@@ -120,7 +120,13 @@ window.FF = window.FF || {};
     bar.style.gap = '10px';
     bar.style.flexWrap = 'wrap';
     bar.style.marginBottom = '14px';
-    if (entity) bar.appendChild(FF.ui.span('meta-chip', entity.avatar + ' ' + entity.name));
+    // In a room nobody takes turns - everyone races the same question,
+    // so naming one player would be wrong on every other device.
+    if (FF.Race && FF.Race.active()) {
+      bar.appendChild(FF.ui.span('meta-chip', '🏁 Everyone races'));
+    } else if (entity) {
+      bar.appendChild(FF.ui.span('meta-chip', entity.avatar + ' ' + entity.name));
+    }
     if (roundText) bar.appendChild(FF.ui.span('meta-chip', roundText));
     return bar;
   }
@@ -141,6 +147,45 @@ window.FF = window.FF || {};
       streakBonus = true;
     }
     return { pts: pts, streak: streakBonus };
+  }
+
+  /* ---------- Race support ----------
+     One helper serves every quiz loop. Returns null offline, so each
+     loop's single-device path is untouched. */
+  function raceFor(api, opts) {
+    if (!FF.Race || !FF.Race.active()) return null;
+    opts = opts || {};
+
+    FF.Race.begin(api.def.id, {
+      rounds: opts.rounds || 10,
+      timerMs: (api.config.timer || 0) * 1000,
+      pointsFor: opts.pointsFor || function (answer) {
+        var pts = Math.round(100 * bonusOf(api.config));
+        if (answer.ms != null && answer.ms < 3000) pts += 50;
+        return pts;
+      }
+    });
+
+    return {
+      beginRound: function (n) { FF.Race.beginRound(n); },
+      submit: function (choice, correct, elapsedMs) {
+        FF.Race.submit(choice, correct, elapsedMs);
+        if (!correct) FF.RaceUI.lockOut(api.shell.root, opts.optionSelector || 'button');
+      },
+      onSettle: function (cb) { return FF.Race.onSettle(cb); },
+      /* The shared result screen every racing game uses. */
+      showResult: function (payload, o) {
+        FF.Race.syncScoring();
+        api.shell.updateScores();
+        FF.RaceUI.result(api.shell.root, {
+          payload: payload,
+          answerText: (o && o.answerText) || null,
+          isLast: !!(o && o.isLast),
+          onNext: (o && o.onNext) || function () {}
+        });
+      },
+      end: function () { FF.Race.end(); }
+    };
   }
 
   function awardWrong(api, id) {
@@ -257,6 +302,18 @@ window.FF = window.FF || {};
       let correctTotal = 0;
       let answeredTotal = 0;
       const perCorrect = {};
+      let currentQ = null;
+
+      const race = raceFor(api, { rounds: ROUNDS, optionSelector: '.quiz-option' });
+      const offSettle = race ? race.onSettle(function (payload) {
+        if (payload.winnerId) correctTotal++;
+        answeredTotal++;
+        race.showResult(payload, {
+          answerText: currentQ ? currentQ.options[currentQ.answer] : null,
+          isLast: (round + 1) >= ROUNDS,
+          onNext: function () { round++; nextRound(); }
+        });
+      }) : null;
 
       function nextRound() {
         round++;
@@ -267,6 +324,8 @@ window.FF = window.FF || {};
             if (Object.prototype.hasOwnProperty.call(perCorrect, id) && perCorrect[id] >= 10) brainBox = true;
           }
           if (brainBox) achievements.push('brainBox');
+          if (offSettle) offSettle();
+          if (race) race.end();
           finishGame(api, { quizCorrect: correctTotal, quizAnswered: answeredTotal, achievements: achievements });
         } else {
           renderRound();
@@ -274,8 +333,10 @@ window.FF = window.FF || {};
       }
 
       function renderRound() {
+        if (race) race.beginRound(round);
         const entity = activeScorer(api.config, round);
         const q = bag.next();
+        currentQ = q;
         const startTime = Date.now();
 
         api.shell.updateScores(entity ? entity.id : null);
@@ -299,6 +360,13 @@ window.FF = window.FF || {};
         function onAnswer(idx) {
           const elapsed = (Date.now() - startTime) / 1000;
           const correct = idx === q.answer;
+
+          if (race) {
+            // The race decides the round; a wrong answer only locks
+            // this device out while everyone else keeps playing.
+            race.submit(idx, correct, Date.now() - startTime);
+            return;
+          }
 
           for (let i = 0; i < optEls.length; i++) {
             optEls[i].disabled = true;

@@ -475,6 +475,15 @@ window.FF = window.FF || {};
         fail: function (msg) { FF.GameFlow.fail(msg); }
       };
 
+      // Seed BEFORE the game builds anything. Games shuffle pools and
+      // create question Bags during setup, not just per round, so every
+      // device has to start from the same RNG state or they deal
+      // different questions from round one.
+      if (config.room && FF.Room && FF.Room.current() && FF.Random.seed) {
+        const roomMeta = FF.Room.current().meta || {};
+        FF.Random.seed(FF.Random.roundSeed(roomMeta.seed, def.id, 'init'));
+      }
+
       const shell = buildShell(def, config, api);
       api.shell = shell;
       this.current.shell = shell;

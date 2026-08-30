@@ -230,6 +230,36 @@ window.FF = window.FF || {};
     var totalAnswered = 0;
     var finished = false;
 
+    // ---- Race support. Offline this is all inert. ----
+    var racing = !!(FF.Race && FF.Race.active && FF.Race.active());
+    var offSettle = null;
+    var currentCorrectName = null;
+
+    if (racing) {
+      FF.Race.begin(api.def.id, {
+        rounds: rounds,
+        timerMs: (api.config.timer || 0) * 1000,
+        pointsFor: function (answer) {
+          var pts = Math.round(BASE_POINTS * difficultyBonus(api.config.difficulty));
+          if (answer.ms != null && answer.ms <= FAST_MS) pts += SPEED_BONUS;
+          return pts;
+        }
+      });
+      offSettle = FF.Race.onSettle(function (payload) {
+        stopShellTimer();
+        if (payload.winnerId) totalCorrect++;
+        totalAnswered++;
+        FF.Race.syncScoring();
+        api.shell.updateScores();
+        FF.RaceUI.result(api.shell.root, {
+          payload: payload,
+          answerText: currentCorrectName,
+          isLast: roundIndex >= rounds - 1,
+          onNext: function () { roundIndex++; nextRound(); }
+        });
+      });
+    }
+
     function stopShellTimer() {
       try { api.shell.hideTimer(); } catch (e) { /* ignore */ }
     }
@@ -238,6 +268,8 @@ window.FF = window.FF || {};
       if (finished) return;
       finished = true;
       stopShellTimer();
+      if (offSettle) { offSettle(); offSettle = null; }
+      if (racing) FF.Race.end();
       var res = api.scoring.results();
       var out = { results: res.results, winnerId: res.winnerId, quizCorrect: totalCorrect, quizAnswered: totalAnswered };
       var bestStreak = 0;
@@ -292,6 +324,7 @@ window.FF = window.FF || {};
     function nextRound() {
       if (finished) return;
       if (roundIndex >= rounds) { finish(); return; }
+      if (racing) FF.Race.beginRound(roundIndex);
 
       var active = scorers[roundIndex % scorers.length];
       var item = bag.next();
@@ -311,7 +344,12 @@ window.FF = window.FF || {};
       head.appendChild(FF.ui.el('span', {
         style: { fontWeight: '800', fontSize: '0.9rem', color: 'var(--muted, #6b7280)', letterSpacing: '1px' }
       }, 'ROUND ' + (roundIndex + 1) + ' / ' + rounds));
-      if (active && api.config.mode !== 'solo') {
+      // In a room nobody takes turns - everyone races the same question.
+      if (racing) {
+        head.appendChild(FF.ui.el('span', {
+          style: { fontWeight: '800', fontSize: '1rem', color: 'var(--accent, #8b5cf6)', background: 'var(--accent-soft, #ede9fe)', padding: '6px 14px', borderRadius: '999px' }
+        }, '🏁 Everyone races'));
+      } else if (active && api.config.mode !== 'solo') {
         head.appendChild(FF.ui.el('span', {
           style: { fontWeight: '800', fontSize: '1rem', color: 'var(--accent, #8b5cf6)', background: 'var(--accent-soft, #ede9fe)', padding: '6px 14px', borderRadius: '999px' }
         }, (active.avatar || '😀') + ' ' + active.name + "'s turn"));
@@ -320,6 +358,7 @@ window.FF = window.FF || {};
 
       var startTime = Date.now();
       var answered = false;
+      currentCorrectName = q.correctName;
 
       var controls = visualRound(wrap, {
         imageDOM: q.imageDOM,
@@ -329,6 +368,13 @@ window.FF = window.FF || {};
         factLines: q.factLines,
         onAnswer: function (correct) {
           if (answered) return;
+          if (racing) {
+            // The race decides the round; a wrong answer only locks
+            // this device out while everyone else keeps playing.
+            FF.Race.submit(null, correct, Date.now() - startTime);
+            if (!correct) FF.RaceUI.lockOut(api.shell.root, '.ffv-option');
+            return;
+          }
           answered = true;
           handleAnswer(active, correct, Date.now() - startTime);
         }
