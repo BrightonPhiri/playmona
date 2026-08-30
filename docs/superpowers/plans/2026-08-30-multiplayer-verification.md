@@ -194,3 +194,69 @@ global, so `window.FF = {}` must create a global `FF`.
   `js/net/firebase-config.js` is git-ignored and must be uploaded by hand.
 - Real-phone checklist: QR scan, mobile data, 3+ devices, host disconnect,
   guest rejoin, team mode, 13th device refused, all 17 games end to end.
+
+---
+
+## 10. Live Firebase verification (added after setup)
+
+Verified against the real project `family-fun-game`, Realtime Database in
+`europe-west1`, from `localhost`.
+
+| Check | Result |
+|---|---|
+| `FF.Net.configured()` with a real config | true, button appears |
+| SDK loads lazily from CDN on first use | pass |
+| Anonymous sign-in | pass |
+| Create room over Firebase | pass |
+| Lobby shows the host once the watch delivers | pass |
+| Start game (clears rounds — host-only rule) | pass |
+| Claim `startedAt`, write answer, claim `winner` | pass |
+| Result screen: verdict, points, answer, scoreboard | pass |
+| Stored round data matches the design exactly | pass |
+
+### A serious defect in the original security rules
+
+The rules originally shipped in `FIREBASE_SETUP.md` **enforced nothing.**
+
+In Realtime Database a `.write` rule that grants access **cascades to every
+child**, and deeper rules are never consulted. The original rules put a broad
+`".write": "auth != null && …"` on the `$code` node, which granted write access
+to the entire room subtree. The carefully nested per-path rules underneath were
+decorative.
+
+This was found by attempting each forbidden operation against the live
+database. Every one succeeded:
+
+```
+STEAL winner (overwrite)          ALLOWED
+CHANGE my answer after the fact   ALLOWED
+FORGE another player answer       ALLOWED
+REWRITE startedAt                 ALLOWED
+```
+
+Fixed by removing the room-level `.write` entirely and giving each write path
+its own rule. Re-tested against the live database:
+
+```
+claim winner (first time)         ALLOWED   <- the app works
+write my own answer               ALLOWED
+create room meta (host)           ALLOWED
+STEAL winner (overwrite)          DENIED
+CHANGE my answer after the fact   DENIED
+FORGE another player answer       DENIED
+FORGE another player entry        DENIED
+REWRITE startedAt                 DENIED
+meta without required fields      DENIED
+```
+
+Reading the whole `rooms` collection is also denied, so rooms cannot be
+enumerated — only a room whose 6-character code you already have.
+
+The corrected rules were then confirmed not to break legitimate play: a full
+game was created, started and played through a round against the live
+database.
+
+**Known edge case:** a room whose `meta` somehow lacks `hostUid` can never be
+written again, because the host check cannot resolve. The app always writes
+`hostUid` at creation, so this cannot occur through normal use — it only
+affected a raw test node written by hand during this verification.

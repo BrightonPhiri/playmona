@@ -51,9 +51,9 @@ Open **Realtime Database → Rules**, replace everything, and click **Publish**:
     "rooms": {
       "$code": {
         ".read": "auth != null",
-        ".write": "auth != null && (!data.exists() || !data.child('meta/expiresAt').exists() || data.child('meta/expiresAt').val() > now)",
 
         "meta": {
+          ".write": "auth != null && (!data.exists() || data.child('hostUid').val() === auth.uid || root.child('rooms').child($code).child('players').child(data.child('hostUid').val()).child('online').val() !== true)",
           ".validate": "newData.hasChildren(['seed', 'status', 'appVersion'])"
         },
 
@@ -65,19 +65,21 @@ Open **Realtime Database → Rules**, replace everything, and click **Publish**:
         },
 
         "rounds": {
+          ".write": "auth != null && !newData.exists() && root.child('rooms').child($code).child('meta').child('hostUid').val() === auth.uid",
+
           "$index": {
-            "answers": {
-              "$uid": {
-                ".write": "auth != null && $uid === auth.uid && !data.exists()",
-                ".validate": "newData.hasChildren(['correct'])"
-              }
+            "startedAt": {
+              ".write": "auth != null && !data.exists()"
             },
             "winner": {
               ".write": "auth != null && !data.exists()",
               ".validate": "newData.isString()"
             },
-            "startedAt": {
-              ".write": "auth != null && !data.exists()"
+            "answers": {
+              "$uid": {
+                ".write": "auth != null && $uid === auth.uid && !data.exists()",
+                ".validate": "newData.hasChildren(['correct'])"
+              }
             }
           }
         }
@@ -89,14 +91,33 @@ Open **Realtime Database → Rules**, replace everything, and click **Publish**:
 
 These rules enforce:
 
-- Only signed-in devices can read or write, and only inside a room whose code
-  they already know.
-- A player may write **only their own** entry and their own answer, and cannot
-  change an answer once submitted.
-- `winner` and `startedAt` can be claimed once and never overwritten. **This is
-  what makes the buzzer fair** — the first correct answer wins and no later
-  write can steal it.
-- Writes to an expired room are rejected.
+- Only signed-in devices can read, and only a room whose code they already
+  know. Reading the whole `rooms` collection is denied, so nobody can
+  enumerate other people's rooms.
+- A player may write **only their own** entry and their own answer
+  (`$uid === auth.uid`), and `!data.exists()` means an answer cannot be
+  changed once submitted — no editing after seeing someone else's.
+- `winner` and `startedAt` can be claimed once and **never overwritten**.
+  This is what makes the buzzer fair: the first correct answer takes the
+  point and no later write can steal it.
+- Only the host can clear the round history (starting a game or playing
+  again). `meta` is writable by the host, or by anyone once the recorded
+  host has gone offline, which is what lets host migration work.
+
+> **Why there is no `.write` at the room level.** In Realtime Database, a
+> `.write` rule that grants access **cascades to every child**, and deeper
+> rules are then never consulted. An earlier version of these rules had a
+> broad `".write"` on `$code`, which silently granted everything and made the
+> nested rules decorative. Each write path must carry its own rule.
+
+These were verified against a live project by attempting each forbidden
+operation and confirming it was rejected: stealing the winner slot, changing
+an answer after submitting, forging another player's answer or entry,
+rewriting `startedAt`, and writing malformed `meta`.
+
+**Not enforced by rules:** the 6-hour room expiry. Expressing it at every
+path made the rules unwieldy, and it is not a security property — room
+expiry is checked by the app when joining.
 
 ## 6. Copy the config into the app
 
@@ -148,3 +169,4 @@ beyond family use. Rooms expire after 6 hours.
 | "Permission denied" in the console | Rules were not published, or Anonymous sign-in is still off. |
 | Players see different questions | A device is running a cached old version. Hard-refresh it; the version guard should catch this and prompt. |
 | Everything works locally but not deployed | You forgot to upload `firebase-config.js` — it is git-ignored. |
+| Players can somehow overwrite each other | Your rules have a `.write` at the `$code` level. Remove it — see the note in step 5. |
