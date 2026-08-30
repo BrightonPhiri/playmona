@@ -292,6 +292,66 @@ window.FF = window.FF || {};
 
     /* Push the derived scores into FF.Scoring so the shell's header
        scoreboard shows the race standings instead of local zeroes. */
+    /* One helper any game file can use to join the race, so the wiring is
+       written once rather than per engine. Returns null offline, letting
+       each game keep its single-device path untouched:
+
+         var race = FF.Race.forGame(api, { rounds: 6, optionSelector: '.x' });
+         if (race) race.beginRound(n);   ... race.submit(i, correct, ms)
+
+       opts: { rounds, optionSelector, mode, pointsFor, timerMs } */
+    forGame: function (api, opts) {
+      if (!this.active()) return null;
+      opts = opts || {};
+      var self = this;
+      var sel = opts.optionSelector || 'button';
+
+      this.begin(api.def.id, {
+        rounds: opts.rounds || 8,
+        mode: opts.mode,
+        timerMs: opts.timerMs != null ? opts.timerMs : (api.config.timer || 0) * 1000,
+        pointsFor: opts.pointsFor || function (answer) {
+          if (answer.value != null) return answer.value;
+          return (answer.ms != null && answer.ms <= 2500) ? 150 : 100;
+        }
+      });
+
+      return {
+        beginRound: function (n) { return self.beginRound(n); },
+
+        /* Hold the options until the round's shared open instant. */
+        gate: function (onOpen) {
+          return FF.RaceUI.gate(api.shell.root, sel, onOpen);
+        },
+
+        /* Times are measured from the shared instant so they compare
+           across devices, not from when each one rendered. */
+        submit: function (choice, correct, fallbackMs, extra) {
+          var shared = self.msSinceOpen();
+          var p = self.submit(choice, correct, shared != null ? shared : fallbackMs, extra);
+          if (!correct && opts.mode !== 'parallel') FF.RaceUI.lockOut(api.shell.root, sel);
+          return p;
+        },
+
+        onSettle: function (cb) { return self.onSettle(cb); },
+
+        /* The shared result screen every racing game uses. */
+        showResult: function (payload, o) {
+          o = o || {};
+          self.syncScoring();
+          api.shell.updateScores();
+          FF.RaceUI.result(api.shell.root, {
+            payload: payload,
+            answerText: o.answerText != null ? o.answerText : null,
+            isLast: !!o.isLast,
+            onNext: o.onNext || function () {}
+          });
+        },
+
+        end: function () { self.end(); }
+      };
+    },
+
     syncScoring: function () {
       if (!session || !room()) return;
       var scores = this.scores();

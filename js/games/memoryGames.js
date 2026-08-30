@@ -385,11 +385,28 @@ window.FF = window.FF || {};
 
       var revealTimer = null;
 
-      function currentScorer() { return scorers[(round - 1) % scorers.length]; }
+      // ---- Race support. Offline this is all inert. ----
+      var race = FF.Race ? FF.Race.forGame(api, {
+        rounds: ROUNDS,
+        optionSelector: '.wm-opt'
+      }) : null;
+      var offSettle = null;
+
+      // In a room nobody takes turns - everyone races the same question.
+      function currentScorer() {
+        if (race) {
+          var me = FF.Room.current();
+          var mine = scorers.filter(function (sc) { return sc.id === me.uid; })[0];
+          return mine || scorers[0];
+        }
+        return scorers[(round - 1) % scorers.length];
+      }
 
       function finish() {
         if (ended) return;
         ended = true;
+        if (offSettle) { offSettle(); offSettle = null; }
+        if (race) race.end();
         api.audio.play('winner');
         api.shell.updateScores();
         api.end(buildResults(api));
@@ -406,8 +423,14 @@ window.FF = window.FF || {};
       }
 
       function playRound(count) {
+        if (race) race.beginRound(round - 1);
+        // The shared result screen clears the shell root, detaching our
+        // wrap - reattach it before drawing the next round.
+        if (wrap.parentNode !== root) { api.ui.clear(root); root.appendChild(wrap); }
         api.ui.clear(stage);
-        status.textContent = 'Round ' + round + ' of ' + ROUNDS + ' — ' + currentScorer().name + ', memorise the emoji!';
+        status.textContent = race
+          ? ('Round ' + round + ' of ' + ROUNDS + ' — everyone, memorise the emoji!')
+          : ('Round ' + round + ' of ' + ROUNDS + ' — ' + currentScorer().name + ', memorise the emoji!');
         api.shell.updateScores(currentScorer().id);
 
         var shown = api.util.sample(EMOJI, count);
@@ -430,23 +453,40 @@ window.FF = window.FF || {};
 
         var countdown = api.ui.span('wm-count', '');
         stage.appendChild(countdown);
-        stage.appendChild(api.ui.button("I'm ready!", {
-          class: 'btn btn-primary',
-          onClick: function () { reveal(); }
-        }));
+
+        // No early reveal in a room: it would both hand that device a head
+        // start and put it on a different screen from everyone else.
+        if (!race) {
+          stage.appendChild(api.ui.button("I'm ready!", {
+            class: 'btn btn-primary',
+            onClick: function () { reveal(); }
+          }));
+        }
 
         var revealed = false;
         var remaining = 3;
-        countdown.textContent = 'Revealing in ' + remaining + '…';
-        revealTimer = setInterval(function () {
-          remaining--;
-          if (remaining <= 0) {
-            clearInterval(revealTimer);
-            reveal();
-          } else {
-            countdown.textContent = 'Revealing in ' + remaining + '…';
-          }
-        }, 1000);
+
+        function startMemorising() {
+          countdown.textContent = 'Revealing in ' + remaining + '…';
+          revealTimer = setInterval(function () {
+            remaining--;
+            if (remaining <= 0) {
+              clearInterval(revealTimer);
+              reveal();
+            } else {
+              countdown.textContent = 'Revealing in ' + remaining + '…';
+            }
+          }, 1000);
+        }
+
+        if (race) {
+          // Start the memorise clock at the round's shared instant, or the
+          // device that rendered first reaches the answer screen first.
+          countdown.textContent = 'Get ready…';
+          FF.RaceUI.gate(root, '.wm-opt', startMemorising);
+        } else {
+          startMemorising();
+        }
 
         function reveal() {
           if (revealed) return;
@@ -476,10 +516,18 @@ window.FF = window.FF || {};
               dataset: { emoji: em },
               onClick: function () {
                 if (answered || ended) return;
-                answered = true;
                 var elapsed = (typeof performance !== 'undefined' && performance.now)
                   ? (performance.now() - startMs)
                   : (Date.now() - startMs);
+
+                if (race) {
+                  // The race decides the round; a wrong answer only locks
+                  // this device out while the others keep playing.
+                  race.submit(null, em === missing, elapsed);
+                  return;
+                }
+
+                answered = true;
                 if (em === missing) {
                   b.classList.add('correct');
                   api.audio.play('correct');
@@ -502,6 +550,20 @@ window.FF = window.FF || {};
             opts.appendChild(b);
           });
           stage.appendChild(opts);
+
+          if (race) {
+            race.gate();
+            if (offSettle) offSettle();
+            offSettle = race.onSettle(function (payload) {
+              if (answered || ended) return;
+              answered = true;
+              race.showResult(payload, {
+                answerText: missing,
+                isLast: round >= ROUNDS,
+                onNext: function () { nextRound(); }
+              });
+            });
+          }
         }
       }
 

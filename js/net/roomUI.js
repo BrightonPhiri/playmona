@@ -14,7 +14,8 @@ window.FF = window.FF || {};
     'familyQuiz', 'trueOrFalse', 'guessWho', 'pictureQuiz',
     'quickTap', 'colorReaction',
     // Parallel play: same letters for everyone, each keeps their own score.
-    'letterRush'
+    'letterRush',
+    'whatsMissing'
     // Brain Battle is deliberately absent: its format is a personal
     // streak run per player, so there is no shared question to race for.
   ];
