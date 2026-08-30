@@ -22,7 +22,8 @@ window.FF = window.FF || {};
       reduceMotion: false,
       randomOrder: true,
       randomQuestions: true,
-      displaySeconds: 60
+      displaySeconds: 60,
+      autoAdvanceMs: 2000
     },
     get: function (key) { return FF.Storage.get(key, this.defaults[key]); },
     set: function (key, val) { FF.Storage.set(key, val); },
@@ -292,6 +293,7 @@ window.FF = window.FF || {};
     },
 
     launch: function (id, overrides) {
+      if (FF.Advance) FF.Advance.cancelAll();
       const def = FF.Games.get(id);
       if (!def) { FF.Nav.go('home'); return; }
       const config = this.buildConfig(def, overrides);
@@ -607,6 +609,7 @@ window.FF = window.FF || {};
     pause: function () {
       const cur = this.current;
       if (!cur) return;
+      if (FF.Advance) FF.Advance.pauseAll();
       if (cur.shell && cur.shell.timer && cur.shell.timer.isRunning()) cur.shell.timer.pause();
       const overlay = FF.ui.div('pause-overlay');
       overlay.appendChild(FF.ui.el('h2', {}, '⏸ GAME PAUSED'));
@@ -626,9 +629,11 @@ window.FF = window.FF || {};
         // only resume if it was running before pause (best effort)
         if (!this.current.shell.timer.isFinished() && this.current.shell.timer.remaining > 0) this.current.shell.timer.resume();
       }
+      if (FF.Advance) FF.Advance.resumeAll();
     },
 
     restart: function () {
+      if (FF.Advance) FF.Advance.cancelAll();
       const overlay = FF.ui.$('.pause-overlay', FF.ui.$('#game-screen'));
       if (overlay) overlay.parentNode.removeChild(overlay);
       const cur = this.current;
@@ -649,6 +654,7 @@ window.FF = window.FF || {};
     },
 
     exitToHome: function () {
+      if (FF.Advance) FF.Advance.cancelAll();
       const screen = FF.ui.$('#game-screen');
       screen.classList.add('hidden');
       FF.ui.clear(screen);
