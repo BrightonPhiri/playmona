@@ -18,13 +18,32 @@ window.FF = window.FF || {};
     /* Sentinel stored in the winner slot when a round ends unwon. */
     NOBODY: '-',
 
+    /* The fastest correct answer in a round, or null. Used by reaction
+       games, where the winner must be the quickest recorded tap rather
+       than whoever's write reached the server first - otherwise network
+       latency, not reflexes, decides the round. */
+    fastestOf: function (round) {
+      var answers = answersOf(round);
+      var best = null;
+      var bestMs = null;
+      Object.keys(answers).forEach(function (uid) {
+        var a = answers[uid];
+        if (!a || a.correct !== true || a.ms == null) return;
+        if (bestMs == null || a.ms < bestMs) { bestMs = a.ms; best = uid; }
+      });
+      return best;
+    },
+
     /* Decide whether a round is over.
        round   : { startedAt, answers: {uid:{choice,correct,ms}}, winner }
        players : [{uid, online}]
        timerMs : round time limit; 0 or null means no limit
        now     : server-aligned timestamp
+       mode    : 'first' (default) - the winner slot is claimed on answer;
+                 'fastest' - nobody claims, the quickest correct answer
+                 wins once everyone has answered or the clock runs out.
        returns : { settled, winnerId, reason } */
-    settle: function (round, players, timerMs, now) {
+    settle: function (round, players, timerMs, now, mode) {
       round = round || {};
       players = players || [];
 
@@ -40,6 +59,24 @@ window.FF = window.FF || {};
 
       var answers = answersOf(round);
       var active = players.filter(function (p) { return p && p.online !== false; });
+      var everyoneAnswered = active.length && active.every(function (p) {
+        return Object.prototype.hasOwnProperty.call(answers, p.uid);
+      });
+      var timedOut = !!(timerMs && timerMs > 0 && round.startedAt != null &&
+        (now - round.startedAt) >= timerMs);
+
+      if (mode === 'fastest') {
+        // No slot is claimed on answer; the round ends when everyone has
+        // had their go, and the quickest correct answer takes it.
+        if (everyoneAnswered || timedOut) {
+          return {
+            settled: true,
+            winnerId: this.fastestOf(round),
+            reason: everyoneAnswered ? 'exhausted' : 'timeout'
+          };
+        }
+        return { settled: false, winnerId: null, reason: null };
+      }
 
       if (active.length) {
         var allAnswered = active.every(function (p) {

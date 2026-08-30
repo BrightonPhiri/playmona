@@ -138,6 +138,30 @@ window.FF = window.FF || {};
     var players = scorers.slice();
     if (api.config.randomOrder) players = api.util.shuffle(players);
 
+    // ---- Race support. Offline this is all inert. ----
+    var racing = !!(FF.Race && FF.Race.active && FF.Race.active());
+    var offSettle = null;
+
+    if (racing) {
+      // Everyone taps at the same moment on their own device, so this
+      // device plays only its own player instead of taking turns.
+      var me = FF.Room.current();
+      var mine = players.filter(function (p) { return p.id === me.uid; });
+      players = mine.length ? mine : players.slice(0, 1);
+
+      FF.Race.begin(api.def.id, {
+        rounds: roundsPerPlayer,
+        timerMs: 0,
+        // The quickest valid tap wins - not whoever's write lands first,
+        // which would let network latency decide a reflex game.
+        mode: 'fastest',
+        pointsFor: function (answer) {
+          if (answer.ms == null) return 0;
+          return Math.round(scoreForAverage(answer.ms / 1000) * bonus);
+        }
+      });
+    }
+
     var summary = [];
     var index = 0;
 
@@ -159,6 +183,9 @@ window.FF = window.FF || {};
       if (index >= players.length) { finish(); return; }
       var player = players[index];
       index++;
+      // In a room every player has their own device, so there is nothing
+      // to hand over - go straight into the rounds.
+      if (racing) { runRounds(player, 0, []); return; }
       intro(player);
     }
 
@@ -187,6 +214,7 @@ window.FF = window.FF || {};
     }
 
     function runRound(player, roundNumber, times, onDone) {
+      if (racing) FF.Race.beginRound(roundNumber);
       var root = api.shell.root;
       api.ui.clear(root);
 
@@ -217,6 +245,8 @@ window.FF = window.FF || {};
           pad.disabled = true;
           api.audio.play('wrong');
           times.push(null);
+          // A false start has no valid time to compete with.
+          if (racing) { FF.Race.submit(null, false, null); }
           setTimeout(onDone, 900);
         } else if (state.phase === 'ready') {
           state.done = true;
@@ -228,6 +258,7 @@ window.FF = window.FF || {};
           pad.disabled = true;
           api.audio.play('tap');
           times.push(sec);
+          if (racing) { FF.Race.submit(null, true, ms); }
           setTimeout(onDone, 900);
         }
       }
@@ -294,6 +325,8 @@ window.FF = window.FF || {};
     }
 
     function finish() {
+      if (offSettle) { offSettle(); offSettle = null; }
+      if (racing) FF.Race.end();
       var results = summary.slice().sort(function (a, b) { return b.points - a.points; });
       var winner = results[0];
       var fastestSec = null;
@@ -364,6 +397,28 @@ window.FF = window.FF || {};
     var players = scorers.slice();
     if (api.config.randomOrder) players = api.util.shuffle(players);
 
+    // ---- Race support. Offline this is all inert. ----
+    var racing = !!(FF.Race && FF.Race.active && FF.Race.active());
+
+    if (racing) {
+      // Everyone answers the same colour at the same moment on their own
+      // device, so this device plays only its own player.
+      var me = FF.Room.current();
+      var mine = players.filter(function (p) { return p.id === me.uid; });
+      players = mine.length ? mine : players.slice(0, 1);
+
+      FF.Race.begin(api.def.id, {
+        rounds: roundsPerPlayer,
+        timerMs: timeLimitMs,
+        // Quickest correct answer wins, not the first write to arrive.
+        mode: 'fastest',
+        pointsFor: function (answer) {
+          var speed = (answer.ms != null && answer.ms <= fastMs) ? 50 : 0;
+          return Math.round(100 * bonus) + speed;
+        }
+      });
+    }
+
     var stats = {};
     players.forEach(function (p) {
       stats[p.id] = { correct: 0, wrong: 0, streak: 0, bestStreak: 0, fastestMs: null };
@@ -382,6 +437,8 @@ window.FF = window.FF || {};
       if (index >= players.length) { finish(); return; }
       var player = players[index];
       index++;
+      // In a room every player has their own device - no hand-off needed.
+      if (racing) { runRounds(player, 0); return; }
       intro(player);
     }
 
@@ -404,6 +461,8 @@ window.FF = window.FF || {};
 
     function runRounds(player, roundNumber) {
       if (roundNumber >= roundsPerPlayer) { finalize(player); return; }
+      // Seed the round so every device gets the same word and ink colour.
+      if (racing) FF.Race.beginRound(roundNumber);
       runRound(player, roundNumber, function () { runRounds(player, roundNumber + 1); });
     }
 
@@ -505,7 +564,9 @@ window.FF = window.FF || {};
       function answer(picked) {
         if (resolved) return;
         var elapsed = Date.now() - startedAt;
-        resolve(picked.name === round.ink.name, elapsed);
+        var correct = picked.name === round.ink.name;
+        if (racing) FF.Race.submit(null, correct, elapsed);
+        resolve(correct, elapsed);
       }
 
       timer = api.timer.create({
@@ -515,6 +576,7 @@ window.FF = window.FF || {};
         },
         onFinish: function () {
           if (resolved) return;
+          if (racing) FF.Race.submit(null, false, null);
           resolve(false, timeLimitMs, 'Too slow! The text was ' + round.ink.name + '.');
         }
       });
@@ -549,6 +611,7 @@ window.FF = window.FF || {};
     }
 
     function finish() {
+      if (racing) FF.Race.end();
       var results = players.slice().map(function (p) {
         var s = stats[p.id];
         return {

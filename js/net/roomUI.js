@@ -11,7 +11,10 @@ window.FF = window.FF || {};
     'whereInWorld', 'mapChallenge', 'capitalChallenge', 'guessFlag',
     'guessCountry', 'guessLandmark', 'guessAnimal', 'guessFood',
     'guessObject', 'guessSport', 'guessVehicle',
-    'familyQuiz', 'trueOrFalse', 'guessWho', 'pictureQuiz'
+    'familyQuiz', 'trueOrFalse', 'guessWho', 'pictureQuiz',
+    'quickTap', 'colorReaction'
+    // Brain Battle is deliberately absent: its format is a personal
+    // streak run per player, so there is no shared question to race for.
   ];
 
   var STYLE_READY = false;

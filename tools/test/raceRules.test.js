@@ -178,3 +178,62 @@ test('the NOBODY sentinel settles a round with no winner and no score', function
   assertEqual(scores.u1, 0, 'the sentinel must never be scored as a win');
   assertEqual(scores[FF.RaceRules.NOBODY], undefined, 'and must not become a player');
 });
+
+test('fastest mode picks the quickest correct answer, not the first written', function () {
+  const FF = loadFF(['js/net/raceRules.js']);
+  const r = FF.RaceRules.settle(
+    round({
+      u1: { choice: null, correct: true, ms: 410 },
+      u2: { choice: null, correct: true, ms: 260 },   // quickest
+      u3: { choice: null, correct: false, ms: null }  // false start
+    }, null),
+    players(3), 0, 5000, 'fastest');
+  assertEqual(r.settled, true);
+  assertEqual(r.winnerId, 'u2', 'the quickest valid tap must win');
+});
+
+test('fastest mode waits until everyone has had their go', function () {
+  const FF = loadFF(['js/net/raceRules.js']);
+  const r = FF.RaceRules.settle(
+    round({ u1: { choice: null, correct: true, ms: 410 } }, null),
+    players(3), 0, 5000, 'fastest');
+  assertEqual(r.settled, false, 'u2 and u3 have not tapped yet');
+});
+
+test('fastest mode ends on the timer with whoever managed a tap', function () {
+  const FF = loadFF(['js/net/raceRules.js']);
+  const r = FF.RaceRules.settle(
+    round({ u1: { choice: null, correct: true, ms: 900 } }, null, 1000),
+    players(3), 4000, 5000, 'fastest');
+  assertEqual(r.settled, true);
+  assertEqual(r.reason, 'timeout');
+  assertEqual(r.winnerId, 'u1');
+});
+
+test('fastest mode with only false starts has no winner', function () {
+  const FF = loadFF(['js/net/raceRules.js']);
+  const r = FF.RaceRules.settle(
+    round({
+      u1: { choice: null, correct: false, ms: null },
+      u2: { choice: null, correct: false, ms: null }
+    }, null),
+    players(2), 0, 5000, 'fastest');
+  assertEqual(r.settled, true);
+  assertEqual(r.winnerId, null, 'nobody tapped validly');
+});
+
+test('fastest mode ignores an answer with no recorded time', function () {
+  const FF = loadFF(['js/net/raceRules.js']);
+  assertEqual(FF.RaceRules.fastestOf(round({
+    u1: { choice: null, correct: true, ms: null },
+    u2: { choice: null, correct: true, ms: 700 }
+  })), 'u2');
+});
+
+test('default mode still requires a claimed winner slot', function () {
+  const FF = loadFF(['js/net/raceRules.js']);
+  const r = FF.RaceRules.settle(
+    round({ u1: { choice: 1, correct: true, ms: 500 } }, null),
+    players(2), 20000, 1500);
+  assertEqual(r.settled, false, 'first-mode must wait for the winner slot');
+});

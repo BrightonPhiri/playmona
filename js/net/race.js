@@ -72,27 +72,37 @@ window.FF = window.FF || {};
     var r = room();
     if (!r) return;
 
+    var node = currentRound();
     var verdict = FF.RaceRules.settle(
-      currentRound(),
+      node,
       FF.Room.racePlayers(),
       session.timerMs,
-      r.transport.serverNow()
+      r.transport.serverNow(),
+      session.mode
     );
     if (!verdict.settled) return;
 
-    // A recorded winner is already a shared fact - settle on it.
-    if (verdict.winnerId) { finalise(verdict.winnerId, 'winner'); return; }
+    // A winner already recorded in the room is a shared fact - settle on it.
+    if (node && node.winner && node.winner !== FF.RaceRules.NOBODY) {
+      finalise(node.winner, 'winner');
+      return;
+    }
+    // In 'first' mode the verdict's winner IS the stored slot.
+    if (session.mode !== 'fastest' && verdict.winnerId) {
+      finalise(verdict.winnerId, 'winner');
+      return;
+    }
 
-    // Nobody won as far as THIS device can tell. Devices judge timeouts
-    // from their own clock, so publish the outcome instead of trusting it:
-    // claim the winner slot for NOBODY. If a correct answer landed at the
-    // same instant it will already hold the slot and we defer to it, so
-    // every device ends the round the same way.
+    // Publish this device's conclusion so every device ends the round the
+    // same way. Devices judge timeouts from their own clock, and in
+    // 'fastest' mode each derives the winner from the recorded times, so
+    // the first write wins and everyone else defers to it.
     session.claiming = true;
     var n = session.index;
     var localReason = verdict.reason;
+    var proposal = verdict.winnerId || FF.RaceRules.NOBODY;
     r.transport.transaction('rounds/' + n + '/winner', function (current) {
-      return current == null ? FF.RaceRules.NOBODY : undefined;
+      return current == null ? proposal : undefined;
     }).then(function () {
       return r.transport.get('rounds/' + n + '/winner');
     }).then(function (stored) {
@@ -133,6 +143,9 @@ window.FF = window.FF || {};
         rounds: opts.rounds || 8,
         timerMs: opts.timerMs || 0,
         pointsFor: opts.pointsFor || function () { return 100; },
+        // 'first'   - first correct answer claims the winner slot
+        // 'fastest' - quickest correct answer wins once everyone has gone
+        mode: opts.mode === 'fastest' ? 'fastest' : 'first',
         index: 0,
         settled: false,
         claiming: false
@@ -196,7 +209,9 @@ window.FF = window.FF || {};
       }
 
       return r.transport.set('rounds/' + n + '/answers/' + r.uid, record).then(function () {
-        if (!correct) return null;
+        // In 'fastest' mode nobody claims on answering - the winner is
+        // derived from the recorded times once the round closes.
+        if (!correct || session.mode === 'fastest') return null;
         return r.transport.transaction('rounds/' + n + '/winner', function (current) {
           return current == null ? r.uid : undefined;   // first correct answer wins
         });
