@@ -165,8 +165,11 @@ window.FF = window.FF || {};
       return FF.RaceRules.lockedOut(currentRound(), r.uid);
     },
 
-    /* Record an answer. A correct one contests the winner slot. */
-    submit: function (choice, correct, ms) {
+    /* Record an answer. A correct one contests the winner slot.
+       `extra` carries game-specific fields onto the stored answer - for
+       example Guess Who, where the points depend on how many clues were
+       revealed and so cannot be derived from the answer time. */
+    submit: function (choice, correct, ms, extra) {
       var r = room();
       if (!r || !session) return Promise.resolve();
       var n = session.index;
@@ -177,11 +180,18 @@ window.FF = window.FF || {};
       // answered but no winner is recorded yet - is handled in
       // FF.RaceRules.settle, which does not treat a round holding a
       // correct answer as exhausted.
-      return r.transport.set('rounds/' + n + '/answers/' + r.uid, {
+      var record = {
         choice: choice == null ? null : choice,
         correct: !!correct,
         ms: ms == null ? null : Math.round(ms)
-      }).then(function () {
+      };
+      if (extra) {
+        Object.keys(extra).forEach(function (k) {
+          if (extra[k] !== undefined) record[k] = extra[k];
+        });
+      }
+
+      return r.transport.set('rounds/' + n + '/answers/' + r.uid, record).then(function () {
         if (!correct) return null;
         return r.transport.transaction('rounds/' + n + '/winner', function (current) {
           return current == null ? r.uid : undefined;   // first correct answer wins

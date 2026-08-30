@@ -295,6 +295,11 @@ window.FF = window.FF || {};
 
       online: function (main) {
         if (!FF.Net || !FF.Net.configured()) { FF.Nav.go('home'); return; }
+        // Already in a room (for example after a game ends and the shell
+        // re-renders this view): go back to the lobby, not the create /
+        // join chooser - otherwise the room's live listeners are dropped
+        // and this device stops following the host.
+        if (FF.Room && FF.Room.current()) { FF.RoomUI.showLobby(main); return; }
         FF.RoomUI.showHome(main);
       },
 

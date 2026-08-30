@@ -160,6 +160,9 @@ window.FF = window.FF || {};
       rounds: opts.rounds || 10,
       timerMs: (api.config.timer || 0) * 1000,
       pointsFor: opts.pointsFor || function (answer) {
+        // A game may state what its answer was worth (Guess Who scores
+        // by clues revealed, not by speed).
+        if (answer.value != null) return answer.value;
         var pts = Math.round(100 * bonusOf(api.config));
         if (answer.ms != null && answer.ms < 3000) pts += 50;
         return pts;
@@ -168,8 +171,8 @@ window.FF = window.FF || {};
 
     return {
       beginRound: function (n) { FF.Race.beginRound(n); },
-      submit: function (choice, correct, elapsedMs) {
-        FF.Race.submit(choice, correct, elapsedMs);
+      submit: function (choice, correct, elapsedMs, extra) {
+        FF.Race.submit(choice, correct, elapsedMs, extra);
         if (!correct) FF.RaceUI.lockOut(api.shell.root, opts.optionSelector || 'button');
       },
       onSettle: function (cb) { return FF.Race.onSettle(cb); },
@@ -442,10 +445,24 @@ window.FF = window.FF || {};
       let correctTotal = 0;
       let answeredTotal = 0;
       let timer = null;
+      let currentItem = null;
+
+      const race = raceFor(api, { rounds: ROUNDS, optionSelector: '.btn' });
+      const offSettle = race ? race.onSettle(function (payload) {
+        if (payload.winnerId) correctTotal++;
+        answeredTotal++;
+        race.showResult(payload, {
+          answerText: currentItem ? (currentItem.answer ? 'TRUE' : 'FALSE') : null,
+          isLast: (round + 1) >= ROUNDS,
+          onNext: function () { nextRound(); }
+        });
+      }) : null;
 
       function nextRound() {
         round++;
         if (round >= ROUNDS) {
+          if (offSettle) offSettle();
+          if (race) race.end();
           finishGame(api, { quizCorrect: correctTotal, quizAnswered: answeredTotal });
         } else {
           renderRound();
@@ -453,8 +470,10 @@ window.FF = window.FF || {};
       }
 
       function renderRound() {
+        if (race) race.beginRound(round);
         const entity = activeScorer(api.config, round);
         const item = bag.next();
+        currentItem = item;
         const startTime = Date.now();
         let answered = false;
 
@@ -503,9 +522,17 @@ window.FF = window.FF || {};
         function stopTimer() { if (timer) { timer.stop(); timer = null; } }
 
         function settle(correct) {
+          if (answered) return;
+          const elapsed = (Date.now() - startTime) / 1000;
+
+          if (race) {
+            stopTimer();
+            race.submit(correct ? 1 : 0, correct, Date.now() - startTime);
+            return;
+          }
+
           answered = true;
           stopTimer();
-          const elapsed = (Date.now() - startTime) / 1000;
 
           trueBtn.disabled = true;
           falseBtn.disabled = true;
@@ -816,10 +843,24 @@ window.FF = window.FF || {};
       let round = 0;
       let correctTotal = 0;
       let answeredTotal = 0;
+      let currentAnswerText = null;
+
+      const race = raceFor(api, { rounds: TOTAL, optionSelector: '.quiz-option' });
+      const offSettle = race ? race.onSettle(function (payload) {
+        if (payload.winnerId) correctTotal++;
+        answeredTotal++;
+        race.showResult(payload, {
+          answerText: currentAnswerText,
+          isLast: (round + 1) >= TOTAL,
+          onNext: function () { nextRound(); }
+        });
+      }) : null;
 
       function nextRound() {
         round++;
         if (round >= TOTAL) {
+          if (offSettle) offSettle();
+          if (race) race.end();
           finishGame(api, { quizCorrect: correctTotal, quizAnswered: answeredTotal });
         } else {
           renderRound();
@@ -827,8 +868,10 @@ window.FF = window.FF || {};
       }
 
       function renderRound() {
+        if (race) race.beginRound(round);
         const entity = activeScorer(api.config, round);
         const item = bag.next();
+        currentAnswerText = item.answer;
         let revealed = 1;
         const startTime = Date.now();
 
@@ -888,6 +931,13 @@ window.FF = window.FF || {};
           function pick(idx) {
             const correct = opts[idx] === item.answer;
             const value = Math.round(pointsNow() * bonusOf(api.config));
+
+            if (race) {
+              // Points depend on how many clues THIS device revealed, so
+              // send the value along rather than deriving it from time.
+              race.submit(idx, correct, Date.now() - startTime, { value: value });
+              return;
+            }
 
             for (let i = 0; i < optEls.length; i++) {
               optEls[i].disabled = true;
@@ -974,10 +1024,24 @@ window.FF = window.FF || {};
       let round = 0;
       let correctTotal = 0;
       let answeredTotal = 0;
+      let currentP = null;
+
+      const race = raceFor(api, { rounds: TOTAL, optionSelector: '.quiz-option' });
+      const offSettle = race ? race.onSettle(function (payload) {
+        if (payload.winnerId) correctTotal++;
+        answeredTotal++;
+        race.showResult(payload, {
+          answerText: currentP ? currentP.options[currentP.answer] : null,
+          isLast: (round + 1) >= TOTAL,
+          onNext: function () { nextRound(); }
+        });
+      }) : null;
 
       function nextRound() {
         round++;
         if (round >= TOTAL) {
+          if (offSettle) offSettle();
+          if (race) race.end();
           finishGame(api, { quizCorrect: correctTotal, quizAnswered: answeredTotal });
         } else {
           renderRound();
@@ -985,9 +1049,11 @@ window.FF = window.FF || {};
       }
 
       function renderRound() {
+        if (race) race.beginRound(round);
         const entity = activeScorer(api.config, round);
         const entry = bag.next();
         const p = entry.p;
+        currentP = p;
         const v = entry.v;
         const startTime = Date.now();
 
@@ -1016,6 +1082,11 @@ window.FF = window.FF || {};
         function onAnswer(idx) {
           const elapsed = (Date.now() - startTime) / 1000;
           const correct = idx === p.answer;
+
+          if (race) {
+            race.submit(idx, correct, Date.now() - startTime);
+            return;
+          }
 
           for (let i = 0; i < optEls.length; i++) {
             optEls[i].disabled = true;
