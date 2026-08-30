@@ -76,6 +76,43 @@ window.FF = window.FF || {};
     icon: function (emoji) { return el('span', { class: 'icon-emoji', 'aria-hidden': 'true' }, emoji); }
   };
 
+  /* ---------- Seedable random source ----------
+     Every random call in the app routes through FF._rand(). Normally that
+     is Math.random. Inside a multiplayer round it is a seeded PRNG, so all
+     devices generate identical questions from the room's seed. */
+  var _seeded = null;
+
+  // xmur3: string -> 32-bit seed
+  function _hashSeed(str) {
+    var text = String(str);
+    var h = 1779033703 ^ text.length;
+    for (var i = 0; i < text.length; i++) {
+      h = Math.imul(h ^ text.charCodeAt(i), 3432918353);
+      h = (h << 13) | (h >>> 19);
+    }
+    return function () {
+      h = Math.imul(h ^ (h >>> 16), 2246822507);
+      h = Math.imul(h ^ (h >>> 13), 3266489909);
+      h ^= h >>> 16;
+      return h >>> 0;
+    };
+  }
+
+  // mulberry32: 32-bit seed -> uniform [0,1)
+  function _mulberry32(a) {
+    return function () {
+      a |= 0;
+      a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  FF._rand = function () {
+    return _seeded ? _seeded() : Math.random();
+  };
+
   /* ---------- Utilities ---------- */
   FF.util = {
     $: function (sel, root) { return (root || document).querySelector(sel); },
@@ -84,25 +121,25 @@ window.FF = window.FF || {};
     shuffle: function (arr) {
       const a = arr.slice();
       for (let i = a.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
+        const j = Math.floor(FF._rand() * (i + 1));
         const t = a[i]; a[i] = a[j]; a[j] = t;
       }
       return a;
     },
 
-    pick: function (arr) { return arr[Math.floor(Math.random() * arr.length)]; },
+    pick: function (arr) { return arr[Math.floor(FF._rand() * arr.length)]; },
 
     // sample n distinct items (returns fewer if not enough)
     sample: function (arr, n) {
       const a = arr.slice();
       for (let i = a.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
+        const j = Math.floor(FF._rand() * (i + 1));
         const t = a[i]; a[i] = a[j]; a[j] = t;
       }
       return a.slice(0, n);
     },
 
-    int: function (min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; },
+    int: function (min, max) { return Math.floor(FF._rand() * (max - min + 1)) + min; },
     clamp: function (v, min, max) { return Math.max(min, Math.min(max, v)); },
 
     formatTime: function (totalSeconds) {
@@ -120,7 +157,7 @@ window.FF = window.FF || {};
       });
     },
 
-    uid: function () { return 'id' + Math.random().toString(36).slice(2, 10); },
+    uid: function () { return 'id' + FF._rand().toString(36).slice(2, 10); },
 
     plural: function (n, word, pluralWord) {
       return n + ' ' + (n === 1 ? word : (pluralWord || word + 's'));
@@ -144,7 +181,7 @@ window.FF = window.FF || {};
     // Fisher-Yates in place
     shuffleInPlace: function (arr) {
       for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
+        const j = Math.floor(FF._rand() * (i + 1));
         const t = arr[i]; arr[i] = arr[j]; arr[j] = t;
       }
       return arr;
@@ -159,6 +196,25 @@ window.FF = window.FF || {};
     pick: function (arr) { return FF.util.pick(arr); },
     shuffle: function (arr) { return FF.util.shuffle(arr); },
     sample: function (arr, n) { return FF.util.sample(arr, n); },
+
+    seed: function (seedString) { _seeded = _mulberry32(_hashSeed(seedString)()); },
+
+    unseed: function () { _seeded = null; },
+
+    seeded: function () { return !!_seeded; },
+
+    // Per-round seed: round N depends only on N, never on earlier rounds.
+    roundSeed: function (roomSeed, gameId, roundIndex) {
+      return String(roomSeed) + '|' + String(gameId) + '|' + String(roundIndex);
+    },
+
+    // Room seeds must never come from the seeded stream.
+    newSeed: function () {
+      var chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+      var out = '';
+      for (var i = 0; i < 8; i++) out += chars.charAt(Math.floor(Math.random() * chars.length));
+      return out;
+    },
 
     Bag: function (items) {
       let pool = [];
