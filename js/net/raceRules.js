@@ -15,6 +15,9 @@ window.FF = window.FF || {};
   }
 
   FF.RaceRules = {
+    /* Sentinel stored in the winner slot when a round ends unwon. */
+    NOBODY: '-',
+
     /* Decide whether a round is over.
        round   : { startedAt, answers: {uid:{choice,correct,ms}}, winner }
        players : [{uid, online}]
@@ -26,6 +29,12 @@ window.FF = window.FF || {};
       players = players || [];
 
       if (round.winner) {
+        // NOBODY is written when a round ends with no correct answer. It
+        // makes 'nobody won' a shared fact instead of each device judging
+        // it from its own clock, which could otherwise disagree.
+        if (round.winner === FF.RaceRules.NOBODY) {
+          return { settled: true, winnerId: null, reason: 'exhausted' };
+        }
         return { settled: true, winnerId: round.winner, reason: 'winner' };
       }
 
@@ -36,7 +45,14 @@ window.FF = window.FF || {};
         var allAnswered = active.every(function (p) {
           return Object.prototype.hasOwnProperty.call(answers, p.uid);
         });
-        if (allAnswered) {
+        // A correct answer that has not yet claimed the winner slot must
+        // NOT count as exhaustion. An answer is written before the winner
+        // transaction resolves, so treating 'everyone answered' as a dead
+        // round would settle it wrongly in that window.
+        var anyCorrect = Object.keys(answers).some(function (uid) {
+          return answers[uid] && answers[uid].correct === true;
+        });
+        if (allAnswered && !anyCorrect) {
           return { settled: true, winnerId: null, reason: 'exhausted' };
         }
       }
@@ -62,7 +78,7 @@ window.FF = window.FF || {};
 
       Object.keys(rounds || {}).forEach(function (key) {
         var round = rounds[key];
-        if (!round || !round.winner) return;
+        if (!round || !round.winner || round.winner === FF.RaceRules.NOBODY) return;
         var winner = round.winner;
         if (!Object.prototype.hasOwnProperty.call(out, winner)) out[winner] = 0;
         var answer = answersOf(round)[winner];

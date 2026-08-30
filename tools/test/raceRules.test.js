@@ -136,3 +136,45 @@ test('a winner with no recorded answer scores zero, not NaN', function () {
   const scores = FF.RaceRules.scores(rounds, players(2), function (a) { return 100; });
   assertEqual(scores.u1, 0, 'missing answer data must not produce NaN');
 });
+
+test('a correct answer awaiting the winner slot is not exhaustion', function () {
+  const FF = loadFF(['js/net/raceRules.js']);
+  // Every player has answered and one of them is CORRECT, but the winner
+  // transaction has not landed yet. This window is real: the answer write
+  // and the winner claim are two separate operations.
+  const r = FF.RaceRules.settle(
+    round({
+      u1: { choice: 0, correct: false, ms: 900 },
+      u2: { choice: 3, correct: true, ms: 5000 }
+    }, null),
+    players(2), 20000, 6000);
+  assertEqual(r.settled, false,
+    'must wait for the winner slot rather than declaring a dead round');
+});
+
+test('all answered and all wrong is still exhaustion', function () {
+  const FF = loadFF(['js/net/raceRules.js']);
+  const r = FF.RaceRules.settle(
+    round({
+      u1: { choice: 0, correct: false, ms: 900 },
+      u2: { choice: 3, correct: false, ms: 1000 }
+    }, null),
+    players(2), 20000, 2000);
+  assertEqual(r.settled, true);
+  assertEqual(r.reason, 'exhausted');
+});
+
+test('the NOBODY sentinel settles a round with no winner and no score', function () {
+  const FF = loadFF(['js/net/raceRules.js']);
+  const r = FF.RaceRules.settle(
+    round({ u1: { choice: 0, correct: false, ms: 900 } }, FF.RaceRules.NOBODY),
+    players(3), 20000, 2000);
+  assertEqual(r.settled, true, 'a published no-winner outcome settles everywhere');
+  assertEqual(r.winnerId, null);
+
+  const scores = FF.RaceRules.scores(
+    { 0: round({ u1: { choice: 0, correct: false, ms: 900 } }, FF.RaceRules.NOBODY) },
+    players(2), function () { return 100; });
+  assertEqual(scores.u1, 0, 'the sentinel must never be scored as a win');
+  assertEqual(scores[FF.RaceRules.NOBODY], undefined, 'and must not become a player');
+});
