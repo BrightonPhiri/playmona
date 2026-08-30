@@ -10,6 +10,9 @@ window.FF = window.FF || {};
   'use strict';
 
   var session = null;         // { gameId, rounds, timerMs, pointsFor, index, settled }
+  // Kept after end() so the final results screen can still derive scores;
+  // scoring needs the game's pointsFor, and the session is gone by then.
+  var lastSession = null;
   var settleHandlers = [];
   var offRounds = null;
   var timeoutPoll = null;
@@ -134,6 +137,7 @@ window.FF = window.FF || {};
         settled: false,
         claiming: false
       };
+      lastSession = null;
       if (offRounds) offRounds();
       offRounds = FF.Room.on('rounds', evaluate);
     },
@@ -211,8 +215,9 @@ window.FF = window.FF || {};
 
     scores: function () {
       var r = room();
-      if (!r || !session) return {};
-      return FF.RaceRules.scores(r.rounds || {}, FF.Room.racePlayers(), session.pointsFor);
+      var s = session || lastSession;
+      if (!r || !s) return {};
+      return FF.RaceRules.scores(r.rounds || {}, FF.Room.racePlayers(), s.pointsFor);
     },
 
     /* Push the derived scores into FF.Scoring so the shell's header
@@ -234,6 +239,7 @@ window.FF = window.FF || {};
     end: function () {
       stopPoll();
       if (offRounds) { offRounds(); offRounds = null; }
+      lastSession = session;
       session = null;
       settleHandlers.length = 0;
       FF.Random.unseed();
