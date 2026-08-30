@@ -283,10 +283,10 @@ window.FF = window.FF || {};
       wrap.appendChild(stats);
 
       var isLast = index >= players.length;
-      var nextBtn = api.ui.button(isLast ? '🏆 RESULTS' : 'NEXT ▶', { primary: true, class: 'btn-lg', onClick: function () {
+      var nextBtn = FF.Advance.button(isLast ? '🏆 RESULTS' : 'NEXT ▶', function () {
         api.audio.play('select');
         next();
-      } });
+      }, { class: 'btn-lg' });
       wrap.appendChild(nextBtn);
       root.appendChild(wrap);
       focusSafe(nextBtn);
@@ -538,10 +538,10 @@ window.FF = window.FF || {};
       wrap.appendChild(list);
 
       var isLast = index >= players.length;
-      var nextBtn = api.ui.button(isLast ? '🏆 RESULTS' : 'NEXT ▶', { primary: true, class: 'btn-lg', onClick: function () {
+      var nextBtn = FF.Advance.button(isLast ? '🏆 RESULTS' : 'NEXT ▶', function () {
         api.audio.play('select');
         next();
-      } });
+      }, { class: 'btn-lg' });
       wrap.appendChild(nextBtn);
       root.appendChild(wrap);
       focusSafe(nextBtn);
