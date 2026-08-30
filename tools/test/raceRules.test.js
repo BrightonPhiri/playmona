@@ -237,3 +237,44 @@ test('default mode still requires a claimed winner slot', function () {
     players(2), 20000, 1500);
   assertEqual(r.settled, false, 'first-mode must wait for the winner slot');
 });
+
+test('parallel mode: everyone banks their own score, not just the winner', function () {
+  const FF = loadFF(['js/net/raceRules.js']);
+  const rounds = {
+    0: round({
+      u1: { correct: true, ms: 30000, value: 220 },
+      u2: { correct: true, ms: 30000, value: 140 },
+      u3: { correct: true, ms: 30000, value: 0 }
+    }, null)
+  };
+  const scores = FF.RaceRules.scores(rounds, players(3), function () { return 0; }, 'parallel');
+  assertEqual(scores.u1, 220, 'top scorer banks their own points');
+  assertEqual(scores.u2, 140, 'so does everyone else - not winner-takes-all');
+  assertEqual(scores.u3, 0);
+});
+
+test('parallel mode waits for everyone, then names the top scorer', function () {
+  const FF = loadFF(['js/net/raceRules.js']);
+  const partial = FF.RaceRules.settle(
+    round({ u1: { correct: true, ms: 1000, value: 100 } }, null),
+    players(2), 0, 5000, 'parallel');
+  assertEqual(partial.settled, false, 'u2 is still playing');
+
+  const done = FF.RaceRules.settle(
+    round({
+      u1: { correct: true, ms: 1000, value: 100 },
+      u2: { correct: true, ms: 1000, value: 260 }
+    }, null),
+    players(2), 0, 5000, 'parallel');
+  assertEqual(done.settled, true);
+  assertEqual(done.winnerId, 'u2', 'highest score takes the headline');
+});
+
+test('parallel mode with nobody scoring has no headline winner', function () {
+  const FF = loadFF(['js/net/raceRules.js']);
+  const r = FF.RaceRules.settle(
+    round({ u1: { correct: true, ms: 1, value: 0 }, u2: { correct: true, ms: 1, value: 0 } }, null),
+    players(2), 0, 5000, 'parallel');
+  assertEqual(r.settled, true);
+  assertEqual(r.winnerId, null);
+});

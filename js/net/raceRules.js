@@ -34,6 +34,21 @@ window.FF = window.FF || {};
       return best;
     },
 
+    /* The highest-scoring answer in a round, or null. Used by parallel
+       games, where everyone plays the same challenge at the same time and
+       keeps their own score rather than racing for one point. */
+    bestOf: function (round) {
+      var answers = answersOf(round);
+      var best = null;
+      var bestVal = null;
+      Object.keys(answers).forEach(function (uid) {
+        var a = answers[uid];
+        if (!a || a.value == null) return;
+        if (bestVal == null || a.value > bestVal) { bestVal = a.value; best = uid; }
+      });
+      return (bestVal != null && bestVal > 0) ? best : null;
+    },
+
     /* Decide whether a round is over.
        round   : { startedAt, answers: {uid:{choice,correct,ms}}, winner }
        players : [{uid, online}]
@@ -64,6 +79,20 @@ window.FF = window.FF || {};
       });
       var timedOut = !!(timerMs && timerMs > 0 && round.startedAt != null &&
         (now - round.startedAt) >= timerMs);
+
+      if (mode === 'parallel') {
+        // Everyone plays the whole round; it ends when all have finished
+        // or the clock runs out. The 'winner' is only for the headline -
+        // in this mode every player keeps the points they earned.
+        if (everyoneAnswered || timedOut) {
+          return {
+            settled: true,
+            winnerId: this.bestOf(round),
+            reason: everyoneAnswered ? 'exhausted' : 'timeout'
+          };
+        }
+        return { settled: false, winnerId: null, reason: null };
+      }
 
       if (mode === 'fastest') {
         // No slot is claimed on answer; the round ends when everyone has
@@ -109,9 +138,25 @@ window.FF = window.FF || {};
 
     /* Scores are always derived, never stored, so devices cannot drift.
        pointsFor(answer) returns the points for a winning answer. */
-    scores: function (rounds, players, pointsFor) {
+    scores: function (rounds, players, pointsFor, mode) {
       var out = {};
       (players || []).forEach(function (p) { out[p.uid] = 0; });
+
+      // Parallel games are not winner-takes-all: each player banks what
+      // they scored in every round.
+      if (mode === 'parallel') {
+        Object.keys(rounds || {}).forEach(function (key) {
+          var answers = answersOf(rounds[key]);
+          Object.keys(answers).forEach(function (uid) {
+            var a = answers[uid];
+            if (!a) return;
+            if (!Object.prototype.hasOwnProperty.call(out, uid)) out[uid] = 0;
+            var v = (a.value != null) ? a.value : 0;
+            out[uid] += (typeof v === 'number' && isFinite(v)) ? v : 0;
+          });
+        });
+        return out;
+      }
 
       Object.keys(rounds || {}).forEach(function (key) {
         var round = rounds[key];

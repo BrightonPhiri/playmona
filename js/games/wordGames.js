@@ -126,13 +126,13 @@ window.FF = window.FF || {};
     return Math.round(base * bonusMult(api));
   }
 
+  // One point per letter, so longer words are always worth more and there
+  // is no cap - the old tiers scored every word of 7+ letters the same.
+  // Deliberately NOT passed through applyBonus: the difficulty multiplier
+  // would make a 3-letter word worth 5 on Normal. Difficulty still shapes
+  // the letter pool and the clock in these games.
   function wordLengthScore(len) {
-    if (len < 3) return 0;
-    if (len === 3) return 10;
-    if (len === 4) return 20;
-    if (len === 5) return 40;
-    if (len === 6) return 70;
-    return 100;
+    return len < 3 ? 0 : len;
   }
 
   // Returns api.config.timer when set (may be 0 = off), else fallback.
@@ -314,7 +314,7 @@ window.FF = window.FF || {};
     howToPlay: [
       'On your turn you get a set of letters.',
       'Type as many words as you can using only those letters.',
-      'Longer words earn more points — watch the clock!',
+      'Longer words earn more points — 1 point per letter. Watch the clock!',
       'The player with the most words and points wins.'
     ],
     display: true,
@@ -330,6 +330,37 @@ window.FF = window.FF || {};
       var order = scorerEntities(api);
       if (!order.length) { showMissingData(api, 'Letter Rush', 'No players were found.'); return; }
       if (api.config.randomOrder) order = FF.util.shuffle(order);
+
+      // ---- Race support. Offline this is all inert. ----
+      // Letter Rush is not a buzzer race: everyone gets the SAME letters at
+      // the same moment and keeps whatever they score, so it runs in
+      // 'parallel' mode with a single shared round.
+      var racing = !!(FF.Race && FF.Race.active && FF.Race.active());
+      var offSettle = null;
+
+      if (racing) {
+        var me = FF.Room.current();
+        var mine = order.filter(function (e) { return e.id === me.uid; });
+        order = mine.length ? mine : order.slice(0, 1);
+
+        FF.Race.begin(api.def.id, {
+          rounds: 1,
+          mode: 'parallel',
+          timerMs: (turnSeconds(api, 30) + 25) * 1000,
+          pointsFor: function (answer) { return answer.value || 0; }
+        });
+
+        offSettle = FF.Race.onSettle(function () {
+          if (state.ended) return;
+          state.ended = true;
+          FF.Race.syncScoring();
+          api.shell.updateScores();
+          if (offSettle) { offSettle(); offSettle = null; }
+          FF.Race.end();
+          // The shared room results screen shows the final standings.
+          api.end({});
+        });
+      }
 
       var state = {
         order: order,
@@ -357,8 +388,14 @@ window.FF = window.FF || {};
         api.shell.setTitle(api.def.name);
 
         var wrap = FF.ui.div('wg-wrap');
-        wrap.appendChild(FF.ui.el('h2', { class: 'wg-center' }, entityLabel(entity) + "'s Turn"));
-        wrap.appendChild(FF.ui.el('p', { class: 'hint wg-center' }, 'Turn ' + state.round + ' of ' + state.order.length + ' — type words from these letters:'));
+        // In a room nobody takes turns - everyone races the same letters.
+        if (racing) {
+          wrap.appendChild(FF.ui.el('h2', { class: 'wg-center' }, '🏁 Everyone plays at once'));
+          wrap.appendChild(FF.ui.el('p', { class: 'hint wg-center' }, 'Same letters for everyone — find as many words as you can. 1 point per letter.'));
+        } else {
+          wrap.appendChild(FF.ui.el('h2', { class: 'wg-center' }, entityLabel(entity) + "'s Turn"));
+          wrap.appendChild(FF.ui.el('p', { class: 'hint wg-center' }, 'Turn ' + state.round + ' of ' + state.order.length + ' — type words from these letters:'));
+        }
 
         var letterRow = FF.ui.div('wg-letters');
         letters.forEach(function (ch) {
@@ -393,7 +430,7 @@ window.FF = window.FF || {};
             return;
           }
           turnWords.forEach(function (w) {
-            listBox.appendChild(FF.ui.el('span', { class: 'wg-chip' }, w.toUpperCase() + ' +' + applyBonus(api, wordLengthScore(w.length))));
+            listBox.appendChild(FF.ui.el('span', { class: 'wg-chip' }, w.toUpperCase() + ' +' + wordLengthScore(w.length)));
           });
         }
 
@@ -409,7 +446,7 @@ window.FF = window.FF || {};
           turnWords.push(word);
           state.words[entity.id].push(word);
           state.counts[entity.id]++;
-          var pts = applyBonus(api, wordLengthScore(word.length));
+          var pts = wordLengthScore(word.length);
           api.scoring.add(entity.id, pts, { correct: true });
           api.shell.updateScores(entity.id);
           api.audio.play('correct');
@@ -422,14 +459,56 @@ window.FF = window.FF || {};
           if (state.busy) return;
           state.busy = true;
           api.shell.hideTimer();
+
+          if (racing) {
+            // Bank this device's score and wait for everyone else.
+            var mySoFar = 0;
+            turnWords.forEach(function (w) { mySoFar += wordLengthScore(w.length); });
+            FF.Race.submit(null, true, FF.Race.msSinceOpen(), { value: mySoFar });
+            renderWaiting(turnWords, mySoFar);
+            return;
+          }
+
           renderSummary(entity, turnWords);
         }
 
-        if (seconds && seconds > 0) {
-          api.shell.setTimer(seconds, finishTurn);
+        function openRound() {
+          if (seconds && seconds > 0) {
+            api.shell.setTimer(seconds, finishTurn);
+          }
+          focusSoon(input);
         }
 
-        focusSoon(input);
+        if (racing) {
+          // Hold every device until the shared open instant, so nobody
+          // starts typing early, and only then start the clock.
+          FF.Race.beginRound(0);
+          input.disabled = true;
+          FF.RaceUI.gate(root, '.wg-input, .btn', function () {
+            input.disabled = false;
+            openRound();
+          });
+        } else {
+          openRound();
+        }
+      }
+
+      /* Parallel play: this device has finished, others may still be typing. */
+      function renderWaiting(turnWords, myScore) {
+        var root = api.shell.root;
+        FF.ui.clear(root);
+        api.shell.hideTimer();
+        var wrap = FF.ui.div('panel panel--center wg-wrap');
+        wrap.appendChild(FF.ui.el('h2', {}, '⏳ Time! You scored ' + myScore));
+        wrap.appendChild(FF.ui.el('p', {}, 'You found ' + FF.util.plural(turnWords.length, 'word') + '.'));
+        if (turnWords.length) {
+          var list = FF.ui.div('wg-word-list');
+          turnWords.forEach(function (w) { list.appendChild(FF.ui.el('span', { class: 'wg-chip' }, w.toUpperCase())); });
+          wrap.appendChild(list);
+        }
+        wrap.appendChild(FF.ui.div('hint', 'Waiting for the other players to finish…'));
+        if (FF.RaceUI && FF.RaceUI.scoreboard) wrap.appendChild(FF.RaceUI.scoreboard());
+        root.appendChild(wrap);
       }
 
       function renderSummary(entity, turnWords) {
@@ -844,7 +923,7 @@ window.FF = window.FF || {};
           state.used[word] = true;
           state.words[state.activeId].push(word);
           state.counts[state.activeId]++;
-          var pts = applyBonus(api, wordLengthScore(word.length));
+          var pts = wordLengthScore(word.length);
           api.scoring.add(entity.id, pts, { correct: true });
           api.shell.updateScores(entity.id);
           api.audio.play('correct');

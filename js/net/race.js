@@ -95,7 +95,7 @@ window.FF = window.FF || {};
       return;
     }
     // In 'first' mode the verdict's winner IS the stored slot.
-    if (session.mode !== 'fastest' && verdict.winnerId) {
+    if (session.mode === 'first' && verdict.winnerId) {
       finalise(verdict.winnerId, 'winner');
       return;
     }
@@ -150,9 +150,11 @@ window.FF = window.FF || {};
         rounds: opts.rounds || 8,
         timerMs: opts.timerMs || 0,
         pointsFor: opts.pointsFor || function () { return 100; },
-        // 'first'   - first correct answer claims the winner slot
-        // 'fastest' - quickest correct answer wins once everyone has gone
-        mode: opts.mode === 'fastest' ? 'fastest' : 'first',
+        // 'first'    - first correct answer claims the winner slot
+        // 'fastest'  - quickest correct answer wins once everyone has gone
+        // 'parallel' - everyone plays the same challenge and keeps their
+        //              own score; the winner is only for the headline
+        mode: (opts.mode === 'fastest' || opts.mode === 'parallel') ? opts.mode : 'first',
         index: 0,
         settled: false,
         claiming: false
@@ -264,7 +266,7 @@ window.FF = window.FF || {};
       return r.transport.set('rounds/' + n + '/answers/' + r.uid, record).then(function () {
         // In 'fastest' mode nobody claims on answering - the winner is
         // derived from the recorded times once the round closes.
-        if (!correct || session.mode === 'fastest') return null;
+        if (!correct || session.mode === 'fastest' || session.mode === 'parallel') return null;
         return r.transport.transaction('rounds/' + n + '/winner', function (current) {
           return current == null ? r.uid : undefined;   // first correct answer wins
         });
@@ -285,7 +287,7 @@ window.FF = window.FF || {};
       var r = room();
       var s = session || lastSession;
       if (!r || !s) return {};
-      return FF.RaceRules.scores(r.rounds || {}, FF.Room.racePlayers(), s.pointsFor);
+      return FF.RaceRules.scores(r.rounds || {}, FF.Room.racePlayers(), s.pointsFor, s.mode);
     },
 
     /* Push the derived scores into FF.Scoring so the shell's header
