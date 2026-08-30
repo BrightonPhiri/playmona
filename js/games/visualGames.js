@@ -253,10 +253,10 @@ window.FF = window.FF || {};
 
     function showNext() {
       var last = roundIndex >= rounds - 1;
-      var nextBtn = FF.ui.button(last ? '🏁 FINISH' : 'NEXT ▶', {
-        class: 'btn-lg', primary: true,
-        onClick: function () { roundIndex++; nextRound(); }
-      });
+      var nextBtn = FF.Advance.button(last ? '🏁 FINISH' : 'NEXT ▶', function () {
+        roundIndex++;
+        nextRound();
+      }, { class: 'btn-lg' });
       nextBtn.style.display = 'block';
       nextBtn.style.margin = '18px auto 0';
       nextBtn.style.minWidth = '200px';
@@ -381,18 +381,11 @@ window.FF = window.FF || {};
           flag.style.width = '360px';
           flag.style.height = '240px';
           flag.style.maxWidth = '100%';
-          var factLines = [
-            '🌍 ' + (country.name || ''),
-            '🏙️ Capital: ' + (country.capital || '—'),
-            '🗺️ Continent: ' + (country.continent || '—')
-          ];
-          if (country.facts && country.facts.length) factLines.push('💡 ' + country.facts[0]);
           return {
             imageDOM: flag,
             promptText: 'WHICH COUNTRY?',
             correctName: country.name,
-            options: makeOptions(country.name, names),
-            factLines: factLines
+            options: makeOptions(country.name, names)
           };
         }
       });
