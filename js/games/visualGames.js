@@ -369,9 +369,11 @@ window.FF = window.FF || {};
         onAnswer: function (correct) {
           if (answered) return;
           if (racing) {
+            // Measure from the shared open instant so times compare fairly.
+            var shared = FF.Race.msSinceOpen();
             // The race decides the round; a wrong answer only locks
             // this device out while everyone else keeps playing.
-            FF.Race.submit(null, correct, Date.now() - startTime);
+            FF.Race.submit(null, correct, shared != null ? shared : (Date.now() - startTime));
             if (!correct) FF.RaceUI.lockOut(api.shell.root, '.ffv-option');
             return;
           }
@@ -382,7 +384,22 @@ window.FF = window.FF || {};
 
       api.shell.root.appendChild(wrap);
 
-      if (api.config.timer && api.config.timer > 0) {
+      function openRound() {
+        startTime = Date.now();
+        if (api.config.timer && api.config.timer > 0) {
+          api.shell.setTimer(api.config.timer, function () {
+            if (answered) return;
+            answered = true;
+            controls.reveal();
+            handleTimeout(active);
+          });
+        }
+      }
+
+      if (racing) {
+        api.shell.hideTimer();
+        FF.RaceUI.gate(api.shell.root, '.ffv-option', openRound);
+      } else if (api.config.timer && api.config.timer > 0) {
         api.shell.setTimer(api.config.timer, function () {
           if (answered) return;
           answered = true;

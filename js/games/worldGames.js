@@ -318,11 +318,22 @@ window.FF = window.FF || {};
       root.appendChild(wrap);
       if (FF.Nav && FF.Nav.focusFirst) FF.Nav.focusFirst(root);
 
-      roundStart = Date.now();
-      if (api.config.timer > 0) {
-        api.shell.setTimer(api.config.timer, function () { handleAnswer(null); });
-      } else {
+      function openRound() {
+        roundStart = Date.now();
+        if (api.config.timer > 0) {
+          api.shell.setTimer(api.config.timer, function () { handleAnswer(null); });
+        } else {
+          api.shell.hideTimer();
+        }
+      }
+
+      if (racing) {
+        // Hold until the round's shared open instant so every device
+        // reveals the question at the same moment.
         api.shell.hideTimer();
+        FF.RaceUI.gate(root, '.wg-option', openRound);
+      } else {
+        openRound();
       }
     }
 
@@ -333,9 +344,12 @@ window.FF = window.FF || {};
       var correct = (choiceIndex != null && choiceIndex === q.answer);
 
       if (racing) {
+        // Measure from the SHARED open instant, not from when this device
+        // rendered, so the recorded times are comparable across devices.
+        var shared = FF.Race.msSinceOpen();
         // The race decides the round. A wrong answer only locks this
         // device out; everyone else keeps playing.
-        FF.Race.submit(choiceIndex, correct, elapsed);
+        FF.Race.submit(choiceIndex, correct, shared != null ? shared : elapsed);
         if (!correct) FF.RaceUI.lockOut(root, '.wg-option');
         return;
       }

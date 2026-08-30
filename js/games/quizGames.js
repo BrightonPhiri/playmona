@@ -171,8 +171,18 @@ window.FF = window.FF || {};
 
     return {
       beginRound: function (n) { FF.Race.beginRound(n); },
+
+      /* Hold the options until the round's shared open instant, so every
+         device can answer from the same moment. */
+      gate: function (onOpen) {
+        return FF.RaceUI.gate(api.shell.root, opts.optionSelector || 'button', onOpen);
+      },
+
       submit: function (choice, correct, elapsedMs, extra) {
-        FF.Race.submit(choice, correct, elapsedMs, extra);
+        // Measure from the shared open instant so times compare across
+        // devices rather than from when each happened to render.
+        var shared = FF.Race.msSinceOpen();
+        FF.Race.submit(choice, correct, shared != null ? shared : elapsedMs, extra);
         if (!correct) FF.RaceUI.lockOut(api.shell.root, opts.optionSelector || 'button');
       },
       onSettle: function (cb) { return FF.Race.onSettle(cb); },
@@ -358,6 +368,7 @@ window.FF = window.FF || {};
         });
 
         api.shell.root.appendChild(wrap);
+        if (race) race.gate();
         FF.Nav.focusFirst(api.shell.root);
 
         function onAnswer(idx) {
@@ -505,6 +516,7 @@ window.FF = window.FF || {};
         wrap.appendChild(row);
 
         api.shell.root.appendChild(wrap);
+        if (race) race.gate();
         FF.Nav.focusFirst(api.shell.root);
 
         if (api.config.timer > 0) {
@@ -845,7 +857,9 @@ window.FF = window.FF || {};
       let answeredTotal = 0;
       let currentAnswerText = null;
 
-      const race = raceFor(api, { rounds: TOTAL, optionSelector: '.quiz-option' });
+      // 'button' rather than '.quiz-option': the clue screen's actions need
+      // gating too, since options only appear after pressing Guess Now.
+      const race = raceFor(api, { rounds: TOTAL, optionSelector: 'button' });
       const offSettle = race ? race.onSettle(function (payload) {
         if (payload.winnerId) correctTotal++;
         answeredTotal++;
@@ -906,6 +920,7 @@ window.FF = window.FF || {};
 
           api.shell.root.appendChild(wrap);
           FF.Nav.focusFirst(api.shell.root);
+          if (race) race.gate();
         }
 
         function guessNow() {
@@ -1078,6 +1093,7 @@ window.FF = window.FF || {};
 
         api.shell.root.appendChild(wrap);
         FF.Nav.focusFirst(api.shell.root);
+        if (race) race.gate();
 
         function onAnswer(idx) {
           const elapsed = (Date.now() - startTime) / 1000;

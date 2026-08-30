@@ -9,6 +9,13 @@ window.FF = window.FF || {};
 (function () {
   'use strict';
 
+  // How far in the future a round is scheduled to open. Every device waits
+  // for this shared instant before revealing the question, so nobody can
+  // answer early. Without it the host answers first every time: Firebase
+  // applies a device's own write optimistically, so the host's watcher
+  // fires immediately while everyone else waits a network round trip.
+  var LEAD_MS = 1200;
+
   var session = null;         // { gameId, rounds, timerMs, pointsFor, index, settled }
   // Kept after end() so the final results screen can still derive scores;
   // scoring needs the game's pointsFor, and the session is gone by then.
@@ -167,13 +174,59 @@ window.FF = window.FF || {};
 
       FF.Random.seed(FF.Random.roundSeed(r.meta.seed, session.gameId, n));
 
-      // First device here claims startedAt; the rest read it.
+      // The first device here schedules when the round OPENS - a moment in
+      // the near future, not now - and everyone else reads that same
+      // instant. This is what keeps the reveal simultaneous.
       return r.transport.transaction('rounds/' + n + '/startedAt', function (current) {
-        return current == null ? r.transport.serverNow() : undefined;
+        return current == null ? (r.transport.serverNow() + LEAD_MS) : undefined;
       }).then(function () {
         startPoll();
         evaluate();
       }).catch(function () { /* a lost race for startedAt is harmless */ });
+    },
+
+    /* The server-aligned instant this round opens for answers, or null. */
+    opensAt: function () {
+      var node = currentRound();
+      return (node && node.startedAt != null) ? node.startedAt : null;
+    },
+
+    /* Milliseconds until the round opens; 0 once it is open. */
+    msUntilOpen: function () {
+      var r = room();
+      var at = this.opensAt();
+      if (!r || at == null) return 0;
+      var left = at - r.transport.serverNow();
+      return left > 0 ? left : 0;
+    },
+
+    /* Time since the round opened, measured from the SHARED instant rather
+       than from when this device happened to render. That makes the
+       recorded answer time comparable across devices. */
+    msSinceOpen: function () {
+      var r = room();
+      var at = this.opensAt();
+      if (!r || at == null) return null;
+      var since = r.transport.serverNow() - at;
+      return since > 0 ? Math.round(since) : 0;
+    },
+
+    /* Run cb at the shared open instant (immediately if already open).
+       Returns a cancel function. */
+    whenOpen: function (cb) {
+      var self = this;
+      var cancelled = false;
+      var timer = null;
+      function tick() {
+        if (cancelled) return;
+        var left = self.msUntilOpen();
+        // Re-check rather than trusting one reading: startedAt may not have
+        // arrived from the server yet when this is first called.
+        if (left <= 0 && self.opensAt() != null) { cb(); return; }
+        timer = setTimeout(tick, left > 0 ? Math.min(left, 120) : 60);
+      }
+      tick();
+      return function () { cancelled = true; if (timer) clearTimeout(timer); };
     },
 
     lockedOut: function () {

@@ -258,13 +258,18 @@ window.FF = window.FF || {};
           pad.disabled = true;
           api.audio.play('tap');
           times.push(sec);
-          if (racing) { FF.Race.submit(null, true, ms); }
+          if (racing) { var shared = FF.Race.msSinceOpen(); FF.Race.submit(null, true, shared != null ? shared : ms); }
           setTimeout(onDone, 900);
         }
       }
 
-      // FF._rand() so the signal fires at the same instant on every device in a room.
+      // FF._rand() so the wait is the same length on every device in a room.
       var delay = 2000 + Math.floor(FF._rand() * 3001); // 2–5 seconds
+
+      // ...and start counting it from the round's SHARED open instant, not
+      // from whenever this device happened to render, or the device that
+      // rendered first would see TAP! first.
+      function armSignal() {
       state.timer = setTimeout(function () {
         if (state.done) return;
         state.phase = 'ready';
@@ -275,6 +280,14 @@ window.FF = window.FF || {};
         pad.classList.add('go');
         api.audio.play('countdown');
       }, delay);
+      }
+
+      if (racing) {
+        pad.disabled = true;
+        FF.RaceUI.gate(root, '.qt-pad', function () { pad.disabled = false; armSignal(); });
+      } else {
+        armSignal();
+      }
     }
 
     function finalize(player, times) {
@@ -524,6 +537,7 @@ window.FF = window.FF || {};
 
       var limitSec = timeLimitMs / 1000;
 
+
       function resolve(correct, elapsedMs, msgOverride) {
         if (resolved) return;
         resolved = true;
@@ -565,7 +579,7 @@ window.FF = window.FF || {};
         if (resolved) return;
         var elapsed = Date.now() - startedAt;
         var correct = picked.name === round.ink.name;
-        if (racing) FF.Race.submit(null, correct, elapsed);
+        if (racing) { var shared = FF.Race.msSinceOpen(); FF.Race.submit(null, correct, shared != null ? shared : elapsed); }
         resolve(correct, elapsed);
       }
 
@@ -580,7 +594,17 @@ window.FF = window.FF || {};
           resolve(false, timeLimitMs, 'Too slow! The text was ' + round.ink.name + '.');
         }
       });
-      timer.start(limitSec);
+      // Hold every device until the round's shared open instant, and only
+      // start the clock then - otherwise time would tick away while the
+      // options were still disabled.
+      if (racing) {
+        FF.RaceUI.gate(root, 'button', function () {
+          startedAt = Date.now();
+          timer.start(limitSec);
+        });
+      } else {
+        timer.start(limitSec);
+      }
     }
 
     function finalize(player) {

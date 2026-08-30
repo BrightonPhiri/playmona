@@ -28,7 +28,14 @@ window.FF = window.FF || {};
       '.ffr-board{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:6px;}',
       '.ffr-chip{display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;',
       'background:var(--surface,#f8fafc);border:1px solid var(--border,#e2e8f0);font-weight:700;}',
-      '.ffr-chip--off{opacity:.45;}'
+      '.ffr-chip--off{opacity:.45;}',
+      '.ffr-gate{position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;',
+      'align-items:center;justify-content:center;gap:10px;',
+      'background:rgba(15,23,42,0.72);backdrop-filter:blur(3px);}',
+      '.ffr-gate__label{font-size:1.1rem;font-weight:800;color:#fff;letter-spacing:2px;}',
+      '.ffr-gate__num{font-size:5rem;font-weight:800;color:#fff;line-height:1;',
+      'animation:ffr-pop .4s ease;}',
+      '@keyframes ffr-pop{from{transform:scale(.6);opacity:.4;}to{transform:scale(1);opacity:1;}}'
     ].join('\n');
     document.head.appendChild(style);
   }
@@ -53,6 +60,57 @@ window.FF = window.FF || {};
 
   FF.RaceUI = {
     scoreboard: scoreboard,
+
+    /* Hold this device until the round's shared open instant, so no one
+       can answer early. Firebase echoes a device's own write immediately,
+       so without this the host always sees the question first.
+
+       Disables the option buttons, shows a brief countdown, then enables
+       them and calls onOpen() - at the same moment on every device.
+       Returns a cancel function. */
+    gate: function (root, optionSelector, onOpen) {
+      ensureStyles();
+      onOpen = onOpen || function () {};
+
+      if (!FF.Race || !FF.Race.active() || FF.Race.msUntilOpen() <= 0) {
+        onOpen();
+        return function () {};
+      }
+
+      var buttons = FF.ui.$$(optionSelector || 'button', root).filter(function (b) {
+        return !b.classList.contains('shell-btn') && !b.classList.contains('host-btn');
+      });
+      buttons.forEach(function (b) { b.disabled = true; });
+
+      var overlay = FF.ui.div('ffr-gate');
+      var label = FF.ui.div('ffr-gate__label', 'GET READY');
+      var num = FF.ui.div('ffr-gate__num', '');
+      overlay.appendChild(label);
+      overlay.appendChild(num);
+      document.body.appendChild(overlay);
+
+      var lastShown = null;
+      var ticker = setInterval(function () {
+        var secs = Math.ceil(FF.Race.msUntilOpen() / 1000);
+        if (secs !== lastShown) {
+          lastShown = secs;
+          num.textContent = secs > 0 ? String(secs) : '';
+        }
+      }, 80);
+
+      function cleanup() {
+        clearInterval(ticker);
+        if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+      }
+
+      var cancelWait = FF.Race.whenOpen(function () {
+        cleanup();
+        buttons.forEach(function (b) { b.disabled = false; });
+        onOpen();
+      });
+
+      return function () { cancelWait(); cleanup(); };
+    },
 
     /* Wrong answer in a room: disable the options, stay on the
        question, and let the round play out for everyone else. */
