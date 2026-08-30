@@ -32,9 +32,38 @@ window.FF = window.FF || {};
     return out;
   }
 
+  /* Identity storage. Normally localStorage, so a device keeps its name
+     and score across a browser restart. In dev-rooms mode it is per-tab
+     sessionStorage instead, so two tabs of one browser act as two
+     genuinely separate devices rather than sharing one identity. */
+  function devIdentity(value) {
+    try {
+      if (value === undefined) {
+        var raw = window.sessionStorage.getItem('ff-dev-identity');
+        return raw ? JSON.parse(raw) : null;
+      }
+      window.sessionStorage.setItem('ff-dev-identity', JSON.stringify(value));
+      return value;
+    } catch (e) { return null; }
+  }
+
+  function usingDevIdentity() {
+    return !!(FF.Net && FF.Net.devMode && FF.Net.devMode());
+  }
+
+  function readIdentity() {
+    return usingDevIdentity() ? devIdentity() : FF.Storage.get('roomIdentity', null);
+  }
+
+  function writeIdentity(value) {
+    if (usingDevIdentity()) devIdentity(value);
+    else FF.Storage.set('roomIdentity', value);
+    return value;
+  }
+
   /* A stable per-device identity, reused across rooms and rejoins. */
   function identity() {
-    var saved = FF.Storage.get('roomIdentity', null);
+    var saved = readIdentity();
     if (saved && saved.uid) return saved;
     var players = FF.Players.get();
     var first = players && players.length ? players[0] : null;
@@ -44,7 +73,7 @@ window.FF = window.FF || {};
       avatar: first ? first.avatar : FF.util.pick(FF.Players.AVATARS),
       color: first ? first.color : FF.Players.COLORS[0]
     };
-    FF.Storage.set('roomIdentity', fresh);
+    writeIdentity(fresh);
     return fresh;
   }
 
@@ -53,13 +82,15 @@ window.FF = window.FF || {};
     Object.keys(patch || {}).forEach(function (k) {
       if (patch[k] != null && patch[k] !== '') id[k] = patch[k];
     });
-    FF.Storage.set('roomIdentity', id);
+    writeIdentity(id);
     return id;
   }
 
   function makeTransport(code, useDev) {
     var root = FF.Transport.roomPath(code);
-    if (useDev) return Promise.resolve(FF.Transport.dev({ root: root, namespace: 'familyfun' }));
+    if (useDev || (FF.Net && FF.Net.devMode && FF.Net.devMode())) {
+      return Promise.resolve(FF.Transport.dev({ root: root, namespace: 'familyfun' }));
+    }
     if (!FF.Net || !FF.Net.configured()) {
       return Promise.reject(new Error('Online play is not configured on this copy of the app.'));
     }
@@ -285,6 +316,22 @@ window.FF = window.FF || {};
         return (cur && cur.online !== false) ? undefined : myUid;
       }).then(function (res) {
         if (res.committed && state) state.isHost = true;
+      });
+    },
+
+    /* Start a game in this room. Clearing the round history and taking a
+       fresh seed is essential: leftover rounds from the previous game
+       would settle the new one instantly, and a reused seed would deal
+       the same questions again. */
+    startGame: function (gameId) {
+      if (!state || !state.isHost) return Promise.resolve();
+      var transport = state.transport;
+      return transport.set('rounds', null).then(function () {
+        return transport.update('meta', {
+          seed: FF.Random.newSeed(),
+          gameId: gameId,
+          status: 'playing'
+        });
       });
     },
 

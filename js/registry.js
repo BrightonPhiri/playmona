@@ -269,11 +269,16 @@ window.FF = window.FF || {};
 
       const scorers = (mode === 'team') ? FF.Teams.entities() : FF.Players.entities();
 
+      // In a room the scoreboard is the connected devices, not the
+      // players configured locally on this one.
+      const inRoom = !!(overrides.room && FF.Room && FF.Room.current());
+      const roomScorers = inRoom ? FF.Room.scorers() : null;
+
       const config = {
         def: def,
         players: players,
         teams: teamsEnabled ? teams.teams : null,
-        scorers: scorers,
+        scorers: (roomScorers && roomScorers.length) ? roomScorers : scorers,
         mode: mode,
         difficulty: overrides.difficulty || FF.Settings.get('difficulty'),
         length: overrides.length || FF.Settings.get('length'),
@@ -287,7 +292,8 @@ window.FF = window.FF || {};
         displaySeconds: overrides.displaySeconds != null ? overrides.displaySeconds : (FF.Settings.get('displaySeconds') || 60),
         round: overrides.round || null,
         tournament: !!overrides.tournament,
-        onEnd: overrides.onEnd || null
+        onEnd: overrides.onEnd || null,
+        room: inRoom
       };
       return config;
     },
@@ -501,6 +507,17 @@ window.FF = window.FF || {};
         this.showDisplayResults(results);
         return;
       }
+      // In a room every device shows the same derived scoreboard rather
+      // than its own local FF.Scoring state.
+      if (cur.config.room && FF.Room && FF.Room.current()) {
+        FF.Stats.recordGamePlayed(cur.def.id, cur.def.name);
+        FF.Recents.add(cur.def.id, cur.def.name);
+        FF.GameFlow.exitToHome();
+        FF.Nav.go('online');
+        FF.RoomUI.showResults(FF.App.root());
+        return;
+      }
+
       if (!results.results || !results.results.length) {
         const r = FF.Scoring.results();
         results.results = r.results;

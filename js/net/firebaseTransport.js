@@ -43,9 +43,19 @@ window.FF = window.FF || {};
     return sdkPromise;
   }
 
+  /* Local development only: with this flag set, online play runs on the
+     BroadcastChannel transport across tabs of this browser, with no
+     Firebase account and no internet. Turn it on from the console with
+       FF.Storage.set('devRooms', true)
+     It is opt-in and per-browser, so it never affects real users. */
+  function devMode() {
+    return !!(FF.Storage && FF.Storage.get('devRooms', false));
+  }
+
   /* The gate for the whole online feature. False here means the
      PLAY TOGETHER button never renders and no network call is made. */
   function configured() {
+    if (devMode()) return true;
     var c = FF.FirebaseConfig;
     return !!(c && c.apiKey && c.databaseURL && String(c.apiKey).indexOf('AIza') === 0);
   }
@@ -123,6 +133,7 @@ window.FF = window.FF || {};
 
   FF.Net = FF.Net || {};
   FF.Net.configured = configured;
+  FF.Net.devMode = devMode;
   FF.Net.firebase = firebaseTransport;
   FF.Net.SDK_VERSION = SDK_VERSION;
 })();

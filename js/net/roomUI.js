@@ -234,7 +234,7 @@ window.FF = window.FF || {};
             class: 'btn btn-lg', primary: true,
             onClick: function () {
               FF.Audio.play('roundStart');
-              FF.Room.setMeta({ gameId: select.value, status: 'playing' });
+              FF.Room.startGame(select.value);
             }
           }));
         } else {

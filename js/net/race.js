@@ -113,7 +113,13 @@ window.FF = window.FF || {};
   }
 
   FF.Race = {
-    active: function () { return !!(session && room()); },
+    /* True whenever this device is playing inside a room. Games check
+       this BEFORE calling begin(), so it must not depend on a session
+       having been created - that would never become true. */
+    active: function () { return !!room(); },
+
+    /* True once begin() has opened a race session for a game. */
+    running: function () { return !!(session && room()); },
 
     begin: function (gameId, opts) {
       opts = opts || {};
@@ -197,6 +203,18 @@ window.FF = window.FF || {};
       var r = room();
       if (!r || !session) return {};
       return FF.RaceRules.scores(r.rounds || {}, FF.Room.racePlayers(), session.pointsFor);
+    },
+
+    /* Push the derived scores into FF.Scoring so the shell's header
+       scoreboard shows the race standings instead of local zeroes. */
+    syncScoring: function () {
+      if (!session || !room()) return;
+      var scores = this.scores();
+      Object.keys(scores).forEach(function (id) {
+        if (FF.Scoring && typeof FF.Scoring.set === 'function') {
+          FF.Scoring.set(id, scores[id]);
+        }
+      });
     },
 
     roster: function () {

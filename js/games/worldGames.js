@@ -220,16 +220,49 @@ window.FF = window.FF || {};
     var answered = false;
     var currentQuestion = null;
 
-    function activeScorer() { return order[roundIndex % order.length]; }
+    // ---- Race support. Offline this is all inert. ----
+    var racing = !!(FF.Race && FF.Race.active && FF.Race.active());
+    var offSettle = null;
+
+    if (racing) {
+      FF.Race.begin(api.def.id, {
+        rounds: roundCount,
+        timerMs: (api.config.timer || 0) * 1000,
+        pointsFor: function (answer) { return computePoints(api, answer.ms); }
+      });
+      offSettle = FF.Race.onSettle(function (payload) {
+        answered = true;
+        api.shell.hideTimer();
+        if (payload.winnerId) { totalCorrect++; }
+        totalAnswered++;
+        FF.Race.syncScoring();
+        api.shell.updateScores();
+        renderRaceFeedback(currentQuestion, payload);
+      });
+    }
+
+    // In a room everyone plays every round on their own device, so the
+    // 'active' scorer is always this device rather than a rotating turn.
+    function activeScorer() {
+      if (racing) {
+        var me = FF.Room.current();
+        var mine = me && order.filter(function (sc) { return sc.id === me.uid; })[0];
+        return mine || order[0];
+      }
+      return order[roundIndex % order.length];
+    }
 
     function finish() {
       api.shell.hideTimer();
+      if (offSettle) { offSettle(); offSettle = null; }
+      if (racing) FF.Race.end();
       api.shell.updateScores();
       api.end(buildResults(api, totalCorrect, totalAnswered));
     }
 
     function renderRound() {
       answered = false;
+      if (racing) FF.Race.beginRound(roundIndex);
       var scorer = activeScorer();
       api.shell.updateScores(scorer.id);
 
@@ -249,7 +282,12 @@ window.FF = window.FF || {};
 
       var head = div('wg-head');
       head.appendChild(div('wg-round', 'ROUND ' + (roundIndex + 1) + ' / ' + roundCount));
-      head.appendChild(div('wg-turn', [span('wg-ava', scorer.avatar || '😀'), scorer.name]));
+      // In a room nobody takes turns - everyone races the same question.
+      if (racing) {
+        head.appendChild(div('wg-turn', '🏁 Everyone races'));
+      } else {
+        head.appendChild(div('wg-turn', [span('wg-ava', scorer.avatar || '😀'), scorer.name]));
+      }
       wrap.appendChild(head);
 
       var prompt = div('wg-prompt');
@@ -290,12 +328,21 @@ window.FF = window.FF || {};
 
     function handleAnswer(choiceIndex) {
       if (answered) return;
-      answered = true;
-      api.shell.hideTimer();
       var elapsed = Date.now() - roundStart;
-      var scorer = activeScorer();
       var q = currentQuestion;
       var correct = (choiceIndex != null && choiceIndex === q.answer);
+
+      if (racing) {
+        // The race decides the round. A wrong answer only locks this
+        // device out; everyone else keeps playing.
+        FF.Race.submit(choiceIndex, correct, elapsed);
+        if (!correct) FF.RaceUI.lockOut(root, '.wg-option');
+        return;
+      }
+
+      answered = true;
+      api.shell.hideTimer();
+      var scorer = activeScorer();
       totalAnswered++;
       var points = 0;
       if (correct) {
@@ -309,6 +356,19 @@ window.FF = window.FF || {};
       }
       api.shell.updateScores(scorer.id);
       renderFeedback(q, correct, points);
+    }
+
+    function renderRaceFeedback(q, payload) {
+      FF.RaceUI.result(root, {
+        payload: payload,
+        answerText: (q && q.answerText != null) ? q.answerText : '',
+        isLast: (roundIndex + 1) >= roundCount,
+        onNext: function () {
+          roundIndex++;
+          if (roundIndex >= roundCount) finish();
+          else renderRound();
+        }
+      });
     }
 
     function renderFeedback(q, correct, points) {

@@ -58,6 +58,13 @@ window.FF = window.FF || {};
       this.buildShell();
       FF.Nav.init();
       this.render('home');
+
+      // A shared link like .../familygame/#room=ABC123 goes straight to join.
+      var joinCode = (FF.Room && FF.Room.codeFromUrl) ? FF.Room.codeFromUrl() : null;
+      if (joinCode && FF.Net && FF.Net.configured()) {
+        FF.Nav.go('online');
+        FF.RoomUI.showJoin(this.root(), joinCode);
+      }
     },
 
     root: function () { return FF.ui.$('#app-main'); },
@@ -136,7 +143,7 @@ window.FF = window.FF || {};
       footer.appendChild(FF.ui.el('button', { class: 'link-btn', onclick: function () { FF.Nav.go('credits'); } }, 'Credits & Sources'));
       footer.appendChild(FF.ui.el('button', { class: 'link-btn', onclick: function () { FF.Nav.go('about'); } }, 'About'));
       footer.appendChild(FF.ui.div('app-footer__privacy', '🔒 Private & offline — no account, no internet.'));
-      footer.appendChild(FF.ui.div('app-footer__ver', 'v1.0.0'));
+      footer.appendChild(FF.ui.div('app-footer__ver', 'v1.1.0'));
 
       app.appendChild(header);
       app.appendChild(main);
@@ -286,6 +293,11 @@ window.FF = window.FF || {};
     /* ================= Views ================= */
     views: {
 
+      online: function (main) {
+        if (!FF.Net || !FF.Net.configured()) { FF.Nav.go('home'); return; }
+        FF.RoomUI.showHome(main);
+      },
+
       home: function (main) {
         const hero = FF.ui.div('home-hero');
         const heroText = FF.ui.div('home-hero__text');
@@ -298,6 +310,11 @@ window.FF = window.FF || {};
         actions.appendChild(FF.App.heroButton('play', '🎮', 'QUICK PLAY', 'Random game, right now', function () { FF.App.quickPlay(); }, true));
         actions.appendChild(FF.App.heroButton('moon', '🌙', 'GAME NIGHT', 'Multi-round tournament', function () { FF.Nav.go('gamenight'); }));
         actions.appendChild(FF.App.heroButton('lightning', '⚡', 'QUICK ROUND', '2–5 minute game', function () { FF.App.quickRound(); }));
+        // Only shown when online play is configured, so an offline copy
+        // of the app has no trace of it and makes no network requests.
+        if (FF.Net && FF.Net.configured()) {
+          actions.appendChild(FF.App.heroButton('globe', '🌐', 'PLAY TOGETHER', 'Same game, different devices', function () { FF.Nav.go('online'); }));
+        }
         hero.appendChild(actions);
         main.appendChild(hero);
 
