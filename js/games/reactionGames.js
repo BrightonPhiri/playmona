@@ -232,7 +232,8 @@ window.FF = window.FF || {};
         }
       }
 
-      var delay = 2000 + Math.floor(Math.random() * 3001); // 2–5 seconds
+      // FF._rand() so the signal fires at the same instant on every device in a room.
+      var delay = 2000 + Math.floor(FF._rand() * 3001); // 2–5 seconds
       state.timer = setTimeout(function () {
         if (state.done) return;
         state.phase = 'ready';
@@ -409,7 +410,7 @@ window.FF = window.FF || {};
     function makeRound() {
       var word = STROOP_COLORS[api.util.int(0, STROOP_COLORS.length - 1)];
       var ink;
-      if (Math.random() < conflictChance) {
+      if (FF._rand() < conflictChance) {
         var others = STROOP_COLORS.filter(function (c) { return c.name !== word.name; });
         ink = api.util.pick(others);
       } else {

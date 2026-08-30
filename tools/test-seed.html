@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light" data-accent="purple">
+<head>
+  <meta charset="UTF-8">
+  <title>Family Fun — Seed Determinism Test</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 24px; }
+    .pass { color: #15803d; } .fail { color: #b91c1c; font-weight: 700; }
+    li { margin: 4px 0; font-family: ui-monospace, monospace; font-size: 13px; }
+    #summary { font-size: 20px; font-weight: 700; margin: 16px 0; }
+    pre { background: #f1f5f9; padding: 8px; overflow-x: auto; font-size: 11px; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>Seed Determinism Test</h1>
+  <p>Renders every race game's questions twice under the same seed and compares them.
+     A failure here means devices in a room would see different questions.</p>
+  <p style="color:#92400e;background:#fef3c7;padding:10px;border-radius:8px;max-width:760px;">
+     <strong>Scope:</strong> this diffs rendered text, so it covers question content, option
+     wording and option order. It does <em>not</em> observe values produced later by timers
+     (such as Quick Tap's GET READY delay). Those are deterministic by construction — they
+     call <code>FF._rand()</code>, so the same seed and the same call order give the same
+     result on every device.</p>
+  <div id="summary">Running…</div>
+  <ul id="results"></ul>
+
+  <div id="stage" style="position:absolute;left:-9999px;top:0;width:900px;"></div>
+
+  <script src="../js/core.js"></script>
+  <script src="../js/storage.js"></script>
+  <script src="../js/theme.js"></script>
+  <script src="../js/audio.js"></script>
+  <script src="../js/timer.js"></script>
+  <script src="../js/advance.js"></script>
+  <script src="../js/confetti.js"></script>
+  <script src="../js/scoring.js"></script>
+  <script src="../js/players.js"></script>
+  <script src="../js/assets.js"></script>
+  <script src="../js/flagrenderer.js"></script>
+  <script src="../js/icons.js"></script>
+  <script src="../js/icons-custom.js"></script>
+  <script src="../js/registry.js"></script>
+  <script src="../js/navigation.js"></script>
+  <script src="../js/data/quiz.js"></script>
+  <script src="../js/data/words.js"></script>
+  <script src="../js/data/countries.js"></script>
+  <script src="../js/data/flagcodes.js"></script>
+  <script src="../js/data/party.js"></script>
+  <script src="../js/data/visual.js"></script>
+  <script src="../js/data/visual2.js"></script>
+  <script src="../js/games/wordGames.js"></script>
+  <script src="../js/games/quizGames.js"></script>
+  <script src="../js/games/memoryGames.js"></script>
+  <script src="../js/games/reactionGames.js"></script>
+  <script src="../js/games/numberGames.js"></script>
+  <script src="../js/games/creativeGames.js"></script>
+  <script src="../js/games/partyGames.js"></script>
+  <script src="../js/games/visualGames.js"></script>
+  <script src="../js/games/puzzleGames.js"></script>
+  <script src="../js/games/worldGames.js"></script>
+
+  <script>
+  (function () {
+    'use strict';
+
+    // The 18 games that support racing.
+    var RACE_GAMES = [
+      'whereInWorld', 'mapChallenge', 'capitalChallenge', 'guessFlag',
+      'guessCountry', 'guessLandmark', 'guessAnimal', 'guessFood',
+      'guessObject', 'guessSport', 'guessVehicle',
+      'familyQuiz', 'trueOrFalse', 'brainBattle', 'guessWho', 'pictureQuiz',
+      'quickTap', 'colorReaction'
+    ];
+    var ROUNDS = 8;
+    var results = document.getElementById('results');
+    var passes = 0, failures = 0;
+
+    FF.Storage.init();
+    FF.Storage.set('players', [
+      { id: 'p1', name: 'Ana', avatar: '\uD83E\uDD8A', color: '#8b5cf6' },
+      { id: 'p2', name: 'Ben', avatar: '\uD83D\uDC3C', color: '#3b82f6' }
+    ]);
+
+    // Render a game's rounds into a detached stage and capture the visible text.
+    function capture(gameId, seed) {
+      var def = FF.Games.get(gameId);
+      if (!def) return null;
+
+      var frames = [];
+      for (var r = 0; r < ROUNDS; r++) {
+        FF.Random.seed(FF.Random.roundSeed(seed, gameId, r));
+
+        var stage = document.getElementById('stage');
+        stage.innerHTML = '';
+        var root = document.createElement('div');
+        stage.appendChild(root);
+
+        var config = FF.GameFlow.buildConfig(def, { skipIntro: true, timer: 0 });
+        var api = {
+          def: def,
+          config: config,
+          scoring: FF.Scoring,
+          audio: { play: function () {}, unlock: function () {}, setEffects: function () {} },
+          ui: FF.ui, util: FF.util, random: FF.Random,
+          timer: FF.Timer, assets: FF.Assets, flags: FF.Flags,
+          shell: {
+            root: root,
+            updateScores: function () {}, setTimer: function () {},
+            hideTimer: function () {}, pauseTimer: function () {},
+            resumeTimer: function () {}, toast: function () {},
+            timer: { isRunning: function () { return false; }, stop: function () {} }
+          },
+          end: function () {}, fail: function () {}
+        };
+        FF.Scoring.init(config.scorers, config.mode);
+
+        try {
+          def.start(api);
+          // Some games open on a hand-off gate ("Pass the device to Ana",
+          // "Ana's Run"). Capturing that screen would compare identical
+          // intros and prove nothing, so click through to a real round.
+          for (var g = 0; g < 3; g++) {
+            var gate = null;
+            var btns = root.querySelectorAll('button');
+            for (var b = 0; b < btns.length; b++) {
+              var label = (btns[b].textContent || '');
+              if (/START|'s Run|Guess Now/i.test(label)) { gate = btns[b]; break; }
+            }
+            if (!gate) break;
+            gate.click();
+          }
+        } catch (e) {
+          FF.Random.unseed();
+          return { error: e.message };
+        }
+        // Normalise: text only, whitespace collapsed. Ignores DOM identity.
+        frames.push((root.textContent || '').replace(/\s+/g, ' ').trim());
+      }
+      FF.Random.unseed();
+      return frames;
+    }
+
+    function report(name, ok, detail) {
+      var li = document.createElement('li');
+      li.className = ok ? 'pass' : 'fail';
+      li.textContent = (ok ? 'PASS  ' : 'FAIL  ') + name;
+      if (!ok && detail) {
+        var pre = document.createElement('pre');
+        pre.textContent = detail;
+        li.appendChild(pre);
+      }
+      results.appendChild(li);
+      if (ok) passes++; else failures++;
+    }
+
+    RACE_GAMES.forEach(function (id) {
+      var seed = 'test-seed-' + id;
+      var first = capture(id, seed);
+      var second = capture(id, seed);
+
+      if (!first) { report(id + ' (not registered)', false, 'FF.Games.get returned null'); return; }
+      if (first.error) { report(id, false, 'threw: ' + first.error); return; }
+      if (second && second.error) { report(id, false, 'threw on second run: ' + second.error); return; }
+
+      var mismatch = -1;
+      for (var i = 0; i < first.length; i++) {
+        if (first[i] !== second[i]) { mismatch = i; break; }
+      }
+
+      if (mismatch === -1) {
+        report(id + ' \u2014 ' + ROUNDS + ' rounds identical', true);
+      } else {
+        report(id + ' \u2014 round ' + mismatch + ' differs', false,
+          'run 1: ' + String(first[mismatch]).slice(0, 300) + '\n\nrun 2: ' + String(second[mismatch]).slice(0, 300));
+      }
+    });
+
+    var summary = document.getElementById('summary');
+    summary.textContent = passes + ' passed, ' + failures + ' failed';
+    summary.className = failures ? 'fail' : 'pass';
+    window.__seedTestResult = { passes: passes, failures: failures };
+  })();
+  </script>
+</body>
+</html>
