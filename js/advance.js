@@ -150,6 +150,7 @@ window.FF = window.FF || {};
     var ms = opts.ms == null ? defaultMs() : Math.max(0, opts.ms);
     var fired = false;
     var raf = null;
+    var safety = null;
 
     var btn = FF.ui.button('', {
       class: 'ff-adv ' + (opts.class || 'btn btn-lg'),
@@ -168,6 +169,7 @@ window.FF = window.FF || {};
         else clearTimeout(raf);
         raf = null;
       }
+      if (safety != null) { clearInterval(safety); safety = null; }
     }
 
     function done() {
@@ -202,6 +204,15 @@ window.FF = window.FF || {};
         raf = window.requestAnimationFrame ? window.requestAnimationFrame(loop) : setTimeout(loop, 50);
       };
       raf = window.requestAnimationFrame ? window.requestAnimationFrame(loop) : setTimeout(loop, 50);
+
+      // requestAnimationFrame is throttled or suspended in a background
+      // tab, which would strand the countdown. The controller measures
+      // wall-clock time and onDone is idempotent, so a coarse interval
+      // is a safe net: whichever notices first finishes the round.
+      safety = setInterval(function () {
+        if (ctrl.state() === 'done' || ctrl.state() === 'cancelled') { stopLoop(); return; }
+        ctrl.tick();
+      }, 200);
     }
 
     return btn;

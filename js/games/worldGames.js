@@ -40,12 +40,6 @@ window.FF = window.FF || {};
     return !!(c && c[field] && Array.isArray(c[field]) && c[field].length);
   }
 
-  function countryFact(c) {
-    if (!countryHas(c, 'facts')) return null;
-    var facts = c.facts.filter(function (f) { return f && String(f).length; });
-    return facts.length ? FF.util.pick(facts) : null;
-  }
-
   function uniqueStrings(list) {
     var seen = {};
     var out = [];
@@ -147,9 +141,7 @@ window.FF = window.FF || {};
       '.wg-correct{color:var(--success,#10b981);}',
       '.wg-wrong{color:var(--danger,#ef4444);}',
       '.wg-fb-points{color:var(--accent,#8b5cf6);font-weight:800;font-size:1.2rem;}',
-      '.wg-fb-answer{font-weight:700;}',
-      '.wg-fact{background:var(--surface-2,#f1eef9);border:1px solid var(--border,#e7e3f2);border-radius:14px;padding:14px 18px;max-width:540px;line-height:1.45;}',
-      '.wg-fact-label{font-weight:800;color:var(--accent,#8b5cf6);text-transform:uppercase;font-size:0.78rem;letter-spacing:0.4px;margin-bottom:4px;}'
+      '.wg-fb-answer{font-weight:700;}'
     ].join('\n');
     document.head.appendChild(style);
   }
@@ -346,23 +338,13 @@ window.FF = window.FF || {};
         wrap.appendChild(fwrap);
       }
 
-      if (q.fact) {
-        var fact = div('wg-fact');
-        fact.appendChild(div('wg-fact-label', 'Did you know?'));
-        fact.appendChild(div('', q.fact));
-        wrap.appendChild(fact);
-      }
-
       var isLast = (roundIndex + 1) >= roundCount;
-      var next = FF.ui.button(isLast ? '🏆 See Results' : 'Next ➜', {
-        class: 'btn btn-lg', primary: true,
-        onClick: function () {
-          api.audio.play('select');
-          roundIndex++;
-          if (roundIndex >= roundCount) finish();
-          else renderRound();
-        }
-      });
+      var next = FF.Advance.button(isLast ? '🏆 See Results' : 'Next ➜', function () {
+        api.audio.play('select');
+        roundIndex++;
+        if (roundIndex >= roundCount) finish();
+        else renderRound();
+      }, { class: 'btn btn-lg' });
       wrap.appendChild(next);
 
       root.appendChild(wrap);
@@ -428,8 +410,7 @@ window.FF = window.FF || {};
         options: made.options,
         answer: made.answer,
         answerText: correct.name,
-        feedbackFlagNode: renderFlagNode(api, correct, 180),
-        fact: countryFact(correct)
+        feedbackFlagNode: renderFlagNode(api, correct, 180)
       };
     };
   }
@@ -463,8 +444,7 @@ window.FF = window.FF || {};
           options: made.options,
           answer: made.answer,
           answerText: correct.continent,
-          feedbackFlagNode: renderFlagNode(api, correct, 180),
-          fact: countryFact(correct)
+          feedbackFlagNode: renderFlagNode(api, correct, 180)
         };
       }
 
@@ -480,8 +460,7 @@ window.FF = window.FF || {};
           options: madeN.options,
           answer: madeN.answer,
           answerText: neighborName,
-          feedbackFlagNode: renderFlagNode(api, subject, 180),
-          fact: countryFact(subject)
+          feedbackFlagNode: renderFlagNode(api, subject, 180)
         };
       }
 
@@ -496,8 +475,7 @@ window.FF = window.FF || {};
         options: madeC.options,
         answer: madeC.answer,
         answerText: correctC.name,
-        feedbackFlagNode: renderFlagNode(api, correctC, 180),
-        fact: countryFact(correctC)
+        feedbackFlagNode: renderFlagNode(api, correctC, 180)
       };
     };
   }
@@ -517,8 +495,7 @@ window.FF = window.FF || {};
         options: made.options,
         answer: made.answer,
         answerText: correct.capital,
-        feedbackFlagNode: renderFlagNode(api, correct, 180),
-        fact: countryFact(correct)
+        feedbackFlagNode: renderFlagNode(api, correct, 180)
       };
     };
   }
@@ -536,8 +513,7 @@ window.FF = window.FF || {};
         options: made.options,
         answer: made.answer,
         answerText: correct.name,
-        feedbackFlagNode: renderFlagNode(api, correct, 180),
-        fact: countryFact(correct)
+        feedbackFlagNode: renderFlagNode(api, correct, 180)
       };
     };
   }
@@ -562,7 +538,7 @@ window.FF = window.FF || {};
       'Read the clue about a mystery country.',
       'Pick the right country from four choices.',
       'Correct answers earn points — be fast for a bonus!',
-      'Learn a fun fact after every answer.'
+      'The next clue follows automatically.'
     ],
     start: function (api) {
       startWorldGame(api, { rounds: 8, buildQuestion: whereInWorldBuilder(api) });
@@ -585,7 +561,7 @@ window.FF = window.FF || {};
       'Answer geography questions about continents, borders and capitals.',
       'Choose from four options.',
       'Hard difficulty doubles your points.',
-      'See the flag and a fact after each answer.'
+      'The next question follows automatically.'
     ],
     start: function (api) {
       startWorldGame(api, { rounds: 8, buildQuestion: mapChallengeBuilder(api) });
@@ -608,7 +584,7 @@ window.FF = window.FF || {};
       'A country name appears on screen.',
       'Pick its capital city from four choices.',
       'Correct answers earn points — be fast for a bonus!',
-      'See the flag and a fact after each answer.'
+      'The next question follows automatically.'
     ],
     start: function (api) {
       startWorldGame(api, { rounds: 8, buildQuestion: capitalChallengeBuilder(api) });
@@ -631,7 +607,7 @@ window.FF = window.FF || {};
       'A big flag appears on screen.',
       'Pick the matching country from four choices.',
       'Answer fast for a speed bonus!',
-      'See a fun fact after each answer.'
+      'The next flag follows automatically.'
     ],
     start: function (api) {
       startWorldGame(api, { rounds: 10, buildQuestion: guessFlagBuilder(api) });
