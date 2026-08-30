@@ -323,6 +323,13 @@ window.FF = window.FF || {};
         hero.appendChild(actions);
         main.appendChild(hero);
 
+        // Favorites (shown first, above the featured picks)
+        const favs = FF.Favorites.get().map(FF.Games.get).filter(Boolean).slice(0, 6);
+        if (favs.length) {
+          main.appendChild(FF.App.sectionTitle('💛 My Favorites'));
+          main.appendChild(FF.App.gameGrid(favs));
+        }
+
         // Featured games
         const featuredIds = ['familyQuiz', 'guessCountry', 'memoryMatch', 'letterRush', 'charades', 'quickTap'];
         const featured = featuredIds.map(FF.Games.get).filter(Boolean);
@@ -350,13 +357,6 @@ window.FF = window.FF || {};
           const recentGames = recents.map(function (r) { return FF.Games.get(r.id); }).filter(Boolean).slice(0, 6);
           main.appendChild(FF.App.sectionTitle('🕐 Recently Played'));
           main.appendChild(FF.App.gameGrid(recentGames));
-        }
-
-        // Favorites
-        const favs = FF.Favorites.get().map(FF.Games.get).filter(Boolean).slice(0, 6);
-        if (favs.length) {
-          main.appendChild(FF.App.sectionTitle('💛 My Favorites'));
-          main.appendChild(FF.App.gameGrid(favs));
         }
       },
 

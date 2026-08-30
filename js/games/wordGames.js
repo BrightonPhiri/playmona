@@ -217,6 +217,28 @@ window.FF = window.FF || {};
     return true;
   }
 
+  // Pick a dictionary word that fits inside `n` letters so the pool is
+  // always guaranteed to contain at least one valid word.
+  function pickSeedWord(n) {
+    var w = wordsData();
+    var dict = (w && w.dictionary) ? w.dictionary : [];
+    if (!dict.length) return null;
+    var min = 4;
+    var max = Math.min(n, 7);
+    var candidates = [];
+    for (var i = 0; i < dict.length; i++) {
+      var s = String(dict[i]).toLowerCase().replace(/[^a-z]/g, '');
+      if (s.length >= min && s.length <= max) candidates.push(s);
+    }
+    if (!candidates.length) {
+      for (var j = 0; j < dict.length; j++) {
+        var t = String(dict[j]).toLowerCase().replace(/[^a-z]/g, '');
+        if (t.length >= 3 && t.length <= n) candidates.push(t);
+      }
+    }
+    return candidates.length ? FF.util.pick(candidates) : null;
+  }
+
   function makeLetterPool(api, count) {
     var freq = {
       a: 8, e: 12, i: 8, o: 8, u: 4,
@@ -227,11 +249,12 @@ window.FF = window.FF || {};
     var weighted = '';
     for (var k in freq) { for (var i = 0; i < freq[k]; i++) weighted += k; }
     var n = count || FF.util.int(7, 10);
-    var isEasy = api.config.difficulty === 'easy';
-    var vowels = 'aeiou';
-    var minVowels = isEasy ? Math.min(5, Math.ceil(n / 2)) : 3;
+
+    // Start from a real dictionary word so the letters are always enough
+    // to make one, then fill the remaining slots with weighted letters.
     var letters = [];
-    for (var v = 0; v < minVowels; v++) letters.push(vowels.charAt(FF.util.int(0, 4)));
+    var seed = pickSeedWord(n);
+    if (seed) letters = seed.split('');
     while (letters.length < n) letters.push(weighted.charAt(FF.util.int(0, weighted.length - 1)));
     return FF.util.shuffle(letters);
   }

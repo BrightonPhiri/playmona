@@ -403,7 +403,9 @@ body.game-active .app { filter: none; }
   .game-grid { grid-template-columns: 1fr; }
   .brand-tag { display: none; }
   .game-shell__title { font-size: 1rem; }
-  .shell-btn { width: 40px; height: 40px; }
+  .game-shell__bar { gap: 8px; padding-left: 10px; padding-right: 10px; }
+  .game-shell__timer { min-width: 62px; font-size: 1.2rem; }
+  .shell-btn { width: 38px; height: 38px; font-size: 1.15rem; }
 }
 
 /* ---------- Reduced motion ---------- */

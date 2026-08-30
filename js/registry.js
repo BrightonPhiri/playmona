@@ -154,12 +154,14 @@ window.FF = window.FF || {};
     const title = FF.ui.div('game-shell__title', def.icon + ' ' + def.name);
     const timerEl = FF.ui.div('game-shell__timer hidden', '');
     const hostBtn = FF.ui.button('🎛️', { class: 'shell-btn', ariaLabel: 'Host controls', onClick: function () { FF.GameFlow.toggleHost(); } });
+    const restartBtn = FF.ui.button('🔄', { class: 'shell-btn', ariaLabel: 'Restart game', onClick: function () { FF.GameFlow.restart(); } });
     const pauseBtn = FF.ui.button('⏸️', { class: 'shell-btn', ariaLabel: 'Pause', onClick: function () { FF.GameFlow.pause(); } });
 
     bar.appendChild(exitBtn);
     bar.appendChild(title);
     bar.appendChild(timerEl);
     bar.appendChild(hostBtn);
+    bar.appendChild(restartBtn);
     bar.appendChild(pauseBtn);
 
     const scoreBar = FF.ui.div('game-shell__scores');
@@ -371,6 +373,7 @@ window.FF = window.FF || {};
       steps.forEach(function (s, i) { ol.appendChild(FF.ui.el('li', {}, s)); });
       box.appendChild(ol);
       box.appendChild(FF.ui.button('GOT IT', { primary: true, class: 'btn-lg', onClick: function () { FF.GameFlow.showIntro(def, FF.GameFlow.current.config); } }));
+      box.appendChild(FF.ui.button('🏠 Back to Home', { class: 'btn-lg', onClick: function () { FF.GameFlow.exitToHome(); } }));
       modal.appendChild(box);
       screen.appendChild(modal);
       FF.Nav.focusFirst(screen);
@@ -452,6 +455,11 @@ window.FF = window.FF || {};
           FF.GameFlow.start(def, config);
         } });
         box.appendChild(done);
+
+        const settingsNav = FF.ui.div('results__actions');
+        settingsNav.appendChild(FF.ui.button('← Back to Intro', { class: 'btn-lg', onClick: function () { FF.GameFlow.showIntro(def, config); } }));
+        settingsNav.appendChild(FF.ui.button('🏠 Home', { class: 'btn-lg', onClick: function () { FF.GameFlow.exitToHome(); } }));
+        box.appendChild(settingsNav);
 
         FF.Nav.focusFirst(screen);
       }
@@ -663,7 +671,33 @@ window.FF = window.FF || {};
       const overlay = FF.ui.$('.pause-overlay', FF.ui.$('#game-screen'));
       if (overlay) overlay.parentNode.removeChild(overlay);
       const cur = this.current;
-      if (cur) FF.GameFlow.launch(cur.def.id, { skipIntro: true, mode: cur.config.mode, variation: cur.config.variation, displaySeconds: cur.config.displaySeconds });
+      if (!cur) return;
+      const c = cur.config;
+      // Re-launch with the same settings so difficulty/length/timer and any
+      // tournament/room context survive a restart.
+      FF.GameFlow.launch(cur.def.id, {
+        skipIntro: true,
+        mode: c.mode,
+        variation: c.variation,
+        displaySeconds: c.displaySeconds,
+        difficulty: c.difficulty,
+        length: c.length,
+        timer: c.timer,
+        tournament: c.tournament,
+        round: c.round,
+        onEnd: c.onEnd,
+        room: c.room
+      });
+    },
+
+    // Shared "back" behaviour for the hardware/remote back key and the
+    // browser back button while a game is on screen. A first press asks
+    // to exit; a second press (dialog already open) means "keep playing".
+    handleBack: function () {
+      const screen = FF.ui.$('#game-screen');
+      const overlay = screen && FF.ui.$('.pause-overlay', screen);
+      if (overlay) this.resume();
+      else this.confirmExit();
     },
 
     confirmExit: function () {
@@ -932,7 +966,8 @@ window.FF = window.FF || {};
       wrap.appendChild(FF.ui.el('h1', { class: 'results__title' }, 'TIE BREAKER!'));
       wrap.appendChild(FF.ui.el('p', { class: 'results__sub' }, a.name + ' vs ' + b.name));
       wrap.appendChild(FF.ui.el('p', { class: 'results__sub' }, 'Quick Tap — fastest reaction wins.'));
-      wrap.appendChild(FF.ui.button('⚡ START TIE BREAKER', { class: 'btn-lg', primary: true, onClick: function () {
+      const tieActions = FF.ui.div('results__actions');
+      tieActions.appendChild(FF.ui.button('⚡ START TIE BREAKER', { class: 'btn-lg', primary: true, onClick: function () {
         FF.GameNight._tieWinner = null;
         FF.GameNight._tiePair = [a, b];
         FF.GameFlow.launch('quickTap', {
@@ -942,6 +977,8 @@ window.FF = window.FF || {};
           onEnd: function (results) { FF.GameNight.tieBreakDone(results); }
         });
       } }));
+      tieActions.appendChild(FF.ui.button('🏠 End Game Night', { class: 'btn-lg', onClick: function () { FF.GameNight.abort(); } }));
+      wrap.appendChild(tieActions);
       screen.appendChild(wrap);
       FF.Nav.focusFirst(screen);
     },
