@@ -1,0 +1,118 @@
+/* ============================================================
+   FAMILY FUN — icons-custom.js
+   Hand-drawn, on-brand SVG icon set (the DEFAULT icon style).
+
+   Every icon is a 24×24 monochrome line glyph that uses
+   `currentColor`, so it automatically inherits the selected
+   accent colour (or whatever colour the surrounding CSS sets).
+
+   This file EXTENDS js/icons.js. It does not delete the bundled
+   Phosphor set — that stays as a second option users can pick in
+   Settings → Appearance → Icon style.
+
+   To replace these with AI-generated artwork, see
+   ICON_GENERATION_PROMPTS.md and drop the new SVGs into the
+   FF.Icons.custom map below (keep the same keys).
+   ============================================================ */
+window.FF = window.FF || {};
+
+(function () {
+  'use strict';
+
+  // Wrap path data in a consistent 24×24 stroke-style SVG shell.
+  function ico(inner) {
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + inner + '</svg>';
+  }
+
+  FF.Icons.custom = {
+    'arrows-left-right': ico('<path d="M8 7l-5 5 5 5"/><path d="M3 12h18"/><path d="M16 7l5 5-5 5"/>'),
+    'arrows-out': ico('<path d="M15 3h6v6"/><path d="M21 3l-7 7"/><path d="M9 3H3v6"/><path d="M3 3l7 7"/><path d="M15 21h6v-6"/><path d="M21 21l-7-7"/><path d="M9 21H3v-6"/><path d="M3 21l7-7"/>'),
+    'binoculars': ico('<circle cx="7" cy="9" r="4"/><circle cx="17" cy="9" r="4"/><path d="M7 13v3a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-3"/><path d="M2 9h1M21 9h1M10 9h4"/>'),
+    'brain': ico('<path d="M12 4a2.5 2.5 0 0 0-2.5 2.5A3.5 3.5 0 0 0 6 10a3 3 0 0 0 0 6 3.5 3.5 0 0 0 3.5 3 2.5 2.5 0 0 0 5 0 3.5 3.5 0 0 0 3.5-3 3 3 0 0 0 0-6 3.5 3.5 0 0 0-3.5-3.5A2.5 2.5 0 0 0 12 4Z"/><path d="M9.5 10c-.5 1-.5 2 0 3M14.5 10c.5 1 .5 2 0 3"/>'),
+    'buildings': ico('<rect x="4" y="4" width="7" height="16" rx="1"/><rect x="13" y="4" width="7" height="12" rx="1"/><path d="M6 8h3M6 12h3M6 16h3M15 8h3M15 12h3M2 20h20"/>'),
+    'calculator': ico('<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8"/><path d="M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 16h.01"/>'),
+    'car': ico('<path d="M5 13l1.4-4.2A2 2 0 0 1 8.3 7.5h7.4a2 2 0 0 1 1.9 1.3L19 13"/><path d="M5 13h14a1 1 0 0 1 1 1v3h-1.5a2 2 0 0 0-2-2h-9a2 2 0 0 0-2 2H4v-3a1 1 0 0 1 1-1Z"/><circle cx="7.5" cy="17" r="1.5"/><circle cx="16.5" cy="17" r="1.5"/>'),
+    'cards': ico('<rect x="3" y="8" width="14" height="12" rx="2"/><path d="M7 5h11a2 2 0 0 1 2 2v11"/><path d="M7 12h6M7 15h4"/>'),
+    'chalkboard': ico('<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 20h8M12 17v3"/><path d="M9 6l6 5M15 6l-6 5"/>'),
+    'chart-line': ico('<path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/>'),
+    'check': ico('<path d="M5 12l5 5L20 7"/>'),
+    'city': ico('<path d="M3 21h18"/><path d="M5 21V9l4 2.5V9l4 2.5V9l4 2.5V21"/><path d="M8 21v-3h2v3M13 21v-3h2v3"/>'),
+    'confetti': ico('<path d="M12 3l1.7 4.3L18 9l-4.3 1.7L12 15l-1.7-4.3L6 9l4.3-1.7L12 3Z"/><path d="M4 15l1 2 2 1-2 1-1 2-1-2-2-1 2-1Z"/><path d="M20 14l.8 1.8 1.8.8-1.8.8L20 19.2l-.8-1.8-1.8-.8 1.8-.8Z"/><path d="M5 4h.01M18 20h.01"/>'),
+    'cube': ico('<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/>'),
+    'detective': ico('<circle cx="9" cy="9" r="6"/><path d="M13.5 13.5L20 20"/><path d="M7.5 9a1.8 1.8 0 0 1 3.4 0c0 1.2-1 1.8-1 2.8"/><path d="M9.9 14.6h.01"/>'),
+    'drop': ico('<path d="M12 3c3 4 6 7 6 10a6 6 0 1 1-12 0c0-3 3-6 6-10Z"/>'),
+    'eye': ico('<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>'),
+    'eye-slash': ico('<path d="M2 12s3.5-7 10-7c2 0 3.8.6 5.3 1.6M22 12s-3.5 7-10 7c-2 0-3.8-.6-5.3-1.6"/><path d="M4 4l16 16"/>'),
+    'fire': ico('<path d="M12 3c1 3-2 4-2 7a4 4 0 0 0 8 0c0-1-.3-2-.8-3C18.5 8.5 20 11 20 14a8 8 0 1 1-16 0c0-4 3-7 6-9 0 2 1 3 2 3Z"/>'),
+    'flag': ico('<path d="M5 21V4"/><path d="M5 4c5-3 9 2 14 0v10c-5 2-9-3-14 0"/>'),
+    'fork-knife': ico('<path d="M6 3v18"/><path d="M6 3v7a2 2 0 0 0 4 0V3"/><path d="M6 5h4"/><path d="M17 3v18"/><path d="M17 3c2.5 2.5 2.5 5.5 0 8"/>'),
+    'game-controller': ico('<rect x="3" y="7" width="18" height="10" rx="5"/><path d="M8 10v4M6 12h4"/><circle cx="15" cy="11" r="1"/><circle cx="18" cy="13" r="1"/>'),
+    'gear': ico('<path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'),
+    'globe': ico('<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/>'),
+    'globe-hemisphere-west': ico('<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c3 2.5 3 15.5 0 18M12 3c-3 2.5-3 15.5 0 18"/>'),
+    'hand-tap': ico('<path d="M7 11V4.5A1.5 1.5 0 0 1 10 4.5V10"/><path d="M10 10V3.5A1.5 1.5 0 0 1 13 3.5V10"/><path d="M13 10V5a1.5 1.5 0 0 1 3 0v5"/><path d="M16 10V7a1.5 1.5 0 0 1 3 0v7a6 6 0 0 1-6 6h-1.5A6 6 0 0 1 7.6 17.9L4 14.3a1.5 1.5 0 0 1 2.1-2.1L8 14"/>'),
+    'hash': ico('<path d="M9 3L7 21M17 3l-2 18M4 9h16M3 15h16"/>'),
+    'heart': ico('<path d="M12 20C7 16 3 12.5 3 8.5A4.5 4.5 0 0 1 7.5 4c1.7 0 3.2.9 4.5 2.5C13.3 4.9 14.8 4 16.5 4A4.5 4.5 0 0 1 21 8.5C21 12.5 17 16 12 20Z"/>'),
+    'house': ico('<path d="M4 11l8-7 8 7"/><path d="M6 9v11h12V9"/><path d="M10 20v-5h4v5"/>'),
+    'image': ico('<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.5"/><path d="M3 17l5-5 3 3 4-4 6 6"/>'),
+    'image-square': ico('<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="1.5"/><path d="M3 16l5-5 3 3 4-4 6 6"/>'),
+    'images': ico('<rect x="4" y="4" width="13" height="13" rx="2"/><path d="M7 7h7M7 12l2.5-2.5L12 12l3-3"/><path d="M7 20h13a1 1 0 0 0 1-1V6"/>'),
+    'info': ico('<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5h.01"/>'),
+    'keyboard': ico('<rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M9 10h.01M12 10h.01M15 10h.01M18 10h.01"/><path d="M7 14h10"/>'),
+    'lightning': ico('<path d="M13 2L4 14h6l-1 8 9-12h-6l1-8Z"/>'),
+    'link': ico('<path d="M9 15l6-6"/><path d="M11 6l1-1a4 4 0 0 1 5.7 5.7l-1 1"/><path d="M13 18l-1 1a4 4 0 0 1-5.7-5.7l1-1"/>'),
+    'list-numbers': ico('<path d="M5 6h15M5 12h15M5 18h15"/><path d="M8 4L5 6l3 2M8 14l-3 2 3 2"/>'),
+    'magnifying-glass': ico('<circle cx="10" cy="10" r="6"/><path d="M14.5 14.5L21 21"/>'),
+    'map-pin': ico('<path d="M12 21s-7-6-7-11a7 7 0 0 1 14 0c0 5-7 11-7 11Z"/><circle cx="12" cy="10" r="2.5"/>'),
+    'map-trifold': ico('<path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2Z"/><path d="M9 4v14M15 6v14"/>'),
+    'medal': ico('<circle cx="12" cy="15" r="5"/><path d="M10 15l1.5 1.5L15 13.5"/><path d="M9 6h6"/><path d="M10 6l2 3M14 6l-2 3"/>'),
+    'monitor': ico('<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M9 20h6M12 16v4"/>'),
+    'moon': ico('<path d="M20 14A8 8 0 1 1 10 4a6 6 0 0 0 10 10Z"/>'),
+    'paint-brush': ico('<path d="M18.5 4.5L10 13a3 3 0 0 0 0 4.2 3 3 0 0 0 4.2 0L19.5 5.5"/><path d="M14 3l2 2"/><path d="M5 20c1-1.5 2-2.5 3.5-3.5"/>'),
+    'paw-print': ico('<ellipse cx="8" cy="8" rx="2" ry="2.5"/><ellipse cx="16" cy="8" rx="2" ry="2.5"/><ellipse cx="12" cy="5" rx="2" ry="2.5"/><path d="M12 11c-3 0-5 2-5 4.5 0 2 1.5 3.5 3 3.5 1.5 0 2-1 2-1s.5 1 2 1c1.5 0 3-1.5 3-3.5 0-2.5-2-4.5-5-4.5Z"/>'),
+    'pencil': ico('<path d="M4 20l4-1L20.5 6.5a2 2 0 0 0-3-3L5 15l-1 5Z"/>'),
+    'person-arms-spread': ico('<circle cx="12" cy="5" r="2"/><path d="M12 8v4M5 14c0-2 3-3 7-3s7 1 7 3M5 16l-2 3M19 16l2 3"/>'),
+    'play': ico('<path d="M7 4.5v15l12-7.5L7 4.5Z"/>'),
+    'puzzle-piece': ico('<path d="M9 3a3 3 0 0 1 6 0h3a2 2 0 0 1 2 2v3a3 3 0 0 1 0 6v3a2 2 0 0 1-2 2h-3v-1a3 3 0 0 1-6 0v1H6a2 2 0 0 1-2-2v-3a3 3 0 0 1 0-6V7a2 2 0 0 1 2-2h3a3 3 0 0 1 0-2Z"/>'),
+    'question': ico('<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 0 1 5 .5c0 1.5-2 2-2 3.5"/><path d="M12 16.5h.01"/>'),
+    'scales': ico('<path d="M12 3v18M8 21h8"/><path d="M5 7h14"/><path d="M5 7l-2.5 6a3 3 0 0 0 5 0L5 7Z"/><path d="M19 7l-2.5 6a3 3 0 0 0 5 0L19 7Z"/>'),
+    'shuffle': ico('<path d="M3 7h3l4 5 4-5h7"/><path d="M3 17h3l4-5 4 5h7"/><path d="M17 4l3 3-3 3"/><path d="M17 14l3 3-3 3"/>'),
+    'sparkle': ico('<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15Z"/>'),
+    'split-horizontal': ico('<path d="M12 3v18"/><path d="M8 8L4 12l4 4M16 8l4 4-4 4"/>'),
+    'squares-four': ico('<rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/>'),
+    'stack': ico('<path d="M12 3l9 5-9 5-9-5 9-5Z"/><path d="M3 13l9 5 9-5"/><path d="M3 18l9 5 9-5"/>'),
+    'star': ico('<path d="M12 3l2.6 5.3 5.9.9-4.3 4.2 1 5.9-5.2-2.7-5.2 2.7 1-5.9L3.5 9.2l5.9-.9L12 3Z"/>'),
+    'sun': ico('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'),
+    'target': ico('<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/>'),
+    'text-aa': ico('<path d="M4 19V6l4 7 4-7v13M4 13h8"/><circle cx="18" cy="14" r="3.5"/><path d="M21.5 14v5"/>'),
+    'timer': ico('<circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2"/><path d="M10 2h4M12 2v3"/>'),
+    'trophy': ico('<path d="M8 21h8M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0V4Z"/><path d="M7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3"/>'),
+    'users-three': ico('<circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3 2.5-5 6-5s6 2 6 5"/><circle cx="18" cy="9" r="2.5"/><path d="M16 15c3 0 5 2 5 5"/>'),
+    'x': ico('<path d="M6 6l12 12M18 6L6 18"/>'),
+    'x-circle': ico('<circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/>')
+  };
+
+  /* ---------- Icon style (custom vs. bundled Phosphor) ---------- */
+  FF.Icons.getStyle = function () { return FF.Storage.get('iconStyle', 'custom'); };
+  FF.Icons.setStyle = function (s) { if (s !== 'phosphor') s = 'custom'; FF.Storage.set('iconStyle', s); };
+  FF.Icons.activeSet = function () { return this.getStyle() === 'phosphor' ? this.set : this.custom; };
+
+  // Override the icon lookup so it honours the active style while keeping
+  // a safe fallback to the other set (never lose an icon to a missing key).
+  FF.Icons.svg = function (key) {
+    const active = this.activeSet();
+    if (active[key] != null) return active[key];
+    return this.set[key] || this.custom[key] || '';
+  };
+
+  FF.Icons.icon = function (key, fallback, extraCls) {
+    const span = document.createElement('span');
+    span.className = 'icon-svg' + (extraCls ? ' ' + extraCls : '');
+    span.setAttribute('aria-hidden', 'true');
+    const active = this.activeSet();
+    let markup = active[key] != null ? active[key] : (this.set[key] || this.custom[key]);
+    if (markup) span.innerHTML = markup;
+    else if (fallback) span.textContent = fallback;
+    return span;
+  };
+})();
