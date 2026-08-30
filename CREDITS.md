@@ -38,6 +38,10 @@ All are licensed under the **SIL Open Font License 1.1** (distributed via Google
 ## Third-party content
 
 - Bundled fonts (SIL OFL 1.1) and Phosphor Icons (MIT) as listed above.
+- **qrcode-generator** by Kazuhiko Arase — renders the join QR code for online play.
+  Bundled at `js/vendor/qrcode.js`, unmodified. Licensed under the **MIT License**.
+  https://github.com/kazuhikoarase/qrcode-generator
+  ("QR Code" is a registered trademark of DENSO WAVE INCORPORATED.)
 - If you add photographs, record their attribution here and keep the license with the file
   (see `IMAGE_DOWNLOAD_LIST.md` for recommended sources).
 

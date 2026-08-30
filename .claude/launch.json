@@ -4,8 +4,8 @@
     {
       "name": "familyfun",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "8926"],
-      "port": 8926
+      "runtimeArgs": ["-m", "http.server", "8927"],
+      "port": 8927
     }
   ]
 }
