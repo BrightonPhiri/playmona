@@ -69,7 +69,8 @@
       'guessCountry', 'guessLandmark', 'guessAnimal', 'guessFood',
       'guessObject', 'guessSport', 'guessVehicle',
       'familyQuiz', 'trueOrFalse', 'brainBattle', 'guessWho', 'pictureQuiz',
-      'quickTap', 'colorReaction'
+      'quickTap', 'colorReaction',
+      'letterRush'
     ];
     var ROUNDS = 8;
     var results = document.getElementById('results');
@@ -106,6 +107,7 @@
           shell: {
             root: root,
             updateScores: function () {}, setTimer: function () {},
+            setTitle: function () {}, setSubtitle: function () {},
             hideTimer: function () {}, pauseTimer: function () {},
             resumeTimer: function () {}, toast: function () {},
             timer: { isRunning: function () { return false; }, stop: function () {} }
