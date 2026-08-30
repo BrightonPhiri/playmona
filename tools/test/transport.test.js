@@ -135,3 +135,18 @@ test('roomPath builds room-scoped paths', function () {
   assertEqual(FF.Transport.roomPath('ABC123', 'players/u1'), 'rooms/ABC123/players/u1');
   assertEqual(FF.Transport.roomPath('ABC123'), 'rooms/ABC123');
 });
+
+test('watch fires immediately with the current value, like Firebase', async function () {
+  const FF = loadFF(['js/core.js', 'js/net/transport.js']);
+  const bus = makeBus();
+  const a = await connect(FF, bus);
+  await a.set('players/u1', { name: 'Ana' });
+
+  const seen = [];
+  a.watch('players', function (v) { seen.push(v); });
+  await new Promise(r => setTimeout(r, 10));
+
+  assertEqual(seen.length, 1, 'subscribing must deliver the current value once');
+  assertEqual(seen[0], { u1: { name: 'Ana' } },
+    'a device that subscribes after writing must see its own write');
+});

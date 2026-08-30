@@ -159,6 +159,14 @@ window.FF = window.FF || {};
 
       watch: function (path, cb) {
         var last = JSON.stringify(readPath(path));
+
+        // Firebase's on('value') fires immediately with the current value.
+        // Match that here, or a caller that subscribes after writing will
+        // never see its own write and will sit on a stale snapshot.
+        Promise.resolve().then(function () {
+          if (!closed) cb(readPath(path));
+        });
+
         var off = bus.subscribe(function () {
           var value = readPath(path);
           var snapshot = JSON.stringify(value);
