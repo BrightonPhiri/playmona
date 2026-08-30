@@ -323,7 +323,7 @@ window.FF = window.FF || {};
           }
 
           if (q.explanation) wrap.appendChild(FF.ui.el('p', { class: 'hint' }, '💡 ' + q.explanation));
-          const nextBtn = api.ui.button('Next ➡', { class: 'btn-lg', primary: true, onClick: function () { FF.Audio.play('click'); nextRound(); } });
+          const nextBtn = FF.Advance.button('Next ➡', function () { FF.Audio.play('click'); nextRound(); }, { class: 'btn-lg' });
           wrap.appendChild(nextBtn);
 
           api.shell.updateScores(entity.id);
@@ -461,7 +461,7 @@ window.FF = window.FF || {};
 
           wrap.appendChild(FF.ui.el('p', { class: 'hint' }, 'Answer: ' + (item.answer ? 'TRUE ✅' : 'FALSE ❌')));
           if (item.explanation) wrap.appendChild(FF.ui.el('p', { class: 'hint' }, '💡 ' + item.explanation));
-          const nextBtn = api.ui.button('Next ➡', { class: 'btn-lg', primary: true, onClick: function () { FF.Audio.play('click'); nextRound(); } });
+          const nextBtn = FF.Advance.button('Next ➡', function () { FF.Audio.play('click'); nextRound(); }, { class: 'btn-lg' });
           wrap.appendChild(nextBtn);
 
           api.shell.updateScores(entity.id);
@@ -842,7 +842,7 @@ window.FF = window.FF || {};
             }
 
             wrap.appendChild(FF.ui.el('p', { class: 'hint' }, '🎯 Answer: ' + item.answer));
-            const nextBtn = api.ui.button('Next ➡', { class: 'btn-lg', primary: true, onClick: function () { FF.Audio.play('click'); nextRound(); } });
+            const nextBtn = FF.Advance.button('Next ➡', function () { FF.Audio.play('click'); nextRound(); }, { class: 'btn-lg' });
             wrap.appendChild(nextBtn);
 
             api.shell.updateScores(entity.id);
@@ -971,7 +971,7 @@ window.FF = window.FF || {};
           }
 
           if (p.explanation) wrap.appendChild(FF.ui.el('p', { class: 'hint' }, '💡 ' + p.explanation));
-          const nextBtn = api.ui.button('Next ➡', { class: 'btn-lg', primary: true, onClick: function () { FF.Audio.play('click'); nextRound(); } });
+          const nextBtn = FF.Advance.button('Next ➡', function () { FF.Audio.play('click'); nextRound(); }, { class: 'btn-lg' });
           wrap.appendChild(nextBtn);
 
           api.shell.updateScores(entity.id);
