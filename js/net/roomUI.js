@@ -43,7 +43,40 @@ window.FF = window.FF || {};
       'font-family:inherit;}',
       '.rm-error{color:#b91c1c;font-weight:700;text-align:center;min-height:1.2em;}',
       '.rm-hint{color:var(--muted,#6b7280);text-align:center;}',
-      '.rm-row{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;}'
+      '.rm-row{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;}',
+      '.rm-subtitle{font-size:1.05rem;font-weight:800;text-align:center;margin:6px 0 0;',
+      'letter-spacing:.5px;color:var(--muted,#6b7280);text-transform:uppercase;}',
+      '.rm-chosen{min-height:1.2em;font-style:italic;}',
+
+      /* Game picker */
+      '.rm-games{display:grid;gap:10px;',
+      'grid-template-columns:repeat(auto-fill,minmax(104px,1fr));}',
+      '.rm-game{display:flex;flex-direction:column;align-items:center;gap:4px;',
+      'padding:12px 8px;border-radius:16px;cursor:pointer;text-align:center;',
+      'background:var(--surface,#f8fafc);border:2px solid var(--border,#e2e8f0);',
+      'color:var(--text,#111827);transition:transform .12s ease,border-color .12s ease;}',
+      '.rm-game:hover{transform:translateY(-2px);border-color:var(--rm-game-color,#8b5cf6);}',
+      '.rm-game:focus-visible{outline:3px solid var(--rm-game-color,#8b5cf6);outline-offset:2px;}',
+      '.rm-game--on{border-color:var(--rm-game-color,#8b5cf6);',
+      'box-shadow:inset 0 0 0 3px color-mix(in srgb, var(--rm-game-color,#8b5cf6) 22%, transparent);}',
+      '.rm-game__icon{font-size:1.7rem;line-height:1;}',
+      '.rm-game__name{font-weight:800;font-size:.86rem;line-height:1.15;}',
+      '.rm-game__cat{font-size:.68rem;font-weight:700;letter-spacing:.4px;',
+      'text-transform:uppercase;color:var(--rm-game-color,#8b5cf6);}',
+
+      /* Start countdown */
+      '.rm-count{align-items:center;text-align:center;gap:10px;}',
+      '.rm-count__game{font-size:1.4rem;font-weight:800;}',
+      '.rm-count__num{font-size:6rem;font-weight:800;line-height:1;',
+      'color:var(--accent,#8b5cf6);}',
+      '.rm-count__num--pop{animation:rm-pop .45s ease;}',
+      '@keyframes rm-pop{from{transform:scale(.55);opacity:.35;}to{transform:scale(1);opacity:1;}}',
+
+      '@media (max-width:420px){',
+      '  .rm-games{grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;}',
+      '  .rm-code{font-size:1.9rem;letter-spacing:.28em;}',
+      '  .rm-count__num{font-size:4.5rem;}',
+      '}'
     ].join('\n');
     document.head.appendChild(s);
   }
@@ -188,6 +221,37 @@ window.FF = window.FF || {};
 
       FF.Room.offAll();
 
+      // Remembered across re-renders so an arriving player does not reset
+      // the host's choice.
+      var chosen = self._lastGame || ONLINE_GAMES[0];
+
+      function gameGrid(onPick) {
+        var grid = FF.ui.div('rm-games');
+        ONLINE_GAMES.forEach(function (id) {
+          var def = FF.Games.get(id);
+          if (!def) return;
+          var cat = (FF.Categories && FF.Categories[def.category]) || { name: def.category, color: '#8b5cf6' };
+
+          var card = FF.ui.el('button', {
+            class: 'rm-game' + (id === chosen ? ' rm-game--on' : ''),
+            type: 'button',
+            'aria-pressed': id === chosen ? 'true' : 'false',
+            style: { '--rm-game-color': cat.color },
+            onclick: function () {
+              chosen = id;
+              self._lastGame = id;
+              FF.Audio.play('click');
+              onPick();
+            }
+          });
+          card.appendChild(FF.ui.div('rm-game__icon', def.icon || '🎮'));
+          card.appendChild(FF.ui.div('rm-game__name', def.name));
+          card.appendChild(FF.ui.div('rm-game__cat', cat.name));
+          grid.appendChild(card);
+        });
+        return grid;
+      }
+
       function render() {
         var s = FF.Room.current();
         if (!s) return;
@@ -197,7 +261,7 @@ window.FF = window.FF || {};
         var players = FF.Room.racePlayers();
 
         var qrWrap = FF.ui.div('rm-qr');
-        var qr = (FF.QR && FF.QR.available()) ? FF.QR.svg(url, { size: 190 }) : null;
+        var qr = (FF.QR && FF.QR.available()) ? FF.QR.svg(url, { size: 170 }) : null;
         if (qr) qrWrap.appendChild(qr);
 
         var share = FF.ui.div('rm-share', [
@@ -225,19 +289,15 @@ window.FF = window.FF || {};
         ];
 
         if (s.isHost) {
-          var select = FF.ui.el('select', { class: 'rm-input rm-input--text', 'aria-label': 'Choose a game' });
-          ONLINE_GAMES.forEach(function (id) {
-            var def = FF.Games.get(id);
-            if (!def) return;
-            select.appendChild(FF.ui.el('option', { value: id }, def.icon + '  ' + def.name));
-          });
-          children.push(FF.ui.div('rm-hint', 'Choose a game'));
-          children.push(select);
-          children.push(FF.ui.button('▶ START GAME', {
+          var def = FF.Games.get(chosen);
+          children.push(FF.ui.el('h2', { class: 'rm-subtitle' }, 'Pick a game'));
+          children.push(gameGrid(render));
+          if (def) children.push(FF.ui.div('rm-hint rm-chosen', def.description || ''));
+          children.push(FF.ui.button('▶ START ' + (def ? def.name.toUpperCase() : 'GAME'), {
             class: 'btn btn-lg', primary: true,
             onClick: function () {
               FF.Audio.play('roundStart');
-              FF.Room.startGame(select.value);
+              FF.Room.startGame(chosen);
             }
           }));
         } else {
@@ -256,12 +316,64 @@ window.FF = window.FF || {};
       FF.Room.on('players', render);
       FF.Room.on('meta', function (meta) {
         if (meta && meta.status === 'playing' && meta.gameId) {
-          FF.GameFlow.launch(meta.gameId, { skipIntro: true, room: true });
+          self.startWhenReady(main, meta);
         }
       });
       render();
     },
 
+    /* Everyone counts down to the same instant and starts together. A device
+       that arrives late (startAt already past) just launches straight away. */
+    startWhenReady: function (main, meta) {
+      ensureStyles();
+      var s = FF.Room.current();
+      if (!s) return;
+      if (this._starting) return;
+
+      var def = FF.Games.get(meta.gameId);
+      var serverNow = function () { return s.transport.serverNow(); };
+      var startAt = meta.startAt || 0;
+
+      function launch() {
+        FF.RoomUI._starting = false;
+        FF.GameFlow.launch(meta.gameId, { skipIntro: true, room: true });
+      }
+
+      if (!startAt || serverNow() >= startAt) { launch(); return; }
+
+      this._starting = true;
+      FF.ui.clear(main);
+
+      var num = FF.ui.div('rm-count__num', '');
+      var wrap = panel([
+        FF.ui.div('rm-count__game', (def ? (def.icon + '  ' + def.name) : 'Get ready')),
+        num,
+        FF.ui.div('rm-hint', 'Everyone starts together when this hits zero'),
+        playerChips(FF.Room.racePlayers(), s.uid)
+      ]);
+      wrap.classList.add('rm-count');
+      main.appendChild(wrap);
+
+      var lastShown = null;
+      var iv = setInterval(function () {
+        if (!FF.Room.current()) { clearInterval(iv); FF.RoomUI._starting = false; return; }
+        var left = startAt - serverNow();
+        var secs = Math.ceil(left / 1000);
+        if (secs !== lastShown) {
+          lastShown = secs;
+          num.textContent = secs > 0 ? String(secs) : 'GO!';
+          num.classList.remove('rm-count__num--pop');
+          void num.offsetWidth;              // restart the pop animation
+          num.classList.add('rm-count__num--pop');
+          if (secs > 0 && secs <= 3) FF.Audio.play('countdown');
+        }
+        if (left <= 0) {
+          clearInterval(iv);
+          FF.Audio.play('roundStart');
+          launch();
+        }
+      }, 100);
+    },
     showResults: function (main) {
       ensureStyles();
       var self = this;

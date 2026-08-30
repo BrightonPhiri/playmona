@@ -13,6 +13,8 @@ window.FF = window.FF || {};
   var MAX_PLAYERS = 12;
   var TTL_MS = 6 * 60 * 60 * 1000;                     // 6 hours
   var APP_VERSION = '1.1.0';
+  // How long everyone gets to look up from their phone before round one.
+  var COUNTDOWN_MS = 10000;
 
   var state = null;
   var handlers = { players: [], meta: [], rounds: [], error: [] };
@@ -143,6 +145,7 @@ window.FF = window.FF || {};
     MAX_PLAYERS: MAX_PLAYERS,
     TTL_MS: TTL_MS,
     APP_VERSION: APP_VERSION,
+    COUNTDOWN_MS: COUNTDOWN_MS,
     newCode: newCode,
     identity: identity,
     saveIdentity: saveIdentity,
@@ -330,7 +333,10 @@ window.FF = window.FF || {};
         return transport.update('meta', {
           seed: FF.Random.newSeed(),
           gameId: gameId,
-          status: 'playing'
+          status: 'playing',
+          // A shared instant for the game to begin, so every device counts
+          // down to the same moment and starts together.
+          startAt: transport.serverNow() + COUNTDOWN_MS
         });
       });
     },
