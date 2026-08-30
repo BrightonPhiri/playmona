@@ -861,18 +861,36 @@ window.FF = window.FF || {};
       var round = 0;
       var bag = new api.random.Bag(riddles);
 
+      // ---- Race support. Offline this stays null and nothing changes. ----
+      var race = FF.Race ? FF.Race.forGame(api, {
+        rounds: rounds,
+        optionSelector: '.riddle-opt'
+      }) : null;
+
       function playRound() {
-        if (round >= rounds) { finish(api); return; }
+        if (round >= rounds) {
+          if (race) race.end();
+          finish(api);
+          return;
+        }
         var scorer = list[round % list.length];
+        if (race) {
+          // In a room nobody takes turns - everyone races the same riddle.
+          race.beginRound(round);
+          var me = FF.Room.current();
+          scorer = list.filter(function (sc) { return sc.id === me.uid; })[0] || list[0];
+        }
         round++;
-        var label = 'Round ' + round + ' of ' + rounds + (list.length > 1 ? ' — ' + scorer.name : '');
-        renderRiddleRound(api, scorer, bag.next(), label, playRound);
+        var label = race
+          ? ('Round ' + round + ' of ' + rounds + ' — 🏁 everyone races')
+          : ('Round ' + round + ' of ' + rounds + (list.length > 1 ? ' — ' + scorer.name : ''));
+        renderRiddleRound(api, scorer, bag.next(), label, playRound, race, round >= rounds);
       }
       playRound();
     }
   });
 
-  function renderRiddleRound(api, scorer, item, label, onDone) {
+  function renderRiddleRound(api, scorer, item, label, onDone, race, isLast) {
     var root = api.shell.root;
     api.ui.clear(root);
     api.shell.updateScores(scorer.id);
@@ -922,17 +940,48 @@ window.FF = window.FF || {};
     root.appendChild(wrap);
 
     var t = api.config.timer;
-    if (t && t > 0) {
-      api.shell.setTimer(t, function () { onTimeout(); });
+
+    function openRound() {
+      startMs = Date.now();
+      if (t && t > 0) {
+        api.shell.setTimer(t, function () { onTimeout(); });
+      }
+    }
+
+    if (race) {
+      // Hold every device until the round's shared instant, then settle
+      // the round for everyone at once.
+      api.shell.hideTimer();
+      race.gate(openRound);
+      race.onSettle(function (payload) {
+        if (done) return;
+        done = true;
+        api.shell.hideTimer();
+        race.showResult(payload, {
+          answerText: item.options[ansIdx],
+          isLast: !!isLast,
+          onNext: function () { onDone(); }
+        });
+      });
+    } else {
+      openRound();
     }
 
     function elapsedSec() { return (Date.now() - startMs) / 1000; }
 
     function onAnswer(i) {
       if (done) return;
+      var correct = (i === ansIdx);
+
+      if (race) {
+        // The race decides the round; a wrong answer only locks this
+        // device out while everyone else keeps playing.
+        race.submit(i, correct, Date.now() - startMs);
+        return;
+      }
+
       done = true;
       api.shell.hideTimer();
-      var correct = (i === ansIdx);
       var pts = 0;
       if (correct) {
         var elapsed = elapsedSec();
