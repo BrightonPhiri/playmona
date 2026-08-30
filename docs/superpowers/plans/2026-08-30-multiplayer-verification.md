@@ -5,11 +5,13 @@
 **Method:** Node test suite, a browser determinism harness, and two real
 browser tabs acting as two devices, driven through the actual UI.
 
-> **Not yet done:** verification on real phones against a real Firebase
-> project. That requires the Firebase account setup in `FIREBASE_SETUP.md`,
-> which is the owner's to create. Everything below was verified against the
-> BroadcastChannel development transport, which implements the identical
-> interface.
+> Sections 1-9 were verified against the BroadcastChannel development
+> transport, which implements the identical interface. **Section 10 covers
+> verification against the real Firebase project**, added once it was set up;
+> it includes a serious security-rules defect found only at that stage.
+>
+> **Still not done:** testing on real phones, over mobile data, with three or
+> more devices, and scanning the QR with a real camera.
 
 ---
 
