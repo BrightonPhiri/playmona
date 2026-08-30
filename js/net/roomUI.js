@@ -74,6 +74,37 @@ window.FF = window.FF || {};
       '.rm-count__num--pop{animation:rm-pop .45s ease;}',
       '@keyframes rm-pop{from{transform:scale(.55);opacity:.35;}to{transform:scale(1);opacity:1;}}',
 
+      /* Gamified loading */
+      '.rm-load{display:flex;flex-direction:column;align-items:center;gap:18px;padding:26px 0;}',
+      '.rm-load__stage{position:relative;width:132px;height:132px;}',
+      '.rm-load__ring{position:absolute;inset:0;border-radius:50%;',
+      'border:5px solid var(--accent-soft,#ede9fe);border-top-color:var(--accent,#8b5cf6);',
+      'animation:rm-spin 1.1s linear infinite;}',
+      '.rm-load__ring--slow{inset:14px;border-width:4px;opacity:.6;',
+      'border-top-color:transparent;border-right-color:var(--accent,#8b5cf6);',
+      'animation:rm-spin 1.8s linear infinite reverse;}',
+      '.rm-load__emoji{position:absolute;inset:0;display:flex;align-items:center;',
+      'justify-content:center;font-size:3.1rem;animation:rm-bob 1.5s ease-in-out infinite;}',
+      '.rm-load__status{font-weight:800;font-size:1.05rem;text-align:center;min-height:1.4em;}',
+      '.rm-load__dots{display:flex;gap:9px;}',
+      '.rm-load__dot{width:11px;height:11px;border-radius:50%;',
+      'background:var(--accent,#8b5cf6);animation:rm-bounce 1s ease-in-out infinite;}',
+      '.rm-load__dot:nth-child(2){animation-delay:.15s;}',
+      '.rm-load__dot:nth-child(3){animation-delay:.3s;}',
+      '.rm-load__dot:nth-child(4){animation-delay:.45s;}',
+      '@keyframes rm-spin{to{transform:rotate(360deg);}}',
+      '@keyframes rm-bob{0%,100%{transform:translateY(-5px) scale(1);}',
+      '50%{transform:translateY(5px) scale(1.08);}}',
+      '@keyframes rm-bounce{0%,100%{transform:translateY(0);opacity:.45;}',
+      '50%{transform:translateY(-11px);opacity:1;}}',
+
+      /* Anyone who asked for less motion gets a calm version. */
+      '[data-reduce="1"] .rm-load__ring,',
+      '[data-reduce="1"] .rm-load__ring--slow,',
+      '[data-reduce="1"] .rm-load__emoji,',
+      '[data-reduce="1"] .rm-load__dot{animation:none;}',
+      '[data-reduce="1"] .rm-load__dot{opacity:.8;}',
+
       '@media (max-width:420px){',
       '  .rm-games{grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;}',
       '  .rm-code{font-size:1.9rem;letter-spacing:.28em;}',
@@ -106,8 +137,65 @@ window.FF = window.FF || {};
     return list;
   }
 
+  var LOAD_EMOJI = ['🎮', '🎲', '🧩', '🎯', '🌍', '🎪', '🔠', '🥇'];
+
   FF.RoomUI = {
     ONLINE_GAMES: ONLINE_GAMES,
+
+    /* A playful waiting screen for the moments that need a network round
+       trip. Returns a handle: setStatus(text) to update the caption, and
+       stop() when the screen is replaced. */
+    showLoading: function (main, opts) {
+      ensureStyles();
+      opts = opts || {};
+      FF.ui.clear(main);
+
+      var stage = FF.ui.div('rm-load__stage');
+      var emoji = FF.ui.div('rm-load__emoji', LOAD_EMOJI[0]);
+      stage.appendChild(FF.ui.div('rm-load__ring'));
+      stage.appendChild(FF.ui.div('rm-load__ring rm-load__ring--slow'));
+      stage.appendChild(emoji);
+
+      var dots = FF.ui.div('rm-load__dots');
+      for (var d = 0; d < 4; d++) dots.appendChild(FF.ui.div('rm-load__dot'));
+
+      var status = FF.ui.div('rm-load__status', (opts.messages && opts.messages[0]) || 'Connecting…');
+
+      var box = FF.ui.div('rm-load');
+      box.appendChild(stage);
+      box.appendChild(status);
+      box.appendChild(dots);
+
+      main.appendChild(panel([title(opts.title || '🌐 Getting ready'), box]));
+
+      // Cycle the face and the caption so the wait feels alive rather than
+      // frozen - people read a static 'Connecting...' as a hang.
+      var i = 0;
+      var faceTimer = setInterval(function () {
+        i = (i + 1) % LOAD_EMOJI.length;
+        emoji.textContent = LOAD_EMOJI[i];
+      }, 620);
+
+      var msgTimer = null;
+      if (opts.messages && opts.messages.length > 1) {
+        var m = 0;
+        msgTimer = setInterval(function () {
+          m = (m + 1) % opts.messages.length;
+          status.textContent = opts.messages[m];
+        }, 1600);
+      }
+
+      return {
+        setStatus: function (text) {
+          if (msgTimer) { clearInterval(msgTimer); msgTimer = null; }
+          status.textContent = text;
+        },
+        stop: function () {
+          clearInterval(faceTimer);
+          if (msgTimer) clearInterval(msgTimer);
+        }
+      };
+    },
 
     showHome: function (main) {
       ensureStyles();
@@ -153,16 +241,21 @@ window.FF = window.FF || {};
 
     showCreate: function (main, mode) {
       ensureStyles();
-      FF.ui.clear(main);
-      main.appendChild(panel([
-        title('Creating room…'),
-        FF.ui.div('rm-hint', 'Connecting…')
-      ]));
       var self = this;
+      var load = this.showLoading(main, {
+        title: '🎪 Building your room',
+        messages: [
+          'Waking up the game room…',
+          'Shuffling the questions…',
+          'Printing your room code…'
+        ]
+      });
 
       FF.Room.create({ mode: mode }).then(function () {
+        load.stop();
         self.showLobby(main);
       }).catch(function (e) {
+        load.stop();
         self.showError(main, e.message || 'Could not create the room.');
       });
     },
@@ -189,9 +282,38 @@ window.FF = window.FF || {};
       function go() {
         error.textContent = '';
         if (joinBtn) joinBtn.disabled = true;
-        FF.Room.join(codeInput.value, { name: nameInput.value || 'Player' }).then(function () {
+
+        var code = codeInput.value;
+        var name = nameInput.value || 'Player';
+
+        // Only take over the screen once the code looks plausible, so a
+        // typo still shows the inline error rather than a flash of loading.
+        var load = null;
+        if (String(code).trim().length === FF.Room.CODE_LENGTH) {
+          load = self.showLoading(main, {
+            title: '🔑 Joining room',
+            messages: [
+              'Knocking on the door…',
+              'Finding the other players…',
+              'Taking your seat…'
+            ]
+          });
+        }
+
+        FF.Room.join(code, { name: name }).then(function () {
+          if (load) load.stop();
           self.showLobby(main);
         }).catch(function (e) {
+          if (load) {
+            // The loading screen replaced the form, so rebuild it and put
+            // the message where the player can act on it.
+            load.stop();
+            self.showJoin(main, code);
+            if (e && e.message === 'VERSION_MISMATCH') { self.showVersionBlock(main); return; }
+            var err = main.querySelector('.rm-error');
+            if (err) err.textContent = (e && e.message) || 'Could not join that room.';
+            return;
+          }
           if (joinBtn) joinBtn.disabled = false;
           if (e && e.message === 'VERSION_MISMATCH') { self.showVersionBlock(main); return; }
           error.textContent = (e && e.message) || 'Could not join that room.';
