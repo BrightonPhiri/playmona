@@ -178,7 +178,10 @@ window.FF = window.FF || {};
       answered: 0,
       locked: false,
       q: null,
-      fb: null
+      fb: null,
+      // ---- Race support. Offline this stays null and nothing changes. ----
+      race: FF.Race ? FF.Race.forGame(api, { rounds: 10, optionSelector: '.nc-option' }) : null,
+      offSettle: null
     };
     api.audio.play('roundStart');
     renderNumberChallenge(api, state);
@@ -187,6 +190,12 @@ window.FF = window.FF || {};
   function renderNumberChallenge(api, state) {
     var scorers = api.config.scorers;
     var active = scorers[state.round % scorers.length];
+    if (state.race) {
+      // In a room nobody takes turns - everyone races the same question.
+      state.race.beginRound(state.round);
+      var me = FF.Room.current();
+      active = scorers.filter(function (sc) { return sc.id === me.uid; })[0] || scorers[0];
+    }
     var q = numberQuestion(api.config.difficulty || 'normal');
     var startedAt = Date.now();
     state.locked = false;
@@ -250,10 +259,34 @@ window.FF = window.FF || {};
     api.shell.updateScores(active.id);
     if (FF.Nav && FF.Nav.focusFirst) FF.Nav.focusFirst(root);
 
-    if (api.config.timer > 0) {
-      api.shell.setTimer(api.config.timer, function () { timeoutNumberChallenge(api, state, q, active); });
-    } else {
+    function openRound() {
+      startedAt = Date.now();
+      if (api.config.timer > 0) {
+        api.shell.setTimer(api.config.timer, function () { timeoutNumberChallenge(api, state, q, active); });
+      } else {
+        api.shell.hideTimer();
+      }
+    }
+
+    if (state.race) {
+      // Hold every device until the round's shared instant, and settle it
+      // for everyone at once.
       api.shell.hideTimer();
+      state.race.gate(openRound);
+
+      if (state.offSettle) state.offSettle();
+      state.offSettle = state.race.onSettle(function (payload) {
+        if (state.locked) return;
+        state.locked = true;
+        api.shell.hideTimer();
+        state.race.showResult(payload, {
+          answerText: String(q.answer),
+          isLast: (state.round + 1) >= state.total,
+          onNext: function () { nextNumberChallenge(api, state); }
+        });
+      });
+    } else {
+      openRound();
     }
   }
 
@@ -275,8 +308,16 @@ window.FF = window.FF || {};
 
   function answerNumberChallenge(api, state, chosen, q, active, startedAt) {
     if (state.locked) return;
-    state.locked = true;
     var elapsed = Date.now() - startedAt;
+
+    if (state.race) {
+      // The race decides the round; a wrong answer only locks this device
+      // out while everyone else keeps playing.
+      state.race.submit(null, chosen === q.answer, elapsed);
+      return;
+    }
+
+    state.locked = true;
     api.shell.hideTimer();
     markNumberButtons(api, q, chosen);
 
@@ -338,6 +379,8 @@ window.FF = window.FF || {};
 
   function finishNumberChallenge(api, state) {
     api.shell.hideTimer();
+    if (state.offSettle) { state.offSettle(); state.offSettle = null; }
+    if (state.race) state.race.end();
     var ranked = api.scoring.ranked();
     var bestStreak = 0;
     var fastestMs = null;

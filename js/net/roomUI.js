@@ -15,7 +15,8 @@ window.FF = window.FF || {};
     'quickTap', 'colorReaction',
     // Parallel play: same letters for everyone, each keeps their own score.
     'letterRush',
-    'whatsMissing'
+    'whatsMissing',
+    'numberChallenge'
     // Brain Battle is deliberately absent: its format is a personal
     // streak run per player, so there is no shared question to race for.
   ];
