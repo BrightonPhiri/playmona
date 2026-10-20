@@ -20,7 +20,7 @@ window.FF = window.FF || {};
       const self = this;
       this._entities.forEach(function (e) {
         self._records[e.id] = {
-          id: e.id, name: e.name, avatar: e.avatar || '😀', color: e.color || '#8b5cf6',
+          id: e.id, name: e.name, avatar: e.avatar || '😀', photo: e.photo || null, color: e.color || '#8b5cf6',
           points: 0, correct: 0, wrong: 0, answers: 0,
           streak: 0, bestStreak: 0, fastest: null, roundPoints: 0, events: []
         };
@@ -96,7 +96,7 @@ window.FF = window.FF || {};
     ranked: function () {
       return this.leaderboard().map(function (e) {
         const r = FF.Scoring._records[e.id];
-        return { id: e.id, name: e.name, avatar: e.avatar, color: e.color, points: r.points, correct: r.correct, wrong: r.wrong, bestStreak: r.bestStreak, fastest: r.fastest, answers: r.answers };
+        return { id: e.id, name: e.name, avatar: e.avatar, photo: e.photo || r.photo, color: e.color, points: r.points, correct: r.correct, wrong: r.wrong, bestStreak: r.bestStreak, fastest: r.fastest, answers: r.answers };
       });
     },
 
@@ -107,7 +107,7 @@ window.FF = window.FF || {};
     roundDeltas: function () {
       return this._entities.slice().sort(function (a, b) {
         return FF.Scoring._records[b.id].roundPoints - FF.Scoring._records[a.id].roundPoints;
-      }).map(function (e) { return { id: e.id, name: e.name, avatar: e.avatar, color: e.color, points: FF.Scoring._records[e.id].roundPoints }; });
+      }).map(function (e) { return { id: e.id, name: e.name, avatar: e.avatar, photo: e.photo, color: e.color, points: FF.Scoring._records[e.id].roundPoints }; });
     },
 
     winner: function () {

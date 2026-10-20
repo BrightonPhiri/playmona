@@ -110,7 +110,7 @@ window.FF = window.FF || {};
       var item = bag.next();
       api.shell.updateScores(scorer.id);
 
-      wrap.appendChild(FF.ui.div('rv-who', '📱 Pass the device to ' + scorer.name));
+      wrap.appendChild(FF.ui.div('rv-who', list.length > 1 ? ('📱 Pass the device to ' + scorer.name) : ('Your turn, ' + scorer.name)));
       wrap.appendChild(FF.ui.button('👀 Reveal', {
         class: 'btn btn-primary btn-lg',
         onClick: function () { reveal(item, scorer); }
@@ -292,10 +292,10 @@ window.FF = window.FF || {};
     description: 'Act out the word — no talking! — while everyone guesses.',
     category: 'creative',
     icon: '🎭',
-    players: [2, 8],
+    players: [1, 8],
     difficulty: 'Easy',
     duration: 6,
-    modes: ['turn', 'team'],
+    modes: ['solo', 'turn', 'team'],
     defaultMode: 'turn',
     howToPlay: [
       'Pass the device to the active player.',
@@ -337,10 +337,10 @@ window.FF = window.FF || {};
     description: 'Act out the picture on screen for everyone to guess.',
     category: 'creative',
     icon: '🖼️',
-    players: [2, 8],
+    players: [1, 8],
     difficulty: 'Easy',
     duration: 6,
-    modes: ['turn', 'team'],
+    modes: ['solo', 'turn', 'team'],
     defaultMode: 'turn',
     howToPlay: [
       'Pass the device to the active player.',
@@ -399,10 +399,10 @@ window.FF = window.FF || {};
     description: 'Describe the word without using any forbidden words.',
     category: 'creative',
     icon: '🚫',
-    players: [2, 8],
+    players: [1, 8],
     difficulty: 'Normal',
     duration: 6,
-    modes: ['turn', 'team'],
+    modes: ['solo', 'turn', 'team'],
     defaultMode: 'turn',
     howToPlay: [
       'Describe the word to your team.',
@@ -458,10 +458,10 @@ window.FF = window.FF || {};
     description: 'Draw the prompt, then everyone votes on your artwork.',
     category: 'creative',
     icon: '✏️',
-    players: [2, 8],
+    players: [1, 8],
     difficulty: 'Easy',
     duration: 6,
-    modes: ['turn', 'team'],
+    modes: ['solo', 'turn', 'team'],
     defaultMode: 'turn',
     howToPlay: [
       'Draw the prompt on the canvas.',
@@ -553,11 +553,11 @@ window.FF = window.FF || {};
     description: 'Draw the word and let your team guess it before time runs out.',
     category: 'creative',
     icon: '🎨',
-    players: [2, 8],
+    players: [1, 8],
     difficulty: 'Normal',
     duration: 7,
-    modes: ['team', 'turn'],
-    defaultMode: 'team',
+    modes: ['solo', 'team', 'turn'],
+    defaultMode: 'turn',
     howToPlay: [
       'The drawer sees a secret word and draws it.',
       'Everyone else types their guesses.',

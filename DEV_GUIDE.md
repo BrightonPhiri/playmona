@@ -56,7 +56,7 @@ window.FF = window.FF || {};
     id: 'letterRush',            // unique, camelCase
     name: 'Letter Rush',         // display name
     description: 'Make as many words as you can before time runs out.',
-    category: 'words',           // words | quiz | visual | memory | reaction | creative | numbers | party | world
+    category: 'words',           // words | quiz | bible | visual | memory | reaction | creative | numbers | party | world
     icon: '🔤',                  // single emoji
     players: [1, 8],             // [min, max] players
     difficulty: 'Easy',          // Easy | Normal | Hard (label shown on cards)

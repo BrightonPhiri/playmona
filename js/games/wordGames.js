@@ -88,6 +88,13 @@ window.FF = window.FF || {};
     return map;
   }
 
+  function inDictionary(word) {
+    var w = wordsData();
+    if (w && typeof w.isWord === 'function') return w.isWord(word);
+    var map = dictMap();
+    return !!(word && map[word]);
+  }
+
   function showMissingData(api, gameName, detail) {
     ensureStyles();
     var root = api.shell.root;
@@ -440,7 +447,7 @@ window.FF = window.FF || {};
           input.value = '';
           if (word.length < 3) { api.shell.toast('Too short — use at least 3 letters.', 'warning'); api.audio.play('wrong'); return; }
           if (!canBuild(word, letters)) { api.shell.toast('Only use the letters shown.', 'warning'); api.audio.play('wrong'); return; }
-          if (!state.dict[word]) { api.shell.toast('That word is not in the dictionary.', 'warning'); api.audio.play('wrong'); return; }
+          if (!inDictionary(word)) { api.shell.toast('That word is not in the dictionary.', 'warning'); api.audio.play('wrong'); return; }
           if (usedThisTurn[word]) { api.shell.toast('You already found that one this turn!', 'warning'); api.audio.play('wrong'); return; }
           usedThisTurn[word] = true;
           turnWords.push(word);
@@ -815,11 +822,11 @@ window.FF = window.FF || {};
     description: 'Everyone shares one set of letters — claim words fast and build the most!',
     category: 'words',
     icon: '🧱',
-    players: [2, 8],
+    players: [1, 8],
     difficulty: 'Normal',
     duration: 5,
     tags: ['spelling', 'party'],
-    modes: ['everyone', 'team'],
+    modes: ['solo', 'everyone', 'team'],
     defaultMode: 'everyone',
     howToPlay: [
       'Everyone shares one set of 10 letters.',
@@ -917,7 +924,7 @@ window.FF = window.FF || {};
           input.value = '';
           if (word.length < 3) { api.shell.toast('Too short — use at least 3 letters.', 'warning'); api.audio.play('wrong'); return; }
           if (!canBuild(word, state.letters)) { api.shell.toast('Only use the letters shown.', 'warning'); api.audio.play('wrong'); return; }
-          if (!state.dict[word]) { api.shell.toast('That word is not in the dictionary.', 'warning'); api.audio.play('wrong'); return; }
+          if (!inDictionary(word)) { api.shell.toast('That word is not in the dictionary.', 'warning'); api.audio.play('wrong'); return; }
           if (state.used[word]) { api.shell.toast('That word was already used!', 'warning'); api.audio.play('wrong'); return; }
           var entity = scoreEntityForPlayer(api, state.activeId);
           state.used[word] = true;
@@ -987,11 +994,11 @@ window.FF = window.FF || {};
     description: 'Take turns building a word chain where each word starts with the last letter.',
     category: 'words',
     icon: '🔗',
-    players: [2, 8],
+    players: [1, 8],
     difficulty: 'Normal',
     duration: 4,
     tags: ['spelling', 'party'],
-    modes: ['turn', 'team'],
+    modes: ['solo', 'turn', 'team'],
     defaultMode: 'turn',
     howToPlay: [
       'Take turns adding a word to the chain.',
@@ -1097,7 +1104,7 @@ window.FF = window.FF || {};
           input.value = '';
           if (!word) { api.shell.toast('Type a word first.', 'warning'); api.audio.play('wrong'); return; }
           if (word.charAt(0) !== nextLetter) { api.shell.toast('It must start with ' + nextLetter.toUpperCase() + '.', 'warning'); api.audio.play('wrong'); return; }
-          if (!state.dict[word]) { api.shell.toast('Not in the dictionary.', 'warning'); api.audio.play('wrong'); return; }
+          if (!inDictionary(word)) { api.shell.toast('Not in the dictionary.', 'warning'); api.audio.play('wrong'); return; }
           if (state.used[word]) { api.shell.toast('That word was already used.', 'warning'); api.audio.play('wrong'); return; }
           success(word);
         }

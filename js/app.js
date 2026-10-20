@@ -38,6 +38,7 @@ window.FF = window.FF || {};
   FF.Categories = {
     words:   { name: 'Words',    icon: '🔤', color: '#8b5cf6' },
     quiz:    { name: 'Quiz',     icon: '🧠', color: '#3b82f6' },
+    bible:   { name: 'Bible',    icon: '📖', color: '#9333ea' },
     visual:  { name: 'Visual',   icon: '🖼️', color: '#10b981' },
     memory:  { name: 'Memory',   icon: '🧩', color: '#f97316' },
     reaction:{ name: 'Reaction', icon: '⚡', color: '#ef4444' },
@@ -53,10 +54,18 @@ window.FF = window.FF || {};
 
     init: function () {
       FF.Storage.init();
+      if (FF.i18n) FF.i18n.init();
       FF.Theme.init();
       FF.Audio.init();
       this.buildShell();
       FF.Nav.init();
+      var self = this;
+      if (FF.i18n) {
+        FF.i18n.onChange(function () {
+          self._syncThemeUI();
+          self.render(self._currentView || 'home', self._currentParams || {});
+        });
+      }
       this.render('home');
 
       // A shared link like .../familygame/#room=ABC123 goes straight to join.
@@ -97,6 +106,7 @@ window.FF = window.FF || {};
 
       const app = FF.ui.div('app');
       app.id = 'app';
+      app.style.setProperty('--app-art', FF.Assets.artUrl('ui', 'app-bg'));
 
       // Header
       const header = FF.ui.el('header', { class: 'app-header' });
@@ -110,12 +120,12 @@ window.FF = window.FF || {};
 
       const nav = FF.ui.el('nav', { class: 'app-nav' });
       const navItems = [
-        ['home', '🏠', 'Home'],
-        ['games', '🎮', 'Games'],
-        ['players', '👥', 'Players'],
-        ['scores', '🏆', 'Scores'],
-        ['favorites', '⭐', 'Favorites'],
-        ['settings', '⚙', 'Settings']
+        ['home', '🏠', FF.t('navHome', 'Home')],
+        ['games', '🎮', FF.t('navGames', 'Games')],
+        ['players', '👥', FF.t('navPlayers', 'Players')],
+        ['scores', '🏆', FF.t('navScores', 'Scores')],
+        ['favorites', '⭐', FF.t('navFavorites', 'Favorites')],
+        ['settings', '⚙', FF.t('navSettings', 'Settings')]
       ];
       const self = this;
       navItems.forEach(function (item) {
@@ -130,9 +140,17 @@ window.FF = window.FF || {};
       header.appendChild(nav);
 
       const tools = FF.ui.div('app-header__tools');
-      const themeBtn = FF.ui.button('🌙', { class: 'tool-btn', ariaLabel: 'Theme', onClick: function () { self._cycleTheme(); } });
+      const langBtn = FF.ui.button('', {
+        class: 'tool-btn tool-btn--lang',
+        ariaLabel: 'Language',
+        onClick: function () { self.showLanguagePicker(); }
+      });
+      langBtn.id = 'lang-toggle';
+      const themeBtn = FF.ui.button('', { class: 'tool-btn', ariaLabel: 'Theme', onClick: function () { self._cycleTheme(); } });
       themeBtn.id = 'theme-toggle';
-      const fsBtn = FF.ui.button('⛶', { class: 'tool-btn', ariaLabel: 'Fullscreen', onClick: function () { self.toggleFullscreen(); } });
+      const fsBtn = FF.ui.button('', { class: 'tool-btn', ariaLabel: 'Fullscreen', onClick: function () { self.toggleFullscreen(); } });
+      fsBtn.appendChild(FF.Icons.icon('arrows-out', '⛶'));
+      tools.appendChild(langBtn);
       tools.appendChild(themeBtn);
       tools.appendChild(fsBtn);
       header.appendChild(tools);
@@ -162,14 +180,57 @@ window.FF = window.FF || {};
       FF.Nav.replace(view);
     },
 
+    showLanguagePicker: function () {
+      if (!FF.i18n) return;
+      var cur = FF.i18n.getLang();
+      var langs = FF.i18n.languages;
+      var nextIdx = 0;
+      for (var i = 0; i < langs.length; i++) {
+        if (langs[i].code === cur) { nextIdx = (i + 1) % langs.length; break; }
+      }
+      FF.i18n.setLang(langs[nextIdx].code);
+      FF.Audio.play('select');
+      this._syncThemeUI();
+    },
+
     _syncThemeUI: function () {
       const btn = FF.ui.$('#theme-toggle');
       if (btn) {
         const t = FF.Theme.getTheme();
-        btn.textContent = t === 'light' ? '☀️' : (t === 'dark' ? '🌙' : '⚙');
+        const key = t === 'light' ? 'sun' : (t === 'dark' ? 'moon' : 'monitor');
+        const fallback = t === 'light' ? '☀️' : (t === 'dark' ? '🌙' : '⚙');
+        FF.ui.clear(btn);
+        btn.appendChild(FF.Icons.icon(key, fallback));
+        btn.setAttribute('aria-label', 'Theme: ' + t);
+        btn.setAttribute('title', 'Theme: ' + t);
       }
+
+      const langBtn = FF.ui.$('#lang-toggle');
+      if (langBtn && FF.i18n) {
+        const info = FF.i18n.getLangInfo();
+        FF.ui.clear(langBtn);
+        langBtn.appendChild(document.createTextNode((info ? info.flag : '🌐') + ' ' + (info ? info.code.toUpperCase() : 'EN')));
+        langBtn.setAttribute('aria-label', 'Language: ' + (info ? info.name : 'English'));
+        langBtn.setAttribute('title', 'Language: ' + (info ? info.name : 'English'));
+      }
+
       const navs = FF.ui.$$('.nav-link');
-      navs.forEach(function (n) { n.classList.toggle('active', n.dataset.view === FF.Nav.current); });
+      var navLabels = {
+        home: FF.t('navHome', 'Home'),
+        games: FF.t('navGames', 'Games'),
+        players: FF.t('navPlayers', 'Players'),
+        scores: FF.t('navScores', 'Scores'),
+        favorites: FF.t('navFavorites', 'Favorites'),
+        settings: FF.t('navSettings', 'Settings')
+      };
+      navs.forEach(function (n) {
+        const on = n.dataset.view === FF.Nav.current;
+        n.classList.toggle('active', on);
+        if (on) n.setAttribute('aria-current', 'page');
+        else n.removeAttribute('aria-current');
+        const lbl = n.querySelector('.nav-link__label');
+        if (lbl && navLabels[n.dataset.view]) lbl.textContent = navLabels[n.dataset.view];
+      });
 
       // Rebuild nav icons if the icon style changed.
       const style = (typeof FF.Icons.getStyle === 'function') ? FF.Icons.getStyle() : 'custom';
@@ -225,22 +286,40 @@ window.FF = window.FF || {};
       return h;
     },
 
+    iconHeading: function (iconKey, text, tag) {
+      const h = FF.ui.el(tag || 'h3', { class: tag === 'h2' ? 'section-title section-title--icon' : 'settings-group' });
+      if (FF.Icons) h.appendChild(FF.Icons.icon(iconKey));
+      h.appendChild(document.createTextNode(text));
+      return h;
+    },
+
     gameCard: function (def, opts) {
       opts = opts || {};
       const cat = FF.Categories[def.category] || { name: def.category, icon: '🎮', color: '#888' };
+      const poster = opts.poster !== false;
       const card = FF.ui.el('div', {
-        class: 'game-card' + (opts.large ? ' game-card--large' : ''),
+        class: 'game-card' + (poster ? ' game-card--poster' : '') + (opts.large ? ' game-card--hero' : ''),
         tabindex: 0, 'data-focusable': 'true',
-        style: { '--card-color': cat.color },
+        style: {
+          '--card-color': cat.color,
+          '--art': FF.Assets.artUrl('covers', def.id),
+          '--wash': FF.Assets.wash(def.category)
+        },
         onclick: function (e) {
           if (e.target.closest('.fav-btn')) return;
           FF.Audio.play('select');
           FF.GameFlow.launch(def.id);
         }
       });
+      card.addEventListener('focus', function () {
+        try { card.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' }); } catch (err) {}
+      });
+
+      const mark = FF.ui.div('game-card__mark');
+      mark.appendChild(FF.Icons.icon(FF.Icons.game[def.id], def.icon, 'game-card__icon'));
+      card.appendChild(mark);
 
       const top = FF.ui.div('game-card__top');
-      top.appendChild(FF.Icons.icon(FF.Icons.game[def.id], def.icon, 'game-card__icon'));
       const fav = FF.ui.button(FF.Favorites.has(def.id) ? '⭐' : '☆', {
         class: 'fav-btn' + (FF.Favorites.has(def.id) ? ' active' : ''),
         ariaLabel: 'Toggle favorite',
@@ -254,21 +333,82 @@ window.FF = window.FF || {};
         }
       });
       top.appendChild(fav);
-
       card.appendChild(top);
-      card.appendChild(FF.ui.el('h3', { class: 'game-card__name' }, def.name));
-      card.appendChild(FF.ui.el('p', { class: 'game-card__desc' }, def.description));
+
+      const body = FF.ui.div('game-card__body');
+      body.appendChild(FF.ui.el('h3', { class: 'game-card__name' }, def.name));
+      body.appendChild(FF.ui.el('p', { class: 'game-card__desc' }, def.description));
 
       const meta = FF.ui.div('game-card__meta');
-      meta.appendChild(FF.ui.el('span', { class: 'meta-chip' }, '👥 ' + def.players[0] + '–' + def.players[1]));
-      meta.appendChild(FF.ui.el('span', { class: 'meta-chip' }, '⭐ ' + (def.difficulty || 'Easy')));
-      meta.appendChild(FF.ui.el('span', { class: 'meta-chip' }, '⏱ ' + (def.duration || 5) + 'm'));
+      meta.appendChild(FF.ui.el('span', { class: 'meta-chip' }, def.players[0] + '–' + def.players[1]));
+      meta.appendChild(FF.ui.el('span', { class: 'meta-chip' }, def.difficulty || 'Easy'));
+      meta.appendChild(FF.ui.el('span', { class: 'meta-chip' }, (def.duration || 5) + 'm'));
       const catChip = FF.ui.el('span', { class: 'meta-chip meta-chip--cat' });
       catChip.appendChild(FF.Icons.icon(FF.Icons.category[def.category], cat.icon));
       catChip.appendChild(document.createTextNode(' ' + cat.name));
       meta.appendChild(catChip);
-      card.appendChild(meta);
+      body.appendChild(meta);
+      card.appendChild(body);
       return card;
+    },
+
+    rail: function (title, games, opts) {
+      opts = opts || {};
+      if (!games || !games.length) return null;
+      const wrap = FF.ui.div('rail');
+      const head = FF.ui.div('rail__head');
+      head.appendChild(FF.ui.el('h2', { class: 'section-title' }, title));
+      const controls = FF.ui.div('rail__controls');
+      const track = FF.ui.div('rail__track');
+      games.forEach(function (g, i) {
+        track.appendChild(FF.App.gameCard(g, { poster: true, large: !!(opts.hero && i === 0), onFav: opts.onFav }));
+      });
+      function scroll(dir) {
+        const amount = Math.max(240, Math.round(track.clientWidth * 0.72)) * dir;
+        if (track.scrollBy) track.scrollBy({ left: amount, behavior: 'smooth' });
+        else track.scrollLeft += amount;
+      }
+      const prev = FF.ui.button('‹', { class: 'rail__btn', ariaLabel: 'Previous', onClick: function () { scroll(-1); } });
+      const next = FF.ui.button('›', { class: 'rail__btn', ariaLabel: 'Next', onClick: function () { scroll(1); } });
+      controls.appendChild(prev);
+      controls.appendChild(next);
+      if (opts.action) head.appendChild(opts.action);
+      head.appendChild(controls);
+      wrap.appendChild(head);
+      wrap.appendChild(track);
+      return wrap;
+    },
+
+    categoryRail: function () {
+      const rail = FF.ui.div('cat-rail');
+      const cats = FF.Games.categories();
+      cats.forEach(function (id) {
+        const meta = FF.Categories[id] || { name: id, icon: '🎮', color: '#888' };
+        const count = FF.Games.byCategory(id).length;
+        const tile = FF.ui.el('button', {
+          class: 'cat-tile',
+          tabindex: 0,
+          'data-focusable': 'true',
+          ariaLabel: meta.name,
+          style: {
+            '--art': FF.Assets.artUrl('categories', 'cat-' + id),
+            '--wash': FF.Assets.wash(id),
+            '--card-color': meta.color
+          },
+          onclick: function () {
+            FF.Audio.play('select');
+            FF.App._filter = id;
+            FF.Nav.go('games', { category: id });
+          }
+        });
+        const ic = FF.ui.div('cat-tile__icon');
+        ic.appendChild(FF.Icons.icon(FF.Icons.category[id], meta.icon));
+        tile.appendChild(ic);
+        tile.appendChild(FF.ui.div('cat-tile__name', meta.name));
+        tile.appendChild(FF.ui.div('cat-tile__count', count + ' games'));
+        rail.appendChild(tile);
+      });
+      return rail;
     },
 
     gameGrid: function (games, opts) {
@@ -305,6 +445,7 @@ window.FF = window.FF || {};
 
       home: function (main) {
         const hero = FF.ui.div('home-hero');
+        hero.style.setProperty('--art', FF.Assets.artUrl('ui', 'hero-home'));
         const heroText = FF.ui.div('home-hero__text');
         heroText.appendChild(FF.Brand.logo('brand-logo brand-logo--hero'));
         heroText.appendChild(FF.ui.el('h1', { class: 'home-hero__title' }, FF.Brand.name));
@@ -312,51 +453,56 @@ window.FF = window.FF || {};
         hero.appendChild(heroText);
 
         const actions = FF.ui.div('home-hero__actions');
-        actions.appendChild(FF.App.heroButton('play', '🎮', 'QUICK PLAY', 'Random game, right now', function () { FF.App.quickPlay(); }, true));
-        actions.appendChild(FF.App.heroButton('moon', '🌙', 'GAME NIGHT', 'Multi-round tournament', function () { FF.Nav.go('gamenight'); }));
-        actions.appendChild(FF.App.heroButton('lightning', '⚡', 'QUICK ROUND', '2–5 minute game', function () { FF.App.quickRound(); }));
-        // Only shown when online play is configured, so an offline copy
-        // of the app has no trace of it and makes no network requests.
+        actions.appendChild(FF.App.heroButton('play', '🎮', FF.t('quickPlay', 'Quick play'), FF.t('quickPlaySub', 'Jump into a random game'), function () { FF.App.quickPlay(); }, true));
+        actions.appendChild(FF.App.heroButton('moon', '🌙', FF.t('gameNight', 'Game night'), FF.t('gameNightSub', 'A multi-round tournament'), function () { FF.Nav.go('gamenight'); }));
+        actions.appendChild(FF.App.heroButton('lightning', '⚡', FF.t('quickRound', 'Quick round'), FF.t('quickRoundSub', '2–5 minutes, then done'), function () { FF.App.quickRound(); }));
         if (FF.Net && FF.Net.configured()) {
-          actions.appendChild(FF.App.heroButton('globe', '🌐', 'PLAY TOGETHER', 'Same game, different devices', function () { FF.Nav.go('online'); }));
+          actions.appendChild(FF.App.heroButton('globe', '🌐', FF.t('playTogether', 'Play together'), FF.t('playTogetherSub', 'Same game, different devices'), function () { FF.Nav.go('online'); }));
         }
         hero.appendChild(actions);
         main.appendChild(hero);
 
-        // Favorites (shown first, above the featured picks)
-        const favs = FF.Favorites.get().map(FF.Games.get).filter(Boolean).slice(0, 6);
+        main.appendChild(FF.App.sectionTitle(FF.t('browseByVibe', 'Browse by vibe')));
+        main.appendChild(FF.App.categoryRail());
+
+        const favs = FF.Favorites.get().map(FF.Games.get).filter(Boolean).slice(0, 10);
         if (favs.length) {
-          main.appendChild(FF.App.sectionTitle('💛 My Favorites'));
-          main.appendChild(FF.App.gameGrid(favs));
+          const favRail = FF.App.rail(FF.t('yourFavorites', 'Your favorites'), favs, {
+            onFav: function () { FF.Nav.replace('home'); }
+          });
+          if (favRail) main.appendChild(favRail);
         }
 
-        // Featured games
-        const featuredIds = ['familyQuiz', 'guessCountry', 'memoryMatch', 'letterRush', 'charades', 'quickTap'];
+        const featuredIds = ['bibleQuiz', 'familyQuiz', 'guessCountry', 'memoryMatch', 'letterRush', 'charades', 'quickTap'];
         const featured = featuredIds.map(FF.Games.get).filter(Boolean);
-        main.appendChild(FF.App.sectionTitle('⭐ Featured Games', FF.ui.button('All Games →', { class: 'link-btn', onClick: function () { FF.Nav.go('games'); } })));
-        main.appendChild(FF.App.gameGrid(featured, { large: true }));
+        const featuredRail = FF.App.rail(FF.t('featuredTonight', 'Featured tonight'), featured, {
+          hero: true,
+          action: FF.ui.button(FF.t('allGames', 'All games →'), { class: 'link-btn', onClick: function () { FF.Nav.go('games'); } })
+        });
+        if (featuredRail) main.appendChild(featuredRail);
 
-        // Game Night promo
-        const gn = FF.ui.el('button', { class: 'gamenight-promo', onclick: function () { FF.Nav.go('gamenight'); } });
+        const gn = FF.ui.el('button', {
+          class: 'gamenight-promo',
+          style: { '--art': FF.Assets.artUrl('ui', 'gamenight') },
+          onclick: function () { FF.Nav.go('gamenight'); }
+        });
         gn.appendChild(FF.ui.div('gamenight-promo__icon', '🌙'));
         gn.appendChild(FF.ui.div('gamenight-promo__text', [
-          FF.ui.el('strong', {}, 'GAME NIGHT MODE'),
+          FF.ui.el('strong', {}, FF.t('gameNight', 'Game Night')),
           FF.ui.el('span', {}, 'A multi-round tournament for the whole family. Play 3–10 rounds and crown a champion.')
         ]));
-        gn.appendChild(FF.ui.div('gamenight-promo__cta', 'START →'));
+        gn.appendChild(FF.ui.div('gamenight-promo__cta', 'Start →'));
         main.appendChild(gn);
 
-        // Quick games
-        const quick = FF.Games.all().filter(function (g) { return g.duration <= 3; }).slice(0, 6);
-        main.appendChild(FF.App.sectionTitle('⚡ Quick Games'));
-        main.appendChild(FF.App.gameGrid(quick));
+        const quick = FF.Games.all().filter(function (g) { return g.duration <= 3; }).slice(0, 8);
+        const quickRail = FF.App.rail(FF.t('quickGames', 'Quick games'), quick);
+        if (quickRail) main.appendChild(quickRail);
 
-        // Recently played
         const recents = FF.Recents.get();
         if (recents.length) {
-          const recentGames = recents.map(function (r) { return FF.Games.get(r.id); }).filter(Boolean).slice(0, 6);
-          main.appendChild(FF.App.sectionTitle('🕐 Recently Played'));
-          main.appendChild(FF.App.gameGrid(recentGames));
+          const recentGames = recents.map(function (r) { return FF.Games.get(r.id); }).filter(Boolean).slice(0, 8);
+          const recentRail = FF.App.rail(FF.t('playAgain', 'Play again'), recentGames);
+          if (recentRail) main.appendChild(recentRail);
         }
       },
 
@@ -382,7 +528,19 @@ window.FF = window.FF || {};
         main.appendChild(filterBar);
 
         const list = filter ? all.filter(function (g) { return g.category === filter; }) : all;
-        main.appendChild(FF.App.sectionTitle('🎮 ' + (filter ? (FF.Categories[filter] || {}).name || filter : 'All Games') + ' (' + list.length + ')'));
+        const heading = filter ? ((FF.Categories[filter] || {}).name || filter) : 'All games';
+        const banner = FF.ui.div('page-banner');
+        banner.style.setProperty('--art', filter
+          ? FF.Assets.artUrl('categories', 'cat-' + filter)
+          : FF.Assets.artUrl('ui', 'hero-games'));
+        if (filter) {
+          banner.style.setProperty('--wash', FF.Assets.wash(filter));
+          const catMeta = FF.Categories[filter];
+          if (catMeta && catMeta.color) banner.style.setProperty('--card-color', catMeta.color);
+        }
+        banner.appendChild(FF.ui.el('h2', {}, heading));
+        banner.appendChild(FF.ui.el('p', {}, list.length + ' games ready to play. Pick a poster and go.'));
+        main.appendChild(banner);
         main.appendChild(FF.App.gameGrid(list));
       },
 
@@ -390,15 +548,35 @@ window.FF = window.FF || {};
         const players = FF.Players.get();
         const teams = FF.Teams.get();
 
+        const banner = FF.ui.div('page-banner');
+        banner.style.setProperty('--art', FF.Assets.artUrl('ui', 'players'));
+        banner.appendChild(FF.ui.el('h2', {}, 'Players & teams'));
+        banner.appendChild(FF.ui.el('p', {}, 'Play on your own, or add names and optional photos for a match. Split into teams when you want a showdown.'));
+        main.appendChild(banner);
+
         // Player list
-        main.appendChild(FF.App.sectionTitle('👥 Players (' + players.length + '/' + FF.Players.MAX + ')', FF.ui.button('＋ Add Player', { primary: true, onClick: function () { FF.App.addPlayer(); } })));
+        main.appendChild(FF.App.sectionTitle('Players (' + players.length + '/' + FF.Players.MAX + ')', FF.ui.button('Add player', { primary: true, class: 'btn', onClick: function () { FF.App.addPlayer(); } })));
 
         const list = FF.ui.div('player-list');
         players.forEach(function (p, i) {
           const row = FF.ui.el('div', { class: 'player-row', style: { '--p-color': p.color } });
-          row.appendChild(FF.ui.el('button', { class: 'player-row__avatar', onclick: function () { FF.App.pickAvatar(p.id); }, 'aria-label': 'Change avatar' }, p.avatar));
-          const nameBtn = FF.ui.el('button', { class: 'player-row__name', onclick: function () { FF.App.renamePlayer(p.id); } }, p.name + ' ✏️');
-          row.appendChild(nameBtn);
+          const avaBtn = FF.ui.el('button', { class: 'player-row__avatar', onclick: function () { FF.App.pickAvatar(p.id); }, 'aria-label': 'Change picture' });
+          avaBtn.appendChild(FF.Players.avatarEl(p, 'player-row__face'));
+          row.appendChild(avaBtn);
+          const name = FF.ui.el('input', {
+            type: 'text',
+            class: 'player-row__name-input',
+            value: p.name,
+            maxlength: 24,
+            placeholder: 'Name or team name',
+            'aria-label': 'Player name'
+          });
+          name.addEventListener('input', function () {
+            const next = name.value.trim();
+            if (next) FF.Players.rename(p.id, next);
+            else name.value = p.name;
+          });
+          row.appendChild(name);
           row.appendChild(FF.ui.el('button', { class: 'player-row__color', onclick: function () { FF.App.pickColor(p.id); }, 'aria-label': 'Change colour', style: { background: p.color } }, ''));
           const controls = FF.ui.div('player-row__controls');
           if (i > 0) controls.appendChild(FF.ui.button('↑', { class: 'icon-btn', ariaLabel: 'Move up', onClick: function () { FF.App.movePlayer(i, -1); } }));
@@ -409,7 +587,8 @@ window.FF = window.FF || {};
         });
         main.appendChild(list);
 
-        if (players.length < 2) main.appendChild(FF.ui.div('hint', 'Add at least 2 players for multiplayer fun.'));
+        if (players.length < 2) main.appendChild(FF.ui.div('hint', 'One player is enough for most games. Add another name when you want a match.'));
+        else main.appendChild(FF.ui.div('hint', 'Tap a picture to pick an emoji or upload a photo. Names save as you type.'));
         main.appendChild(FF.ui.button('↺ Reset Players', { class: 'btn', onClick: function () { FF.Players.reset(); FF.Nav.replace('players'); } }));
 
         // Teams
@@ -437,7 +616,27 @@ window.FF = window.FF || {};
           teams.teams.forEach(function (tm) {
             const col = FF.ui.el('div', { class: 'team-col', style: { '--team-color': tm.color } });
             const head = FF.ui.div('team-col__head');
-            head.appendChild(FF.ui.el('button', { class: 'team-col__name', onclick: function () { FF.App.renameTeam(tm.id); } }, tm.name + ' ✏️'));
+            const teamAva = FF.ui.el('button', {
+              class: 'team-col__photo',
+              onclick: function () { FF.Players.pickLook(tm.id, { kind: 'team', onDone: function () { FF.Nav.replace('players'); } }); },
+              'aria-label': 'Change team picture'
+            });
+            teamAva.appendChild(FF.Players.avatarEl({ name: tm.name, avatar: tm.avatar || '👥', photo: tm.photo }, 'team-col__face'));
+            head.appendChild(teamAva);
+            const teamName = FF.ui.el('input', {
+              type: 'text',
+              class: 'team-col__name-input',
+              value: tm.name,
+              maxlength: 24,
+              placeholder: 'Team name',
+              'aria-label': 'Team name'
+            });
+            teamName.addEventListener('input', function () {
+              const next = teamName.value.trim();
+              if (next) FF.Teams.rename(tm.id, next);
+              else teamName.value = tm.name;
+            });
+            head.appendChild(teamName);
             head.appendChild(FF.ui.el('div', { class: 'team-col__dot', style: { background: tm.color } }));
             col.appendChild(head);
 
@@ -445,7 +644,10 @@ window.FF = window.FF || {};
             tm.playerIds.forEach(function (pid) {
               const p = FF.Players.byId(pid);
               if (!p) return;
-              members.appendChild(FF.ui.el('div', { class: 'team-member' }, p.avatar + ' ' + p.name));
+              const member = FF.ui.div('team-member');
+              member.appendChild(FF.Players.avatarEl(p, 'team-member__face'));
+              member.appendChild(FF.ui.span('', ' ' + p.name));
+              members.appendChild(member);
             });
             col.appendChild(members);
 
@@ -466,7 +668,11 @@ window.FF = window.FF || {};
       },
 
       scores: function (main) {
-        main.appendChild(FF.App.sectionTitle('🏆 Family Stats'));
+        const banner = FF.ui.div('page-banner');
+        banner.style.setProperty('--art', FF.Assets.artUrl('ui', 'scores'));
+        banner.appendChild(FF.ui.el('h2', {}, 'Family stats'));
+        banner.appendChild(FF.ui.el('p', {}, 'Wins, streaks and the medals you have unlocked together.'));
+        main.appendChild(banner);
 
         const session = FF.App.session;
         const stats = FF.Stats.get();
@@ -519,18 +725,26 @@ window.FF = window.FF || {};
 
       favorites: function (main) {
         const favs = FF.Favorites.get().map(FF.Games.get).filter(Boolean);
-        main.appendChild(FF.App.sectionTitle('⭐ My Favorites (' + favs.length + ')'));
+        const banner = FF.ui.div('page-banner');
+        banner.style.setProperty('--art', FF.Assets.artUrl('ui', 'favorites'));
+        banner.appendChild(FF.ui.el('h2', {}, 'Favorites'));
+        banner.appendChild(FF.ui.el('p', {}, favs.length ? favs.length + ' games you keep coming back to.' : 'Tap the star on any poster to pin it here.'));
+        main.appendChild(banner);
         if (!favs.length) {
-          main.appendChild(FF.ui.div('empty', 'No favorites yet. Tap the ⭐ on any game card to add it here.'));
-          main.appendChild(FF.ui.button('🎮 Browse Games', { primary: true, onClick: function () { FF.Nav.go('games'); } }));
+          main.appendChild(FF.ui.div('empty', 'No favorites yet. Open any game card and tap the star.'));
+          main.appendChild(FF.ui.button('Browse games', { primary: true, class: 'btn', onClick: function () { FF.Nav.go('games'); } }));
         } else {
           main.appendChild(FF.App.gameGrid(favs));
-          main.appendChild(FF.ui.button('🗑️ Clear Favorites', { class: 'btn', onClick: function () { FF.Favorites.clear(); FF.Nav.replace('favorites'); } }));
+          main.appendChild(FF.ui.button('Clear favorites', { class: 'btn', onClick: function () { FF.Favorites.clear(); FF.Nav.replace('favorites'); } }));
         }
       },
 
       gamenight: function (main) {
-        main.appendChild(FF.App.sectionTitle('🌙 Game Night Setup'));
+        const banner = FF.ui.div('page-banner');
+        banner.style.setProperty('--art', FF.Assets.artUrl('ui', 'gamenight'));
+        banner.appendChild(FF.ui.el('h2', {}, 'Game Night'));
+        banner.appendChild(FF.ui.el('p', {}, 'A multi-round tournament. Pick the length, then let the family fight for the crown.'));
+        main.appendChild(banner);
         const box = FF.ui.div('panel');
         box.appendChild(FF.ui.el('h3', {}, 'Build your tournament'));
 
@@ -562,7 +776,7 @@ window.FF = window.FF || {};
           return seg([{ label: 'Easy', value: 'easy' }, { label: 'Normal', value: 'normal' }, { label: 'Hard', value: 'hard' }], cfg.difficulty, 'difficulty');
         }));
         box.appendChild(row('Per-round timer', function () {
-          return seg([{ label: '10s', value: 10 }, { label: '20s', value: 20 }, { label: '30s', value: 30 }, { label: '60s', value: 60 }], cfg.timer, 'timer');
+          return FF.SettingsUI.duration(cfg.timer, function (s) { cfg.timer = s; }, { allowOff: true });
         }));
 
         const players = FF.Players.get();
@@ -573,16 +787,44 @@ window.FF = window.FF || {};
       },
 
       settings: function (main) {
-        main.appendChild(FF.App.sectionTitle('⚙ Settings'));
+        const head = FF.ui.div('section-head');
+        head.appendChild(FF.App.iconHeading('sliders', 'Settings', 'h2'));
+        main.appendChild(head);
+
+        function segIcon(iconKey, label, active, onClick) {
+          const b = FF.ui.button('', { class: 'seg__btn' + (active ? ' active' : ''), onClick: onClick });
+          b.appendChild(FF.Icons.icon(iconKey));
+          b.appendChild(FF.ui.span('', label));
+          return b;
+        }
+
+        // Language
+        main.appendChild(FF.App.iconHeading('globe', FF.t('language', 'Language')));
+        const langRow = FF.ui.div('settings-row');
+        langRow.appendChild(FF.ui.div('settings-row__label', FF.t('language', 'Language')));
+        const ls = FF.ui.div('seg');
+        if (FF.i18n) {
+          FF.i18n.languages.forEach(function (l) {
+            ls.appendChild(FF.ui.button(l.flag + ' ' + l.name, {
+              class: 'seg__btn' + (FF.i18n.getLang() === l.code ? ' active' : ''),
+              onClick: function () {
+                FF.i18n.setLang(l.code);
+                FF.Nav.replace('settings');
+              }
+            }));
+          });
+        }
+        langRow.appendChild(ls);
+        main.appendChild(langRow);
 
         // Appearance
-        main.appendChild(FF.ui.el('h3', { class: 'settings-group' }, '🎨 Appearance'));
+        main.appendChild(FF.App.iconHeading('paint-brush', 'Appearance'));
         const themeRow = FF.ui.div('settings-row');
         themeRow.appendChild(FF.ui.div('settings-row__label', 'Theme'));
         const ts = FF.ui.div('seg');
-        [['☀️ Light', 'light'], ['🌙 Dark', 'dark'], ['⚙ System', 'system']].forEach(function (opt) {
-          ts.appendChild(FF.ui.button(opt[0], { class: 'seg__btn' + (FF.Theme.getTheme() === opt[1] ? ' active' : ''), onClick: function () { FF.Theme.setTheme(opt[1]); FF.Nav.replace('settings'); } }));
-        });
+        ts.appendChild(segIcon('sun', 'Light', FF.Theme.getTheme() === 'light', function () { FF.Theme.setTheme('light'); FF.Nav.replace('settings'); }));
+        ts.appendChild(segIcon('moon', 'Dark', FF.Theme.getTheme() === 'dark', function () { FF.Theme.setTheme('dark'); FF.Nav.replace('settings'); }));
+        ts.appendChild(segIcon('monitor', 'System', FF.Theme.getTheme() === 'system', function () { FF.Theme.setTheme('system'); FF.Nav.replace('settings'); }));
         themeRow.appendChild(ts);
         main.appendChild(themeRow);
 
@@ -598,6 +840,11 @@ window.FF = window.FF || {};
         });
         accentRow.appendChild(acc);
         main.appendChild(accentRow);
+
+        main.appendChild(FF.App.toggleRow('Mix accent colours', FF.Theme.getMixAccents(), function (on) {
+          FF.Theme.setMixAccents(on);
+        }));
+        main.appendChild(FF.ui.div('hint', 'On: each category keeps its own colour. Off: every card uses your accent colour.'));
 
         const fontRow = FF.ui.div('settings-row');
         fontRow.appendChild(FF.ui.div('settings-row__label', 'Font'));
@@ -615,7 +862,7 @@ window.FF = window.FF || {};
         const iconRow = FF.ui.div('settings-row');
         iconRow.appendChild(FF.ui.div('settings-row__label', 'Icon style'));
         const is = FF.ui.div('seg');
-        [['✨ Custom', 'custom'], ['Phosphor', 'phosphor']].forEach(function (opt) {
+        [['Custom', 'custom'], ['Phosphor', 'phosphor']].forEach(function (opt) {
           is.appendChild(FF.ui.button(opt[0], {
             class: 'seg__btn' + (FF.Icons.getStyle() === opt[1] ? ' active' : ''),
             onClick: function () { FF.Icons.setStyle(opt[1]); FF.Nav.replace('settings'); }
@@ -625,7 +872,7 @@ window.FF = window.FF || {};
         main.appendChild(iconRow);
 
         // Sound
-        main.appendChild(FF.ui.el('h3', { class: 'settings-group' }, '🔊 Sound'));
+        main.appendChild(FF.App.iconHeading('speaker', 'Sound'));
         main.appendChild(FF.App.toggleRow('Sound effects', FF.Settings.get('sound'), function (on) { FF.Audio.setEffects(on); FF.Settings.set('sound', on); }));
         main.appendChild(FF.App.toggleRow('Music', FF.Settings.get('music'), function (on) { FF.Audio.setMusic(on); FF.Settings.set('music', on); }));
         const volRow = FF.ui.div('settings-row');
@@ -635,7 +882,7 @@ window.FF = window.FF || {};
         main.appendChild(volRow);
 
         // Gameplay
-        main.appendChild(FF.ui.el('h3', { class: 'settings-group' }, '🎮 Gameplay'));
+        main.appendChild(FF.App.iconHeading('game-controller', 'Gameplay'));
         const diffRow = FF.ui.div('settings-row');
         diffRow.appendChild(FF.ui.div('settings-row__label', 'Default difficulty'));
         const ds = FF.ui.div('seg');
@@ -646,12 +893,8 @@ window.FF = window.FF || {};
         main.appendChild(diffRow);
 
         const timerRow = FF.ui.div('settings-row');
-        timerRow.appendChild(FF.ui.div('settings-row__label', 'Default timer'));
-        const tsr = FF.ui.div('seg');
-        [['Off', 0], ['10s', 10], ['20s', 20], ['30s', 30], ['60s', 60]].forEach(function (opt) {
-          tsr.appendChild(FF.ui.button(opt[0], { class: 'seg__btn' + (FF.Settings.get('timer') === opt[1] ? ' active' : ''), onClick: function () { FF.Settings.set('timer', opt[1]); FF.Nav.replace('settings'); } }));
-        });
-        timerRow.appendChild(tsr);
+        timerRow.appendChild(FF.ui.div('settings-row__label', 'Default time limit'));
+        timerRow.appendChild(FF.SettingsUI.duration(FF.Settings.get('timer'), function (s) { FF.Settings.set('timer', s); }, { allowOff: true }));
         main.appendChild(timerRow);
 
         const dspRow = FF.ui.div('settings-row');
@@ -665,16 +908,20 @@ window.FF = window.FF || {};
         main.appendChild(FF.App.toggleRow('Random questions', FF.Settings.get('randomQuestions'), function (on) { FF.Settings.set('randomQuestions', on); }));
 
         // Data
-        main.appendChild(FF.ui.el('h3', { class: 'settings-group' }, '🗂️ Data'));
-        main.appendChild(FF.ui.button('Clear favorites', { class: 'btn', onClick: function () { FF.Favorites.clear(); FF.App.toast('Favorites cleared'); } }));
-        main.appendChild(FF.ui.button('Clear recent games', { class: 'btn', onClick: function () { FF.Recents.clear(); FF.App.toast('Recent games cleared'); } }));
-        main.appendChild(FF.ui.button('🎬 Run Demo Mode', { class: 'btn', onClick: function () { FF.App.demo(); } }));
-        main.appendChild(FF.ui.button('🗑️ Reset All Data', { class: 'btn danger', onClick: function () { FF.App.confirmReset(); } }));
+        main.appendChild(FF.App.iconHeading('stack', 'Data'));
+        const dataBtns = FF.ui.div('btn-stack');
+        dataBtns.appendChild(FF.ui.button('Clear favorites', { class: 'btn', onClick: function () { FF.Favorites.clear(); FF.App.toast('Favorites cleared'); } }));
+        dataBtns.appendChild(FF.ui.button('Clear recent games', { class: 'btn', onClick: function () { FF.Recents.clear(); FF.App.toast('Recent games cleared'); } }));
+        dataBtns.appendChild(FF.ui.button('Run Demo Mode', { class: 'btn', onClick: function () { FF.App.demo(); } }));
+        dataBtns.appendChild(FF.ui.button('Reset All Data', { class: 'btn danger', onClick: function () { FF.App.confirmReset(); } }));
+        main.appendChild(dataBtns);
 
         // Credits / About
-        main.appendChild(FF.ui.el('h3', { class: 'settings-group' }, 'ℹ️ Info'));
-        main.appendChild(FF.ui.button('📜 Credits & Sources', { class: 'btn', onClick: function () { FF.Nav.go('credits'); } }));
-        main.appendChild(FF.ui.button('ℹ️ About Family Fun', { class: 'btn', onClick: function () { FF.Nav.go('about'); } }));
+        main.appendChild(FF.App.iconHeading('info', 'Info'));
+        const infoBtns = FF.ui.div('btn-stack');
+        infoBtns.appendChild(FF.ui.button('Credits & Sources', { class: 'btn', onClick: function () { FF.Nav.go('credits'); } }));
+        infoBtns.appendChild(FF.ui.button('About Family Fun', { class: 'btn', onClick: function () { FF.Nav.go('about'); } }));
+        main.appendChild(infoBtns);
       },
 
       credits: function (main) {
@@ -688,6 +935,8 @@ window.FF = window.FF || {};
         box.appendChild(FF.ui.el('p', {}, 'Bundled fonts (Nunito, Fredoka, Baloo 2, Quicksand, Atkinson Hyperlegible) are stored locally in assets/fonts/ and licensed under the SIL Open Font License.'));
         box.appendChild(FF.ui.el('h4', {}, 'Icons'));
         box.appendChild(FF.ui.el('p', {}, 'Menu and game icons use Phosphor Icons (MIT license), bundled in assets/icons/phosphor/ and inlined in js/icons.js. Unicode emoji remain for in-game content.'));
+        box.appendChild(FF.ui.el('h4', {}, 'Word list'));
+        box.appendChild(FF.ui.el('p', {}, 'Word games use a bundled list of common English words (google-10000-english-usa-no-swears, MIT license) plus everyday family words, so real answers are accepted even when they are not in the original short dictionary.'));
         box.appendChild(FF.ui.el('h4', {}, 'Photographs'));
         box.appendChild(FF.ui.el('p', {}, 'Real-world photographs for Guess the Landmark, Guess the Animal, Guess the Food and similar games can be dropped into assets/images/. See the README "Image Download List" for recommended public-domain sources (Wikimedia Commons, Openverse, Unsplash, Pexels) and required attribution.'));
         box.appendChild(FF.ui.el('h4', {}, 'Attribution'));
@@ -737,6 +986,10 @@ window.FF = window.FF || {};
     },
 
     removePlayer: function (id) {
+      if (FF.Players.get().length <= FF.Players.MIN) {
+        FF.App.toast('Keep at least one player for solo games.');
+        return;
+      }
       FF.Players.remove(id);
       FF.Audio.play('click');
       FF.Nav.replace('players');
@@ -749,18 +1002,7 @@ window.FF = window.FF || {};
     },
 
     pickAvatar: function (id) {
-      const current = FF.Players.byId(id).avatar;
-      const overlay = FF.ui.div('modal');
-      const box = FF.ui.div('modal__box');
-      box.appendChild(FF.ui.el('h2', {}, 'Choose Avatar'));
-      const grid = FF.ui.div('avatar-grid');
-      FF.Players.AVATARS.forEach(function (a) {
-        grid.appendChild(FF.ui.button(a, { class: 'avatar-btn' + (a === current ? ' active' : ''), onClick: function () { FF.Players.setAvatar(id, a); FF.Nav.replace('players'); } }));
-      });
-      box.appendChild(grid);
-      box.appendChild(FF.ui.button('Done', { class: 'btn', onClick: function () { FF.Nav.replace('players'); } }));
-      overlay.appendChild(box);
-      document.body.appendChild(overlay);
+      FF.Players.pickLook(id, { onDone: function () { FF.Nav.replace('players'); } });
     },
 
     pickColor: function (id) {

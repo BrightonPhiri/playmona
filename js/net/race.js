@@ -283,11 +283,11 @@ window.FF = window.FF || {};
       };
     },
 
-    scores: function () {
+    scores: function (rounds) {
       var r = room();
       var s = session || lastSession;
       if (!r || !s) return {};
-      return FF.RaceRules.scores(r.rounds || {}, FF.Room.racePlayers(), s.pointsFor, s.mode);
+      return FF.RaceRules.scores(rounds || r.rounds || {}, FF.Room.racePlayers(), s.pointsFor, s.mode);
     },
 
     /* Push the derived scores into FF.Scoring so the shell's header
@@ -353,8 +353,17 @@ window.FF = window.FF || {};
     },
 
     syncScoring: function () {
-      if (!session || !room()) return;
+      var s = session || lastSession;
+      var r = room();
+      if (!s || !r) return;
       var scores = this.scores();
+      if (r.meta && r.meta.mode === 'teams') {
+        FF.Room.scorers().forEach(function (team) {
+          scores[team.id] = (team.players || []).reduce(function (total, uid) {
+            return total + (scores[uid] || 0);
+          }, 0);
+        });
+      }
       Object.keys(scores).forEach(function (id) {
         if (FF.Scoring && typeof FF.Scoring.set === 'function') {
           FF.Scoring.set(id, scores[id]);

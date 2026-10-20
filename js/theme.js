@@ -69,11 +69,18 @@ window.FF = window.FF || {};
       return this.fonts[0].family;
     },
 
+    getMixAccents: function () { return !!FF.Storage.get('mixAccents', false); },
+    setMixAccents: function (on) {
+      FF.Storage.set('mixAccents', !!on);
+      this.apply();
+    },
+
     apply: function () {
       const resolved = this.resolvedTheme();
       document.documentElement.setAttribute('data-theme', resolved);
       document.documentElement.setAttribute('data-accent', this.getAccent());
       document.documentElement.setAttribute('data-font', this.getFont());
+      document.documentElement.setAttribute('data-mix-accents', this.getMixAccents() ? '1' : '0');
       document.documentElement.style.setProperty('--font-ui', this.getFontFamily());
       if (typeof FF.Settings !== 'undefined') {
         document.documentElement.setAttribute('data-reduce', FF.Settings.get('reduceMotion') ? '1' : '0');

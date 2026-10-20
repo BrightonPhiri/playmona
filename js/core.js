@@ -37,7 +37,13 @@ window.FF = window.FF || {};
         else if (k === 'html') node.innerHTML = v;
         else if (k === 'text') node.textContent = v;
         else if (k === 'dataset') { if (typeof v === 'object') Object.assign(node.dataset, v); }
-        else if (k === 'style' && typeof v === 'object') Object.assign(node.style, v);
+        else if (k === 'style' && typeof v === 'object') {
+          for (const sk in v) {
+            if (!Object.prototype.hasOwnProperty.call(v, sk)) continue;
+            if (sk.indexOf('--') === 0) node.style.setProperty(sk, v[sk]);
+            else node.style[sk] = v[sk];
+          }
+        }
         else if (k === 'value') node.value = v;
         else if (k === 'checked') node.checked = !!v;
         else if (k === 'disabled') node.disabled = !!v;
@@ -64,8 +70,13 @@ window.FF = window.FF || {};
     span: function (cls, children) { return el('span', cls ? { class: cls } : null, children); },
     button: function (label, opts) {
       opts = opts || {};
+      var cls = String(opts.class || '').replace(/\s+/g, ' ').trim();
+      var special = /(?:^|\s)(nav-link|seg__btn|tool-btn|shell-btn|icon-btn|switch|hero-btn|filter-chip|mini-btn|link-btn|fav-btn|host-btn|avatar-btn|rail__btn|color-btn|accent-swatch|font-option|player-row)/.test(cls);
+      if (!special && !/(?:^|\s)btn(?:\s|$)/.test(cls)) cls = ('btn ' + cls).trim();
+      if (opts.primary && cls.indexOf('btn-primary') === -1) cls += ' btn-primary';
+      if (opts.icon && cls.indexOf('btn-icon') === -1) cls += ' btn-icon';
       const b = el('button', {
-        class: (opts.class || '') + (opts.primary ? ' btn-primary' : '') + (opts.icon ? ' btn-icon' : ''),
+        class: cls,
         tabindex: 0,
         onclick: opts.onClick,
         'aria-label': opts.ariaLabel || (typeof label === 'string' ? label : null)

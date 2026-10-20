@@ -66,6 +66,21 @@ test('offline players do not block exhaustion', function () {
   assertEqual(r.reason, 'exhausted');
 });
 
+test('players with stale presence do not block exhaustion', function () {
+  const FF = loadFF(['js/net/raceRules.js']);
+  const r = FF.RaceRules.settle(
+    round({ u1: { choice: 0, correct: false, ms: 900 } }),
+    [
+      { uid: 'u1', online: true, lastSeen: 49000 },
+      { uid: 'u2', online: true, lastSeen: 10000 }
+    ],
+    0,
+    50000
+  );
+  assertEqual(r.settled, true, 'u2 has not been seen for 40 seconds');
+  assertEqual(r.reason, 'exhausted');
+});
+
 test('the timer expires the round', function () {
   const FF = loadFF(['js/net/raceRules.js']);
   const notYet = FF.RaceRules.settle(round({}, null, 1000), players(3), 20000, 20999);
@@ -135,6 +150,17 @@ test('a winner with no recorded answer scores zero, not NaN', function () {
   const rounds = { 0: round({}, 'u1') };   // corrupt/partial data
   const scores = FF.RaceRules.scores(rounds, players(2), function (a) { return 100; });
   assertEqual(scores.u1, 0, 'missing answer data must not produce NaN');
+});
+
+test('scores are not ready while a winner answer is missing', function () {
+  const FF = loadFF(['js/net/raceRules.js']);
+  assertEqual(FF.RaceRules.scoresReady({
+    0: round({}, 'u1')
+  }), false);
+  assertEqual(FF.RaceRules.scoresReady({
+    0: round({ u1: { correct: true, ms: 700 } }, 'u1'),
+    1: round({}, FF.RaceRules.NOBODY)
+  }), true);
 });
 
 test('a correct answer awaiting the winner slot is not exhaustion', function () {

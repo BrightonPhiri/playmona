@@ -12,6 +12,7 @@ const ROOT = path.join(__dirname, '..');
 const ORDER = [
   'js/core.js',
   'js/storage.js',
+  'js/i18n.js',
   'js/theme.js',
   'js/audio.js',
   'js/timer.js',
@@ -25,10 +26,12 @@ const ORDER = [
   'js/navigation.js',
   'js/data/quiz.js',
   'js/data/words.js',
+  'js/data/wordlist.js',
   'js/data/countries.js',
   'js/data/party.js',
   'js/data/visual.js',
   'js/data/visual2.js',
+  'js/data/bible.js',
   'js/games/wordGames.js',
   'js/games/quizGames.js',
   'js/games/memoryGames.js',
@@ -38,7 +41,8 @@ const ORDER = [
   'js/games/partyGames.js',
   'js/games/visualGames.js',
   'js/games/puzzleGames.js',
-  'js/games/worldGames.js'
+  'js/games/worldGames.js',
+  'js/games/bibleGames.js'
 ];
 
 const sandbox = {

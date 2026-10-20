@@ -1,5 +1,11 @@
 # IMAGE GENERATION PROMPT LIST — Family Fun
 
+Hub UI (heroes, posters, category tiles) has a dedicated prompt list: **`AI_ART_PROMPTS.md`**. Use that for the new look.
+
+The prompts below are for **in-game illustrations** (animals, food, landmarks, etc.).
+
+---
+
 The shipped illustrations are original, flat, family-friendly **SVG** artwork. If you regenerate
 any of them (or want raster versions), use these prompts. All images must be: family-friendly,
 high contrast, clear, recognisable, TV-suitable, **no text**, **no watermark**.

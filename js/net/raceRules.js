@@ -10,6 +10,8 @@ window.FF = window.FF || {};
 (function () {
   'use strict';
 
+  var PRESENCE_STALE_MS = 20000;
+
   function answersOf(round) {
     return (round && round.answers) ? round.answers : {};
   }
@@ -17,6 +19,7 @@ window.FF = window.FF || {};
   FF.RaceRules = {
     /* Sentinel stored in the winner slot when a round ends unwon. */
     NOBODY: '-',
+    PRESENCE_STALE_MS: PRESENCE_STALE_MS,
 
     /* The fastest correct answer in a round, or null. Used by reaction
        games, where the winner must be the quickest recorded tap rather
@@ -73,7 +76,10 @@ window.FF = window.FF || {};
       }
 
       var answers = answersOf(round);
-      var active = players.filter(function (p) { return p && p.online !== false; });
+      var active = players.filter(function (p) {
+        if (!p || p.online === false) return false;
+        return p.lastSeen == null || (now - p.lastSeen) <= PRESENCE_STALE_MS;
+      });
       var everyoneAnswered = active.length && active.every(function (p) {
         return Object.prototype.hasOwnProperty.call(answers, p.uid);
       });
@@ -134,6 +140,16 @@ window.FF = window.FF || {};
     lockedOut: function (round, uid) {
       var a = answersOf(round)[uid];
       return !!(a && a.correct === false);
+    },
+
+    /* A winner and its answer are written separately. Results are safe to
+       publish only after every winner has its scoring answer available. */
+    scoresReady: function (rounds) {
+      return Object.keys(rounds || {}).every(function (key) {
+        var round = rounds[key];
+        if (!round || !round.winner || round.winner === FF.RaceRules.NOBODY) return true;
+        return Object.prototype.hasOwnProperty.call(answersOf(round), round.winner);
+      });
     },
 
     /* Scores are always derived, never stored, so devices cannot drift.

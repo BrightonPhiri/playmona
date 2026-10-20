@@ -15,8 +15,11 @@ window.FF = window.FF || {};
   var APP_VERSION = '1.1.0';
   // How long everyone gets to look up from their phone before round one.
   var COUNTDOWN_MS = 10000;
+  var HEARTBEAT_MS = 10000;
+  var PRESENCE_STALE_MS = 20000;
 
   var state = null;
+  var heartbeat = null;
   var handlers = { players: [], meta: [], rounds: [], error: [] };
   var unsubs = [];
 
@@ -99,11 +102,29 @@ window.FF = window.FF || {};
     return FF.Net.firebase({ root: root });
   }
 
+  function playersViewSignature(players, now) {
+    return Object.keys(players || {}).sort().map(function (uid) {
+      var p = players[uid] || {};
+      return [
+        uid, p.name || '', p.avatar || '', p.color || '',
+        p.teamId || '', p.joinedAt || 0, playerIsOnline(p, now)
+      ].join('|');
+    }).join('~');
+  }
+
+  function playerIsOnline(player, now) {
+    if (!player || player.online === false) return false;
+    return player.lastSeen == null || (now - player.lastSeen) <= PRESENCE_STALE_MS;
+  }
+
   function watchAll(transport) {
     unsubs.push(transport.watch('players', function (v) {
       if (!state) return;
+      var now = transport.serverNow();
+      var before = state._playersViewSignature || playersViewSignature(state.players, now);
       state.players = v || {};
-      emit('players', state.players);
+      state._playersViewSignature = playersViewSignature(state.players, now);
+      if (state._playersViewSignature !== before) emit('players', state.players);
       FF.Room.claimHost();
     }));
     unsubs.push(transport.watch('meta', function (v) {
@@ -119,24 +140,57 @@ window.FF = window.FF || {};
     }));
     if (transport.watchConnection) {
       unsubs.push(transport.watchConnection(function (online) {
+        if (online && state && state.transport === transport) {
+          restorePresence(transport, state.uid);
+        }
         if (FF.RoomUI && FF.RoomUI.banner) {
           FF.RoomUI.banner(online ? null : '📡 Reconnecting…');
         }
       }));
     }
+    startHeartbeat();
   }
 
   function registerPresence(transport, uid, profile) {
+    var now = transport.serverNow();
     return transport.set('players/' + uid, {
       name: profile.name,
       avatar: profile.avatar,
       color: profile.color,
       teamId: profile.teamId || null,
-      joinedAt: transport.serverNow(),
+      joinedAt: now,
+      lastSeen: now,
       online: true
     }).then(function () {
       return transport.onDisconnectSet('players/' + uid + '/online', false);
     });
+  }
+
+  function restorePresence(transport, uid) {
+    return transport.update('players/' + uid, {
+      online: true,
+      lastSeen: transport.serverNow()
+    }).then(function () {
+      return transport.onDisconnectSet('players/' + uid + '/online', false);
+    }).catch(function () {});
+  }
+
+  function stopHeartbeat() {
+    if (heartbeat != null) {
+      clearInterval(heartbeat);
+      heartbeat = null;
+    }
+  }
+
+  function startHeartbeat() {
+    stopHeartbeat();
+    heartbeat = setInterval(function () {
+      if (!state) return;
+      state.transport.update('players/' + state.uid, {
+        online: true,
+        lastSeen: state.transport.serverNow()
+      }).catch(function () {});
+    }, HEARTBEAT_MS);
   }
 
   FF.Room = {
@@ -154,6 +208,11 @@ window.FF = window.FF || {};
 
     on: function (event, cb) {
       (handlers[event] = handlers[event] || []).push(cb);
+      if (state && Object.prototype.hasOwnProperty.call(state, event)) {
+        Promise.resolve().then(function () {
+          if ((handlers[event] || []).indexOf(cb) !== -1 && state) cb(state[event]);
+        });
+      }
       return function () {
         var list = handlers[event] || [];
         var i = list.indexOf(cb);
@@ -260,16 +319,18 @@ window.FF = window.FF || {};
     racePlayers: function () {
       if (!state) return [];
       var players = state.players || {};
+      var now = state.transport.serverNow();
       return Object.keys(players).map(function (uid) {
         var p = players[uid] || {};
         return {
           uid: uid,
-          online: p.online !== false,
+          online: playerIsOnline(p, now),
           name: p.name || 'Player',
           avatar: p.avatar || '😀',
           color: p.color || '#8b5cf6',
           teamId: p.teamId || null,
-          joinedAt: p.joinedAt || 0
+          joinedAt: p.joinedAt || 0,
+          lastSeen: p.lastSeen == null ? null : p.lastSeen
         };
       });
     },
@@ -303,7 +364,8 @@ window.FF = window.FF || {};
       if (!state || !state.meta) return Promise.resolve();
       var hostUid = state.meta.hostUid;
       var host = (state.players || {})[hostUid];
-      if (host && host.online !== false) return Promise.resolve();
+      var now = state.transport.serverNow();
+      if (playerIsOnline(host, now)) return Promise.resolve();
 
       var online = this.racePlayers().filter(function (p) { return p.online !== false; });
       if (!online.length) return Promise.resolve();
@@ -316,7 +378,7 @@ window.FF = window.FF || {};
       return state.transport.transaction('meta/hostUid', function (current) {
         var cur = players[current];
         // Only take over if the recorded host really is gone.
-        return (cur && cur.online !== false) ? undefined : myUid;
+        return playerIsOnline(cur, now) ? undefined : myUid;
       }).then(function (res) {
         if (res.committed && state) state.isHost = true;
       });
@@ -326,29 +388,47 @@ window.FF = window.FF || {};
        fresh seed is essential: leftover rounds from the previous game
        would settle the new one instantly, and a reused seed would deal
        the same questions again. */
-    startGame: function (gameId) {
-      if (!state || !state.isHost) return Promise.resolve();
+    startGame: function (gameId, settings) {
+      if (!state) return Promise.reject(new Error('Not in a room.'));
+      if (!state.isHost) return Promise.reject(new Error('Only the room host can start a game.'));
       var transport = state.transport;
+      var payload = {
+        seed: FF.Random.newSeed(),
+        gameId: gameId,
+        status: 'playing',
+        startAt: transport.serverNow() + COUNTDOWN_MS,
+        endedAt: null,
+        results: null
+      };
+      if (settings) payload.settings = settings;
       return transport.set('rounds', null).then(function () {
-        return transport.update('meta', {
-          seed: FF.Random.newSeed(),
-          gameId: gameId,
-          status: 'playing',
-          // A shared instant for the game to begin, so every device counts
-          // down to the same moment and starts together.
-          startAt: transport.serverNow() + COUNTDOWN_MS
-        });
+        return transport.update('meta', payload);
       });
     },
 
+    endGame: function (results) {
+      if (!state) return Promise.reject(new Error('Not in a room.'));
+      if (!state.isHost) return Promise.resolve();
+      var patch = {
+        status: 'ended',
+        endedAt: state.transport.serverNow()
+      };
+      if (results) patch.results = results;
+      return state.transport.update('meta', patch);
+    },
+
     playAgain: function () {
-      if (!state || !state.isHost) return Promise.resolve();
+      if (!state) return Promise.reject(new Error('Not in a room.'));
+      if (!state.isHost) return Promise.reject(new Error('Only the room host can restart a game.'));
       var transport = state.transport;
       return transport.set('rounds', null).then(function () {
         return transport.update('meta', {
           seed: FF.Random.newSeed(),
           status: 'lobby',
-          gameId: null
+          gameId: null,
+          startAt: null,
+          endedAt: null,
+          results: null
         });
       });
     },
@@ -356,6 +436,7 @@ window.FF = window.FF || {};
     leave: function () {
       if (!state) return;
       var s = state;
+      stopHeartbeat();
       unsubs.slice().forEach(function (off) { try { off(); } catch (e) {} });
       unsubs = [];
       this.offAll();

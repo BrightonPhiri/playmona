@@ -8,6 +8,7 @@ window.FF = window.FF || {};
   'use strict';
 
   var ONLINE_GAMES = [
+    'bibleQuiz',
     'whereInWorld', 'mapChallenge', 'capitalChallenge', 'guessFlag',
     'guessCountry', 'guessLandmark', 'guessAnimal', 'guessFood',
     'guessObject', 'guessSport', 'guessVehicle',
@@ -132,12 +133,77 @@ window.FF = window.FF || {};
   function playerChips(players, myUid) {
     var list = FF.ui.div('rm-players');
     players.forEach(function (p) {
-      list.appendChild(FF.ui.div('rm-player' + (p.online ? '' : ' rm-player--off'), [
-        FF.ui.span('rm-player__ava', p.avatar || '😀'),
+      var isSpk = FF.Voice && FF.Voice.isSpeaking(p.uid);
+      var chip = FF.ui.div('rm-player' + (p.online ? '' : ' rm-player--off') + (isSpk ? ' rm-player--speaking' : ''), [
+        FF.ui.span('rm-player__ava' + (isSpk ? ' rm-player__ava--speaking' : ''), p.avatar || '😀'),
         p.name + (p.uid === myUid ? ' (you)' : '') + (p.online ? '' : ' — offline')
-      ]));
+      ]);
+      chip.dataset.uid = p.uid;
+      list.appendChild(chip);
     });
     return list;
+  }
+
+  function voicePanel(renderFn) {
+    if (!FF.Voice || !FF.Voice.isSupported()) return null;
+    var vWrap = FF.ui.el('div', { class: 'panel rm-voice', style: { padding: '14px 18px', borderRadius: '18px', background: 'var(--surface)', border: '2px solid var(--border)', margin: '6px 0' } });
+    var topRow = FF.ui.div('rm-row', { style: { justifyContent: 'space-between', marginBottom: '8px' } });
+    topRow.appendChild(FF.ui.el('strong', { style: { display: 'inline-flex', alignItems: 'center', gap: '6px' } }, [
+      document.createTextNode('🎙️ ' + FF.t('voiceChatOptional', 'Voice Chat (Optional)'))
+    ]));
+    if (FF.Voice.isActive()) {
+      var peers = FF.Voice.peers();
+      topRow.appendChild(FF.ui.el('span', { class: 'meta-chip', style: { background: 'var(--success)', color: '#fff', fontWeight: '800' } }, '🟢 ' + (peers.length + 1) + ' in chat'));
+    }
+    vWrap.appendChild(topRow);
+
+    var ctrlRow = FF.ui.div('rm-row', { style: { gap: '8px', justifyContent: 'center', flexWrap: 'wrap' } });
+    if (!FF.Voice.isActive()) {
+      var joinBtn = FF.ui.button('🎙️ ' + FF.t('joinVoice', 'Join Voice Chat'), {
+        class: 'btn btn-primary',
+        onClick: function () {
+          joinBtn.disabled = true;
+          FF.Voice.join().then(function () {
+            FF.Audio.play('select');
+            renderFn();
+          }).catch(function (err) {
+            joinBtn.disabled = false;
+            alert(err.message || 'Could not join voice chat.');
+          });
+        }
+      });
+      ctrlRow.appendChild(joinBtn);
+    } else {
+      var muteBtn = FF.ui.button(FF.Voice.isMuted() ? '🔇 ' + FF.t('micUnmute', 'Unmute Mic') : '🎙️ ' + FF.t('micMute', 'Mute Mic'), {
+        class: 'btn' + (FF.Voice.isMuted() ? ' danger' : ''),
+        onClick: function () {
+          FF.Voice.toggleMute();
+          FF.Audio.play('click');
+          renderFn();
+        }
+      });
+      var deafBtn = FF.ui.button(FF.Voice.isDeafened() ? '🔊 ' + FF.t('undeafen', 'Undeafen') : '🎧 ' + FF.t('deafen', 'Deafen'), {
+        class: 'btn',
+        onClick: function () {
+          FF.Voice.toggleDeafen();
+          FF.Audio.play('click');
+          renderFn();
+        }
+      });
+      var leaveVoiceBtn = FF.ui.button('🚪 ' + FF.t('leaveVoice', 'Leave Voice'), {
+        class: 'btn',
+        onClick: function () {
+          FF.Voice.leave();
+          FF.Audio.play('click');
+          renderFn();
+        }
+      });
+      ctrlRow.appendChild(muteBtn);
+      ctrlRow.appendChild(deafBtn);
+      ctrlRow.appendChild(leaveVoiceBtn);
+    }
+    vWrap.appendChild(ctrlRow);
+    return vWrap;
   }
 
   var LOAD_EMOJI = ['🎮', '🎲', '🧩', '🎯', '🌍', '🎪', '🔠', '🥇'];
@@ -351,6 +417,32 @@ window.FF = window.FF || {};
       // Remembered across re-renders so an arriving player does not reset
       // the host's choice.
       var chosen = self._lastGame || ONLINE_GAMES[0];
+      if (!self._roomSettings) {
+        self._roomSettings = {
+          difficulty: (FF.Settings && FF.Settings.get('difficulty')) || 'normal',
+          length: (FF.Settings && FF.Settings.get('length')) || 'normal',
+          timer: FF.Settings ? FF.Settings.get('timer') : 20
+        };
+      }
+      var rs = self._roomSettings;
+
+      function settingRow(label, node) {
+        var r = FF.ui.div('settings-row');
+        r.appendChild(FF.ui.div('settings-row__label', label));
+        r.appendChild(node);
+        return r;
+      }
+
+      function segs(opts, key) {
+        var wrap = FF.ui.div('seg');
+        opts.forEach(function (o) {
+          wrap.appendChild(FF.ui.button(o[0], {
+            class: 'seg__btn' + (rs[key] === o[1] ? ' active' : ''),
+            onClick: function () { rs[key] = o[1]; render(); }
+          }));
+        });
+        return wrap;
+      }
 
       function gameGrid(onPick) {
         var grid = FF.ui.div('rm-games');
@@ -415,25 +507,43 @@ window.FF = window.FF || {};
           playerChips(players, s.uid)
         ];
 
+        var vPanel = voicePanel(render);
+        if (vPanel) children.push(vPanel);
+
         if (s.isHost) {
           var def = FF.Games.get(chosen);
           children.push(FF.ui.el('h2', { class: 'rm-subtitle' }, 'Pick a game'));
           children.push(gameGrid(render));
           if (def) children.push(FF.ui.div('rm-hint rm-chosen', def.description || ''));
+          children.push(FF.ui.el('h3', { class: 'settings-group' }, 'Before you start'));
+          children.push(settingRow('Difficulty', segs([['Easy', 'easy'], ['Normal', 'normal'], ['Hard', 'hard']], 'difficulty')));
+          children.push(settingRow('Game length', segs([['Quick', 'quick'], ['Short', 'short'], ['Normal', 'normal'], ['Long', 'long']], 'length')));
+          children.push(settingRow('Time limit', FF.SettingsUI.duration(rs.timer, function (v) { rs.timer = v; }, { allowOff: true })));
+          children.push(FF.ui.div('rm-hint', 'These settings apply to everyone in the room.'));
           children.push(FF.ui.button('▶ START ' + (def ? def.name.toUpperCase() : 'GAME'), {
             class: 'btn btn-lg', primary: true,
             onClick: function () {
               FF.Audio.play('roundStart');
-              FF.Room.startGame(chosen);
+              FF.Room.startGame(chosen, {
+                difficulty: rs.difficulty,
+                length: rs.length,
+                timer: rs.timer
+              }).catch(function (err) {
+                self.showError(main, (err && err.message) || 'The game could not be started.');
+              });
             }
           }));
         } else {
-          children.push(FF.ui.div('rm-hint', '⏳ Waiting for the host to start…'));
+          children.push(FF.ui.div('rm-hint', '⏳ Waiting for the host to pick a game and settings…'));
         }
 
-        children.push(FF.ui.button('🚪 Leave room', {
+        children.push(FF.ui.button('🚪 ' + FF.t('leaveRoom', 'Leave room'), {
           class: 'btn btn-lg',
-          onClick: function () { FF.Room.leave(); self.showHome(main); }
+          onClick: function () {
+            if (FF.Voice) FF.Voice.leave();
+            FF.Room.leave();
+            self.showHome(main);
+          }
         }));
 
         main.appendChild(panel(children));
@@ -446,6 +556,17 @@ window.FF = window.FF || {};
           self.startWhenReady(main, meta);
         }
       });
+      if (FF.Voice) {
+        FF.Voice.on('change', render);
+        FF.Voice.on('speaking', function (ev) {
+          var chip = main.querySelector('.rm-player[data-uid="' + ev.uid + '"]');
+          if (chip) {
+            chip.classList.toggle('rm-player--speaking', !!ev.speaking);
+            var ava = chip.querySelector('.rm-player__ava');
+            if (ava) ava.classList.toggle('rm-player__ava--speaking', !!ev.speaking);
+          }
+        });
+      }
       render();
     },
 
@@ -455,6 +576,8 @@ window.FF = window.FF || {};
       ensureStyles();
       var s = FF.Room.current();
       if (!s) return;
+      var startToken = String(meta.startAt || 0) + ':' + String(meta.gameId || '');
+      if (this._lastStartAt === startToken) return;
       if (this._starting) return;
 
       var def = FF.Games.get(meta.gameId);
@@ -463,7 +586,17 @@ window.FF = window.FF || {};
 
       function launch() {
         FF.RoomUI._starting = false;
-        FF.GameFlow.launch(meta.gameId, { skipIntro: true, room: true });
+        FF.RoomUI._lastStartAt = startToken;
+        FF.Room.offAll();
+        var set = (meta && meta.settings) || {};
+        FF.GameFlow.launch(meta.gameId, {
+          skipIntro: true,
+          room: true,
+          roomStartAt: meta.startAt,
+          difficulty: set.difficulty,
+          length: set.length,
+          timer: set.timer != null ? set.timer : undefined
+        });
       }
 
       if (!startAt || serverNow() >= startAt) { launch(); return; }
@@ -538,7 +671,12 @@ window.FF = window.FF || {};
         if (state.isHost) {
           children.push(FF.ui.button('🔄 PLAY AGAIN', {
             class: 'btn btn-lg', primary: true,
-            onClick: function () { FF.Audio.play('click'); FF.Room.playAgain(); }
+            onClick: function () {
+              FF.Audio.play('click');
+              FF.Room.playAgain().catch(function (err) {
+                self.showError(main, (err && err.message) || 'The room could not be restarted.');
+              });
+            }
           }));
         } else {
           children.push(FF.ui.div('rm-hint', '⏳ Waiting for the host…'));
@@ -556,6 +694,7 @@ window.FF = window.FF || {};
       // Play Again returns everyone to the lobby together.
       FF.Room.on('meta', function (meta) {
         if (meta && meta.status === 'lobby') self.showLobby(main);
+        else if (meta && meta.status === 'playing' && meta.gameId) self.startWhenReady(main, meta);
       });
       FF.Room.on('players', render);
       render();

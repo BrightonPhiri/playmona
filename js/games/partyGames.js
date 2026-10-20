@@ -182,6 +182,14 @@ window.FF = window.FF || {};
     var animate = !!api.config.animations;
     var b = bonusMul(api.config.difficulty);
     var basePts = opts.points;
+    var gameEnded = false;
+
+    if (api.config.timer > 0) {
+      api.shell.setTimer(api.config.timer, function () {
+        if (gameEnded) return;
+        finish();
+      });
+    }
 
     function playRound(index) {
       if (index >= rounds.length) { finish(); return; }
@@ -282,6 +290,9 @@ window.FF = window.FF || {};
     }
 
     function finish() {
+      if (gameEnded) return;
+      gameEnded = true;
+      if (api.shell && api.shell.hideTimer) api.shell.hideTimer();
       var ranked = api.scoring.ranked();
       api.end({
         results: ranked,
@@ -291,8 +302,6 @@ window.FF = window.FF || {};
 
     playRound(0);
   }
-
-  /* ============ Who Is Most Likely? ============ */
 
   function runWhoIsMostLikely(api) {
     ensureStyle();
@@ -310,6 +319,11 @@ window.FF = window.FF || {};
     var rounds = pickRounds(data, 8);
     var animate = !!api.config.animations;
     var b = bonusMul(api.config.difficulty);
+    var ended = false;
+
+    if (api.config.timer > 0) {
+      api.shell.setTimer(api.config.timer, function () { finish(); });
+    }
 
     function playRound(index) {
       if (index >= rounds.length) { finish(); return; }
@@ -423,6 +437,9 @@ window.FF = window.FF || {};
     }
 
     function finish() {
+      if (ended) return;
+      ended = true;
+      if (api.shell && api.shell.hideTimer) api.shell.hideTimer();
       var ranked = api.scoring.ranked();
       api.end({
         results: ranked,
@@ -441,11 +458,11 @@ window.FF = window.FF || {};
     description: 'Pick between two wild options — side with the crowd to score!',
     category: 'party',
     icon: '🤔',
-    players: [2, 8],
+    players: [1, 8],
     difficulty: 'Easy',
     duration: 5,
     tags: ['voting', 'party'],
-    modes: ['everyone', 'team'],
+    modes: ['solo', 'everyone', 'team'],
     defaultMode: 'everyone',
     howToPlay: [
       'Read the two "Would you rather" options.',
@@ -499,11 +516,11 @@ window.FF = window.FF || {};
     description: 'A lightning round of quick either-or picks. Go with the majority to win!',
     category: 'party',
     icon: '⚡',
-    players: [2, 8],
+    players: [1, 8],
     difficulty: 'Easy',
     duration: 4,
     tags: ['quick', 'voting'],
-    modes: ['everyone'],
+    modes: ['solo', 'everyone'],
     defaultMode: 'everyone',
     howToPlay: [
       'See two emoji choices.',

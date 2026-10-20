@@ -1,5 +1,11 @@
 # ICON GENERATION PROMPTS — Family Fun
 
+**Prefer the illustrated set?** Full copy-paste prompts for every hub background, category tile, game poster and 3D icon live in **`AI_ART_PROMPTS.md`**. Drop those files into `assets/images/` and they appear automatically.
+
+The rest of this file is only if you want to regenerate the **bundled 24×24 SVG** glyphs.
+
+---
+
 Family Fun ships with **two** icon styles, both local SVG:
 
 | Style | Default? | Where it lives | Look |

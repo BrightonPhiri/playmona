@@ -60,6 +60,43 @@ window.FF = window.FF || {};
 
     svgUri: svgToDataUri,
 
+    // Optional UI artwork. Missing files are fine: CSS falls back to a
+    // category colour wash so the hub never looks broken.
+    artPath: function (folder, id) {
+      return 'assets/images/' + folder + '/' + id + '.webp';
+    },
+    // Absolute url() so CSS custom properties in css/styles.css do not
+    // resolve against the stylesheet folder (css/assets/images/...).
+    cssUrl: function (relPath) {
+      var href = relPath;
+      try {
+        if (typeof URL === 'function' && document.baseURI) {
+          href = new URL(relPath, document.baseURI).href;
+        }
+      } catch (e) {
+        href = '../' + relPath;
+      }
+      return 'url("' + href.replace(/"/g, '\\"') + '")';
+    },
+    artUrl: function (folder, id) {
+      return this.cssUrl(this.artPath(folder, id));
+    },
+    // Category colour wash used behind (or instead of) a cover photo.
+    wash: function (category) {
+      const washes = {
+        words:    'linear-gradient(160deg, #6d4aff 0%, #24145a 58%, #120a28 100%)',
+        quiz:     'linear-gradient(160deg, #3b82f6 0%, #12305f 58%, #0a182e 100%)',
+        visual:   'linear-gradient(160deg, #10b981 0%, #0f3d36 58%, #08201c 100%)',
+        memory:   'linear-gradient(160deg, #f97316 0%, #5a2a0c 58%, #2a1408 100%)',
+        reaction: 'linear-gradient(160deg, #ef4444 0%, #5a1218 58%, #2a080c 100%)',
+        creative: 'linear-gradient(160deg, #ec4899 0%, #5a1640 58%, #2a0c1c 100%)',
+        numbers:  'linear-gradient(160deg, #22d3ee 0%, #0d3d4a 58%, #071c24 100%)',
+        party:    'linear-gradient(160deg, #eab308 0%, #5a3d08 58%, #2a1c06 100%)',
+        world:    'linear-gradient(160deg, #14b8a6 0%, #0d3d38 58%, #071c1a 100%)'
+      };
+      return washes[category] || 'linear-gradient(160deg, var(--accent) 0%, #121826 100%)';
+    },
+
     // Light preloading of a list of image file paths (best effort).
     preload: function (paths, onProgress) {
       if (!paths || !paths.length) { if (onProgress) onProgress(1); return; }

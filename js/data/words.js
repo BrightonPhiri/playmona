@@ -243,4 +243,79 @@ window.FF = window.FF || {};
       { size: 9, grid: [['P','I','A','N','O',null,'C','O','W'],['L',null,null,null,'C',null,'A',null,'A'],['A',null,null,'D','E','S','K',null,'T'],['N',null,null,null,'A',null,'E',null,'E'],['T',null,'W','I','N','D',null,null,'R'],[null,null,null,null,null,'O',null,null,null],[null,null,null,null,null,'O',null,null,null],[null,null,null,null,null,'R',null,null,null],[null,null,null,null,null,null,null,null,null]], clues: { across: [ { num: 1, row: 0, col: 0, clue: 'A musical instrument with keys' }, { num: 6, row: 0, col: 6, clue: 'A farm animal that gives milk' }, { num: 14, row: 2, col: 3, clue: 'You write at it in school' }, { num: 22, row: 4, col: 2, clue: 'Moves the leaves' } ], down: [ { num: 1, row: 0, col: 0, clue: 'A living thing that grows' }, { num: 5, row: 0, col: 4, clue: 'A huge body of salt water' }, { num: 6, row: 0, col: 6, clue: 'Sweet treat for birthdays' }, { num: 8, row: 0, col: 8, clue: 'You drink it every day' }, { num: 24, row: 4, col: 5, clue: 'You open it to enter' } ] } }
     ]
   };
+
+  /* Everyday family / kids words that a 10k-news list often misses. */
+  var FAMILY = ('lego ninja cupcake trampoline playdough crayon lunchbox bedtime grandma grandpa cousin niece nephew unicorn skateboard scooter selfie emoji wifi ipad xbox mario pokemon minecraft brownie pretzel nacho smoothie lemonade muffin bagel taco sushi burger popcorn cookie dinosaur pirate wizard princess superhero boardgame crossword checkers chess monopoly charades pictionary karaoke firefighter astronaut magician chalkboard backpack eraser notebook ladybug grasshopper dragonfly yogurt pancake waffle').split(' ');
+
+  function addWord(seen, list, raw) {
+    var w = String(raw == null ? '' : raw).toLowerCase().replace(/[^a-z]/g, '');
+    if (w.length < 3 || w.length > 16 || seen[w]) return;
+    seen[w] = true;
+    list.push(w);
+  }
+
+  function inflectionStems(word) {
+    var out = [];
+    var n = word.length;
+    function add(s) {
+      if (s && s.length >= 3 && s.length < n) out.push(s);
+    }
+    if (n >= 4 && word.slice(-3) === 'ies') add(word.slice(0, -3) + 'y');
+    if (n >= 5 && word.slice(-2) === 'es') add(word.slice(0, -2));
+    if (n >= 4 && word.charAt(n - 1) === 's' && word.charAt(n - 2) !== 's') add(word.slice(0, -1));
+    if (n >= 6 && word.slice(-3) === 'ing') {
+      var ing = word.slice(0, -3);
+      add(ing);
+      add(ing + 'e');
+      if (ing.length >= 2 && ing.charAt(ing.length - 1) === ing.charAt(ing.length - 2)) add(ing.slice(0, -1));
+    }
+    if (n >= 5 && word.slice(-2) === 'ed') {
+      var ed = word.slice(0, -2);
+      add(ed);
+      add(ed + 'e');
+      add(word.slice(0, -1));
+      if (ed.length >= 2 && ed.charAt(ed.length - 1) === ed.charAt(ed.length - 2)) add(ed.slice(0, -1));
+    }
+    if (n >= 5 && word.slice(-2) === 'ly') add(word.slice(0, -2));
+    return out;
+  }
+
+  FF.data.words.rebuild = function () {
+    if (!this.core) this.core = (this.dictionary || []).slice();
+    var seen = {};
+    var list = [];
+    var i;
+    var src = this.core;
+    for (i = 0; i < src.length; i++) addWord(seen, list, src[i]);
+    src = this.extra || [];
+    for (i = 0; i < src.length; i++) addWord(seen, list, src[i]);
+    for (i = 0; i < FAMILY.length; i++) addWord(seen, list, FAMILY[i]);
+    src = this.scramble || [];
+    for (i = 0; i < src.length; i++) addWord(seen, list, src[i] && src[i].word);
+    src = this.missingLetters || [];
+    for (i = 0; i < src.length; i++) addWord(seen, list, src[i] && src[i].word);
+    src = this.categories || [];
+    for (i = 0; i < src.length; i++) {
+      var items = src[i] && src[i].items ? src[i].items : [];
+      for (var j = 0; j < items.length; j++) addWord(seen, list, items[j]);
+    }
+    this.dictionary = this.core;
+    this._set = seen;
+    this.all = list;
+    return seen;
+  };
+
+  FF.data.words.isWord = function (word) {
+    word = String(word == null ? '' : word).toLowerCase().replace(/[^a-z]/g, '');
+    if (word.length < 3 || word.length > 16) return false;
+    var set = this._set || this.rebuild();
+    if (set[word]) return true;
+    var stems = inflectionStems(word);
+    for (var i = 0; i < stems.length; i++) {
+      if (set[stems[i]]) return true;
+    }
+    return false;
+  };
+
+  FF.data.words.rebuild();
 })();

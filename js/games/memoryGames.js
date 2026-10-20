@@ -230,6 +230,15 @@ window.FF = window.FF || {};
     root.appendChild(wrap);
     renderTurn();
     status.textContent = 'Flip two cards to find a match.';
+    if (api.config.timer > 0) {
+      api.shell.setTimer(api.config.timer, function () {
+        if (ended) return;
+        ended = true;
+        status.textContent = "Time's up!";
+        api.audio.play('roundEnd');
+        setTimeout(function () { api.end(buildResults(api)); }, 700);
+      });
+    }
   }
 
   /* ---------- pictureMemory data helper ---------- */
@@ -382,6 +391,10 @@ window.FF = window.FF || {};
       wrap.appendChild(status);
       wrap.appendChild(stage);
       root.appendChild(wrap);
+
+      if (api.config.timer > 0) {
+        api.shell.setTimer(api.config.timer, function () { finish(); });
+      }
 
       var revealTimer = null;
 
@@ -633,6 +646,9 @@ window.FF = window.FF || {};
       var turnIdx = 0;
       var donePlayers = {};
       var ended = false;
+      if (api.config.timer > 0) {
+        api.shell.setTimer(api.config.timer, function () { finish(); });
+      }
 
       function currentScorer() { return scorers[turnIdx % scorers.length]; }
 
