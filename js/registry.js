@@ -1123,6 +1123,7 @@ window.FF = window.FF || {};
     // browser back button while a game is on screen. A first press asks
     // to exit; a second press (dialog already open) means "keep playing".
     handleBack: function () {
+      if (FF.QuizRun && FF.QuizRun.active()) { FF.QuizRun.askQuit(); return; }
       const screen = FF.ui.$('#game-screen');
       const overlay = screen && FF.ui.$('.pause-overlay', screen);
       if (overlay) this.resume();

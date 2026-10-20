@@ -33,7 +33,7 @@
   </script>
   <script>
     // An old shared room link (index.html#room=ABC123) opens the game app.
-    if (/^#room=/.test(location.hash)) location.replace('play.html' + location.hash);
+    if (/^#(room|challenge)=/.test(location.hash)) location.replace('play.html' + location.hash);
   </script>
 </head>
 <body>

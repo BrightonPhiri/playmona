@@ -240,6 +240,21 @@ window.FF = window.FF || {};
       this.save(s);
     },
 
+    // Daily challenge and friend challenges: they count as a game played.
+    recordExtra: function (o) {
+      o = o || {};
+      const s = this.get();
+      s.gamesPlayed++;
+      const today = this.dayKey();
+      s.daily[today] = (s.daily[today] || 0) + 1;
+      if (o.category) s.byCategory[o.category] = (s.byCategory[o.category] || 0) + 1;
+      s.xp = (s.xp || 0) + Math.max(0, Math.round(o.xp || 0));
+      if (o.quizCorrect != null) s.quizCorrect += o.quizCorrect;
+      if (o.quizAnswered != null) s.quizAnswered += o.quizAnswered;
+      if (s.gamesPlayed >= 10) this.unlock('tenGames');
+      this.save(s);
+    },
+
     recordResult: function (data) {
       const s = this.get();
       if (data.winnerName) {

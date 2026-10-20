@@ -202,13 +202,13 @@ window.FF = window.FF || {};
         ic.appendChild(FF.Icons.icon(o.icon));
         top.appendChild(ic);
         if (o.soon) top.appendChild(FF.ui.span('mode-card__soon', t('comingSoon', 'Coming soon')));
+        else if (o.badge) top.appendChild(FF.ui.span('mode-card__badge', o.badge));
         else if (o.cast) top.appendChild(o.cast);
         b.appendChild(top);
-        b.appendChild(FF.ui.el('h2', { class: 'mode-card__title', id: o.id }, o.title));
+        var h = FF.ui.el('h2', { class: 'mode-card__title', id: o.id }, o.title);
+        h.appendChild(FF.Icons.icon('chevron-right'));
+        b.appendChild(h);
         b.appendChild(FF.ui.el('p', { class: 'mode-card__desc', id: o.id + '-desc' }, o.desc));
-        var go = FF.ui.span('mode-card__go', o.cta);
-        go.appendChild(FF.Icons.icon('arrow-right'));
-        b.appendChild(go);
         b.addEventListener('click', o.onClick);
         li.appendChild(b);
         grid.appendChild(li);
@@ -220,31 +220,42 @@ window.FF = window.FF || {};
       card({
         id: 'mode-friends', tone: 'blue', icon: 'users', cast: cast,
         title: t('playWithFriends', 'Play with friends'),
-        desc: t('playWithFriendsDesc', 'Make a private room and share the code. Everyone plays the same game at the same time on their own phone.'),
-        cta: t('createOrJoin', 'Create or join a room'),
+        desc: t('playWithFriendsDesc', 'Make a private room and share the code. Everyone plays at the same time on their own phone.'),
         onClick: function () { self.showFriends(main); }
+      });
+      var daily = FF.Daily && FF.Daily.today();
+      card({
+        id: 'mode-daily', tone: 'purple', icon: 'calendar',
+        badge: daily ? t('doneToday', 'Done today') : t('newToday', 'New today'),
+        title: t('dailyChallenge', 'Daily challenge'),
+        desc: t('dailyCardDesc', '10 questions, the same for everyone. One try a day, with a daily leaderboard.'),
+        onClick: function () { FF.Nav.go('daily'); }
+      });
+      card({
+        id: 'mode-challenge', tone: 'pink', icon: 'swords',
+        title: t('challengeFriend', 'Challenge a friend'),
+        desc: t('challengeCardDesc', 'Set a score and send a link. Your friend plays the same questions whenever they like.'),
+        onClick: function () { FF.Nav.go('challenges'); }
       });
       card({
         id: 'mode-match', tone: 'green', icon: 'globe', soon: true,
         title: t('quickMatch', 'Quick match'),
         desc: t('quickMatchDesc', 'Get matched with players or teams who are online and ready to play right now.'),
-        cta: t('seeWhatsComing', 'See what is coming'),
         onClick: function () { self.showQuickMatch(main); }
+      });
+      card({
+        id: 'mode-leagues', tone: 'teal', icon: 'medal', soon: true,
+        title: t('leagues', 'Leagues'),
+        desc: t('leaguesDesc', 'Weekly leagues with players at your level. Finish near the top to move up.'),
+        onClick: function () { self.showLeagues(main); }
       });
       card({
         id: 'mode-tours', tone: 'orange', icon: 'trophy', soon: true,
         title: t('tournaments', 'Tournaments'),
         desc: t('tournamentsDesc', 'Register for tournaments hosted by PlayMora. Play the rounds and climb the leaderboard.'),
-        cta: t('seeWhatsComing', 'See what is coming'),
         onClick: function () { self.showTournaments(main); }
       });
       main.appendChild(grid);
-
-      // Shortcut for the most common case: someone sent you a code.
-      var quick = FF.ui.div('online-quick');
-      quick.appendChild(FF.ui.span('online-quick__text', t('haveCode', 'Got a room code from a friend?')));
-      quick.appendChild(FF.UI.button(t('joinRoom', 'Join with a code'), { class: 'btn-sm', icon: 'arrow-right', onClick: function () { self.showJoin(main, FF.Room.codeFromUrl()); } }));
-      main.appendChild(quick);
       FF.Nav.focusFirst(main);
     },
 
@@ -273,6 +284,20 @@ window.FF = window.FF || {};
           FF.t('findPlan1', 'Quick match: pick a game and get paired with players who are online now.'),
           FF.t('findPlan2', 'Join a team that needs players, or fill your own team.'),
           FF.t('findPlan3', 'See who is online and ready to play.')
+        ]
+      });
+    },
+
+    // Leagues: placeholder until they are planned.
+    showLeagues: function (main) {
+      this.showComingSoon(main, {
+        icon: 'medal', tone: 'teal',
+        title: FF.t('leagues', 'Leagues'),
+        lead: FF.t('leaguesLead', 'Compete each week with players at your level.'),
+        planned: [
+          FF.t('leaguePlan1', 'Join a weekly group of about 20 players.'),
+          FF.t('leaguePlan2', 'Every game you play earns league points.'),
+          FF.t('leaguePlan3', 'Finish near the top to move up a division: Bronze, Silver, Gold and beyond.')
         ]
       });
     },

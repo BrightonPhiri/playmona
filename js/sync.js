@@ -17,7 +17,8 @@ window.FF = window.FF || {};
   var SYNC_KEYS = [
     'players', 'teams', 'favorites', 'recents', 'stats',
     'difficulty', 'length', 'timer', 'sound', 'music', 'volume', 'animations',
-    'randomOrder', 'randomQuestions', 'displaySeconds', 'autoAdvanceMs'
+    'randomOrder', 'randomQuestions', 'displaySeconds', 'autoAdvanceMs',
+    'dailyLog', 'challenges'
   ];
   var PUSH_DELAY = 1500;
 

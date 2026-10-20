@@ -61,6 +61,10 @@ Open **Realtime Database → Rules**, replace everything with the contents of
 
 On top of the room rules explained below, that file adds:
 
+- `/daily/{date}/{uid}`: the daily challenge leaderboard. Signed-in users can
+  read a day's scores and write their own score once (0 to 1500 points).
+- `/challenges/{id}/{uid}`: results of a friend challenge, so the sender sees who
+  played it. Same rules: read with an account, write your own result once.
 - `/stats/players`: the public player count on the landing page ("120+ players").
   Anyone can read it; a signed-in user can only add 1 to it, which the app does once
   when an account is created. It starts counting from the first sign-up after you

@@ -489,7 +489,6 @@ body.auth-open #app { display: none; }
   background: var(--tone-bg); border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: var(--shadow-1); transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
 }
-@media (min-width: 900px) { .mode-card { min-height: 250px; } }
 .mode-card::after {
   content: ''; position: absolute; z-index: -1; right: -60px; top: -60px; width: 220px; height: 220px; border-radius: 50%;
   background: radial-gradient(circle, rgba(255, 255, 255, 0.18), transparent 70%);
@@ -512,15 +511,6 @@ body.auth-open #app { display: none; }
 .mode-card__cast .mode-card__ava:first-child { margin-left: 0; }
 .mode-card__title { font-size: var(--fs-2xl); color: #fff; margin-top: var(--sp-2); }
 .mode-card__desc { color: rgba(255, 255, 255, 0.86); flex: 1; }
-.mode-card__go { display: inline-flex; align-items: center; gap: 6px; font-weight: 800; margin-top: var(--sp-2); }
-.mode-card:hover .mode-card__go .icon-svg { transform: translateX(3px); }
-.mode-card__go .icon-svg { transition: transform var(--dur) var(--ease); }
-.online-quick {
-  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--sp-3);
-  margin-top: var(--sp-4); padding: var(--sp-3) var(--sp-4); border-radius: var(--r-md);
-  background: var(--surface); border: 1px dashed var(--border-strong);
-}
-.online-quick__text { font-weight: 700; }
 .rm-hero .mode-card__soon { background: var(--warn-soft); color: var(--text); }
 .rm-hero--green .rm-hero__icon { background: rgba(20, 163, 90, 0.16); color: var(--success); }
 .rm-hero--orange .rm-hero__icon { background: rgba(249, 115, 22, 0.16); color: #c2410c; }

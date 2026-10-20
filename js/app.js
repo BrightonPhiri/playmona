@@ -74,7 +74,7 @@ window.FF = window.FF || {};
     favorites: { view: 'games', params: { favorites: true } }
   };
   // Which main destination a view belongs to (for nav highlighting).
-  var NAV_OF = { home: 'home', gamenight: 'home', games: 'games', online: 'online', profile: 'profile', settings: 'settings', credits: 'settings', about: 'settings' };
+  var NAV_OF = { home: 'home', gamenight: 'home', games: 'games', online: 'online', daily: 'online', challenges: 'online', challenge: 'online', profile: 'profile', settings: 'settings', credits: 'settings', about: 'settings' };
 
   FF.App = {
     session: { games: 0, wins: {}, totalPoints: 0, players: {} },
@@ -175,6 +175,8 @@ window.FF = window.FF || {};
       this.render('home');
 
       // A shared link like .../play.html#room=ABC123 goes straight to join.
+      var challengeCode = FF.Challenge && FF.Challenge.codeFromUrl();
+      if (challengeCode) { FF.Challenge.openCode(challengeCode); return; }
       var joinCode = (FF.Room && FF.Room.codeFromUrl) ? FF.Room.codeFromUrl() : null;
       if (joinCode && onlineEnabled()) {
         FF.Nav.go('online');
@@ -365,6 +367,14 @@ window.FF = window.FF || {};
       if (first) setTimeout(function () { try { first.focus({ preventScroll: true }); } catch (e) {} }, 0);
     },
 
+    // Views that live in other modules (daily challenge, challenges).
+    _mountExtraViews: function () {
+      if (this._extraViews || !FF.Social) return;
+      this._extraViews = true;
+      var views = this.views;
+      Object.keys(FF.Social.views).forEach(function (k) { views[k] = FF.Social.views[k]; });
+    },
+
     /* ================= Shell ================= */
     navItems: function () {
       var items = [
@@ -502,6 +512,7 @@ window.FF = window.FF || {};
     /* ================= Render router ================= */
     render: function (view, params) {
       this.closeAccountMenu();
+      this._mountExtraViews();
       params = params || {};
       if (ALIASES[view]) {
         var alias = ALIASES[view];
@@ -868,6 +879,7 @@ window.FF = window.FF || {};
         main.appendChild(top);
 
         // Stats dashboard, before the game rails.
+        if (FF.Social) main.appendChild(FF.Social.homeCards());
         main.appendChild(FF.App.dashboard({ compact: true }));
 
         var allLink = FF.ui.el('button', { type: 'button', class: 'link-btn', onclick: function () { FF.App.resetLibrary(); FF.Nav.go('games'); } }, t('seeAll', 'See all'));
