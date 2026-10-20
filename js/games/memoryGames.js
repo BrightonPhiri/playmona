@@ -57,61 +57,9 @@ window.FF = window.FF || {};
     return { results: list, winnerId: r && r.winnerId ? r.winnerId : null, bestStreak: bestStreak };
   }
 
-  function ensureStyles(id, css) {
-    if (document.getElementById(id)) return;
-    var style = document.createElement('style');
-    style.id = id;
-    style.textContent = css;
-    document.head.appendChild(style);
-  }
 
-  var MATCH_CSS =
-    '.match-wrap{padding:12px;display:flex;flex-direction:column;gap:14px;max-width:760px;margin:0 auto;width:100%;box-sizing:border-box;}' +
-    '.match-header{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:space-between;}' +
-    '.match-turn{font-weight:700;font-size:1.05rem;}' +
-    '.match-status{color:#64748b;font-size:.95rem;}' +
-    '.match-grid{display:grid;gap:10px;width:100%;}' +
-    '.match-card{position:relative;height:0;padding:0 0 100% 0;border:none;background:transparent;cursor:pointer;perspective:800px;display:block;-webkit-tap-highlight-color:transparent;outline:none;}' +
-    '.match-card:focus-visible{box-shadow:0 0 0 3px #fbbf24;border-radius:14px;}' +
-    '.match-card__inner{position:absolute;top:0;left:0;right:0;bottom:0;transform-style:preserve-3d;transition:transform .4s ease;}' +
-    '.match-card.flipped .match-card__inner{transform:rotateY(180deg);}' +
-    '.match-card__face{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;border-radius:14px;backface-visibility:hidden;-webkit-backface-visibility:hidden;overflow:hidden;box-sizing:border-box;}' +
-    '.match-card__back{background:linear-gradient(135deg,#8b5cf6,#6d28d9);color:#fff;font-size:1.9rem;}' +
-    '.match-card__front{background:#fff;transform:rotateY(180deg);box-shadow:inset 0 0 0 2px #e2e8f0;}' +
-    '.match-card.matched{cursor:default;}' +
-    '.match-card.matched .match-card__front{box-shadow:inset 0 0 0 3px #10b981;background:#ecfdf5;}' +
-    '.match-emoji{font-size:2.3rem;line-height:1;}' +
-    '.match-face-wrap{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;}' +
-    '.mem-img{width:100%;height:100%;display:flex;align-items:center;justify-content:center;}' +
-    '.mem-img svg{width:80%;height:80%;}' +
-    '.mem-caption{position:absolute;left:0;right:0;bottom:2px;font-size:.55rem;text-align:center;color:#475569;line-height:1.1;padding:0 2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}';
 
-  var WM_CSS =
-    '.wm-wrap{padding:16px;max-width:720px;margin:0 auto;text-align:center;display:flex;flex-direction:column;gap:14px;}' +
-    '.wm-status{color:#64748b;font-size:.95rem;min-height:1.4em;}' +
-    '.wm-stage{display:flex;flex-direction:column;gap:16px;align-items:center;}' +
-    '.wm-row{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;}' +
-    '.wm-tile{width:60px;height:60px;display:flex;align-items:center;justify-content:center;font-size:2rem;background:#f1f5f9;border-radius:14px;box-shadow:inset 0 0 0 2px #e2e8f0;line-height:1;}' +
-    '.wm-tile.wm-missing{background:#ede9fe;color:#7c3aed;box-shadow:inset 0 0 0 2px #c4b5fd;}' +
-    '.wm-hint{font-weight:600;}' +
-    '.wm-count{color:#7c3aed;font-weight:700;}' +
-    '.wm-q{font-weight:700;font-size:1.05rem;}' +
-    '.wm-options{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;}' +
-    'button.wm-opt{font-size:1.8rem;min-width:70px;height:60px;padding:4px 10px;}' +
-    'button.wm-opt.correct{background:#d1fae5;box-shadow:0 0 0 3px #10b981;}' +
-    'button.wm-opt.wrong{background:#fee2e2;box-shadow:0 0 0 3px #ef4444;}';
 
-  var RS_CSS =
-    '.rs-wrap{padding:16px;max-width:720px;margin:0 auto;text-align:center;display:flex;flex-direction:column;gap:16px;align-items:center;}' +
-    '.rs-status{font-weight:700;font-size:1.05rem;color:#64748b;}' +
-    '.rs-seq{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;min-height:22px;}' +
-    '.rs-dot{width:18px;height:18px;border-radius:50%;background:#d1d5db;}' +
-    '.rs-dot.done{background:#10b981;}' +
-    '.rs-pad{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;}' +
-    '.rs-tile{width:84px;height:84px;border-radius:18px;border:none;color:#fff;font-weight:700;font-size:.85rem;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.25);transition:transform .12s ease, filter .12s ease;}' +
-    '.rs-tile:active{transform:scale(.94);}' +
-    '.rs-tile.lit{filter:brightness(1.6) saturate(1.4);box-shadow:0 0 0 4px #fff,0 0 22px rgba(0,0,0,.4);transform:scale(1.05);}' +
-    '.rs-msg{min-height:1.4em;color:#334155;font-weight:600;}';
 
   /* ---------- shared card-matching engine (memoryMatch + pictureMemory) ---------- */
 
@@ -269,6 +217,7 @@ window.FF = window.FF || {};
      ============================================================ */
   FF.registerGame({
     id: 'memoryMatch',
+    featured: true,
     name: 'Memory Match',
     description: 'Flip cards to find matching pairs and score big.',
     category: 'memory',
@@ -286,7 +235,6 @@ window.FF = window.FF || {};
       'Find every pair to win.'
     ],
     start: function (api) {
-      ensureStyles('ff-memory-css', MATCH_CSS);
       var d = api.config.difficulty;
       var cfg = {
         easy: { pairs: 6, cols: 4 },
@@ -327,7 +275,6 @@ window.FF = window.FF || {};
       'Find all the pairs to win.'
     ],
     start: function (api) {
-      ensureStyles('ff-memory-css', MATCH_CSS);
       var d = api.config.difficulty;
       var cfg = {
         easy: { pairs: 6, cols: 4 },
@@ -375,7 +322,6 @@ window.FF = window.FF || {};
       'Correct answers earn points — 6 rounds!'
     ],
     start: function (api) {
-      ensureStyles('ff-wm-css', WM_CSS);
       var root = api.shell.root;
       var scorers = scorersFor(api);
       var diff = api.config.difficulty;
@@ -606,7 +552,6 @@ window.FF = window.FF || {};
       'One mistake ends your turn.'
     ],
     start: function (api) {
-      ensureStyles('ff-rs-css', RS_CSS);
       var root = api.shell.root;
       var scorers = scorersFor(api);
       var diff = api.config.difficulty;

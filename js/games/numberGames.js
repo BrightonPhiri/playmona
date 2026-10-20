@@ -157,13 +157,16 @@ window.FF = window.FF || {};
 
   // Friendly guard when there are no scorers (should not normally happen).
   function renderNoPlayers(api) {
-    var root = api.shell.root;
-    FF.ui.clear(root);
-    var panel = FF.ui.div('panel panel--center');
-    panel.appendChild(FF.ui.el('h2', {}, 'No players yet'));
-    panel.appendChild(FF.ui.el('p', {}, 'Add some players from the Players screen to play this game.'));
-    panel.appendChild(FF.ui.button('🏠 Exit', { class: 'btn-lg', primary: true, onClick: function () { FF.GameFlow.exitToHome(); } }));
-    root.appendChild(panel);
+    FF.GameUI.exitCard(api, FF.t('noPlayers', 'No players yet'), FF.t('noPlayersText', 'Add players on the Family screen to play this game.'));
+  }
+
+  // Round, whose turn and streak, above every question.
+  function topBar(api, state, active, showZero) {
+    var bar = FF.GameUI.turnBar(active, FF.t('roundOf', 'Round {n} of {total}', { n: state.round + 1, total: state.total }));
+    var rec = api.scoring.record(active.id);
+    var streak = rec ? rec.streak : 0;
+    if (streak > 0 || showZero) bar.appendChild(FF.GameUI.pill(FF.t('streakN', 'Streak {n}', { n: streak }), 'flame'));
+    return bar;
   }
 
   /* ================= Game 1: Number Challenge ================= */
@@ -204,54 +207,19 @@ window.FF = window.FF || {};
     var root = api.shell.root;
     FF.ui.clear(root);
 
-    var wrap = FF.ui.div('panel nc-wrap');
-    wrap.style.textAlign = 'center';
-    wrap.style.maxWidth = '640px';
-    wrap.style.margin = '0 auto';
+    var wrap = FF.GameUI.stage({ className: 'nc-wrap' });
+    wrap.appendChild(topBar(api, state, active));
+    wrap.appendChild(FF.ui.el('h2', { class: 'gm-big', 'aria-label': q.text.replace(/×/g, ' times ').replace(/÷/g, ' divided by ').replace(/−/g, ' minus ') }, q.text));
 
-    var top = FF.ui.div('nc-top');
-    top.style.display = 'flex';
-    top.style.flexWrap = 'wrap';
-    top.style.justifyContent = 'center';
-    top.style.gap = '10px';
-    top.style.marginBottom = '18px';
-    top.appendChild(FF.ui.span('meta-chip', 'Round ' + (state.round + 1) + ' / ' + state.total));
-    top.appendChild(FF.ui.span('meta-chip', active.avatar + ' ' + active.name));
-    var rec = api.scoring.record(active.id);
-    var streak = rec ? rec.streak : 0;
-    if (streak > 0) top.appendChild(FF.ui.span('meta-chip', '🔥 ' + streak + ' streak'));
-    wrap.appendChild(top);
-
-    var qel = FF.ui.el('div', { text: q.text });
-    qel.style.fontSize = '2.4rem';
-    qel.style.fontWeight = '800';
-    qel.style.margin = '10px 0 22px';
-    qel.style.letterSpacing = '1px';
-    wrap.appendChild(qel);
-
-    var grid = FF.ui.div('nc-options');
-    grid.style.display = 'grid';
-    grid.style.gridTemplateColumns = '1fr 1fr';
-    grid.style.gap = '12px';
-    q.options.forEach(function (opt) {
-      var b = FF.ui.button(String(opt), {
-        class: 'btn nc-option',
-        dataset: { value: String(opt) },
-        onClick: function () { answerNumberChallenge(api, state, opt, q, active, startedAt); }
-      });
-      b.style.fontSize = '1.5rem';
-      b.style.fontWeight = '800';
-      b.style.padding = '18px 10px';
-      b.style.borderRadius = '14px';
+    var grid = FF.GameUI.options({ columns: 2, className: 'nc-options' });
+    q.options.forEach(function (opt, i) {
+      var b = FF.GameUI.option(String(opt), function () { answerNumberChallenge(api, state, opt, q, active, startedAt); }, i, { className: 'nc-option' });
+      b.dataset.value = String(opt);
       grid.appendChild(b);
     });
     wrap.appendChild(grid);
 
-    var fb = FF.ui.div('nc-feedback');
-    fb.style.minHeight = '30px';
-    fb.style.fontSize = '1.2rem';
-    fb.style.fontWeight = '700';
-    fb.style.marginTop = '14px';
+    var fb = FF.ui.el('div', { class: 'nc-feedback', 'aria-live': 'polite' });
     wrap.appendChild(fb);
     state.fb = fb;
 
@@ -290,19 +258,18 @@ window.FF = window.FF || {};
     }
   }
 
+  function showFeedback(holder, kind, text) {
+    FF.ui.clear(holder);
+    holder.appendChild(FF.GameUI.feedback(kind, text));
+  }
+
   function markNumberButtons(api, q, chosen) {
     FF.util.$$('.nc-option', api.shell.root).forEach(function (b) {
       b.disabled = true;
       var val = Number(b.dataset.value);
-      if (val === q.answer) {
-        b.style.background = 'linear-gradient(135deg, #10b981, #059669)';
-        b.style.color = '#fff';
-        b.style.borderColor = '#10b981';
-      } else if (chosen != null && val === chosen) {
-        b.style.background = '#ef4444';
-        b.style.color = '#fff';
-        b.style.borderColor = '#ef4444';
-      }
+      if (val === q.answer) FF.GameUI.markOption(b, 'correct');
+      else if (chosen != null && val === chosen) FF.GameUI.markOption(b, 'wrong');
+      else FF.GameUI.markOption(b, 'dim');
     });
   }
 
@@ -327,17 +294,11 @@ window.FF = window.FF || {};
       api.scoring.add(active.id, points, { correct: true, fastest: elapsed });
       state.correct++;
       api.audio.play('correct');
-      if (state.fb) {
-        state.fb.textContent = '✅ Correct! +' + points + ' points';
-        state.fb.style.color = '#10b981';
-      }
+      if (state.fb) showFeedback(state.fb, 'good', FF.GameUI.correctText(points));
     } else {
       api.scoring.markAnswer(active.id, false);
       api.audio.play('wrong');
-      if (state.fb) {
-        state.fb.textContent = '❌ Not quite — the answer is ' + q.answer;
-        state.fb.style.color = '#ef4444';
-      }
+      if (state.fb) showFeedback(state.fb, 'bad', FF.t('notQuiteAnswer', 'Not quite. The answer is {answer}.', { answer: q.answer }));
     }
     state.answered++;
     api.shell.updateScores(active.id);
@@ -356,10 +317,7 @@ window.FF = window.FF || {};
     markNumberButtons(api, q, null);
     api.scoring.markAnswer(active.id, false);
     api.audio.play('wrong');
-    if (state.fb) {
-      state.fb.textContent = '⏱ Time up! The answer is ' + q.answer;
-      state.fb.style.color = '#ef4444';
-    }
+    if (state.fb) showFeedback(state.fb, 'bad', FF.t('timeUpAnswer', 'Time’s up! The answer is {answer}.', { answer: q.answer }));
     state.answered++;
     api.shell.updateScores(active.id);
     setTimeout(function () {
@@ -459,51 +417,16 @@ window.FF = window.FF || {};
     var root = api.shell.root;
     FF.ui.clear(root);
 
-    var wrap = FF.ui.div('panel panel--center hol-wrap');
-    wrap.style.maxWidth = '560px';
-    wrap.style.margin = '0 auto';
+    var wrap = FF.GameUI.stage({ className: 'hol-wrap' });
+    wrap.appendChild(topBar(api, state, active));
+    wrap.appendChild(FF.GameUI.kicker(FF.t('currentNumber', 'The number is')));
+    wrap.appendChild(FF.ui.div('gm-big', String(pair.current)));
+    wrap.appendChild(FF.GameUI.prompt(FF.t('higherOrLowerQ', 'Will the next number be higher or lower?'), 'sm'));
 
-    var top = FF.ui.div('hol-top');
-    top.style.display = 'flex';
-    top.style.flexWrap = 'wrap';
-    top.style.justifyContent = 'center';
-    top.style.gap = '10px';
-    top.style.marginBottom = '16px';
-    top.appendChild(FF.ui.span('meta-chip', 'Round ' + (state.round + 1) + ' / ' + state.total));
-    top.appendChild(FF.ui.span('meta-chip', active.avatar + ' ' + active.name));
-    var rec = api.scoring.record(active.id);
-    var streak = rec ? rec.streak : 0;
-    if (streak > 0) top.appendChild(FF.ui.span('meta-chip', '🔥 ' + streak + ' streak'));
-    wrap.appendChild(top);
-
-    var label = FF.ui.el('div', { text: 'The current number is…' });
-    label.style.color = 'var(--muted)';
-    label.style.fontSize = '1rem';
-    wrap.appendChild(label);
-
-    var num = FF.ui.el('div', { text: String(pair.current) });
-    num.style.fontSize = '4.5rem';
-    num.style.fontWeight = '900';
-    num.style.margin = '4px 0 14px';
-    wrap.appendChild(num);
-
-    var ask = FF.ui.el('div', { text: 'Is the next number higher or lower?' });
-    ask.style.fontWeight = '700';
-    ask.style.marginBottom = '18px';
-    wrap.appendChild(ask);
-
-    var actions = FF.ui.div('hol-actions');
-    actions.style.display = 'flex';
-    actions.style.gap = '14px';
-    actions.style.justifyContent = 'center';
-    actions.style.flexWrap = 'wrap';
-
-    var high = FF.ui.button('⬆️ HIGHER', { class: 'btn btn-lg', onClick: function () { guessHigherOrLower(api, state, 'higher'); } });
-    high.style.fontSize = '1.4rem';
-    high.style.padding = '20px 26px';
-    var low = FF.ui.button('⬇️ LOWER', { class: 'btn btn-lg', onClick: function () { guessHigherOrLower(api, state, 'lower'); } });
-    low.style.fontSize = '1.4rem';
-    low.style.padding = '20px 26px';
+    var actions = FF.GameUI.duo();
+    actions.classList.add('hol-actions');
+    var high = FF.GameUI.duoButton(FF.t('higher', 'Higher'), function () { guessHigherOrLower(api, state, 'higher'); }, 'up', 'arrow-up');
+    var low = FF.GameUI.duoButton(FF.t('lower', 'Lower'), function () { guessHigherOrLower(api, state, 'lower'); }, 'down', 'arrow-down');
     actions.appendChild(high);
     actions.appendChild(low);
     wrap.appendChild(actions);
@@ -568,49 +491,30 @@ window.FF = window.FF || {};
     FF.ui.clear(root);
     var active = state.active;
 
-    var wrap = FF.ui.div('panel panel--center hol-wrap');
-    wrap.style.maxWidth = '560px';
-    wrap.style.margin = '0 auto';
-
-    var top = FF.ui.div('hol-top');
-    top.style.display = 'flex';
-    top.style.flexWrap = 'wrap';
-    top.style.justifyContent = 'center';
-    top.style.gap = '10px';
-    top.style.marginBottom = '16px';
-    top.appendChild(FF.ui.span('meta-chip', 'Round ' + (state.round + 1) + ' / ' + state.total));
-    top.appendChild(FF.ui.span('meta-chip', active.avatar + ' ' + active.name));
-    var rec = api.scoring.record(active.id);
-    var streak = rec ? rec.streak : 0;
-    top.appendChild(FF.ui.span('meta-chip', streak > 0 ? '🔥 ' + streak + ' streak' : '🔥 0 streak'));
-    wrap.appendChild(top);
-
-    wrap.appendChild(FF.ui.el('div', { text: 'First number', style: { color: 'var(--muted)', fontSize: '0.95rem' } }));
-    wrap.appendChild(FF.ui.el('div', { text: String(state.current), style: { fontSize: '3rem', fontWeight: '800' } }));
+    var wrap = FF.GameUI.stage({ className: 'hol-wrap' });
+    wrap.appendChild(topBar(api, state, active, true));
 
     var wentUp = state.next > state.current;
-    var arrow = wentUp ? '⬆️' : '⬇️';
-    wrap.appendChild(FF.ui.el('div', { text: 'Next number', style: { color: 'var(--muted)', fontSize: '0.95rem', marginTop: '12px' } }));
-    var nextEl = FF.ui.el('div', { text: arrow + ' ' + String(state.next) });
-    nextEl.style.fontSize = '3rem';
-    nextEl.style.fontWeight = '900';
-    nextEl.style.margin = '2px 0 16px';
-    wrap.appendChild(nextEl);
+    var pair = FF.ui.div('gm-duo');
+    var first = FF.ui.div('gm-card gm-card--soft');
+    first.appendChild(FF.GameUI.kicker(FF.t('firstNumber', 'First number')));
+    first.appendChild(FF.ui.div('gm-big', String(state.current)));
+    var second = FF.ui.div('gm-card');
+    second.appendChild(FF.GameUI.kicker(FF.t('nextNumber', 'Next number')));
+    var nextEl = FF.ui.div('gm-big');
+    nextEl.appendChild(FF.Icons.icon(wentUp ? 'arrow-up' : 'arrow-down'));
+    nextEl.appendChild(document.createTextNode(' ' + String(state.next)));
+    second.appendChild(nextEl);
+    pair.appendChild(first);
+    pair.appendChild(second);
+    wrap.appendChild(pair);
 
-    var directionWord = wentUp ? 'higher' : 'lower';
+    var directionWord = wentUp ? FF.t('wentHigher', 'It went higher.') : FF.t('wentLower', 'It went lower.');
     var msg;
-    if (correct) {
-      msg = '✅ Correct! It went ' + directionWord + '. +' + state.lastPoints + ' points';
-    } else if (timedOut) {
-      msg = '⏱ Time up! It went ' + directionWord + '.';
-    } else {
-      msg = '❌ Wrong! It went ' + directionWord + '.';
-    }
-    var fb = FF.ui.el('div', { text: msg });
-    fb.style.fontSize = '1.25rem';
-    fb.style.fontWeight = '800';
-    fb.style.color = correct ? '#10b981' : '#ef4444';
-    wrap.appendChild(fb);
+    if (correct) msg = FF.GameUI.correctText(state.lastPoints) + ' ' + directionWord;
+    else if (timedOut) msg = FF.t('timesUp', 'Time’s up!') + ' ' + directionWord;
+    else msg = FF.t('notQuite', 'Not quite.') + ' ' + directionWord;
+    wrap.appendChild(FF.GameUI.feedback(correct ? 'good' : 'bad', msg));
 
     root.appendChild(wrap);
     api.shell.updateScores(active.id);

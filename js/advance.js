@@ -112,23 +112,6 @@ window.FF = window.FF || {};
     if (i !== -1) live.splice(i, 1);
   }
 
-  /* ---------- Styles (injected once, matching the app's pattern) ---------- */
-  var STYLE_READY = false;
-  function ensureStyles() {
-    if (STYLE_READY) return;
-    STYLE_READY = true;
-    if (!document || !document.head) return;
-    var style = document.createElement('style');
-    style.id = 'ff-advance-style';
-    style.textContent = [
-      '.ff-adv{position:relative;overflow:hidden;}',
-      '.ff-adv__fill{position:absolute;left:0;top:0;bottom:0;width:0%;',
-      'background:currentColor;opacity:0.18;pointer-events:none;border-radius:inherit;}',
-      '.ff-adv__label{position:relative;z-index:1;}'
-    ].join('\n');
-    document.head.appendChild(style);
-  }
-
   function defaultMs() {
     var v = (FF.Settings && typeof FF.Settings.get === 'function')
       ? FF.Settings.get('autoAdvanceMs')
@@ -145,21 +128,23 @@ window.FF = window.FF || {};
   /* Build a button that fires `fn` on click OR when the countdown ends. */
   function button(label, fn, opts) {
     opts = opts || {};
-    ensureStyles();
 
     var ms = opts.ms == null ? defaultMs() : Math.max(0, opts.ms);
     var fired = false;
     var raf = null;
     var safety = null;
 
+    // Arrow emoji in older labels ("Next ➡") become a proper icon.
+    label = String(label).replace(/\s*[➡→▶⏭🏁]️?\s*/g, ' ').trim();
     var btn = FF.ui.button('', {
       class: 'ff-adv ' + (opts.class || 'btn btn-lg'),
       primary: opts.primary !== false,
-      ariaLabel: String(label)
+      ariaLabel: label
     });
 
     var fill = FF.ui.el('span', { class: 'ff-adv__fill', 'aria-hidden': 'true' });
-    var text = FF.ui.el('span', { class: 'ff-adv__label' }, String(label));
+    var text = FF.ui.el('span', { class: 'ff-adv__label' }, label);
+    if (opts.icon !== false && FF.Icons && FF.Icons.icon) text.appendChild(FF.Icons.icon(opts.icon || 'arrow-right'));
     btn.appendChild(fill);
     btn.appendChild(text);
 

@@ -23,100 +23,6 @@ window.FF = window.FF || {};
     // streak run per player, so there is no shared question to race for.
   ];
 
-  var STYLE_READY = false;
-  function ensureStyles() {
-    if (STYLE_READY) return;
-    STYLE_READY = true;
-    if (!document || !document.head) return;
-    var s = document.createElement('style');
-    s.id = 'ff-roomui-style';
-    s.textContent = [
-      '.rm-wrap{max-width:720px;margin:0 auto;width:100%;display:flex;flex-direction:column;gap:16px;}',
-      '.rm-code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:2.4rem;',
-      'font-weight:800;letter-spacing:.35em;text-align:center;padding:18px 6px 18px 22px;',
-      'background:var(--accent-soft,#ede9fe);border-radius:18px;}',
-      '.rm-share{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}',
-      '.rm-qr{display:flex;justify-content:center;padding:6px;}',
-      '.rm-players{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;}',
-      '.rm-player{display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;',
-      'background:var(--surface,#f8fafc);border:1px solid var(--border,#e2e8f0);font-weight:700;}',
-      '.rm-player--off{opacity:.45;}',
-      '.rm-player__ava{font-size:1.3rem;}',
-      '.rm-input{font-size:1.9rem;text-align:center;letter-spacing:.3em;text-transform:uppercase;',
-      'padding:14px;border-radius:14px;border:2px solid var(--border,#e2e8f0);width:100%;',
-      'box-sizing:border-box;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}',
-      '.rm-input--text{font-size:1.2rem;letter-spacing:0;text-transform:none;',
-      'font-family:inherit;}',
-      '.rm-error{color:#b91c1c;font-weight:700;text-align:center;min-height:1.2em;}',
-      '.rm-hint{color:var(--muted,#6b7280);text-align:center;}',
-      '.rm-row{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;}',
-      '.rm-subtitle{font-size:1.05rem;font-weight:800;text-align:center;margin:6px 0 0;',
-      'letter-spacing:.5px;color:var(--muted,#6b7280);text-transform:uppercase;}',
-      '.rm-chosen{min-height:1.2em;font-style:italic;}',
-
-      /* Game picker */
-      '.rm-games{display:grid;gap:10px;',
-      'grid-template-columns:repeat(auto-fill,minmax(104px,1fr));}',
-      '.rm-game{display:flex;flex-direction:column;align-items:center;gap:4px;',
-      'padding:12px 8px;border-radius:16px;cursor:pointer;text-align:center;',
-      'background:var(--surface,#f8fafc);border:2px solid var(--border,#e2e8f0);',
-      'color:var(--text,#111827);transition:transform .12s ease,border-color .12s ease;}',
-      '.rm-game:hover{transform:translateY(-2px);border-color:var(--rm-game-color,#8b5cf6);}',
-      '.rm-game:focus-visible{outline:3px solid var(--rm-game-color,#8b5cf6);outline-offset:2px;}',
-      '.rm-game--on{border-color:var(--rm-game-color,#8b5cf6);',
-      'box-shadow:inset 0 0 0 3px color-mix(in srgb, var(--rm-game-color,#8b5cf6) 22%, transparent);}',
-      '.rm-game__icon{font-size:1.7rem;line-height:1;}',
-      '.rm-game__name{font-weight:800;font-size:.86rem;line-height:1.15;}',
-      '.rm-game__cat{font-size:.68rem;font-weight:700;letter-spacing:.4px;',
-      'text-transform:uppercase;color:var(--rm-game-color,#8b5cf6);}',
-
-      /* Start countdown */
-      '.rm-count{align-items:center;text-align:center;gap:10px;}',
-      '.rm-count__game{font-size:1.4rem;font-weight:800;}',
-      '.rm-count__num{font-size:6rem;font-weight:800;line-height:1;',
-      'color:var(--accent,#8b5cf6);}',
-      '.rm-count__num--pop{animation:rm-pop .45s ease;}',
-      '@keyframes rm-pop{from{transform:scale(.55);opacity:.35;}to{transform:scale(1);opacity:1;}}',
-
-      /* Gamified loading */
-      '.rm-load{display:flex;flex-direction:column;align-items:center;gap:18px;padding:26px 0;}',
-      '.rm-load__stage{position:relative;width:132px;height:132px;}',
-      '.rm-load__ring{position:absolute;inset:0;border-radius:50%;',
-      'border:5px solid var(--accent-soft,#ede9fe);border-top-color:var(--accent,#8b5cf6);',
-      'animation:rm-spin 1.1s linear infinite;}',
-      '.rm-load__ring--slow{inset:14px;border-width:4px;opacity:.6;',
-      'border-top-color:transparent;border-right-color:var(--accent,#8b5cf6);',
-      'animation:rm-spin 1.8s linear infinite reverse;}',
-      '.rm-load__emoji{position:absolute;inset:0;display:flex;align-items:center;',
-      'justify-content:center;font-size:3.1rem;animation:rm-bob 1.5s ease-in-out infinite;}',
-      '.rm-load__status{font-weight:800;font-size:1.05rem;text-align:center;min-height:1.4em;}',
-      '.rm-load__dots{display:flex;gap:9px;}',
-      '.rm-load__dot{width:11px;height:11px;border-radius:50%;',
-      'background:var(--accent,#8b5cf6);animation:rm-bounce 1s ease-in-out infinite;}',
-      '.rm-load__dot:nth-child(2){animation-delay:.15s;}',
-      '.rm-load__dot:nth-child(3){animation-delay:.3s;}',
-      '.rm-load__dot:nth-child(4){animation-delay:.45s;}',
-      '@keyframes rm-spin{to{transform:rotate(360deg);}}',
-      '@keyframes rm-bob{0%,100%{transform:translateY(-5px) scale(1);}',
-      '50%{transform:translateY(5px) scale(1.08);}}',
-      '@keyframes rm-bounce{0%,100%{transform:translateY(0);opacity:.45;}',
-      '50%{transform:translateY(-11px);opacity:1;}}',
-
-      /* Anyone who asked for less motion gets a calm version. */
-      '[data-reduce="1"] .rm-load__ring,',
-      '[data-reduce="1"] .rm-load__ring--slow,',
-      '[data-reduce="1"] .rm-load__emoji,',
-      '[data-reduce="1"] .rm-load__dot{animation:none;}',
-      '[data-reduce="1"] .rm-load__dot{opacity:.8;}',
-
-      '@media (max-width:420px){',
-      '  .rm-games{grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;}',
-      '  .rm-code{font-size:1.9rem;letter-spacing:.28em;}',
-      '  .rm-count__num{font-size:4.5rem;}',
-      '}'
-    ].join('\n');
-    document.head.appendChild(s);
-  }
 
   function panel(children) {
     var w = FF.ui.div('rm-wrap');
@@ -124,19 +30,31 @@ window.FF = window.FF || {};
     return w;
   }
 
-  function title(text) { return FF.ui.el('h1', { class: 'section-title' }, text); }
+  function title(text) { return FF.ui.el('h1', { class: 'page-title' }, text); }
+
+  // Icon + title + hint, centred: the top of each room screen.
+  function hero(iconKey, text, hint) {
+    var h = FF.ui.div('rm-hero');
+    var ic = FF.ui.span('rm-hero__icon');
+    ic.appendChild(FF.Icons.icon(iconKey));
+    h.appendChild(ic);
+    h.appendChild(title(text));
+    if (hint) h.appendChild(FF.ui.el('p', { class: 'rm-hint' }, hint));
+    return h;
+  }
 
   function backButton(fn) {
-    return FF.ui.button('← Back', { class: 'btn btn-lg', onClick: fn });
+    return FF.UI.button(FF.t('back', 'Back'), { class: 'btn-lg btn-ghost', icon: 'arrow-left', onClick: fn });
   }
 
   function playerChips(players, myUid) {
     var list = FF.ui.div('rm-players');
     players.forEach(function (p) {
       var isSpk = FF.Voice && FF.Voice.isSpeaking(p.uid);
+      // Rooms only ever show emoji avatars: photos stay on their own device.
       var chip = FF.ui.div('rm-player' + (p.online ? '' : ' rm-player--off') + (isSpk ? ' rm-player--speaking' : ''), [
         FF.ui.span('rm-player__ava' + (isSpk ? ' rm-player__ava--speaking' : ''), p.avatar || '😀'),
-        p.name + (p.uid === myUid ? ' (you)' : '') + (p.online ? '' : ' — offline')
+        p.name + (p.uid === myUid ? ' ' + FF.t('youTag', '(you)') : '') + (p.online ? '' : ' · ' + FF.t('offline', 'offline'))
       ]);
       chip.dataset.uid = p.uid;
       list.appendChild(chip);
@@ -146,21 +64,22 @@ window.FF = window.FF || {};
 
   function voicePanel(renderFn) {
     if (!FF.Voice || !FF.Voice.isSupported()) return null;
-    var vWrap = FF.ui.el('div', { class: 'panel rm-voice', style: { padding: '14px 18px', borderRadius: '18px', background: 'var(--surface)', border: '2px solid var(--border)', margin: '6px 0' } });
-    var topRow = FF.ui.div('rm-row', { style: { justifyContent: 'space-between', marginBottom: '8px' } });
-    topRow.appendChild(FF.ui.el('strong', { style: { display: 'inline-flex', alignItems: 'center', gap: '6px' } }, [
-      document.createTextNode('🎙️ ' + FF.t('voiceChatOptional', 'Voice Chat (Optional)'))
-    ]));
+    var vWrap = FF.ui.el('section', { class: 'rm-voice', 'aria-label': FF.t('voiceChat', 'Voice chat') });
+    var topRow = FF.ui.div('rm-row');
+    var label = FF.ui.el('strong', { class: 'rm-voice__title' });
+    label.appendChild(FF.Icons.icon('mic'));
+    label.appendChild(document.createTextNode(FF.t('voiceChatOptional', 'Voice chat (optional)')));
+    topRow.appendChild(label);
     if (FF.Voice.isActive()) {
       var peers = FF.Voice.peers();
-      topRow.appendChild(FF.ui.el('span', { class: 'meta-chip', style: { background: 'var(--success)', color: '#fff', fontWeight: '800' } }, '🟢 ' + (peers.length + 1) + ' in chat'));
+      topRow.appendChild(FF.ui.span('badge badge--online', FF.t('inChatN', '{n} in chat', { n: peers.length + 1 })));
     }
     vWrap.appendChild(topRow);
 
-    var ctrlRow = FF.ui.div('rm-row', { style: { gap: '8px', justifyContent: 'center', flexWrap: 'wrap' } });
+    var ctrlRow = FF.ui.div('rm-row');
     if (!FF.Voice.isActive()) {
-      var joinBtn = FF.ui.button('🎙️ ' + FF.t('joinVoice', 'Join Voice Chat'), {
-        class: 'btn btn-primary',
+      var joinBtn = FF.UI.button(FF.t('joinVoice', 'Join voice chat'), {
+        class: 'btn-primary', icon: 'mic',
         onClick: function () {
           joinBtn.disabled = true;
           FF.Voice.join().then(function () {
@@ -168,41 +87,35 @@ window.FF = window.FF || {};
             renderFn();
           }).catch(function (err) {
             joinBtn.disabled = false;
-            alert(err.message || 'Could not join voice chat.');
+            FF.UI.toast((err && err.message) || FF.t('voiceFailed', 'Could not join voice chat.'), { type: 'error' });
           });
         }
       });
       ctrlRow.appendChild(joinBtn);
+      vWrap.appendChild(ctrlRow);
+      vWrap.appendChild(FF.ui.el('p', { class: 'rm-hint' }, FF.t('voicePrivacy', 'Voice goes straight between devices in this room and is never recorded.')));
     } else {
-      var muteBtn = FF.ui.button(FF.Voice.isMuted() ? '🔇 ' + FF.t('micUnmute', 'Unmute Mic') : '🎙️ ' + FF.t('micMute', 'Mute Mic'), {
-        class: 'btn' + (FF.Voice.isMuted() ? ' danger' : ''),
-        onClick: function () {
-          FF.Voice.toggleMute();
-          FF.Audio.play('click');
-          renderFn();
-        }
+      var muted = FF.Voice.isMuted();
+      var muteBtn = FF.UI.button(muted ? FF.t('micUnmute', 'Unmute') : FF.t('micMute', 'Mute'), {
+        class: muted ? 'btn-danger' : '', icon: muted ? 'mic-off' : 'mic',
+        onClick: function () { FF.Voice.toggleMute(); FF.Audio.play('click'); renderFn(); }
       });
-      var deafBtn = FF.ui.button(FF.Voice.isDeafened() ? '🔊 ' + FF.t('undeafen', 'Undeafen') : '🎧 ' + FF.t('deafen', 'Deafen'), {
-        class: 'btn',
-        onClick: function () {
-          FF.Voice.toggleDeafen();
-          FF.Audio.play('click');
-          renderFn();
-        }
+      muteBtn.setAttribute('aria-pressed', muted ? 'true' : 'false');
+      var deaf = FF.Voice.isDeafened();
+      var deafBtn = FF.UI.button(deaf ? FF.t('undeafen', 'Hear others') : FF.t('deafen', 'Silence others'), {
+        icon: 'speaker',
+        onClick: function () { FF.Voice.toggleDeafen(); FF.Audio.play('click'); renderFn(); }
       });
-      var leaveVoiceBtn = FF.ui.button('🚪 ' + FF.t('leaveVoice', 'Leave Voice'), {
-        class: 'btn',
-        onClick: function () {
-          FF.Voice.leave();
-          FF.Audio.play('click');
-          renderFn();
-        }
+      deafBtn.setAttribute('aria-pressed', deaf ? 'true' : 'false');
+      var leaveVoiceBtn = FF.UI.button(FF.t('leaveVoice', 'Leave voice'), {
+        class: 'btn-ghost', icon: 'close',
+        onClick: function () { FF.Voice.leave(); FF.Audio.play('click'); renderFn(); }
       });
       ctrlRow.appendChild(muteBtn);
       ctrlRow.appendChild(deafBtn);
       ctrlRow.appendChild(leaveVoiceBtn);
+      vWrap.appendChild(ctrlRow);
     }
-    vWrap.appendChild(ctrlRow);
     return vWrap;
   }
 
@@ -215,7 +128,6 @@ window.FF = window.FF || {};
        trip. Returns a handle: setStatus(text) to update the caption, and
        stop() when the screen is replaced. */
     showLoading: function (main, opts) {
-      ensureStyles();
       opts = opts || {};
       FF.ui.clear(main);
 
@@ -235,7 +147,7 @@ window.FF = window.FF || {};
       box.appendChild(status);
       box.appendChild(dots);
 
-      main.appendChild(panel([title(opts.title || '🌐 Getting ready'), box]));
+      main.appendChild(panel([title(opts.title || FF.t('gettingReady', 'Getting ready')), box]));
 
       // Cycle the face and the caption so the wait feels alive rather than
       // frozen - people read a static 'Connecting...' as a hang.
@@ -267,52 +179,36 @@ window.FF = window.FF || {};
     },
 
     showHome: function (main) {
-      ensureStyles();
       FF.Room.offAll();
       FF.ui.clear(main);
       var self = this;
       main.appendChild(panel([
-        title('🌐 PLAY TOGETHER'),
-        FF.ui.div('rm-hint', 'Everyone plays the same game at the same time, on their own device. First correct answer takes the point.'),
-        FF.ui.button('➕ CREATE A ROOM', {
-          class: 'btn btn-lg', primary: true,
-          onClick: function () { self.showModePicker(main); }
-        }),
-        FF.ui.button('🔑 JOIN WITH A CODE', {
-          class: 'btn btn-lg',
-          onClick: function () { self.showJoin(main, FF.Room.codeFromUrl()); }
-        }),
-        backButton(function () { FF.Nav.go('home'); })
+        hero('wifi', FF.t('playTogether', 'Play together'), FF.t('playTogetherLead', 'Everyone plays the same game at the same time, each on their own phone or tablet. The first correct answer wins the point.')),
+        FF.UI.button(FF.t('createRoom', 'Create a room'), { class: 'btn-lg btn-primary', icon: 'plus', onClick: function () { self.showModePicker(main); } }),
+        FF.UI.button(FF.t('joinRoom', 'Join with a code'), { class: 'btn-lg', icon: 'arrow-right', onClick: function () { self.showJoin(main, FF.Room.codeFromUrl()); } }),
+        FF.ui.el('p', { class: 'rm-hint' }, FF.t('roomPrivacy', 'Rooms are private: only people with the code can join. Names and emoji pictures are shared while the room is open.'))
       ]));
       FF.Nav.focusFirst(main);
     },
 
     showModePicker: function (main) {
-      ensureStyles();
       FF.ui.clear(main);
       var self = this;
       main.appendChild(panel([
-        title('How are you playing?'),
-        FF.ui.button('👤 AS INDIVIDUAL PLAYERS', {
-          class: 'btn btn-lg', primary: true,
-          onClick: function () { self.showCreate(main, 'players'); }
-        }),
-        FF.ui.div('rm-hint', 'Each device is one player with their own score.'),
-        FF.ui.button('👥 IN TEAMS', {
-          class: 'btn btn-lg',
-          onClick: function () { self.showCreate(main, 'teams'); }
-        }),
-        FF.ui.div('rm-hint', 'Each device picks a team; points go to the team.'),
+        hero('users', FF.t('howPlaying', 'How are you playing?')),
+        FF.UI.button(FF.t('asIndividuals', 'As individual players'), { class: 'btn-lg btn-primary', icon: 'user', onClick: function () { self.showCreate(main, 'players'); } }),
+        FF.ui.div('rm-hint', FF.t('asIndividualsDesc', 'Each device is one player with their own score.')),
+        FF.UI.button(FF.t('inTeams', 'In teams'), { class: 'btn-lg', icon: 'users', onClick: function () { self.showCreate(main, 'teams'); } }),
+        FF.ui.div('rm-hint', FF.t('inTeamsDesc', 'Each device picks a team, and points go to the team.')),
         backButton(function () { self.showHome(main); })
       ]));
       FF.Nav.focusFirst(main);
     },
 
     showCreate: function (main, mode) {
-      ensureStyles();
       var self = this;
       var load = this.showLoading(main, {
-        title: '🎪 Building your room',
+        title: FF.t('buildingRoom', 'Building your room'),
         messages: [
           'Waking up the game room…',
           'Shuffling the questions…',
@@ -330,22 +226,21 @@ window.FF = window.FF || {};
     },
 
     showJoin: function (main, prefill) {
-      ensureStyles();
       FF.Room.offAll();
       FF.ui.clear(main);
       var self = this;
       var id = FF.Room.identity();
 
       var codeInput = FF.ui.el('input', {
-        class: 'rm-input', type: 'text', maxlength: 6,
-        value: prefill || '', 'aria-label': 'Room code', placeholder: 'ABC123',
-        autocapitalize: 'characters', autocorrect: 'off', spellcheck: 'false'
+        class: 'rm-input', type: 'text', maxlength: 6, id: 'rm-code-input',
+        value: prefill || '', placeholder: 'ABC123',
+        autocapitalize: 'characters', autocorrect: 'off', autocomplete: 'off', spellcheck: 'false', enterkeyhint: 'go'
       });
       var nameInput = FF.ui.el('input', {
-        class: 'rm-input rm-input--text', type: 'text', maxlength: 14,
-        value: id.name, 'aria-label': 'Your name'
+        class: 'rm-input rm-input--text', type: 'text', maxlength: 14, id: 'rm-name-input',
+        value: id.name, autocomplete: 'nickname', enterkeyhint: 'go'
       });
-      var error = FF.ui.div('rm-error', '');
+      var error = FF.ui.el('div', { class: 'rm-error', role: 'alert' }, '');
       var joinBtn;
 
       function go() {
@@ -360,7 +255,7 @@ window.FF = window.FF || {};
         var load = null;
         if (String(code).trim().length === FF.Room.CODE_LENGTH) {
           load = self.showLoading(main, {
-            title: '🔑 Joining room',
+            title: FF.t('joiningRoom', 'Joining the room'),
             messages: [
               'Knocking on the door…',
               'Finding the other players…',
@@ -392,13 +287,13 @@ window.FF = window.FF || {};
       codeInput.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') go(); });
       nameInput.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') go(); });
 
-      joinBtn = FF.ui.button('▶ JOIN', { class: 'btn btn-lg', primary: true, onClick: go });
+      joinBtn = FF.UI.button(FF.t('join', 'Join'), { class: 'btn-lg btn-primary', icon: 'arrow-right', onClick: go });
 
       main.appendChild(panel([
-        title('Join a room'),
-        FF.ui.div('rm-hint', 'Enter the 6-character code the host shared.'),
+        hero('arrow-right', FF.t('joinARoom', 'Join a room'), FF.t('enterCode', 'Enter the 6-character code from the host’s screen.')),
+        FF.ui.el('label', { class: 'setting__label', for: 'rm-code-input' }, FF.t('roomCode', 'Room code')),
         codeInput,
-        FF.ui.div('rm-hint', 'Your name'),
+        FF.ui.el('label', { class: 'setting__label', for: 'rm-name-input' }, FF.t('yourName', 'Your name')),
         nameInput,
         error,
         joinBtn,
@@ -408,7 +303,6 @@ window.FF = window.FF || {};
     },
 
     showLobby: function (main) {
-      ensureStyles();
       var self = this;
       if (!FF.Room.current()) { this.showHome(main); return; }
 
@@ -426,22 +320,15 @@ window.FF = window.FF || {};
       }
       var rs = self._roomSettings;
 
-      function settingRow(label, node) {
-        var r = FF.ui.div('settings-row');
-        r.appendChild(FF.ui.div('settings-row__label', label));
-        r.appendChild(node);
-        return r;
-      }
+      function settingRow(label, node) { return FF.UI.settingRow(label, node); }
 
-      function segs(opts, key) {
-        var wrap = FF.ui.div('seg');
-        opts.forEach(function (o) {
-          wrap.appendChild(FF.ui.button(o[0], {
-            class: 'seg__btn' + (rs[key] === o[1] ? ' active' : ''),
-            onClick: function () { rs[key] = o[1]; render(); }
-          }));
+      function segs(opts, key, label) {
+        return FF.UI.segmented({
+          label: label,
+          value: rs[key],
+          options: opts.map(function (o) { return { label: FF.t(o[1], o[0]), value: o[1] }; }),
+          onChange: function (v) { rs[key] = v; }
         });
-        return wrap;
       }
 
       function gameGrid(onPick) {
@@ -463,7 +350,9 @@ window.FF = window.FF || {};
               onPick();
             }
           });
-          card.appendChild(FF.ui.div('rm-game__icon', def.icon || '🎮'));
+          var gi = FF.ui.div('rm-game__icon');
+          gi.appendChild(FF.Icons.icon(FF.Icons.game[id] || cat.iconKey, def.icon || '🎮'));
+          card.appendChild(gi);
           card.appendChild(FF.ui.div('rm-game__name', def.name));
           card.appendChild(FF.ui.div('rm-game__cat', cat.name));
           grid.appendChild(card);
@@ -484,26 +373,33 @@ window.FF = window.FF || {};
         if (qr) qrWrap.appendChild(qr);
 
         var share = FF.ui.div('rm-share', [
-          FF.ui.button('📋 Copy link', {
-            class: 'btn', onClick: function () {
-              if (navigator.clipboard) navigator.clipboard.writeText(url);
+          FF.UI.button(FF.t('copyLink', 'Copy link'), {
+            icon: 'copy', onClick: function () {
               FF.Audio.play('click');
+              if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(url).then(function () {
+                  FF.UI.toast(FF.t('linkCopied', 'Link copied'), { type: 'success' });
+                }, function () { FF.UI.toast(url); });
+              } else {
+                FF.UI.toast(url);
+              }
             }
           }),
-          navigator.share ? FF.ui.button('📤 Share', {
-            class: 'btn', onClick: function () {
+          navigator.share ? FF.UI.button(FF.t('share', 'Share'), {
+            icon: 'share', onClick: function () {
               navigator.share({ title: 'Family Fun', url: url }).catch(function () {});
             }
           }) : null
         ].filter(Boolean));
 
+        var codeBox = FF.ui.el('div', { class: 'rm-code', 'aria-label': FF.t('roomCodeIs', 'Room code {code}', { code: s.code.split('').join(' ') }) }, s.code);
+
         var children = [
-          title(s.isHost ? '🌐 Your room' : '🌐 Joined'),
-          FF.ui.div('rm-code', s.code),
+          hero('wifi', s.isHost ? FF.t('yourRoom', 'Your room') : FF.t('youreIn', 'You’re in!'), s.isHost ? FF.t('shareCode', 'Share this code, or let others scan the QR code.') : null),
+          codeBox,
           share,
           qrWrap,
-          FF.ui.div('rm-hint', FF.util.plural(players.length, 'device') +
-            ' connected · up to ' + FF.Room.MAX_PLAYERS),
+          FF.ui.el('h2', { class: 'rm-subtitle' }, FF.t('whosHere', 'Who’s here ({n} of {max})', { n: players.length, max: FF.Room.MAX_PLAYERS })),
           playerChips(players, s.uid)
         ];
 
@@ -512,16 +408,17 @@ window.FF = window.FF || {};
 
         if (s.isHost) {
           var def = FF.Games.get(chosen);
-          children.push(FF.ui.el('h2', { class: 'rm-subtitle' }, 'Pick a game'));
+          children.push(FF.ui.el('h2', { class: 'rm-subtitle' }, FF.t('pickAGame', 'Pick a game')));
           children.push(gameGrid(render));
-          if (def) children.push(FF.ui.div('rm-hint rm-chosen', def.description || ''));
-          children.push(FF.ui.el('h3', { class: 'settings-group' }, 'Before you start'));
-          children.push(settingRow('Difficulty', segs([['Easy', 'easy'], ['Normal', 'normal'], ['Hard', 'hard']], 'difficulty')));
-          children.push(settingRow('Game length', segs([['Quick', 'quick'], ['Short', 'short'], ['Normal', 'normal'], ['Long', 'long']], 'length')));
-          children.push(settingRow('Time limit', FF.SettingsUI.duration(rs.timer, function (v) { rs.timer = v; }, { allowOff: true })));
-          children.push(FF.ui.div('rm-hint', 'These settings apply to everyone in the room.'));
-          children.push(FF.ui.button('▶ START ' + (def ? def.name.toUpperCase() : 'GAME'), {
-            class: 'btn btn-lg', primary: true,
+          if (def) children.push(FF.ui.el('p', { class: 'rm-chosen', 'aria-live': 'polite' }, def.name + ': ' + (def.description || '')));
+          var opts = FF.ui.el('section', { class: 'settings-section' });
+          opts.appendChild(settingRow(FF.t('difficulty', 'Difficulty'), segs([['Easy', 'easy'], ['Normal', 'normal'], ['Hard', 'hard']], 'difficulty', FF.t('difficulty', 'Difficulty'))));
+          opts.appendChild(settingRow(FF.t('gameLength', 'Game length'), segs([['Quick', 'quick'], ['Short', 'short'], ['Normal', 'normal'], ['Long', 'long']], 'length', FF.t('gameLength', 'Game length'))));
+          opts.appendChild(settingRow(FF.t('timeLimit', 'Time limit'), FF.SettingsUI.duration(rs.timer, function (v) { rs.timer = v; }, { allowOff: true })));
+          children.push(FF.ui.el('h2', { class: 'rm-subtitle' }, FF.t('settingsForAll', 'Settings for everyone')));
+          children.push(opts);
+          children.push(FF.UI.button(def ? FF.t('startName', 'Start {name}', { name: def.name }) : FF.t('startGame', 'Start game'), {
+            class: 'btn-lg btn-primary', icon: 'play',
             onClick: function () {
               FF.Audio.play('roundStart');
               FF.Room.startGame(chosen, {
@@ -534,11 +431,11 @@ window.FF = window.FF || {};
             }
           }));
         } else {
-          children.push(FF.ui.div('rm-hint', '⏳ Waiting for the host to pick a game and settings…'));
+          children.push(FF.UI.emptyState({ icon: 'clock', title: FF.t('waitingHost', 'Waiting for the host'), text: FF.t('waitingHostText', 'The host is picking a game. It will start on everyone’s screen at the same time.') }));
         }
 
-        children.push(FF.ui.button('🚪 ' + FF.t('leaveRoom', 'Leave room'), {
-          class: 'btn btn-lg',
+        children.push(FF.UI.button(FF.t('leaveRoom', 'Leave room'), {
+          class: 'btn-lg btn-ghost', icon: 'close',
           onClick: function () {
             if (FF.Voice) FF.Voice.leave();
             FF.Room.leave();
@@ -573,7 +470,6 @@ window.FF = window.FF || {};
     /* Everyone counts down to the same instant and starts together. A device
        that arrives late (startAt already past) just launches straight away. */
     startWhenReady: function (main, meta) {
-      ensureStyles();
       var s = FF.Room.current();
       if (!s) return;
       var startToken = String(meta.startAt || 0) + ':' + String(meta.gameId || '');
@@ -606,9 +502,9 @@ window.FF = window.FF || {};
 
       var num = FF.ui.div('rm-count__num', '');
       var wrap = panel([
-        FF.ui.div('rm-count__game', (def ? (def.icon + '  ' + def.name) : 'Get ready')),
+        FF.ui.el('h1', { class: 'rm-count__game' }, def ? def.name : FF.t('getReady', 'Get ready')),
         num,
-        FF.ui.div('rm-hint', 'Everyone starts together when this hits zero'),
+        FF.ui.div('rm-hint', FF.t('startsTogether', 'Everyone starts together at zero.')),
         playerChips(FF.Room.racePlayers(), s.uid)
       ]);
       wrap.classList.add('rm-count');
@@ -621,7 +517,7 @@ window.FF = window.FF || {};
         var secs = Math.ceil(left / 1000);
         if (secs !== lastShown) {
           lastShown = secs;
-          num.textContent = secs > 0 ? String(secs) : 'GO!';
+          num.textContent = secs > 0 ? String(secs) : FF.t('go', 'Go!');
           num.classList.remove('rm-count__num--pop');
           void num.offsetWidth;              // restart the pop animation
           num.classList.add('rm-count__num--pop');
@@ -635,7 +531,6 @@ window.FF = window.FF || {};
       }, 100);
     },
     showResults: function (main) {
-      ensureStyles();
       var self = this;
       if (!FF.Room.current()) { this.showHome(main); return; }
 
@@ -651,25 +546,24 @@ window.FF = window.FF || {};
           return { uid: p.uid, name: p.name, avatar: p.avatar, points: scores[p.uid] || 0 };
         }).sort(function (a, b) { return b.points - a.points; });
 
-        var list = FF.ui.div('rm-players');
-        list.style.flexDirection = 'column';
+        var list = FF.ui.el('ol', { class: 'results__leaderboard', style: { listStyle: 'none' } });
         ranked.forEach(function (r, i) {
-          var medal = i === 0 ? '🥇' : (i === 1 ? '🥈' : (i === 2 ? '🥉' : '　'));
-          list.appendChild(FF.ui.div('rm-player', [
-            FF.ui.span('rm-player__ava', medal + ' ' + (r.avatar || '😀')),
-            r.name + (r.uid === state.uid ? ' (you)' : ''),
-            FF.ui.span('', '　' + FF.util.formatNumber(r.points))
-          ]));
+          var row = FF.ui.el('li', { class: 'results__row' + (i === 0 && r.points > 0 ? ' results__row--winner' : '') });
+          row.appendChild(FF.ui.el('span', { class: 'results__rank' }, ['🥇', '🥈', '🥉'][i] || String(i + 1)));
+          row.appendChild(FF.ui.el('span', { class: 'results__avatar' }, r.avatar || '😀'));
+          row.appendChild(FF.ui.el('span', { class: 'results__name' }, r.name + (r.uid === state.uid ? ' ' + FF.t('youTag', '(you)') : '')));
+          row.appendChild(FF.ui.el('span', { class: 'results__pts' }, FF.util.formatNumber(r.points)));
+          list.appendChild(row);
         });
 
         var headline = (ranked.length && ranked[0].points > 0)
-          ? '🏆 ' + ranked[0].name + ' wins!'
-          : '🏁 Game over';
+          ? FF.t('nameWins', '{name} wins!', { name: ranked[0].name })
+          : FF.t('gameOver', 'Game over');
 
-        var children = [title(headline), list];
+        var children = [hero('trophy', headline), list];
 
         if (state.isHost) {
-          children.push(FF.ui.button('🔄 PLAY AGAIN', {
+          children.push(FF.UI.button('Play again', { icon: 'restart',
             class: 'btn btn-lg', primary: true,
             onClick: function () {
               FF.Audio.play('click');
@@ -679,11 +573,11 @@ window.FF = window.FF || {};
             }
           }));
         } else {
-          children.push(FF.ui.div('rm-hint', '⏳ Waiting for the host…'));
+          children.push(FF.ui.div('rm-hint', FF.t('waitingHostShort', 'Waiting for the host…')));
         }
 
-        children.push(FF.ui.button('🚪 Leave room', {
-          class: 'btn btn-lg',
+        children.push(FF.UI.button(FF.t('leaveRoom', 'Leave room'), { icon: 'close',
+          class: 'btn-lg btn-ghost',
           onClick: function () { FF.Room.leave(); self.showHome(main); }
         }));
 
@@ -701,12 +595,10 @@ window.FF = window.FF || {};
     },
 
     showVersionBlock: function (main) {
-      ensureStyles();
       FF.ui.clear(main);
       main.appendChild(panel([
-        title('🔄 Update needed'),
-        FF.ui.div('rm-hint', 'This device is running an older version of the game than the room. Refresh the page to update, then join again.'),
-        FF.ui.button('🔄 REFRESH NOW', {
+        hero('restart', FF.t('updateNeeded', 'Update needed'), FF.t('updateNeededText', 'This device has an older version of the game than the room. Refresh the page to update, then join again.')),
+        FF.UI.button(FF.t('refreshNow', 'Refresh now'), { icon: 'restart',
           class: 'btn btn-lg', primary: true,
           onClick: function () { window.location.reload(); }
         })
@@ -715,16 +607,12 @@ window.FF = window.FF || {};
     },
 
     showError: function (main, message) {
-      ensureStyles();
       FF.ui.clear(main);
       var self = this;
       main.appendChild(panel([
-        title('😅 Something went wrong'),
-        FF.ui.div('rm-error', message),
-        FF.ui.button('← Back', {
-          class: 'btn btn-lg', primary: true,
-          onClick: function () { self.showHome(main); }
-        })
+        hero('alert', FF.t('oops', 'Something went wrong')),
+        FF.ui.el('div', { class: 'rm-error', role: 'alert' }, message),
+        FF.UI.button(FF.t('back', 'Back'), { class: 'btn-lg btn-primary', icon: 'arrow-left', onClick: function () { self.showHome(main); } })
       ]));
       FF.Nav.focusFirst(main);
     },
@@ -734,14 +622,7 @@ window.FF = window.FF || {};
       var existing = document.getElementById('rm-banner');
       if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
       if (!text) return;
-      var b = FF.ui.el('div', {
-        id: 'rm-banner',
-        style: {
-          position: 'fixed', left: '0', right: '0', top: '0', zIndex: '9999',
-          padding: '10px', textAlign: 'center', fontWeight: '800',
-          background: '#f59e0b', color: '#111827'
-        }
-      }, text);
+      var b = FF.ui.el('div', { id: 'rm-banner', class: 'rm-banner', role: 'alert' }, text);
       document.body.appendChild(b);
     }
   };

@@ -101,72 +101,27 @@ window.FF = window.FF || {};
     var code = (FF.data && FF.data.flagCodes) ? FF.data.flagCodes[country && country.id] : null;
     var f = api.flags.render(country && country.flag, {
       code: code,
-      cls: 'wg-flag-svg',
-      alt: (country && country.name) ? country.name + ' flag' : 'Flag'
+      cls: 'wld-flag-svg',
+      // Never name the country here: the flag is often the question.
+      alt: FF.t('aFlag', 'A country flag')
     });
     var w = size || 220;
-    f.style.width = w + 'px';
-    f.style.height = Math.round(w * 2 / 3) + 'px';
-    f.style.maxWidth = '100%';
+    f.style.width = 'min(' + w + 'px, 78vw)';
     return f;
   }
 
   function div(cls, children) { return FF.ui.div(cls, children); }
   function span(cls, children) { return FF.ui.span(cls, children); }
 
-  /* ---------- Style injection (once) ---------- */
-  var STYLE_READY = false;
-  function ensureStyles() {
-    if (STYLE_READY) return;
-    STYLE_READY = true;
-    if (!document || !document.head) return;
-    var style = document.createElement('style');
-    style.id = 'world-games-style';
-    style.textContent = [
-      '.wg-wrap{display:flex;flex-direction:column;gap:16px;max-width:780px;margin:0 auto;width:100%;}',
-      '.wg-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;}',
-      '.wg-round{font-weight:800;color:var(--muted,#6b7280);}',
-      '.wg-turn{font-weight:700;display:flex;align-items:center;gap:6px;}',
-      '.wg-turn .wg-ava{font-size:1.3rem;}',
-      '.wg-prompt{text-align:center;}',
-      '.wg-prompt-title{font-size:1.4rem;font-weight:800;line-height:1.3;margin-bottom:12px;}',
-      '.wg-flag{display:flex;justify-content:center;margin:6px 0;}',
-      '.wg-options{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;}',
-      '.wg-option{flex:1 1 calc(50% - 12px);min-width:210px;display:flex;align-items:center;gap:10px;padding:14px 16px;font-size:1.05rem;font-weight:700;text-align:left;border-radius:14px;background:var(--surface-2,#f1eef9);color:var(--text,#211e33);border:1px solid var(--border,#e7e3f2);}',
-      '.wg-option:hover{background:var(--surface,#ffffff);box-shadow:var(--shadow,0 6px 24px rgba(38,30,70,.08));}',
-      '.wg-option__letter{background:var(--accent-soft,rgba(139,92,246,.16));color:var(--accent,#8b5cf6);font-weight:800;border-radius:8px;padding:2px 9px;}',
-      '.wg-option__label{flex:1;}',
-      '.wg-fb{text-align:center;display:flex;flex-direction:column;gap:14px;align-items:center;}',
-      '.wg-fb-result{font-size:1.6rem;font-weight:800;}',
-      '.wg-correct{color:var(--success,#10b981);}',
-      '.wg-wrong{color:var(--danger,#ef4444);}',
-      '.wg-fb-points{color:var(--accent,#8b5cf6);font-weight:800;font-size:1.2rem;}',
-      '.wg-fb-answer{font-weight:700;}'
-    ].join('\n');
-    document.head.appendChild(style);
-  }
-
   /* ---------- Friendly guards ---------- */
   function showFriendlyMessage(api, title, message) {
-    var root = api.shell.root;
-    FF.ui.clear(root);
-    var box = div('panel');
-    box.style.textAlign = 'center';
-    box.style.margin = '30px auto';
-    box.style.maxWidth = '540px';
-    box.appendChild(FF.ui.el('h2', {}, title));
-    box.appendChild(FF.ui.el('p', {}, message));
-    box.appendChild(FF.ui.button('🏠 Exit', {
-      class: 'btn btn-lg', primary: true,
-      onClick: function () { FF.Audio.play('click'); FF.GameFlow.exitToHome(); }
-    }));
-    root.appendChild(box);
+    FF.GameUI.exitCard(api, title, message);
   }
 
   function showMissingData(api) {
     showFriendlyMessage(
       api,
-      '🌍 World games need country data',
+      FF.t('worldNeedsData', 'World games need country data'),
       'The country data file could not be found or is empty. Add country data (js/data/countries.js) to play the World games.'
     );
   }
@@ -278,42 +233,26 @@ window.FF = window.FF || {};
       }
 
       FF.ui.clear(root);
-      var wrap = div('wg-wrap');
+      var wrap = FF.GameUI.stage({ className: 'wld-wrap' });
 
-      var head = div('wg-head');
-      head.appendChild(div('wg-round', 'ROUND ' + (roundIndex + 1) + ' / ' + roundCount));
       // In a room nobody takes turns - everyone races the same question.
-      if (racing) {
-        head.appendChild(div('wg-turn', '🏁 Everyone races'));
-      } else {
-        head.appendChild(div('wg-turn', [span('wg-ava', scorer.avatar || '😀'), scorer.name]));
-      }
-      wrap.appendChild(head);
+      wrap.appendChild(FF.GameUI.turnBar(scorer, FF.t('roundOf', 'Round {n} of {total}', { n: roundIndex + 1, total: roundCount })));
 
-      var prompt = div('wg-prompt');
-      prompt.appendChild(div('wg-prompt-title', currentQuestion.promptTitle || ''));
+      wrap.appendChild(FF.GameUI.prompt(currentQuestion.promptTitle || ''));
       if (currentQuestion.flagNode) {
-        var fwrap = div('wg-flag');
+        var fwrap = div('wld-flag');
         fwrap.appendChild(currentQuestion.flagNode);
-        prompt.appendChild(fwrap);
+        wrap.appendChild(fwrap);
       }
-      wrap.appendChild(prompt);
 
-      var optionsWrap = div('wg-options');
-      var letters = ['A', 'B', 'C', 'D', 'E'];
+      var optionsWrap = FF.GameUI.options({ columns: 'auto', className: 'wld-options' });
       currentQuestion.options.forEach(function (optText, i) {
-        var b = FF.ui.button('', {
-          class: 'wg-option',
-          ariaLabel: String(optText),
-          onClick: (function (idx) { return function () { handleAnswer(idx); }; })(i)
-        });
-        b.appendChild(span('wg-option__letter', letters[i] || String(i + 1)));
-        b.appendChild(span('wg-option__label', String(optText)));
+        var b = FF.GameUI.option(String(optText), (function (idx) { return function () { handleAnswer(idx); }; })(i), i, { className: 'wld-option' });
         optionsWrap.appendChild(b);
       });
       wrap.appendChild(optionsWrap);
 
-      wrap.appendChild(div('hint', 'Correct answer = ' + basePoints(api) + ' points · Speed bonus +' + SPEED_BONUS + ' if fast!'));
+      wrap.appendChild(FF.GameUI.note(FF.t('worldPoints', '{n} points for a right answer, plus {b} if you are quick.', { n: basePoints(api), b: SPEED_BONUS })));
 
       root.appendChild(wrap);
       if (FF.Nav && FF.Nav.focusFirst) FF.Nav.focusFirst(root);
@@ -331,7 +270,7 @@ window.FF = window.FF || {};
         // Hold until the round's shared open instant so every device
         // reveals the question at the same moment.
         api.shell.hideTimer();
-        FF.RaceUI.gate(root, '.wg-option', openRound);
+        FF.RaceUI.gate(root, '.wld-option', openRound);
       } else {
         openRound();
       }
@@ -350,7 +289,7 @@ window.FF = window.FF || {};
         // The race decides the round. A wrong answer only locks this
         // device out; everyone else keeps playing.
         FF.Race.submit(choiceIndex, correct, shared != null ? shared : elapsed);
-        if (!correct) FF.RaceUI.lockOut(root, '.wg-option');
+        if (!correct) FF.RaceUI.lockOut(root, '.wld-option');
         return;
       }
 
@@ -387,33 +326,28 @@ window.FF = window.FF || {};
 
     function renderFeedback(q, correct, points) {
       FF.ui.clear(root);
-      var wrap = div('wg-fb');
+      var wrap = FF.GameUI.stage({ className: 'wld-fb' });
 
-      var result = div('wg-fb-result');
-      if (correct) {
-        result.textContent = '✅ Correct!';
-        result.classList.add('wg-correct');
-      } else {
-        result.textContent = '❌ Not quite';
-        result.classList.add('wg-wrong');
-      }
+      var result = FF.ui.el('h2', { class: 'wld-fb-result ' + (correct ? 'wld-correct' : 'wld-wrong'), role: 'status' });
+      result.appendChild(FF.Icons.icon(correct ? 'check-circle' : 'x-circle'));
+      result.appendChild(document.createTextNode(correct ? FF.t('correct', 'Correct!') : FF.t('notQuite', 'Not quite.')));
       wrap.appendChild(result);
 
       if (correct && points > 0) {
-        wrap.appendChild(div('wg-fb-points', '+' + points + ' points'));
+        wrap.appendChild(div('wld-fb-points', FF.t('plusPoints', '+{n} points', { n: FF.util.formatNumber(points) })));
       }
 
-      var answerLine = correct ? 'Answer: ' : 'The answer was ';
-      wrap.appendChild(div('wg-fb-answer', answerLine + (q.answerText != null ? q.answerText : '')));
+      var ans = q.answerText != null ? q.answerText : '';
+      wrap.appendChild(div('wld-fb-answer', correct ? FF.t('answerIs', 'Answer: {answer}', { answer: ans }) : FF.t('answerWas', 'The answer was {answer}.', { answer: ans })));
 
       if (q.feedbackFlagNode) {
-        var fwrap = div('wg-flag');
+        var fwrap = div('wld-flag');
         fwrap.appendChild(q.feedbackFlagNode);
         wrap.appendChild(fwrap);
       }
 
       var isLast = (roundIndex + 1) >= roundCount;
-      var next = FF.Advance.button(isLast ? '🏆 See Results' : 'Next ➜', function () {
+      var next = FF.Advance.button(isLast ? FF.t('seeResults', 'See results') : FF.t('next', 'Next'), function () {
         api.audio.play('select');
         roundIndex++;
         if (roundIndex >= roundCount) finish();
@@ -429,7 +363,6 @@ window.FF = window.FF || {};
   }
 
   function startWorldGame(api, opts) {
-    ensureStyles();
     if (!hasData()) { showMissingData(api); return; }
     FF.safe(function () { runTrivia(api, opts); }, function () {
       showFriendlyMessage(api, '😅 Oops!', 'Something went wrong starting this game. Please try again.');
@@ -582,7 +515,7 @@ window.FF = window.FF || {};
       var others = sampleDistractorCountries(pool, [correct.name], 3);
       var made = makeOptionsFromNames(correct.name, others.map(function (c) { return c.name; }));
       return {
-        promptTitle: 'WHICH FLAG?',
+        promptTitle: FF.t('whoseFlag', 'Whose flag is this?'),
         flagNode: renderFlagNode(api, correct, 260),
         options: made.options,
         answer: made.answer,

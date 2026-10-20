@@ -9,36 +9,6 @@ window.FF = window.FF || {};
 (function () {
   'use strict';
 
-  var STYLE_READY = false;
-  function ensureStyles() {
-    if (STYLE_READY) return;
-    STYLE_READY = true;
-    if (!document || !document.head) return;
-    var style = document.createElement('style');
-    style.id = 'ff-raceui-style';
-    style.textContent = [
-      '.ffr-out{font-weight:800;text-align:center;margin-top:14px;color:var(--danger,#ef4444);}',
-      '.ffr-result{display:flex;flex-direction:column;align-items:center;gap:10px;',
-      'max-width:620px;margin:0 auto;text-align:center;}',
-      '.ffr-verdict{font-size:1.7rem;font-weight:800;}',
-      '.ffr-win{color:var(--success,#10b981);}',
-      '.ffr-lose{color:var(--danger,#ef4444);}',
-      '.ffr-points{color:var(--accent,#8b5cf6);font-weight:800;font-size:1.2rem;}',
-      '.ffr-answer{font-weight:700;}',
-      '.ffr-board{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:6px;}',
-      '.ffr-chip{display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;',
-      'background:var(--surface,#f8fafc);border:1px solid var(--border,#e2e8f0);font-weight:700;}',
-      '.ffr-chip--off{opacity:.45;}',
-      '.ffr-gate{position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;',
-      'align-items:center;justify-content:center;gap:10px;',
-      'background:rgba(15,23,42,0.72);backdrop-filter:blur(3px);}',
-      '.ffr-gate__label{font-size:1.1rem;font-weight:800;color:#fff;letter-spacing:2px;}',
-      '.ffr-gate__num{font-size:5rem;font-weight:800;color:#fff;line-height:1;',
-      'animation:ffr-pop .4s ease;}',
-      '@keyframes ffr-pop{from{transform:scale(.6);opacity:.4;}to{transform:scale(1);opacity:1;}}'
-    ].join('\n');
-    document.head.appendChild(style);
-  }
 
   /* A compact live scoreboard so every device shows the same standings. */
   function scoreboard() {
@@ -69,7 +39,6 @@ window.FF = window.FF || {};
        them and calls onOpen() - at the same moment on every device.
        Returns a cancel function. */
     gate: function (root, optionSelector, onOpen) {
-      ensureStyles();
       onOpen = onOpen || function () {};
 
       if (!FF.Race || !FF.Race.active() || FF.Race.msUntilOpen() <= 0) {
@@ -82,8 +51,8 @@ window.FF = window.FF || {};
       });
       buttons.forEach(function (b) { b.disabled = true; });
 
-      var overlay = FF.ui.div('ffr-gate');
-      var label = FF.ui.div('ffr-gate__label', 'GET READY');
+      var overlay = FF.ui.el('div', { class: 'ffr-gate', role: 'status', 'aria-live': 'assertive' });
+      var label = FF.ui.div('ffr-gate__label', FF.t('getReady', 'Get ready'));
       var num = FF.ui.div('ffr-gate__num', '');
       overlay.appendChild(label);
       overlay.appendChild(num);
@@ -119,10 +88,11 @@ window.FF = window.FF || {};
       FF.ui.$$(optionSelector || 'button', root).forEach(function (b) {
         if (b.classList.contains('shell-btn') || b.classList.contains('host-btn')) return;
         b.disabled = true;
-        b.style.opacity = '0.45';
-        b.style.cursor = 'default';
+        b.classList.add('is-locked');
       });
-      var note = FF.ui.div('ffr-out', "❌ You're out — watch it play out");
+      var note = FF.ui.el('div', { class: 'ffr-out', role: 'status' });
+      note.appendChild(FF.Icons.icon('x-circle'));
+      note.appendChild(document.createTextNode(' ' + FF.t('youreOut', 'You’re out this round. Watch how it ends.')));
       root.appendChild(note);
       return note;
     },
@@ -130,41 +100,42 @@ window.FF = window.FF || {};
     /* The round settled for everyone.
        opts: { payload, answerText, isLast, onNext } */
     result: function (root, opts) {
-      ensureStyles();
       opts = opts || {};
       var payload = opts.payload || {};
       FF.ui.clear(root);
 
       var wrap = FF.ui.div('ffr-result');
-      var verdict = FF.ui.div('ffr-verdict');
+      var verdict = FF.ui.el('h2', { class: 'ffr-verdict', role: 'status' });
 
       if (payload.reason === 'winner') {
         var mine = !!payload.correct;
-        verdict.textContent = mine ? '✅ You got it!' : '🏆 ' + payload.winnerName + ' got it';
+        verdict.appendChild(FF.Icons.icon(mine ? 'check-circle' : 'trophy'));
+        verdict.appendChild(document.createTextNode(mine ? FF.t('youGotIt', 'You got it!') : FF.t('nameGotIt', '{name} got it', { name: payload.winnerName })));
         verdict.classList.add(mine ? 'ffr-win' : 'ffr-lose');
         FF.Audio.play(mine ? 'correct' : 'select');
       } else {
         // Devices can reach a no-winner round by different routes (a local
         // timeout, or reading the published sentinel). Show identical copy
         // either way so two phones never disagree on screen.
-        verdict.textContent = '⏰ Nobody got that one';
+        verdict.appendChild(FF.Icons.icon('clock'));
+        verdict.appendChild(document.createTextNode(FF.t('nobodyGotIt', 'Nobody got that one')));
         verdict.classList.add('ffr-lose');
         FF.Audio.play('wrong');
       }
       wrap.appendChild(verdict);
 
       if (payload.reason === 'winner' && payload.points) {
-        wrap.appendChild(FF.ui.div('ffr-points', '+' + payload.points + ' points'));
+        wrap.appendChild(FF.ui.div('ffr-points', FF.t('plusPoints', '+{n} points', { n: FF.util.formatNumber(payload.points) })));
       }
 
       if (opts.answerText != null && opts.answerText !== '') {
-        wrap.appendChild(FF.ui.div('ffr-answer', 'The answer was ' + opts.answerText));
+        wrap.appendChild(FF.ui.div('ffr-answer', FF.t('answerWas', 'The answer was {answer}.', { answer: opts.answerText })));
       }
 
       wrap.appendChild(scoreboard());
 
       wrap.appendChild(FF.Advance.button(
-        opts.isLast ? '🏆 See Results' : 'Next ➜',
+        opts.isLast ? FF.t('seeResults', 'See results') : FF.t('next', 'Next'),
         opts.onNext || function () {},
         { class: 'btn btn-lg' }
       ));

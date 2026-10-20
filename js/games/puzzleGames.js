@@ -36,16 +36,7 @@ window.FF = window.FF || {};
   }
 
   function noData(api, what) {
-    var root = api.shell.root;
-    api.ui.clear(root);
-    var wrap = api.ui.div('panel panel--center');
-    wrap.appendChild(api.ui.el('h2', {}, '😕 ' + what));
-    wrap.appendChild(api.ui.el('p', {}, 'This game needs its picture data, which could not be found. Please make sure the visual data file is loaded, then try again.'));
-    wrap.appendChild(api.ui.button('🏠 EXIT', {
-      primary: true, class: 'btn-lg',
-      onClick: function () { if (FF.GameFlow && FF.GameFlow.exitToHome) FF.GameFlow.exitToHome(); }
-    }));
-    root.appendChild(wrap);
+    FF.GameUI.exitCard(api, what, FF.t('needsPictures', 'This game needs its picture data, which could not be found. Make sure the visual data file is loaded, then try again.'));
   }
 
   function finish(api) {
@@ -158,28 +149,22 @@ window.FF = window.FF || {};
 
   function renderSceneItem(stage, item, onClick) {
     var style = {
-      position: 'absolute',
       left: item.x + 'px',
       top: item.y + 'px',
       width: item.size + 'px',
-      height: item.size + 'px',
-      cursor: onClick ? 'pointer' : 'default'
+      height: item.size + 'px'
     };
     if (item.type === 'emoji') {
       style.fontSize = Math.round(item.size * 0.72) + 'px';
       style.lineHeight = item.size + 'px';
-      style.textAlign = 'center';
     } else {
       style.backgroundColor = item.color.hex;
-      if (item.shape === 'circle') style.borderRadius = '50%';
-      else if (item.shape === 'triangle') style.clipPath = 'polygon(50% 8%, 96% 92%, 4% 92%)';
-      else style.borderRadius = '14%';
-      style.boxShadow = 'inset 0 0 0 1px rgba(0,0,0,0.08)';
     }
-    var el = api.ui.el('div', {
-      class: 'scene-item',
+    var el = FF.ui.el(onClick ? 'button' : 'div', {
+      type: onClick ? 'button' : null,
+      class: 'scene-item' + (item.type === 'emoji' ? ' scene-item--emoji' : ' scene-item--' + item.shape) + (onClick ? ' scene-item--tap' : ''),
       style: style,
-      tabindex: onClick ? 0 : null,
+      'aria-label': onClick ? describeItem(item) : null,
       onclick: onClick || null
     });
     if (item.type === 'emoji') el.textContent = item.emoji;
@@ -188,22 +173,12 @@ window.FF = window.FF || {};
   }
 
   function scaledStage(api, w, h, scale) {
-    var outer = api.ui.div('');
+    var outer = api.ui.div('scene-frame');
     outer.style.width = Math.round(w * scale) + 'px';
     outer.style.height = Math.round(h * scale) + 'px';
-    outer.style.position = 'relative';
-    outer.style.overflow = 'hidden';
-    outer.style.background = '#eef2f6';
-    outer.style.borderRadius = '12px';
-    outer.style.border = '1px solid var(--border)';
-    outer.style.boxShadow = '0 6px 20px rgba(0,0,0,0.12)';
-    var stage = api.ui.div('');
-    stage.style.position = 'absolute';
-    stage.style.left = '0';
-    stage.style.top = '0';
+    var stage = api.ui.div('scene-stage');
     stage.style.width = w + 'px';
     stage.style.height = h + 'px';
-    stage.style.transformOrigin = 'top left';
     stage.style.transform = 'scale(' + scale + ')';
     outer.appendChild(stage);
     return { outer: outer, stage: stage };
@@ -211,7 +186,7 @@ window.FF = window.FF || {};
 
   function fitScaleFor(w) {
     var vw = window.innerWidth || 900;
-    var avail = Math.max(260, vw - 40);
+    var avail = Math.max(260, vw - 48);
     var sideBySide = vw >= 720;
     var per = sideBySide ? (avail - 20) / 2 : avail;
     return { scale: Math.min(1, per / w), sideBySide: sideBySide };
@@ -219,12 +194,7 @@ window.FF = window.FF || {};
 
   function labeledStage(api, label, w, h, scale) {
     var col = api.ui.div('stage-col');
-    col.style.textAlign = 'center';
-    col.style.display = 'inline-block';
-    col.style.verticalAlign = 'top';
     var lab = api.ui.div('stage-label', label);
-    lab.style.fontWeight = '800';
-    lab.style.marginBottom = '6px';
     col.appendChild(lab);
     var s = scaledStage(api, w, h, scale);
     col.appendChild(s.outer);
@@ -233,15 +203,13 @@ window.FF = window.FF || {};
 
   function ring(el) {
     if (!el) return;
-    el.style.boxShadow = '0 0 0 3px #10b981, 0 0 12px rgba(16,185,129,0.8)';
-    el.style.zIndex = '5';
+    el.classList.add('scene-item--found');
   }
 
   function flashWrong(el) {
     if (!el) return;
-    var prev = el.style.boxShadow;
-    el.style.boxShadow = '0 0 0 3px #ef4444';
-    setTimeout(function () { el.style.boxShadow = prev; }, 450);
+    el.classList.add('scene-item--miss');
+    setTimeout(function () { el.classList.remove('scene-item--miss'); }, 450);
   }
 
   function pickChanges(base, n) {
@@ -367,7 +335,7 @@ window.FF = window.FF || {};
       function playRound() {
         if (index >= rounds) { finish(api); return; }
         var scorer = list[index];
-        var label = (list.length > 1) ? (scorer.avatar || '😀') + ' ' + scorer.name + "'s turn" : 'Slide the tiles to reveal the picture';
+        var label = (list.length > 1) ? FF.t('turnOf', '{name}’s turn', { name: scorer.name }) : FF.t('slideTiles', 'Slide the tiles to reveal the picture');
         index++;
         renderPuzzle(api, scorer, bag.next(), size, label, playRound);
       }
@@ -381,30 +349,23 @@ window.FF = window.FF || {};
     api.shell.updateScores(scorer.id);
     api.shell.hideTimer();
 
-    var wrap = api.ui.div('');
-    wrap.style.textAlign = 'center';
+    var wrap = FF.GameUI.stage();
 
-    wrap.appendChild(api.ui.el('h2', {}, label));
-    wrap.appendChild(api.ui.el('p', { class: 'hint' }, '🖼️ ' + item.name));
-
-    var status = api.ui.div('puzzle-status');
-    status.style.margin = '8px 0';
-    status.style.fontWeight = '700';
-    var movesEl = api.ui.span('puzzle-moves', 'Moves: 0');
-    status.appendChild(movesEl);
-    wrap.appendChild(status);
+    wrap.appendChild(FF.GameUI.prompt(label, 'sm'));
+    var meta = FF.ui.div('gm-turnbar');
+    meta.appendChild(FF.GameUI.pill(item.name, 'image'));
+    var movesEl = FF.GameUI.pill(FF.t('movesN', 'Moves: {n}', { n: 0 }), 'shuffle');
+    movesEl.classList.add('puzzle-moves');
+    meta.appendChild(movesEl);
+    wrap.appendChild(meta);
 
     var stage = api.ui.div('puzzle-stage');
-    stage.style.margin = '12px auto';
-    stage.style.textAlign = 'center';
     wrap.appendChild(stage);
 
-    stage.appendChild(api.ui.div('hint', 'Preparing your game...'));
+    stage.appendChild(FF.GameUI.note(FF.t('preparing', 'Getting the puzzle ready…')));
 
-    var controls = api.ui.div('puzzle-controls');
-    controls.style.marginTop = '12px';
-    controls.appendChild(api.ui.button('🔀 Reshuffle', { class: 'btn', onClick: function () { buildBoard(); } }));
-    controls.appendChild(api.ui.button('🏠 End Game', { class: 'btn', onClick: function () { FF.GameFlow.confirmExit(); } }));
+    var controls = api.ui.div('gm-row puzzle-controls');
+    controls.appendChild(FF.UI.button(FF.t('reshuffle', 'Shuffle again'), { icon: 'shuffle', onClick: function () { buildBoard(); } }));
     wrap.appendChild(controls);
 
     root.appendChild(wrap);
@@ -428,7 +389,11 @@ window.FF = window.FF || {};
     }
 
     function updateStatus() {
-      if (movesEl) movesEl.textContent = 'Moves: ' + moves;
+      if (movesEl) {
+        FF.ui.clear(movesEl);
+        movesEl.appendChild(FF.Icons.icon('shuffle'));
+        movesEl.appendChild(document.createTextNode(FF.t('movesN', 'Moves: {n}', { n: moves })));
+      }
     }
 
     function reposition() {
@@ -459,9 +424,9 @@ window.FF = window.FF || {};
           var pts = Math.round(raw * bonusFor(api));
           api.scoring.add(scorer.id, pts);
           api.shell.updateScores(scorer.id);
-          api.shell.toast('Solved in ' + moves + ' moves! +' + pts + ' pts');
+          api.shell.toast(FF.t('solvedIn', 'Solved in {m} moves! +{n} points', { m: moves, n: pts }), 'good');
           var cont = stage.querySelector('.puzzle-board');
-          if (cont) cont.style.boxShadow = '0 8px 24px rgba(16,185,129,0.5)';
+          if (cont) cont.classList.add('puzzle-board--solved');
           setTimeout(onDone, 1500);
         }
       } else {
@@ -472,25 +437,21 @@ window.FF = window.FF || {};
     function makeTile(tid, cell, uri, cont) {
       var col = tid % size;
       var row = Math.floor(tid / size);
-      var t = api.ui.el('div', {
+      var t = api.ui.el('button', {
+        type: 'button',
         class: 'puzzle-tile',
+        'aria-label': FF.t('tileN', 'Tile {n}', { n: tid + 1 }),
         style: {
-          position: 'absolute',
           width: tileSize + 'px',
           height: tileSize + 'px',
           left: (cell % size) * tileSize + 'px',
           top: (Math.floor(cell / size)) * tileSize + 'px',
           backgroundImage: 'url("' + uri + '")',
           backgroundSize: boardSize + 'px ' + boardSize + 'px',
-          backgroundPosition: (-col * tileSize) + 'px ' + (-row * tileSize) + 'px',
-          backgroundRepeat: 'no-repeat',
-          cursor: 'pointer',
-          transition: 'left .15s ease, top .15s ease',
-          boxSizing: 'border-box',
-          boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.35)'
+          backgroundPosition: (-col * tileSize) + 'px ' + (-row * tileSize) + 'px'
         },
-        tabindex: 0,
-        onclick: function () { onTap(cell); }
+        // Tiles move, so look up where this tile is now (not where it started).
+        onclick: function () { onTap(board.indexOf(tid)); }
       });
       cont.appendChild(t);
       return t;
@@ -530,14 +491,8 @@ window.FF = window.FF || {};
 
       var uri = api.assets.svgUri(item.svg);
       var cont = api.ui.div('puzzle-board');
-      cont.style.position = 'relative';
       cont.style.width = boardSize + 'px';
       cont.style.height = boardSize + 'px';
-      cont.style.margin = '0 auto';
-      cont.style.background = '#eef2f6';
-      cont.style.borderRadius = '12px';
-      cont.style.overflow = 'hidden';
-      cont.style.boxShadow = '0 8px 24px rgba(0,0,0,0.15)';
 
       var cell2;
       for (cell2 = 0; cell2 < total; cell2++) {
@@ -603,30 +558,24 @@ window.FF = window.FF || {};
     var base = placeSceneItems(16, 600, 380, [22, 34], false);
     var changes = pickChanges(base, n);
 
-    var wrap = api.ui.div('');
-    wrap.style.textAlign = 'center';
+    var wrap = FF.GameUI.stage({ wide: true });
 
-    wrap.appendChild(api.ui.el('h2', {}, label));
-    wrap.appendChild(api.ui.el('p', { class: 'hint' }, 'Tap the ' + n + ' differences on the RIGHT picture.'));
+    wrap.appendChild(FF.GameUI.prompt(label, 'sm'));
+    wrap.appendChild(FF.GameUI.sub(FF.t('spotRule', 'Tap the {n} differences in the second picture.', { n: n })));
 
-    var status = api.ui.div('puzzle-status');
-    status.style.margin = '8px 0';
-    status.style.fontWeight = '700';
-    status.textContent = 'Found 0 of ' + n;
-    wrap.appendChild(status);
+    var status = FF.GameUI.pill(FF.t('foundOf', 'Found {f} of {n}', { f: 0, n: n }), 'magnifying-glass', 'turn');
+    status.classList.add('puzzle-status');
+    status.setAttribute('aria-live', 'polite');
+    var statusRow = FF.ui.div('gm-turnbar');
+    statusRow.appendChild(status);
+    wrap.appendChild(statusRow);
 
     var panels = api.ui.div('spot-panels');
-    panels.style.display = 'flex';
-    panels.style.flexWrap = 'wrap';
-    panels.style.gap = '16px';
-    panels.style.justifyContent = 'center';
-    panels.style.alignItems = 'flex-start';
-    panels.style.margin = '12px 0';
     wrap.appendChild(panels);
 
     var fs = fitScaleFor(600);
-    var pa = labeledStage(api, 'ORIGINAL', 600, 380, fs.scale);
-    var pb = labeledStage(api, 'FIND THE DIFFERENCES', 600, 380, fs.scale);
+    var pa = labeledStage(api, FF.t('original', 'Original'), 600, 380, fs.scale);
+    var pb = labeledStage(api, FF.t('findDifferences', 'Find the differences'), 600, 380, fs.scale);
     panels.appendChild(pa.col);
     panels.appendChild(pb.col);
 
@@ -645,20 +594,16 @@ window.FF = window.FF || {};
     bItems.forEach(function (bit, i) {
       var el;
       if (bit.ghost) {
-        el = api.ui.el('div', {
-          class: 'scene-item scene-item--ghost',
+        el = api.ui.el('button', {
+          type: 'button',
+          class: 'scene-item scene-item--ghost scene-item--tap',
+          'aria-label': FF.t('emptySpot', 'Empty spot'),
           style: {
-            position: 'absolute',
             left: bit.x + 'px',
             top: bit.y + 'px',
             width: bit.size + 'px',
-            height: bit.size + 'px',
-            border: '2px dashed rgba(120,130,150,0.6)',
-            borderRadius: '8px',
-            boxSizing: 'border-box',
-            cursor: 'pointer'
+            height: bit.size + 'px'
           },
-          tabindex: 0,
           onclick: function () { onB(i); }
         });
         pb.stage.appendChild(el);
@@ -679,11 +624,13 @@ window.FF = window.FF || {};
         api.audio.play('correct');
         ring(bEls[i]);
         if (aEls[i]) ring(aEls[i]);
-        status.textContent = 'Found ' + foundCount + ' of ' + n;
+        FF.ui.clear(status);
+        status.appendChild(FF.Icons.icon('magnifying-glass'));
+        status.appendChild(document.createTextNode(FF.t('foundOf', 'Found {f} of {n}', { f: foundCount, n: n })));
         if (foundCount >= n) {
           done = true;
           api.audio.play('roundEnd');
-          api.shell.toast('All ' + n + ' differences found!');
+          api.shell.toast(FF.t('allFound', 'All {n} differences found!', { n: n }), 'good');
           setTimeout(onDone, 1400);
         }
       } else if (!changeMap[i]) {
@@ -749,26 +696,18 @@ window.FF = window.FF || {};
     var targetIndex = -1;
     for (var ti = 0; ti < items.length; ti++) { if (items[ti] === target) targetIndex = ti; }
 
-    var wrap = api.ui.div('');
-    wrap.style.textAlign = 'center';
+    var wrap = FF.GameUI.stage({ wide: true });
 
-    var heading = 'Round ' + roundNum + ' of ' + totalRounds;
-    if (scorers(api).length > 1) heading = heading + ' — ' + scorer.name;
-    wrap.appendChild(api.ui.el('h2', {}, heading));
+    wrap.appendChild(FF.GameUI.turnBar(scorers(api).length > 1 ? scorer : null, FF.t('roundOf', 'Round {n} of {total}', { n: roundNum, total: totalRounds })));
 
-    var prompt = api.ui.el('div', { class: 'find-prompt' });
-    prompt.style.fontSize = '1.6rem';
-    prompt.style.fontWeight = '800';
-    prompt.style.margin = '8px 0';
-    prompt.style.letterSpacing = '1px';
-    prompt.textContent = 'FIND THE ' + describeItem(target);
+    var prompt = api.ui.el('h2', { class: 'find-prompt gm-prompt' });
+    prompt.appendChild(document.createTextNode(FF.t('findThe', 'Find the') + ' '));
+    prompt.appendChild(api.ui.span(target.type === 'emoji' ? 'find-prompt__emoji' : 'find-prompt__name', target.type === 'emoji' ? target.emoji : describeItem(target).toLowerCase()));
     wrap.appendChild(prompt);
 
-    wrap.appendChild(api.ui.div('hint', 'Tap the hidden item. Wrong taps cost 10 points.'));
+    wrap.appendChild(FF.GameUI.note(FF.t('hiddenRule', 'Tap it as fast as you can. Wrong taps cost 10 points.')));
 
-    var stageWrap = api.ui.div('');
-    stageWrap.style.display = 'inline-block';
-    stageWrap.style.margin = '10px 0';
+    var stageWrap = api.ui.div('scene-wrap');
     var fs = fitScaleFor(areaW);
     var st = scaledStage(api, areaW, areaH, fs.scale);
     stageWrap.appendChild(st.outer);
@@ -801,7 +740,7 @@ window.FF = window.FF || {};
         api.shell.updateScores(scorer.id);
         api.audio.play('correct');
         ring(targetEl);
-        api.shell.toast('Found it! +' + pts + ' pts');
+        api.shell.toast(FF.t('foundIt', 'Found it! +{n} points', { n: pts }), 'good');
         setTimeout(onDone, 900);
       } else {
         api.audio.play('wrong');
@@ -815,7 +754,7 @@ window.FF = window.FF || {};
       if (done) return;
       done = true;
       if (targetEl) ring(targetEl);
-      api.shell.toast("Time's up! It was " + describeItem(target));
+      api.shell.toast(FF.t('timeUpWas', 'Time’s up! It was {x}.', { x: describeItem(target).toLowerCase() }), 'bad');
       setTimeout(onDone, 1100);
     }
   }
@@ -881,9 +820,7 @@ window.FF = window.FF || {};
           scorer = list.filter(function (sc) { return sc.id === me.uid; })[0] || list[0];
         }
         round++;
-        var label = race
-          ? ('Round ' + round + ' of ' + rounds + ' — 🏁 everyone races')
-          : ('Round ' + round + ' of ' + rounds + (list.length > 1 ? ' — ' + scorer.name : ''));
+        var label = FF.t('roundOf', 'Round {n} of {total}', { n: round, total: rounds });
         renderRiddleRound(api, scorer, bag.next(), label, playRound, race, round >= rounds);
       }
       playRound();
@@ -902,36 +839,22 @@ window.FF = window.FF || {};
     var startMs = Date.now();
     var done = false;
 
-    var wrap = api.ui.div('panel panel--center riddle-panel');
-    wrap.style.maxWidth = '640px';
-    wrap.style.margin = '0 auto';
+    var wrap = FF.GameUI.stage({ className: 'riddle-panel' });
 
-    wrap.appendChild(api.ui.el('p', { class: 'hint' }, label));
+    wrap.appendChild(FF.GameUI.turnBar(race ? null : (scorers(api).length > 1 ? scorer : null), label));
+    if (race) wrap.firstChild.insertBefore(FF.GameUI.pill(FF.t('everyoneRaces', 'Everyone races'), 'lightning', 'turn'), wrap.firstChild.firstChild);
 
     if (item.svg) {
-      var img = api.assets.illustration(item.svg, 'riddle-img', item.question);
-      img.style.margin = '6px auto';
-      wrap.appendChild(img);
+      wrap.appendChild(FF.GameUI.media(api.assets.illustration(item.svg, 'riddle-img', item.question)));
     }
 
-    wrap.appendChild(api.ui.el('h2', {}, item.question));
+    wrap.appendChild(FF.GameUI.prompt(item.question));
 
-    var opts = api.ui.div('riddle-opts');
-    opts.style.display = 'grid';
-    opts.style.gridTemplateColumns = '1fr 1fr';
-    opts.style.gap = '10px';
-    opts.style.marginTop = '8px';
+    var opts = FF.GameUI.options({ columns: 'auto', className: 'riddle-opts' });
 
     var optionBtns = [];
     item.options.forEach(function (text, i) {
-      var b = api.ui.button(text, {
-        class: 'btn riddle-opt',
-        onClick: function () { onAnswer(i); }
-      });
-      b.style.padding = '12px';
-      b.style.fontSize = '1rem';
-      b.style.textAlign = 'center';
-      b.style.whiteSpace = 'normal';
+      var b = FF.GameUI.option(text, function () { onAnswer(i); }, i, { className: 'riddle-opt' });
       optionBtns.push(b);
       opts.appendChild(b);
     });
@@ -990,22 +913,20 @@ window.FF = window.FF || {};
         api.scoring.add(scorer.id, pts);
         api.scoring.markAnswer(scorer.id, true, Math.round(elapsed * 1000));
         api.audio.play('correct');
-        api.shell.toast('Correct! +' + pts + ' pts');
+        api.shell.toast(FF.GameUI.correctText(pts), 'good');
       } else {
         api.scoring.markAnswer(scorer.id, false, null);
         api.audio.play('wrong');
       }
       optionBtns.forEach(function (b, bi) {
         b.disabled = true;
-        if (bi === ansIdx) {
-          b.classList.add('btn-primary');
-          b.style.boxShadow = '0 0 0 3px #10b981';
-        } else if (bi === i && !correct) {
-          b.style.boxShadow = '0 0 0 3px #ef4444';
-        }
+        if (bi === ansIdx) FF.GameUI.markOption(b, 'correct');
+        else if (bi === i && !correct) FF.GameUI.markOption(b, 'wrong');
+        else FF.GameUI.markOption(b, 'dim');
       });
       api.shell.updateScores(scorer.id);
-      if (!correct) api.shell.toast('Answer: ' + item.options[ansIdx]);
+      if (!correct) wrap.appendChild(FF.GameUI.feedback('bad', FF.t('answerWas', 'The answer was {answer}.', { answer: item.options[ansIdx] })));
+      else wrap.appendChild(FF.GameUI.feedback('good', FF.GameUI.correctText(pts)));
       setTimeout(onDone, correct ? 1400 : 1800);
     }
 
@@ -1015,13 +936,10 @@ window.FF = window.FF || {};
       api.scoring.markAnswer(scorer.id, false, null);
       optionBtns.forEach(function (b, bi) {
         b.disabled = true;
-        if (bi === ansIdx) {
-          b.classList.add('btn-primary');
-          b.style.boxShadow = '0 0 0 3px #10b981';
-        }
+        FF.GameUI.markOption(b, bi === ansIdx ? 'correct' : 'dim');
       });
       api.shell.updateScores(scorer.id);
-      api.shell.toast("Time's up! Answer: " + item.options[ansIdx]);
+      wrap.appendChild(FF.GameUI.feedback('bad', FF.t('timeUpAnswer', 'Time’s up! The answer is {answer}.', { answer: item.options[ansIdx] })));
       setTimeout(onDone, 1600);
     }
   }

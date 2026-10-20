@@ -32,13 +32,6 @@ window.FF = window.FF || {};
     return { results: r.results, winnerId: r.winnerId };
   }
 
-  function ensureStyles(id, css) {
-    if (document.getElementById(id)) return;
-    var style = document.createElement('style');
-    style.id = id;
-    style.textContent = css;
-    document.head.appendChild(style);
-  }
 
   function showMissing(api, msg) {
     var root = api.shell.root;
@@ -46,36 +39,16 @@ window.FF = window.FF || {};
     var box = FF.ui.div('panel panel--center', [
       FF.ui.el('h2', {}, '😅 ' + (msg || 'Missing data')),
       FF.ui.el('p', {}, 'This game needs a little more content. Please try another game.'),
-      FF.ui.button('🏠 Back to Home', { class: 'btn btn-primary', onClick: function () { FF.GameFlow.exitToHome(); } })
+      FF.UI.button('Back to home', { icon: 'house',  class: 'btn btn-primary', onClick: function () { FF.GameFlow.exitToHome(); } })
     ]);
     root.appendChild(box);
   }
 
-  var CSS =
-    '.rv-wrap{max-width:720px;margin:0 auto;padding:14px;text-align:center;display:flex;flex-direction:column;gap:16px;}' +
-    '.rv-who{font-size:1.3rem;font-weight:800;}' +
-    '.rv-prompt{background:var(--surface-2,#f1eef9);border:1px solid var(--border,#e7e3f2);border-radius:18px;padding:26px 18px;}' +
-    '.rv-word{font-size:clamp(2rem,7vw,3.6rem);font-weight:900;letter-spacing:.02em;color:var(--accent,#8b5cf6);}' +
-    '.rv-cat{color:var(--muted,#6b7280);font-weight:700;text-transform:uppercase;letter-spacing:1px;font-size:.85rem;margin-top:6px;}' +
-    '.rv-forbidden{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:14px;}' +
-    '.rv-forbidden span{background:#fee2e2;color:#b91c1c;border-radius:999px;padding:8px 16px;font-weight:800;}' +
-    '.rv-actions{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;}' +
-    '.rv-img{width:min(360px,88vw);height:auto;margin:0 auto;}' +
-    '.rv-img svg{width:100%;height:100%;}' +
-    '.cnv-wrap{max-width:860px;margin:0 auto;display:flex;flex-direction:column;gap:12px;}' +
-    '.cnv-toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}' +
-    '.cnv-toolbar .swatch{width:34px;height:34px;border-radius:50%;border:3px solid transparent;cursor:pointer;}' +
-    '.cnv-toolbar .swatch.active{border-color:var(--text,#211e33);transform:scale(1.12);}' +
-    '.cnv-canvas{width:100%;height:auto;background:#fff;border-radius:14px;box-shadow:inset 0 0 0 2px #e2e8f0;touch-action:none;cursor:crosshair;}' +
-    '.vote-actions{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;}' +
-    '.vote-btn{font-size:1.6rem;padding:12px 20px;border-radius:16px;background:var(--surface-2,#f1eef9);border:1px solid var(--border,#e7e3f2);font-weight:700;}' +
-    '.guess-input{font-size:1.2rem;padding:12px 16px;border-radius:12px;border:2px solid var(--border,#e7e3f2);background:var(--surface,#fff);color:var(--text,#211e33);width:min(340px,80vw);text-align:center;}';
 
   /* ---------- shared "reveal then act" flow (charades / visualCharades / dontSayIt) ---------- */
   function runRevealGame(api, items, opts) {
     var root = api.shell.root;
     FF.ui.clear(root);
-    ensureStyles('ff-creative-css', CSS);
     if (!items || !items.length) { showMissing(api, 'No prompts available'); return; }
 
     var bag = new api.random.Bag(items);
@@ -111,7 +84,7 @@ window.FF = window.FF || {};
       api.shell.updateScores(scorer.id);
 
       wrap.appendChild(FF.ui.div('rv-who', list.length > 1 ? ('📱 Pass the device to ' + scorer.name) : ('Your turn, ' + scorer.name)));
-      wrap.appendChild(FF.ui.button('👀 Reveal', {
+      wrap.appendChild(FF.UI.button('Reveal', { icon: 'eye',
         class: 'btn btn-primary btn-lg',
         onClick: function () { reveal(item, scorer); }
       }));
@@ -170,9 +143,9 @@ window.FF = window.FF || {};
           actions.appendChild(FF.ui.button(b.label, { class: 'btn btn-lg', onClick: function () { answered(null, b.points, b.sound); } }));
         });
       } else {
-        actions.appendChild(FF.ui.button('✅ Correct', { class: 'btn btn-lg btn-primary', onClick: function () { answered(null, 100, 'correct'); } }));
-        actions.appendChild(FF.ui.button('⏭ Pass', { class: 'btn btn-lg', onClick: function () { answered(null, 0, 'click'); } }));
-        actions.appendChild(FF.ui.button('➡ Skip', { class: 'btn btn-lg', onClick: function () { answered(null, 0, 'click'); } }));
+        actions.appendChild(FF.UI.button('Correct', { icon: 'check',  class: 'btn btn-lg btn-primary', onClick: function () { answered(null, 100, 'correct'); } }));
+        actions.appendChild(FF.UI.button('Pass', { icon: 'chevron-right',  class: 'btn btn-lg', onClick: function () { answered(null, 0, 'click'); } }));
+        actions.appendChild(FF.UI.button('Skip', { icon: 'arrow-right',  class: 'btn btn-lg', onClick: function () { answered(null, 0, 'click'); } }));
       }
       wrap.appendChild(actions);
     }
@@ -201,7 +174,7 @@ window.FF = window.FF || {};
       toolbar.appendChild(s);
     });
 
-    var eraserBtn = FF.ui.button('🧽', { class: 'btn', ariaLabel: 'Eraser', onClick: function () {
+    var eraserBtn = FF.UI.button('', {  class: 'btn', ariaLabel: 'Eraser', onClick: function () {
       state.eraser = !state.eraser;
       eraserBtn.classList.toggle('active', state.eraser);
       if (state.eraser) swatches.forEach(function (x) { x.classList.remove('active'); });
@@ -217,8 +190,8 @@ window.FF = window.FF || {};
       }));
     });
 
-    toolbar.appendChild(FF.ui.button('↩️ Undo', { class: 'btn', onClick: function () { strokes.pop(); redraw(); } }));
-    toolbar.appendChild(FF.ui.button('🗑️ Clear', { class: 'btn', onClick: function () { strokes = []; redraw(); } }));
+    toolbar.appendChild(FF.UI.button('Undo', {  class: 'btn', onClick: function () { strokes.pop(); redraw(); } }));
+    toolbar.appendChild(FF.UI.button('Clear', { icon: 'trash',  class: 'btn', onClick: function () { strokes = []; redraw(); } }));
 
     var canvas = FF.ui.el('canvas', { class: 'cnv-canvas' });
     canvas.width = 800; canvas.height = 500;
@@ -288,6 +261,7 @@ window.FF = window.FF || {};
      ============================================================ */
   FF.registerGame({
     id: 'charades',
+    featured: true,
     name: 'Charades',
     description: 'Act out the word — no talking! — while everyone guesses.',
     category: 'creative',
@@ -309,7 +283,7 @@ window.FF = window.FF || {};
       if (!p || !p.charades || !p.charades.length) { showMissing(api, 'No charades prompts'); return; }
       FF.Display.deck(api, {
         title: 'Charades',
-        tag: '👥 EVERYONE PLAYS — ACT IT OUT',
+        tag: 'Everyone plays: act it out',
         items: p.charades,
         interval: 30,
         render: function (item) { return FF.ui.div('dsp-word', item.word); },
@@ -359,7 +333,7 @@ window.FF = window.FF || {};
       }
       FF.Display.deck(api, {
         title: 'Visual Charades',
-        tag: '👥 EVERYONE PLAYS — ACT IT OUT',
+        tag: 'Everyone plays: act it out',
         items: items,
         interval: 30,
         render: function (item) {
@@ -416,7 +390,7 @@ window.FF = window.FF || {};
       if (!p || !p.dontSayIt || !p.dontSayIt.length) { showMissing(api, 'No prompts available'); return; }
       FF.Display.deck(api, {
         title: "Don't Say It",
-        tag: '👥 EVERYONE PLAYS — DESCRIBE THE WORD',
+        tag: 'Everyone plays: describe the word',
         items: p.dontSayIt,
         interval: 40,
         render: function (item) {
@@ -470,7 +444,6 @@ window.FF = window.FF || {};
       'Highest vote wins the round.'
     ],
     start: function (api) {
-      ensureStyles('ff-creative-css', CSS);
       var root = api.shell.root;
       FF.ui.clear(root);
       var p = party();
@@ -496,7 +469,7 @@ window.FF = window.FF || {};
         wrap.appendChild(FF.ui.div('rv-who', drawer.name + ', draw this:'));
         var prompt = bag.next();
         wrap.appendChild(FF.ui.div('rv-prompt', FF.ui.div('rv-word', prompt)));
-        wrap.appendChild(FF.ui.button('✏️ Start Drawing', { class: 'btn btn-primary btn-lg', onClick: function () { drawPhase(drawer, prompt); } }));
+        wrap.appendChild(FF.UI.button('Start drawing', { icon: 'pencil',  class: 'btn btn-primary btn-lg', onClick: function () { drawPhase(drawer, prompt); } }));
         root.appendChild(wrap);
       }
 
@@ -506,7 +479,7 @@ window.FF = window.FF || {};
         var wrap = FF.ui.div('rv-wrap');
         wrap.appendChild(FF.ui.div('rv-who', '🎨 ' + drawer.name + ' — draw: ' + prompt));
         var board = makeCanvas(root, api);
-        var doneBtn = FF.ui.button('✅ Done', { class: 'btn btn-primary btn-lg', onClick: function () { votePhase(drawer, board); } });
+        var doneBtn = FF.UI.button('Done', { icon: 'check',  class: 'btn btn-primary btn-lg', onClick: function () { votePhase(drawer, board); } });
         wrap.appendChild(doneBtn);
         // re-append wrap after canvas
         root.appendChild(wrap);
@@ -565,7 +538,6 @@ window.FF = window.FF || {};
       'Pass or get a new word anytime.'
     ],
     start: function (api) {
-      ensureStyles('ff-creative-css', CSS);
       var root = api.shell.root;
       FF.ui.clear(root);
       var p = party();
@@ -632,8 +604,8 @@ window.FF = window.FF || {};
         guessWrap.appendChild(msg);
 
         var actions = FF.ui.div('rv-actions');
-        actions.appendChild(FF.ui.button('⏭ Pass', { class: 'btn', onClick: function () { api.audio.play('click'); nextRound(); } }));
-        actions.appendChild(FF.ui.button('🆕 New word', { class: 'btn', onClick: function () { round(drawer, bag.next()); } }));
+        actions.appendChild(FF.UI.button('Pass', { icon: 'chevron-right',  class: 'btn', onClick: function () { api.audio.play('click'); nextRound(); } }));
+        actions.appendChild(FF.UI.button('New word', {  class: 'btn', onClick: function () { round(drawer, bag.next()); } }));
         guessWrap.appendChild(actions);
         root.appendChild(guessWrap);
 

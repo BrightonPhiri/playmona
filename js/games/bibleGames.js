@@ -26,6 +26,7 @@ window.FF = window.FF || {};
      ============================================================ */
   FF.registerGame({
     id: 'bibleQuiz',
+    featured: true,
     name: 'Bible Quiz',
     description: 'Test your knowledge on stories, miracles, heroes of faith, and scripture!',
     category: 'bible',
@@ -81,68 +82,26 @@ window.FF = window.FF || {};
 
         FF.ui.clear(api.shell.root);
 
-        var wrap = FF.ui.el('div', {
-          style: { maxWidth: '680px', margin: '0 auto', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '16px' }
-        });
+        var wrap = FF.GameUI.stage();
 
         // Round & active player header
-        var headRow = FF.ui.div('rm-row');
-        headRow.appendChild(FF.ui.el('span', { class: 'meta-chip' }, 'Question ' + (currentIndex + 1) + ' of ' + questions.length));
-        headRow.appendChild(FF.ui.el('span', { class: 'meta-chip' }, '📖 ' + (q.category || 'Bible')));
-        if (scorers.length > 1 && !race) {
-          headRow.appendChild(FF.ui.el('span', {
-            class: 'meta-chip',
-            style: { background: scorer.color || 'var(--accent)', color: '#fff', fontWeight: '800' }
-          }, scorer.name + "'s Turn"));
-        }
+        var headRow = FF.GameUI.turnBar(race ? null : (scorers.length > 1 ? scorer : null), FF.GameUI.roundText(currentIndex + 1, questions.length));
         wrap.appendChild(headRow);
+        wrap.appendChild(FF.GameUI.kicker(q.category || FF.t('catBibleShort', 'Bible')));
+        wrap.appendChild(FF.GameUI.prompt(q.q));
 
-        // Question text
-        var qBox = FF.ui.el('div', {
-          class: 'panel',
-          style: { padding: '24px 20px', borderRadius: '18px', background: 'var(--surface)', border: '2px solid var(--border)' }
-        });
-        qBox.appendChild(FF.ui.el('h2', {
-          style: { fontSize: 'clamp(1.2rem, 3.5vw, 1.7rem)', fontWeight: '800', lineHeight: '1.3' }
-        }, q.q));
-        wrap.appendChild(qBox);
-
-        // Options grid
-        var optGrid = FF.ui.el('div', {
-          style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '12px' }
-        });
-
+        var optGrid = FF.GameUI.options({ columns: 'auto' });
         q.options.forEach(function (optText, idx) {
-          var btn = FF.ui.el('button', {
-            type: 'button',
-            class: 'btn bible-quiz-option',
-            tabindex: 0,
-            style: {
-              padding: '16px 20px', fontSize: '1.05rem', fontWeight: '700',
-              textAlign: 'left', borderRadius: '14px', border: '2px solid var(--border)',
-              background: 'var(--surface)', color: 'var(--text)', transition: 'all .15s ease'
-            },
-            onclick: function () {
-              if (answered) return;
-              handleAnswer(idx, btn, optGrid, q);
-            }
-          }, [
-            FF.ui.el('span', {
-              style: {
-                display: 'inline-block', width: '28px', height: '28px', lineHeight: '28px',
-                textAlign: 'center', borderRadius: '8px', background: 'var(--accent-soft)',
-                color: 'var(--accent)', marginRight: '10px', fontWeight: '800'
-              }
-            }, String.fromCharCode(65 + idx)),
-            document.createTextNode(optText)
-          ]);
+          var btn = FF.GameUI.option(optText, function () {
+            if (answered) return;
+            handleAnswer(idx, btn, optGrid, q);
+          }, idx, { className: 'bible-quiz-option' });
           optGrid.appendChild(btn);
         });
 
         wrap.appendChild(optGrid);
 
-        var feedbackBox = FF.ui.div('hint hidden');
-        feedbackBox.id = 'bible-quiz-feedback';
+        var feedbackBox = FF.ui.el('div', { id: 'bible-quiz-feedback', 'aria-live': 'polite' });
         wrap.appendChild(feedbackBox);
 
         api.shell.root.appendChild(wrap);
@@ -171,19 +130,16 @@ window.FF = window.FF || {};
         var buttons = optGrid.querySelectorAll('button');
         buttons.forEach(function (b, i) {
           b.disabled = true;
-          if (i === q.answer) {
-            b.style.borderColor = 'var(--success)';
-            b.style.background = 'rgba(16, 185, 129, 0.18)';
-          } else if (i === choiceIdx && !isCorrect) {
-            b.style.borderColor = 'var(--danger)';
-            b.style.background = 'rgba(239, 68, 68, 0.18)';
-          }
+          if (i === q.answer) FF.GameUI.markOption(b, 'correct');
+          else if (i === choiceIdx && !isCorrect) FF.GameUI.markOption(b, 'wrong');
+          else FF.GameUI.markOption(b, 'dim');
         });
 
         var feedback = document.getElementById('bible-quiz-feedback');
         if (feedback) {
-          feedback.classList.remove('hidden');
-          feedback.innerHTML = '<strong>' + (isCorrect ? '✅ Correct!' : '❌ ' + (choiceIdx === -1 ? 'Time is up!' : 'Not quite!')) + '</strong> ' + (q.explanation || '');
+          FF.ui.clear(feedback);
+          var verdict = isCorrect ? FF.t('correct', 'Correct!') : (choiceIdx === -1 ? FF.t('timesUp', 'Time’s up!') : FF.t('notQuite', 'Not quite.'));
+          feedback.appendChild(FF.GameUI.feedback(isCorrect ? 'good' : 'bad', verdict + (q.explanation ? ' ' + q.explanation : '')));
         }
 
         var basePoints = 100;
@@ -300,61 +256,33 @@ window.FF = window.FF || {};
 
         FF.ui.clear(api.shell.root);
 
-        var wrap = FF.ui.el('div', {
-          style: { maxWidth: '680px', margin: '0 auto', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '16px' }
-        });
+        var wrap = FF.GameUI.stage();
 
-        var head = FF.ui.div('rm-row');
-        head.appendChild(FF.ui.el('span', { class: 'meta-chip' }, 'Figure ' + (cardIdx + 1) + ' of ' + deck.length));
-        head.appendChild(FF.ui.el('span', { class: 'meta-chip' }, scorer.name + "'s Turn"));
-        wrap.appendChild(head);
+        wrap.appendChild(FF.GameUI.turnBar(scorers.length > 1 ? scorer : null, FF.t('figureOf', 'Figure {n} of {total}', { n: cardIdx + 1, total: deck.length })));
+        wrap.appendChild(FF.GameUI.prompt(FF.t('whoAmIBible', 'Who am I?')));
 
-        var clueContainer = FF.ui.el('div', {
-          class: 'panel',
-          style: { padding: '24px', borderRadius: '20px', background: 'var(--surface)', border: '2px solid var(--border)', textAlign: 'left' }
-        });
-        clueContainer.id = 'clue-box';
-
-        var clueTitle = FF.ui.el('h2', { style: { textAlign: 'center', marginBottom: '16px', fontSize: '1.4rem' } }, '🔍 Who Am I?');
-        clueContainer.appendChild(clueTitle);
-
-        var clueList = FF.ui.el('div', { style: { display: 'flex', flexDirection: 'column', gap: '10px' } });
-        clueList.id = 'clue-items';
-        clueContainer.appendChild(clueList);
-        wrap.appendChild(clueContainer);
+        var clueList = FF.ui.el('ol', { class: 'gm-list', id: 'clue-items', 'aria-live': 'polite', 'aria-label': FF.t('clues', 'Clues') });
+        wrap.appendChild(clueList);
 
         // Next clue countdown / button
-        var clueProgress = FF.ui.el('div', { class: 'rm-row', style: { justifyContent: 'space-between' } });
-        var clueCountText = FF.ui.el('span', { class: 'hint', style: { margin: 0 } }, 'Clue 1 of ' + item.clues.length);
+        var clueProgress = FF.ui.div('gm-row');
+        var clueCountText = FF.GameUI.pill(FF.t('clueOf', 'Clue {n} of {total}', { n: 1, total: item.clues.length }), 'list-numbers');
         clueCountText.id = 'clue-counter';
-        var nextClueBtn = FF.ui.button('Next Clue ⏭', {
-          class: 'mini-btn',
-          onClick: function () { advanceClue(); }
-        });
+        var nextClueBtn = FF.UI.button(FF.t('nextClue', 'Another clue'), { class: 'btn-sm', icon: 'plus', onClick: function () { advanceClue(); } });
         nextClueBtn.id = 'next-clue-btn';
         clueProgress.appendChild(clueCountText);
         clueProgress.appendChild(nextClueBtn);
         wrap.appendChild(clueProgress);
 
         // Choice buttons
-        var choiceGrid = FF.ui.el('div', {
-          style: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }
-        });
+        var choiceGrid = FF.GameUI.options({ columns: 'auto' });
 
-        choices.forEach(function (name) {
-          var b = FF.ui.el('button', {
-            type: 'button',
-            class: 'btn',
-            tabindex: 0,
-            style: {
-              padding: '16px', fontSize: '1.15rem', fontWeight: '800',
-              borderRadius: '16px', border: '2px solid var(--border)', background: 'var(--surface)'
-            },
-            onclick: function () {
-              if (resolved) return;
-              submitGuess(name, b, choiceGrid, item);
-            }
-          }, name);
+        choices.forEach(function (name, ci) {
+          var b = FF.GameUI.option(name, function () {
+            if (resolved) return;
+            submitGuess(name, b, choiceGrid, item);
+          }, ci);
+          b.dataset.answer = name;
           choiceGrid.appendChild(b);
         });
 
@@ -373,18 +301,17 @@ window.FF = window.FF || {};
 
         FF.ui.clear(list);
         for (var i = 0; i < clueLevel; i++) {
-          var row = FF.ui.el('div', {
-            style: {
-              padding: '12px 14px', borderRadius: '12px',
-              background: (i === clueLevel - 1) ? 'var(--accent-soft)' : 'var(--surface-2)',
-              borderLeft: '4px solid var(--accent)',
-              fontWeight: (i === clueLevel - 1) ? '700' : '600'
-            }
-          }, (i + 1) + '. ' + item.clues[i]);
+          var row = FF.ui.el('li', { class: 'gm-list__row gm-list__row--start' + (i === clueLevel - 1 ? ' gm-list__row--new' : '') });
+          row.appendChild(FF.ui.el('strong', {}, String(i + 1)));
+          row.appendChild(FF.ui.span('', item.clues[i]));
           list.appendChild(row);
         }
 
-        if (counter) counter.textContent = 'Clue ' + clueLevel + ' of ' + item.clues.length;
+        if (counter) {
+          FF.ui.clear(counter);
+          counter.appendChild(FF.Icons.icon('list-numbers'));
+          counter.appendChild(document.createTextNode(FF.t('clueOf', 'Clue {n} of {total}', { n: clueLevel, total: item.clues.length })));
+        }
         if (nextBtn) nextBtn.disabled = (clueLevel >= item.clues.length);
       }
 
@@ -417,23 +344,23 @@ window.FF = window.FF || {};
         var buttons = choiceGrid.querySelectorAll('button');
         buttons.forEach(function (b) {
           b.disabled = true;
-          if (b.textContent === item.answer) {
-            b.style.borderColor = 'var(--success)';
-            b.style.background = 'rgba(16, 185, 129, 0.2)';
-          } else if (b === btn && !isCorrect) {
-            b.style.borderColor = 'var(--danger)';
-            b.style.background = 'rgba(239, 68, 68, 0.2)';
-          }
+          if (b.dataset.answer === item.answer) FF.GameUI.markOption(b, 'correct');
+          else if (b === btn && !isCorrect) FF.GameUI.markOption(b, 'wrong');
+          else FF.GameUI.markOption(b, 'dim');
         });
+        var nextBtnEl = document.getElementById('next-clue-btn');
+        if (nextBtnEl) nextBtnEl.disabled = true;
 
         // Award points inversely proportional to clues used
         if (isCorrect) {
           api.audio.play('correct');
           var points = (5 - clueLevel) * 75; // 300 for clue 1, 225 for clue 2, 150 for clue 3, 75 for clue 4
           api.scoring.add(scorer.id, points, { correct: true });
+          choiceGrid.parentNode.appendChild(FF.GameUI.feedback('good', FF.GameUI.correctText(points)));
         } else {
           api.audio.play('wrong');
           api.scoring.markAnswer(scorer.id, false);
+          choiceGrid.parentNode.appendChild(FF.GameUI.feedback('bad', FF.t('itWasName', 'It was {name}.', { name: item.answer })));
         }
 
         api.shell.updateScores(scorer.id);
@@ -507,41 +434,24 @@ window.FF = window.FF || {};
 
         FF.ui.clear(api.shell.root);
 
-        var wrap = FF.ui.el('div', {
-          style: { maxWidth: '720px', margin: '0 auto', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '16px' }
-        });
+        var wrap = FF.GameUI.stage();
 
-        var head = FF.ui.div('rm-row');
-        head.appendChild(FF.ui.el('span', { class: 'meta-chip' }, 'Verse ' + (verseIdx + 1) + ' of ' + verses.length));
-        head.appendChild(FF.ui.el('span', { class: 'meta-chip', style: { fontWeight: '800' } }, '📖 ' + item.reference));
-        if (scorers.length > 1) {
-          head.appendChild(FF.ui.el('span', { class: 'meta-chip' }, scorer.name));
-        }
-        wrap.appendChild(head);
+        wrap.appendChild(FF.GameUI.turnBar(scorers.length > 1 ? scorer : null, FF.t('verseOf', 'Verse {n} of {total}', { n: verseIdx + 1, total: verses.length })));
+        wrap.appendChild(FF.GameUI.prompt(item.reference));
+        wrap.appendChild(FF.GameUI.sub(FF.t('verseRule', 'Tap the words in the right order to build the verse.')));
 
         // Assembly container (sentence preview)
-        var assembleBox = FF.ui.el('div', {
-          class: 'panel',
-          style: {
-            minHeight: '120px', padding: '18px', borderRadius: '18px',
-            background: 'var(--surface)', border: '2px dashed var(--accent)',
-            display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center', justifyContent: 'center'
-          }
-        });
-        assembleBox.id = 'assemble-box';
+        var assembleBox = FF.ui.el('div', { class: 'verse-build', id: 'assemble-box', 'aria-live': 'polite', 'aria-label': FF.t('yourVerse', 'Your verse') });
         wrap.appendChild(assembleBox);
 
         // Pool container
-        var poolBox = FF.ui.el('div', {
-          style: { display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center', padding: '10px 0' }
-        });
-        poolBox.id = 'pool-box';
+        var poolBox = FF.ui.el('div', { class: 'verse-pool', id: 'pool-box', role: 'group', 'aria-label': FF.t('wordsToUse', 'Words to use') });
         wrap.appendChild(poolBox);
 
         // Action buttons (Clear / Check)
-        var actionRow = FF.ui.div('rm-row');
-        var clearBtn = FF.ui.button('Clear', {
-          class: 'btn',
+        var actionRow = FF.ui.div('gm-row');
+        var clearBtn = FF.UI.button(FF.t('startOver', 'Start over'), {
+          icon: 'restart',
           onClick: function () {
             assembled = [];
             poolWords = api.util.shuffle(targetWords.slice());
@@ -558,16 +468,13 @@ window.FF = window.FF || {};
           FF.ui.clear(poolBox);
 
           if (!assembled.length) {
-            assembleBox.appendChild(FF.ui.el('span', { class: 'hint', style: { fontStyle: 'italic' } }, 'Tap words below in order…'));
+            assembleBox.appendChild(FF.ui.span('verse-build__empty', FF.t('tapWordsInOrder', 'Tap the words below in order…')));
           } else {
             assembled.forEach(function (word, idx) {
               var wBtn = FF.ui.el('button', {
                 type: 'button',
-                class: 'btn',
-                style: {
-                  padding: '10px 16px', fontSize: '1.1rem', fontWeight: '700',
-                  borderRadius: '12px', background: 'var(--accent)', color: '#fff', border: 'none'
-                },
+                class: 'word-chip word-chip--placed',
+                'aria-label': FF.t('removeWord', 'Remove {w}', { w: word }),
                 onclick: function () {
                   if (solved) return;
                   assembled.splice(idx, 1);
@@ -583,12 +490,7 @@ window.FF = window.FF || {};
           poolWords.forEach(function (word, idx) {
             var pBtn = FF.ui.el('button', {
               type: 'button',
-              class: 'btn',
-              style: {
-                padding: '12px 18px', fontSize: '1.05rem', fontWeight: '700',
-                borderRadius: '14px', background: 'var(--surface)', border: '2px solid var(--border)',
-                boxShadow: 'var(--shadow)'
-              },
+              class: 'word-chip',
               onclick: function () {
                 if (solved) return;
                 poolWords.splice(idx, 1);
@@ -619,8 +521,8 @@ window.FF = window.FF || {};
             solved = true;
             api.shell.hideTimer();
             api.audio.play('correct');
-            assembleBox.style.borderColor = 'var(--success)';
-            assembleBox.style.background = 'rgba(16, 185, 129, 0.15)';
+            assembleBox.classList.add('verse-build--good');
+            wrap.appendChild(FF.GameUI.feedback('good', FF.GameUI.correctText(150)));
             api.scoring.add(scorer.id, 150, { correct: true });
             api.shell.updateScores(scorer.id);
 
@@ -631,9 +533,10 @@ window.FF = window.FF || {};
             }, 1800);
           } else {
             api.audio.play('wrong');
-            assembleBox.style.borderColor = 'var(--danger)';
+            assembleBox.classList.add('verse-build--bad');
+            FF.UI.announce(FF.t('notRightOrder', 'Not in the right order yet. Tap a word to take it back.'));
             setTimeout(function () {
-              assembleBox.style.borderColor = 'var(--accent)';
+              assembleBox.classList.remove('verse-build--bad');
             }, 600);
           }
         }
@@ -680,7 +583,7 @@ window.FF = window.FF || {};
     start: function (api) {
       var data = getBibleData();
       if (!data || !data.books || !data.books.length) {
-        api.shell.root.innerHTML = '<div class="empty">Books data not loaded.</div>';
+        FF.GameUI.exitCard(api, FF.t('noBooks', 'Books data not loaded'));
         return;
       }
 
@@ -703,39 +606,19 @@ window.FF = window.FF || {};
 
         FF.ui.clear(api.shell.root);
 
-        var wrap = FF.ui.el('div', {
-          style: { maxWidth: '580px', margin: '0 auto', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '20px' }
-        });
+        var wrap = FF.GameUI.stage();
 
-        var head = FF.ui.div('rm-row');
-        head.appendChild(FF.ui.el('span', { class: 'meta-chip' }, 'Book ' + (idx + 1) + ' of ' + deck.length));
-        if (scorers.length > 1) head.appendChild(FF.ui.el('span', { class: 'meta-chip' }, scorer.name));
-        wrap.appendChild(head);
+        wrap.appendChild(FF.GameUI.turnBar(scorers.length > 1 ? scorer : null, FF.t('bookOf', 'Book {n} of {total}', { n: idx + 1, total: deck.length })));
 
-        var card = FF.ui.el('div', {
-          class: 'panel',
-          style: { padding: '36px 20px', borderRadius: '24px', background: 'var(--surface)', border: '2px solid var(--border)' }
-        });
-        card.appendChild(FF.ui.el('div', { style: { fontSize: '1.2rem', color: 'var(--muted)', fontWeight: '700', marginBottom: '8px' } }, 'Which Testament?'));
-        card.appendChild(FF.ui.el('h1', { style: { fontSize: 'clamp(2.2rem, 6vw, 3.2rem)', fontWeight: '900', color: 'var(--accent)' } }, book.name));
-        card.appendChild(FF.ui.el('div', { style: { fontSize: '0.95rem', color: 'var(--muted)', marginTop: '8px' } }, book.chapters + ' chapters'));
+        var card = FF.ui.div('gm-card');
+        card.appendChild(FF.GameUI.kicker(FF.t('whichTestament', 'Which testament?')));
+        card.appendChild(FF.ui.el('h2', { class: 'gm-big' }, book.name));
+        card.appendChild(FF.GameUI.note(FF.t('chaptersN', '{n} chapters', { n: book.chapters })));
         wrap.appendChild(card);
 
-        var btnRow = FF.ui.el('div', {
-          style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }
-        });
-
-        var otBtn = FF.ui.el('button', {
-          type: 'button', class: 'btn btn-lg',
-          style: { padding: '24px 16px', fontSize: '1.25rem', fontWeight: '800', borderRadius: '18px' },
-          onclick: function () { pick('OT'); }
-        }, '📜 Old Testament (39)');
-
-        var ntBtn = FF.ui.el('button', {
-          type: 'button', class: 'btn btn-lg',
-          style: { padding: '24px 16px', fontSize: '1.25rem', fontWeight: '800', borderRadius: '18px' },
-          onclick: function () { pick('NT'); }
-        }, '✝️ New Testament (27)');
+        var btnRow = FF.GameUI.duo();
+        var otBtn = FF.GameUI.duoButton(FF.t('oldTestament', 'Old Testament'), function () { pick('OT', otBtn); }, 'up', 'scroll');
+        var ntBtn = FF.GameUI.duoButton(FF.t('newTestament', 'New Testament'), function () { pick('NT', ntBtn); }, 'down', 'book-open');
 
         btnRow.appendChild(otBtn);
         btnRow.appendChild(ntBtn);
@@ -743,8 +626,15 @@ window.FF = window.FF || {};
 
         api.shell.root.appendChild(wrap);
 
-        function pick(choice) {
+        var picked = false;
+        function pick(choice, btn) {
+          if (picked) return;
+          picked = true;
           var isCorrect = (choice === book.testament);
+          otBtn.disabled = true;
+          ntBtn.disabled = true;
+          FF.GameUI.markOption(book.testament === 'OT' ? otBtn : ntBtn, 'correct');
+          if (!isCorrect && btn) FF.GameUI.markOption(btn, 'wrong');
           if (isCorrect) {
             streak++;
             api.audio.play('correct');
@@ -755,9 +645,16 @@ window.FF = window.FF || {};
             api.scoring.markAnswer(scorer.id, false);
           }
           api.shell.updateScores(scorer.id);
-          idx++;
-          scorerIdx++;
-          renderCard();
+          wrap.appendChild(FF.GameUI.feedback(isCorrect ? 'good' : 'bad', isCorrect
+            ? FF.t('correct', 'Correct!')
+            : FF.t('bookIn', '{book} is in the {t}.', { book: book.name, t: book.testament === 'OT' ? FF.t('oldTestament', 'Old Testament') : FF.t('newTestament', 'New Testament') })));
+          // A short beat so everyone sees the answer before the next book.
+          setTimeout(function () {
+            if (!FF.GameFlow.current) return;
+            idx++;
+            scorerIdx++;
+            renderCard();
+          }, isCorrect ? 650 : 1300);
         }
       }
 

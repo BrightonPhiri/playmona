@@ -11,62 +11,8 @@ window.FF = window.FF || {};
 
   /* ================= Shared helpers ================= */
 
-  var _stylesInjected = false;
 
   // Inject a small stylesheet once for the word-game specific UI.
-  function ensureStyles() {
-    if (_stylesInjected) return;
-    _stylesInjected = true;
-    var css = [
-      '.wg-wrap{display:flex;flex-direction:column;gap:14px;max-width:860px;margin:0 auto;}',
-      '.wg-center{text-align:center;}',
-      '.wg-letters{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;}',
-      '.wg-letter{width:52px;height:52px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-weight:900;background:var(--surface);border:2px solid var(--accent);border-radius:12px;color:var(--accent);box-shadow:var(--shadow);text-transform:uppercase;}',
-      '.wg-scramble{font-size:clamp(2rem,7vw,3.4rem);font-weight:900;letter-spacing:.12em;color:var(--accent);text-align:center;word-break:break-all;}',
-      '.wg-word-form{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:10px 0;}',
-      '.wg-input{flex:1 1 200px;min-width:150px;padding:14px 16px;font-size:1.2rem;border-radius:14px;border:2px solid var(--border);background:var(--surface);color:var(--text);font-weight:700;}',
-      '.wg-input:focus{border-color:var(--accent);outline:none;}',
-      '.wg-word-list{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-height:210px;overflow:auto;padding:8px;}',
-      '.wg-chip{background:var(--accent-soft);color:var(--text);font-weight:700;padding:6px 12px;border-radius:999px;font-size:.9rem;}',
-      '.wg-word-row{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:8px 14px;margin:6px 0;}',
-      '.wg-word-row__name{font-weight:700;min-width:130px;}',
-      '.wg-word-row__words{color:var(--muted);font-size:.9rem;flex:1;}',
-      '.wg-claim-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;}',
-      '.wg-claim-btn{background:var(--surface-2);border:2px solid var(--border);border-radius:12px;padding:10px 14px;font-weight:700;}',
-      '.wg-claim-btn.active{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);}',
-      '.wg-chain-letter{font-size:3rem;font-weight:900;color:var(--accent);text-align:center;}',
-      '.wg-chain{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-height:120px;overflow:auto;padding:8px;}',
-      '.wg-lives{font-size:1.4rem;letter-spacing:.1em;text-align:center;}',
-      '.wg-sub{color:var(--muted);font-size:.95rem;}',
-      '.wg-timer-note{color:var(--muted);font-size:.85rem;text-align:center;}',
-      '.wg-result{text-align:center;}',
-      /* crossword */
-      '.wg-cw-gridwrap{overflow-x:auto;padding:4px;}',
-      '.wg-cw-grid{display:grid;gap:3px;justify-content:center;margin:0 auto;width:max-content;}',
-      '.wg-cw-cell{position:relative;width:42px;height:42px;}',
-      '.wg-cw-num{position:absolute;top:1px;left:3px;font-size:.55rem;color:var(--muted);pointer-events:none;z-index:2;line-height:1;}',
-      '.wg-cw-input{width:100%;height:100%;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);text-align:center;font-size:1.3rem;font-weight:800;text-transform:uppercase;padding:0;}',
-      '.wg-cw-input:focus{outline:none;}',
-      '.wg-cw-input.selected{border:3px solid var(--accent);background:var(--accent-soft);}',
-      '.wg-cw-input.word-hl{background:var(--surface-2);}',
-      '.wg-cw-input.correct{background:var(--success);color:#fff;border-color:var(--success);}',
-      '.wg-cw-input.wrong{background:var(--danger);color:#fff;border-color:var(--danger);}',
-      '.wg-cw-block{background:var(--surface-2);border:1px solid var(--border);border-radius:6px;opacity:.55;}',
-      '.wg-cw-clues{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:8px;}',
-      '.wg-cw-clues-col h3{margin-bottom:6px;color:var(--accent);}',
-      '.wg-cw-clue{display:block;width:100%;text-align:left;padding:8px 10px;border-radius:8px;background:var(--surface-2);border:1px solid var(--border);margin:4px 0;font-size:.9rem;}',
-      '.wg-cw-clue.active{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:700;}',
-      '.wg-cw-controls{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:12px;}',
-      '.wg-cw-players{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;}',
-      '.wg-player-btn{background:var(--surface-2);border:2px solid var(--border);border-radius:12px;padding:8px 12px;font-weight:700;}',
-      '.wg-player-btn.active{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);}',
-      '@media (max-width:600px){.wg-cw-clues{grid-template-columns:1fr;}.wg-cw-cell{width:34px;height:34px;}.wg-cw-input{font-size:1.1rem;}}'
-    ].join('\n');
-    var style = document.createElement('style');
-    style.setAttribute('data-wg-styles', '1');
-    style.textContent = css;
-    document.head.appendChild(style);
-  }
 
   function wordsData() {
     return (window.FF && FF.data && FF.data.words) ? FF.data.words : null;
@@ -96,7 +42,6 @@ window.FF = window.FF || {};
   }
 
   function showMissingData(api, gameName, detail) {
-    ensureStyles();
     var root = api.shell.root;
     FF.ui.clear(root);
     api.shell.hideTimer();
@@ -105,7 +50,7 @@ window.FF = window.FF || {};
     box.appendChild(FF.ui.el('h2', {}, gameName));
     box.appendChild(FF.ui.el('p', {}, detail || 'This game needs the word list to play.'));
     box.appendChild(FF.ui.div('empty', '😕 The word list could not be found. Please make sure the word data is installed, then try again.'));
-    box.appendChild(FF.ui.button('🏠 Exit', { primary: true, class: 'btn btn-lg', onClick: function () {
+    box.appendChild(FF.UI.button('Exit', { icon: 'house',  primary: true, class: 'btn btn-lg', onClick: function () {
       FF.Audio.play('click');
       FF.GameFlow.exitToHome();
     } }));
@@ -158,7 +103,6 @@ window.FF = window.FF || {};
 
   // Shared "big letters on the TV" display for Letter Rush / Word Builder.
   function runLetterDisplay(api, count) {
-    ensureStyles();
     var root = api.shell.root;
     var seconds = displaySeconds(api, 60);
     var letters = makeLetterPool(api, count);
@@ -169,7 +113,7 @@ window.FF = window.FF || {};
     api.shell.setTitle(api.def.name);
 
     var wrap = FF.ui.div('dsp-wrap');
-    wrap.appendChild(FF.ui.div('dsp-tag', '👥 EVERYONE PLAYS — NO INPUT'));
+    wrap.appendChild(FF.ui.div('dsp-tag', 'Everyone plays: no input'));
     wrap.appendChild(FF.ui.div('dsp-title', api.def.name));
     wrap.appendChild(FF.ui.div('dsp-sub', 'Find as many words as you can from the letters below. Write them in your books or on cards — count points manually.'));
 
@@ -187,12 +131,12 @@ window.FF = window.FF || {};
     wrap.appendChild(timerEl);
 
     var actions = FF.ui.div('dsp-actions');
-    actions.appendChild(FF.ui.button('🔀 New Letters', { class: 'btn btn-lg', onClick: function () {
+    actions.appendChild(FF.UI.button('New letters', { icon: 'shuffle',  class: 'btn btn-lg', onClick: function () {
       letters = makeLetterPool(api, count);
       renderLetters();
       api.audio.play('flip');
     } }));
-    actions.appendChild(FF.ui.button('🏁 Finish', { class: 'btn btn-lg', primary: true, onClick: end }));
+    actions.appendChild(FF.UI.button('Finish', { icon: 'check',  class: 'btn btn-lg', primary: true, onClick: end }));
     wrap.appendChild(actions);
 
     root.appendChild(wrap);
@@ -308,6 +252,7 @@ window.FF = window.FF || {};
 
   FF.registerGame({
     id: 'letterRush',
+    featured: true,
     name: 'Letter Rush',
     description: 'Race to build as many words as you can from your letters before time runs out.',
     category: 'words',
@@ -326,12 +271,10 @@ window.FF = window.FF || {};
     ],
     display: true,
     displayStart: function (api) {
-      ensureStyles();
       if (!hasDictionary()) { showMissingData(api, 'Letter Rush'); return; }
       runLetterDisplay(api, null);
     },
     start: function (api) {
-      ensureStyles();
       if (!hasDictionary()) { showMissingData(api, 'Letter Rush'); return; }
       var dict = dictMap();
       var order = scorerEntities(api);
@@ -400,7 +343,7 @@ window.FF = window.FF || {};
           wrap.appendChild(FF.ui.el('h2', { class: 'wg-center' }, '🏁 Everyone plays at once'));
           wrap.appendChild(FF.ui.el('p', { class: 'hint wg-center' }, 'Same letters for everyone — find as many words as you can. 1 point per letter.'));
         } else {
-          wrap.appendChild(FF.ui.el('h2', { class: 'wg-center' }, entityLabel(entity) + "'s Turn"));
+          wrap.appendChild(FF.ui.el('h2', { class: 'wg-center' }, entityLabel(entity) + '’s turn'));
           wrap.appendChild(FF.ui.el('p', { class: 'hint wg-center' }, 'Turn ' + state.round + ' of ' + state.order.length + ' — type words from these letters:'));
         }
 
@@ -416,8 +359,8 @@ window.FF = window.FF || {};
           autocomplete: 'off', autocapitalize: 'off', spellcheck: 'false', maxlength: 12,
           onkeydown: function (e) { if (e.key === 'Enter') { e.preventDefault(); submit(); } }
         });
-        var submitBtn = FF.ui.button('✅ Add Word', { primary: true, class: 'btn', onClick: submit });
-        var doneBtn = FF.ui.button('⏭ Finish Turn', { class: 'btn', onClick: finishTurn });
+        var submitBtn = FF.UI.button('Add word', { icon: 'check',  primary: true, class: 'btn', onClick: submit });
+        var doneBtn = FF.UI.button('Finish turn', { icon: 'chevron-right',  class: 'btn', onClick: finishTurn });
         form.appendChild(input);
         form.appendChild(submitBtn);
         form.appendChild(doneBtn);
@@ -563,7 +506,7 @@ window.FF = window.FF || {};
         });
         if (!total) wrap.appendChild(FF.ui.div('empty', 'No words were found this game.'));
         var achievements = mostWords >= 15 ? ['wordMaster'] : [];
-        wrap.appendChild(FF.ui.button('🏁 Finish', { primary: true, class: 'btn btn-lg', onClick: function () {
+        wrap.appendChild(FF.UI.button('Finish', { icon: 'check',  primary: true, class: 'btn btn-lg', onClick: function () {
           playEnd(api);
           var sr = api.scoring.results();
           api.end({
@@ -603,7 +546,6 @@ window.FF = window.FF || {};
     ],
     display: true,
     displayStart: function (api) {
-      ensureStyles();
       var w = wordsData();
       var list = (w && w.scramble) ? w.scramble.filter(function (s) { return s && s.word; }) : [];
       if (!list.length) { showMissingData(api, 'Word Scramble', 'The scrambled word list is missing.'); return; }
@@ -622,7 +564,7 @@ window.FF = window.FF || {};
       api.shell.setTitle(api.def.name);
 
       var wrap = FF.ui.div('dsp-wrap');
-      wrap.appendChild(FF.ui.div('dsp-tag', '👥 EVERYONE PLAYS — WRITE YOUR ANSWER'));
+      wrap.appendChild(FF.ui.div('dsp-tag', 'Everyone plays: write your answer'));
       wrap.appendChild(FF.ui.div('dsp-title', 'Word Scramble'));
 
       var card = FF.ui.div('dsp-card');
@@ -645,20 +587,20 @@ window.FF = window.FF || {};
       }
 
       var actions = FF.ui.div('dsp-actions');
-      actions.appendChild(FF.ui.button('🙈 Reveal Answer', { class: 'btn btn-lg', onClick: function () {
+      actions.appendChild(FF.UI.button('Reveal answer', { icon: 'eye',  class: 'btn btn-lg', onClick: function () {
         if (revealed) return;
         revealed = true;
         answerEl.textContent = '✅ ' + word.toUpperCase();
         api.audio.play('correct');
       } }));
-      actions.appendChild(FF.ui.button('▶ Next Word', { class: 'btn btn-lg', onClick: function () {
+      actions.appendChild(FF.UI.button('Next word', { icon: 'play',  class: 'btn btn-lg', onClick: function () {
         item = bag.next();
         word = item.word.toLowerCase();
         scrambled = scrambleWord(word);
         renderWord();
         api.audio.play('flip');
       } }));
-      actions.appendChild(FF.ui.button('🏁 Finish', { class: 'btn btn-lg', primary: true, onClick: end }));
+      actions.appendChild(FF.UI.button('Finish', { icon: 'check',  class: 'btn btn-lg', primary: true, onClick: end }));
       wrap.appendChild(actions);
 
       root.appendChild(wrap);
@@ -675,7 +617,6 @@ window.FF = window.FF || {};
       api.shell.setTimer(seconds, end);
     },
     start: function (api) {
-      ensureStyles();
       var w = wordsData();
       var list = (w && w.scramble) ? w.scramble.filter(function (s) { return s && s.word; }) : [];
       if (!list.length) { showMissingData(api, 'Word Scramble', 'The scrambled word list is missing.'); return; }
@@ -727,9 +668,9 @@ window.FF = window.FF || {};
           autocomplete: 'off', autocapitalize: 'off', spellcheck: 'false', maxlength: 16,
           onkeydown: function (e) { if (e.key === 'Enter') { e.preventDefault(); check(); } }
         });
-        var checkBtn = FF.ui.button('✅ Check', { primary: true, class: 'btn', onClick: check });
-        var hintBtn = FF.ui.button('💡 Hint (-30)', { class: 'btn', onClick: hint });
-        var skipBtn = FF.ui.button('⏭ Skip', { class: 'btn', onClick: function () { resolve(false, 'skip'); } });
+        var checkBtn = FF.UI.button('Check', { icon: 'check',  primary: true, class: 'btn', onClick: check });
+        var hintBtn = FF.UI.button('Hint (-30)', { icon: 'lightbulb',  class: 'btn', onClick: hint });
+        var skipBtn = FF.UI.button('Skip', { icon: 'chevron-right',  class: 'btn', onClick: function () { resolve(false, 'skip'); } });
         form.appendChild(input);
         form.appendChild(checkBtn);
         wrap.appendChild(form);
@@ -780,7 +721,7 @@ window.FF = window.FF || {};
             box.appendChild(FF.ui.el('p', {}, 'The word was: ' + word.toUpperCase()));
             box.appendChild(FF.ui.el('p', { class: 'wg-sub' }, '💡 ' + item.clue));
           }
-          box.appendChild(FF.ui.button('▶ Next', { primary: true, class: 'btn btn-lg', onClick: next }));
+          box.appendChild(FF.UI.button('Next', { icon: 'play',  primary: true, class: 'btn btn-lg', onClick: next }));
           root2.appendChild(box);
         }
 
@@ -836,12 +777,10 @@ window.FF = window.FF || {};
     ],
     display: true,
     displayStart: function (api) {
-      ensureStyles();
       if (!hasDictionary()) { showMissingData(api, 'Word Builder'); return; }
       runLetterDisplay(api, 10);
     },
     start: function (api) {
-      ensureStyles();
       if (!hasDictionary()) { showMissingData(api, 'Word Builder'); return; }
       var players = (api.config.players && api.config.players.length) ? api.config.players.slice() : scorerEntities(api);
       if (!players.length) { showMissingData(api, 'Word Builder', 'No players were found.'); return; }
@@ -897,7 +836,7 @@ window.FF = window.FF || {};
           autocomplete: 'off', autocapitalize: 'off', spellcheck: 'false', maxlength: 12,
           onkeydown: function (e) { if (e.key === 'Enter') { e.preventDefault(); submit(); } }
         });
-        var submitBtn = FF.ui.button('✅ Add Word', { primary: true, class: 'btn', onClick: submit });
+        var submitBtn = FF.UI.button('Add word', { icon: 'check',  primary: true, class: 'btn', onClick: submit });
         form.appendChild(input);
         form.appendChild(submitBtn);
         wrap.appendChild(form);
@@ -946,7 +885,7 @@ window.FF = window.FF || {};
         } else {
           wrap.appendChild(FF.ui.div('wg-timer-note', 'No timer — press "Finish" when done.'));
         }
-        wrap.appendChild(FF.ui.button('🏁 Finish', { class: 'btn', onClick: renderEnd }));
+        wrap.appendChild(FF.UI.button('Finish', { icon: 'check',  class: 'btn', onClick: renderEnd }));
         focusSoon(input);
       }
 
@@ -968,7 +907,7 @@ window.FF = window.FF || {};
           wrap.appendChild(row);
         });
         var achievements = mostWords >= 15 ? ['wordMaster'] : [];
-        wrap.appendChild(FF.ui.button('🏁 Finish', { primary: true, class: 'btn btn-lg', onClick: function () {
+        wrap.appendChild(FF.UI.button('Finish', { icon: 'check',  primary: true, class: 'btn btn-lg', onClick: function () {
           playEnd(api);
           var sr = api.scoring.results();
           api.end({
@@ -1007,7 +946,6 @@ window.FF = window.FF || {};
       'Last player standing (or most points) wins!'
     ],
     start: function (api) {
-      ensureStyles();
       if (!hasDictionary()) { showMissingData(api, 'Word Chain'); return; }
       var dictList = wordsData().dictionary;
       var order = scorerEntities(api);
@@ -1073,7 +1011,7 @@ window.FF = window.FF || {};
         api.shell.setTitle(api.def.name);
 
         var wrap = FF.ui.div('panel panel--center wg-wrap');
-        wrap.appendChild(FF.ui.el('h2', {}, entityLabel(entity) + "'s Turn"));
+        wrap.appendChild(FF.ui.el('h2', {}, entityLabel(entity) + '’s turn'));
         wrap.appendChild(FF.ui.el('p', { class: 'wg-sub' }, 'Type a word that starts with:'));
         wrap.appendChild(FF.ui.div('wg-chain-letter', nextLetter.toUpperCase()));
         wrap.appendChild(FF.ui.div('wg-lives', hearts(state.lives[entity.id])));
@@ -1090,8 +1028,8 @@ window.FF = window.FF || {};
           autocomplete: 'off', autocapitalize: 'off', spellcheck: 'false', maxlength: 16,
           onkeydown: function (e) { if (e.key === 'Enter') { e.preventDefault(); submit(); } }
         });
-        var submitBtn = FF.ui.button('✅ Add', { primary: true, class: 'btn', onClick: submit });
-        var skipBtn = FF.ui.button('⏭ Skip (-1 life)', { class: 'btn', onClick: function () { fail('skip'); } });
+        var submitBtn = FF.UI.button('Add', { icon: 'check',  primary: true, class: 'btn', onClick: submit });
+        var skipBtn = FF.UI.button('Skip (-1 life)', { icon: 'chevron-right',  class: 'btn', onClick: function () { fail('skip'); } });
         form.appendChild(input);
         form.appendChild(submitBtn);
         form.appendChild(skipBtn);
@@ -1140,7 +1078,7 @@ window.FF = window.FF || {};
           box.appendChild(FF.ui.el('h2', {}, msg));
           box.appendChild(FF.ui.div('wg-lives', hearts(state.lives[e.id])));
           box.appendChild(FF.ui.el('p', { class: 'wg-sub' }, 'The chain stays on "' + state.chain[state.chain.length - 1].toUpperCase() + '".'));
-          box.appendChild(FF.ui.button('▶ Next', { primary: true, class: 'btn btn-lg', onClick: advance }));
+          box.appendChild(FF.UI.button('Next', { icon: 'play',  primary: true, class: 'btn btn-lg', onClick: advance }));
           root2.appendChild(box);
         }
 
@@ -1192,7 +1130,6 @@ window.FF = window.FF || {};
       'Fill every square to complete the puzzle!'
     ],
     start: function (api) {
-      ensureStyles();
       var w = wordsData();
       var list = (w && w.crosswords) ? w.crosswords.filter(function (p) { return p && p.size && p.grid && p.clues; }) : [];
       if (!list.length) { showMissingData(api, 'Mini Crossword', 'The crossword puzzles are missing.'); return; }
@@ -1536,9 +1473,9 @@ window.FF = window.FF || {};
         wrap.appendChild(gridwrap);
 
         var controls = FF.ui.div('wg-cw-controls');
-        controls.appendChild(FF.ui.button('🔍 Reveal Letter (-20)', { class: 'btn', onClick: revealLetter }));
-        controls.appendChild(FF.ui.button('🔍 Reveal Word (-40)', { class: 'btn', onClick: revealWord }));
-        controls.appendChild(FF.ui.button('🏁 Reveal Puzzle', { class: 'btn danger', onClick: function () { finish(false); } }));
+        controls.appendChild(FF.UI.button('Reveal letter (-20)', { icon: 'search',  class: 'btn', onClick: revealLetter }));
+        controls.appendChild(FF.UI.button('Reveal word (-40)', { icon: 'search',  class: 'btn', onClick: revealWord }));
+        controls.appendChild(FF.UI.button('Reveal puzzle', { icon: 'check',  class: 'btn danger', onClick: function () { finish(false); } }));
         wrap.appendChild(controls);
 
         var clues = FF.ui.div('wg-cw-clues');

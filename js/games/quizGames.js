@@ -66,70 +66,35 @@ window.FF = window.FF || {};
 
   /* ---------- DOM building helpers ---------- */
 
-  function cardWrap() {
-    return FF.ui.el('div', { style: { maxWidth: '660px', margin: '0 auto', textAlign: 'center' } });
+  // Screens are built from FF.GameUI (js/gameUI.js, css/games.css).
+  function cardWrap() { return FF.GameUI.stage(); }
+
+  // An answer button with its A/B/C/D key. Buttons go into an options
+  // group so they lay out as a grid on wider screens.
+  function optionBtn(label, onClick, index) {
+    return FF.GameUI.option(label, onClick, index, { className: 'quiz-option' });
   }
 
-  function optionBtn(label, onClick) {
-    return FF.ui.el('button', {
-      type: 'button',
-      class: 'btn quiz-option',
-      style: {
-        display: 'block', width: '100%', margin: '10px 0', padding: '16px 18px',
-        fontSize: '1.08rem', textAlign: 'left', borderRadius: '14px', cursor: 'pointer',
-        border: '2px solid var(--border)', background: 'var(--surface)', color: 'var(--text)',
-        fontWeight: '700'
-      },
-      onclick: onClick
-    }, label);
+  function optionGroup(wrap) {
+    const group = FF.GameUI.options({ columns: 'auto' });
+    wrap.appendChild(group);
+    return group;
   }
 
-  function bigTFButton(label, onClick) {
-    return FF.ui.el('button', {
-      type: 'button',
-      class: 'btn',
-      style: {
-        flex: '1 1 200px', minWidth: '150px', padding: '30px 20px', fontSize: '1.6rem',
-        fontWeight: '800', borderRadius: '18px', cursor: 'pointer',
-        background: 'var(--surface)', color: 'var(--text)', border: '3px solid var(--border)'
-      },
-      onclick: onClick
-    }, label);
-  }
+  // kind: 'correct', 'wrong' or 'dim'. Adds an icon, not just a colour.
+  function markOption(btn, kind) { FF.GameUI.markOption(btn, kind); }
 
-  // kind: 'correct' (green), 'wrong' (red), anything else (dim).
-  function markOption(btn, kind) {
-    if (!btn) return;
-    if (kind === 'correct') {
-      btn.style.background = '#16a34a';
-      btn.style.borderColor = '#15803d';
-      btn.style.color = '#ffffff';
-    } else if (kind === 'wrong') {
-      btn.style.background = '#dc2626';
-      btn.style.borderColor = '#b91c1c';
-      btn.style.color = '#ffffff';
-    } else {
-      btn.style.opacity = '0.45';
-    }
-  }
+  // In a room nobody takes turns - everyone races the same question,
+  // so naming one player would be wrong on every other device.
+  function turnChip(entity, roundText) { return FF.GameUI.turnBar(entity, roundText); }
 
-  function turnChip(entity, roundText) {
-    const bar = FF.ui.div('');
-    bar.style.display = 'flex';
-    bar.style.justifyContent = 'center';
-    bar.style.gap = '10px';
-    bar.style.flexWrap = 'wrap';
-    bar.style.marginBottom = '14px';
-    // In a room nobody takes turns - everyone races the same question,
-    // so naming one player would be wrong on every other device.
-    if (FF.Race && FF.Race.active()) {
-      bar.appendChild(FF.ui.span('meta-chip', '🏁 Everyone races'));
-    } else if (entity) {
-      bar.appendChild(FF.ui.span('meta-chip', entity.avatar + ' ' + entity.name));
-    }
-    if (roundText) bar.appendChild(FF.ui.span('meta-chip', roundText));
-    return bar;
+  function roundLabel(n, total) { return FF.t('roundOf', 'Round {n} of {total}', { n: n, total: total }); }
+
+  function correctLine(pts, streak) {
+    return FF.GameUI.feedback('good', FF.GameUI.correctText(pts) + (streak ? ' ' + FF.t('streakBonus', 'Streak bonus!') : ''));
   }
+  function wrongLine() { return FF.GameUI.feedback('bad', FF.t('notQuite', 'Not quite.')); }
+  function tipLine(text) { return FF.GameUI.feedback('tip', text); }
 
   /* ---------- Scoring helpers ---------- */
 
@@ -232,20 +197,7 @@ window.FF = window.FF || {};
 
   // Friendly fallback when required data is missing (no api.end — user exits).
   function friendlyExit(api, msg) {
-    if (api.shell && api.shell.hideTimer) api.shell.hideTimer();
-    FF.ui.clear(api.shell.root);
-    const wrap = FF.ui.div('panel panel--center');
-    wrap.style.maxWidth = '560px';
-    wrap.style.margin = '8vh auto';
-    wrap.appendChild(FF.ui.el('h2', { style: { fontSize: '1.6rem', margin: '0 0 10px' } }, '😕 No questions yet'));
-    wrap.appendChild(FF.ui.el('p', {}, msg || 'This game needs more quiz data before it can be played.'));
-    wrap.appendChild(FF.ui.button('🚪 Exit Game', {
-      class: 'btn-lg',
-      primary: true,
-      onClick: function () { FF.Audio.play('click'); FF.GameFlow.exitToHome(); }
-    }));
-    api.shell.root.appendChild(wrap);
-    FF.Nav.focusFirst(api.shell.root);
+    FF.GameUI.exitCard(api, FF.t('noQuestions', 'No questions yet'), msg || FF.t('needsQuizData', 'This game needs more quiz data before it can be played.'));
   }
 
   // Picture quiz: find a visual item whose name matches imageKey (case-insensitive).
@@ -280,6 +232,7 @@ window.FF = window.FF || {};
      ============================================================ */
   FF.registerGame({
     id: 'familyQuiz',
+    featured: true,
     name: 'Family Quiz',
     icon: '🧠',
     category: 'quiz',
@@ -356,15 +309,16 @@ window.FF = window.FF || {};
         FF.ui.clear(api.shell.root);
 
         const wrap = cardWrap();
-        wrap.appendChild(turnChip(entity, 'Round ' + (round + 1) + ' of ' + ROUNDS));
-        if (q.category) wrap.appendChild(FF.ui.span('meta-chip meta-chip--cat', q.category));
-        wrap.appendChild(FF.ui.el('h2', { style: { fontSize: '1.5rem', margin: '14px 0 6px' } }, q.q));
+        wrap.appendChild(turnChip(entity, roundLabel(round + 1, ROUNDS)));
+        if (q.category) wrap.appendChild(FF.GameUI.kicker(q.category));
+        wrap.appendChild(FF.GameUI.prompt(q.q));
 
         const optEls = [];
+        const group = optionGroup(wrap);
         q.options.forEach(function (opt, i) {
-          const b = optionBtn(opt, function () { onAnswer(i); });
+          const b = optionBtn(opt, function () { onAnswer(i); }, i);
           optEls.push(b);
-          wrap.appendChild(b);
+          group.appendChild(b);
         });
 
         api.shell.root.appendChild(wrap);
@@ -384,7 +338,6 @@ window.FF = window.FF || {};
 
           for (let i = 0; i < optEls.length; i++) {
             optEls[i].disabled = true;
-            optEls[i].style.cursor = 'default';
             if (i === q.answer) markOption(optEls[i], 'correct');
             else markOption(optEls[i], 'dim');
           }
@@ -397,15 +350,15 @@ window.FF = window.FF || {};
             perCorrect[entity.id] = (perCorrect[entity.id] || 0) + 1;
             api.audio.play('correct');
             if (res.streak) api.audio.play('streak');
-            wrap.appendChild(FF.ui.el('p', { class: 'hint', style: { fontSize: '1.05rem' } }, '✅ Correct! +' + res.pts + ' points' + (res.streak ? ' 🔥 streak bonus' : '')));
+            wrap.appendChild(correctLine(res.pts, res.streak));
           } else {
             awardWrong(api, entity.id);
             api.audio.play('wrong');
-            wrap.appendChild(FF.ui.el('p', { class: 'hint', style: { fontSize: '1.05rem' } }, '❌ Not quite.'));
+            wrap.appendChild(wrongLine());
           }
 
-          if (q.explanation) wrap.appendChild(FF.ui.el('p', { class: 'hint' }, '💡 ' + q.explanation));
-          const nextBtn = FF.Advance.button('Next ➡', function () { FF.Audio.play('click'); nextRound(); }, { class: 'btn-lg' });
+          if (q.explanation) wrap.appendChild(tipLine(q.explanation));
+          const nextBtn = FF.Advance.button(FF.t('next', 'Next'), function () { FF.Audio.play('click'); nextRound(); }, { class: 'btn-lg' });
           wrap.appendChild(nextBtn);
 
           api.shell.updateScores(entity.id);
@@ -492,25 +445,15 @@ window.FF = window.FF || {};
         FF.ui.clear(api.shell.root);
 
         const wrap = cardWrap();
-        wrap.appendChild(turnChip(entity, 'Round ' + (round + 1) + ' of ' + ROUNDS));
-        wrap.appendChild(FF.ui.el('h2', { style: { fontSize: '1.5rem', margin: '10px 0 16px' } }, item.q));
+        wrap.appendChild(turnChip(entity, roundLabel(round + 1, ROUNDS)));
+        wrap.appendChild(FF.GameUI.prompt(item.q));
 
-        const timerLabel = FF.ui.div('');
-        timerLabel.style.fontSize = '1.3rem';
-        timerLabel.style.fontWeight = '800';
-        timerLabel.style.color = 'var(--accent)';
-        timerLabel.style.marginBottom = '12px';
-        if (api.config.timer > 0) timerLabel.textContent = '⏱ ' + api.config.timer + 's';
-        wrap.appendChild(timerLabel);
+        const meter = FF.GameUI.meter(1);
+        if (api.config.timer > 0) wrap.appendChild(meter);
 
-        const row = FF.ui.div('');
-        row.style.display = 'flex';
-        row.style.gap = '14px';
-        row.style.flexWrap = 'wrap';
-        row.style.justifyContent = 'center';
-
-        const trueBtn = bigTFButton('✅ TRUE', function () { answer(true); });
-        const falseBtn = bigTFButton('❌ FALSE', function () { answer(false); });
+        const row = FF.GameUI.duo();
+        const trueBtn = FF.GameUI.duoButton(FF.t('true', 'True'), function () { answer(true); }, 'yes', 'check');
+        const falseBtn = FF.GameUI.duoButton(FF.t('false', 'False'), function () { answer(false); }, 'no', 'close');
         row.appendChild(trueBtn);
         row.appendChild(falseBtn);
         wrap.appendChild(row);
@@ -521,10 +464,7 @@ window.FF = window.FF || {};
 
         if (api.config.timer > 0) {
           timer = api.timer.create({
-            onTick: function (rem) {
-              timerLabel.textContent = '⏱ ' + Math.max(0, Math.ceil(rem)) + 's';
-              if (rem <= 5) timerLabel.style.color = 'var(--danger)';
-            },
+            onTick: function (rem) { meter.set(rem / api.config.timer); },
             onFinish: function () { onTimeout(); },
             warningAt: 5
           });
@@ -548,8 +488,6 @@ window.FF = window.FF || {};
 
           trueBtn.disabled = true;
           falseBtn.disabled = true;
-          trueBtn.style.cursor = 'default';
-          falseBtn.style.cursor = 'default';
           if (item.answer === true) markOption(trueBtn, 'correct'); else markOption(trueBtn, 'dim');
           if (item.answer === false) markOption(falseBtn, 'correct'); else markOption(falseBtn, 'dim');
 
@@ -559,16 +497,16 @@ window.FF = window.FF || {};
             correctTotal++;
             api.audio.play('correct');
             if (res.streak) api.audio.play('streak');
-            wrap.appendChild(FF.ui.el('p', { class: 'hint', style: { fontSize: '1.05rem' } }, '✅ Correct! +' + res.pts + ' points'));
+            wrap.appendChild(correctLine(res.pts));
           } else {
             awardWrong(api, entity.id);
             api.audio.play('wrong');
-            wrap.appendChild(FF.ui.el('p', { class: 'hint', style: { fontSize: '1.05rem' } }, '❌ Not quite.'));
+            wrap.appendChild(wrongLine());
           }
 
-          wrap.appendChild(FF.ui.el('p', { class: 'hint' }, 'Answer: ' + (item.answer ? 'TRUE ✅' : 'FALSE ❌')));
-          if (item.explanation) wrap.appendChild(FF.ui.el('p', { class: 'hint' }, '💡 ' + item.explanation));
-          const nextBtn = FF.Advance.button('Next ➡', function () { FF.Audio.play('click'); nextRound(); }, { class: 'btn-lg' });
+          wrap.appendChild(FF.GameUI.feedback('info', FF.t('itWas', 'It was {answer}.', { answer: item.answer ? FF.t('true', 'True') : FF.t('false', 'False') })));
+          if (item.explanation) wrap.appendChild(tipLine(item.explanation));
+          const nextBtn = FF.Advance.button(FF.t('next', 'Next'), function () { FF.Audio.play('click'); nextRound(); }, { class: 'btn-lg' });
           wrap.appendChild(nextBtn);
 
           api.shell.updateScores(entity.id);
@@ -671,10 +609,12 @@ window.FF = window.FF || {};
         FF.ui.clear(api.shell.root);
 
         const wrap = cardWrap();
-        wrap.appendChild(turnChip(current, 'Run ' + (runIdx + 1) + ' of ' + all.length));
-        wrap.appendChild(FF.ui.el('h2', { style: { fontSize: '1.7rem' } }, current.avatar + ' ' + current.name));
-        wrap.appendChild(FF.ui.el('p', { class: 'hint', style: { fontSize: '1.05rem' } }, 'Answer as many questions as you can. One wrong answer — or the timer running out — ends your run!'));
-        wrap.appendChild(FF.ui.button('▶ START RUN', { class: 'btn-lg', primary: true, onClick: function () { FF.Audio.play('roundStart'); runQuestion(); } }));
+        wrap.classList.add('gm-stage--center');
+        wrap.appendChild(turnChip(current, FF.t('runOf', 'Run {n} of {total}', { n: runIdx + 1, total: all.length })));
+        wrap.appendChild(FF.ui.div('gm-emoji', current.avatar));
+        wrap.appendChild(FF.GameUI.prompt(FF.t('yourRun', '{name}, you’re up!', { name: current.name }), 'xl'));
+        wrap.appendChild(FF.GameUI.sub(FF.t('brainRunRules', 'Answer as many questions as you can. One wrong answer, or running out of time, ends your run.')));
+        wrap.appendChild(FF.GameUI.action(FF.t('startRun', 'Start my run'), function () { FF.Audio.play('roundStart'); runQuestion(); }, { icon: 'play' }));
         api.shell.root.appendChild(wrap);
         FF.Nav.focusFirst(api.shell.root);
       }
@@ -693,34 +633,27 @@ window.FF = window.FF || {};
         const rec = api.scoring.record(current.id);
         const streakNow = rec ? rec.streak : 0;
 
-        const info = FF.ui.div('');
-        info.style.display = 'flex';
-        info.style.justifyContent = 'center';
-        info.style.gap = '12px';
-        info.style.flexWrap = 'wrap';
-        info.style.marginBottom = '10px';
-        info.appendChild(FF.ui.span('meta-chip', '🔥 Streak: ' + streakNow));
-        const timerLabel = FF.ui.span('meta-chip', '⏱ ' + perSec + 's');
-        info.appendChild(timerLabel);
+        const info = FF.ui.div('gm-turnbar');
+        info.appendChild(FF.GameUI.pill(FF.t('streakN', 'Streak {n}', { n: streakNow }), 'flame', 'turn'));
         wrap.appendChild(info);
+        const meter = FF.GameUI.meter(1);
+        wrap.appendChild(meter);
 
-        wrap.appendChild(FF.ui.el('h2', { style: { fontSize: '1.4rem', margin: '8px 0' } }, q.q));
+        wrap.appendChild(FF.GameUI.prompt(q.q));
 
         const optEls = [];
+        const group = optionGroup(wrap);
         q.options.forEach(function (opt, i) {
-          const b = optionBtn(opt, function () { onAnswer(i, q, optEls); });
+          const b = optionBtn(opt, function () { onAnswer(i, q, optEls); }, i);
           optEls.push(b);
-          wrap.appendChild(b);
+          group.appendChild(b);
         });
 
         api.shell.root.appendChild(wrap);
         FF.Nav.focusFirst(api.shell.root);
 
         timer = api.timer.create({
-          onTick: function (rem) {
-            timerLabel.textContent = '⏱ ' + Math.max(0, Math.ceil(rem)) + 's';
-            if (rem <= 5) timerLabel.style.color = 'var(--danger)';
-          },
+          onTick: function (rem) { meter.set(rem / perSec); },
           onFinish: function () { onTimeout(q, optEls); },
           warningAt: 5
         });
@@ -731,7 +664,6 @@ window.FF = window.FF || {};
         // reveal correct answer and end the current player's run
         for (let i = 0; i < optEls.length; i++) {
           optEls[i].disabled = true;
-          optEls[i].style.cursor = 'default';
           if (i === q.answer) markOption(optEls[i], 'correct');
           else markOption(optEls[i], 'dim');
         }
@@ -741,19 +673,19 @@ window.FF = window.FF || {};
         const rec = api.scoring.record(current.id);
 
         const wrap = cardWrap();
-        wrap.appendChild(FF.ui.el('h2', { style: { fontSize: '1.6rem' } }, current.avatar + ' ' + current.name + '\'s run is over!'));
-        wrap.appendChild(FF.ui.el('p', { class: 'hint' }, '🔥 Best streak: ' + (rec ? rec.bestStreak : 0) + '   •   ✅ ' + (rec ? rec.correct : 0) + ' correct'));
-        wrap.appendChild(FF.ui.el('p', { class: 'hint', style: { fontSize: '1.05rem' } }, 'Answer: ' + q.options[q.answer]));
-        if (q.explanation) wrap.appendChild(FF.ui.el('p', { class: 'hint' }, '💡 ' + q.explanation));
-        wrap.appendChild(api.ui.button(nextName ? ('▶ ' + nextName + '\'s Run') : '🏁 See Results', {
-          class: 'btn-lg', primary: true,
-          onClick: function () {
-            FF.Audio.play('roundStart');
-            runIdx++;
-            if (runIdx >= all.length) finishBrain();
-            else renderRunIntro();
-          }
-        }));
+        wrap.appendChild(FF.GameUI.prompt(FF.t('runOver', '{name}’s run is over', { name: current.name })));
+        const runStats = FF.ui.div('gm-turnbar');
+        runStats.appendChild(FF.GameUI.pill(FF.t('bestStreakN', 'Best streak {n}', { n: rec ? rec.bestStreak : 0 }), 'flame'));
+        runStats.appendChild(FF.GameUI.pill(FF.t('correctN', '{n} correct', { n: rec ? rec.correct : 0 }), 'check-circle'));
+        wrap.appendChild(runStats);
+        wrap.appendChild(FF.GameUI.feedback('info', FF.t('answerWas', 'The answer was {answer}.', { answer: q.options[q.answer] })));
+        if (q.explanation) wrap.appendChild(tipLine(q.explanation));
+        wrap.appendChild(FF.GameUI.action(nextName ? FF.t('nextRun', '{name}’s run', { name: nextName }) : FF.t('seeResults', 'See results'), function () {
+          FF.Audio.play('roundStart');
+          runIdx++;
+          if (runIdx >= all.length) finishBrain();
+          else renderRunIntro();
+        }, { icon: nextName ? 'play' : 'trophy' }));
         api.shell.root.appendChild(wrap);
         FF.Nav.focusFirst(api.shell.root);
       }
@@ -767,7 +699,6 @@ window.FF = window.FF || {};
 
         for (let i = 0; i < optEls.length; i++) {
           optEls[i].disabled = true;
-          optEls[i].style.cursor = 'default';
           if (i === q.answer) markOption(optEls[i], 'correct');
           else markOption(optEls[i], 'dim');
         }
@@ -785,7 +716,7 @@ window.FF = window.FF || {};
           correctTotal++;
           api.audio.play('correct');
           if (streakNow % 5 === 0) api.audio.play('streak');
-          api.shell.toast('✅ +' + (base + streakBonus));
+          api.shell.toast('+' + FF.util.formatNumber(base + streakBonus), 'good');
           api.shell.updateScores(current.id);
           setTimeout(function () { runQuestion(); }, 650);
         } else {
@@ -896,25 +827,26 @@ window.FF = window.FF || {};
         function render() {
           FF.ui.clear(api.shell.root);
           const wrap = cardWrap();
-          wrap.appendChild(turnChip(entity, 'Round ' + (round + 1) + ' of ' + TOTAL));
-          wrap.appendChild(FF.ui.el('h2', { style: { fontSize: '1.6rem' } }, '🕵️ Who / What am I?'));
+          wrap.appendChild(turnChip(entity, roundLabel(round + 1, TOTAL)));
+          wrap.appendChild(FF.GameUI.prompt(FF.t('whoAmI', 'Who or what am I?')));
 
+          const clues = FF.ui.el('ol', { class: 'gm-list', 'aria-label': FF.t('clues', 'Clues') });
           for (let i = 0; i < revealed; i++) {
-            wrap.appendChild(FF.ui.el('p', { class: 'hint', style: { fontSize: '1.15rem' } }, '🔎 ' + item.clues[i]));
+            const li = FF.ui.el('li', { class: 'gm-list__row gm-list__row--start' });
+            li.appendChild(FF.ui.el('strong', {}, FF.t('clueN', 'Clue {n}', { n: i + 1 })));
+            li.appendChild(FF.ui.span('', item.clues[i]));
+            clues.appendChild(li);
           }
+          wrap.appendChild(clues);
 
-          wrap.appendChild(FF.ui.span('meta-chip', '💎 ' + pointsNow() + ' points'));
+          const worth = FF.ui.div('gm-turnbar');
+          worth.appendChild(FF.GameUI.pill(FF.t('worthN', 'Worth {n} points', { n: pointsNow() }), 'sparkle', 'turn'));
+          wrap.appendChild(worth);
 
-          const actions = FF.ui.div('');
-          actions.style.marginTop = '18px';
-          actions.style.display = 'flex';
-          actions.style.gap = '12px';
-          actions.style.justifyContent = 'center';
-          actions.style.flexWrap = 'wrap';
-
-          actions.appendChild(api.ui.button('🕵️ Guess Now', { class: 'btn-lg', primary: true, onClick: function () { FF.Audio.play('select'); guessNow(); } }));
+          const actions = FF.ui.div('gm-row');
+          actions.appendChild(FF.UI.button(FF.t('guessNow', 'Guess now'), { class: 'btn-lg btn-primary', icon: 'target', onClick: function () { FF.Audio.play('select'); guessNow(); } }));
           if (revealed < item.clues.length) {
-            actions.appendChild(api.ui.button('➡ Next Clue', { class: 'btn-lg', onClick: function () { revealed++; FF.Audio.play('flip'); render(); } }));
+            actions.appendChild(FF.UI.button(FF.t('nextClue', 'Another clue'), { class: 'btn-lg', icon: 'plus', onClick: function () { revealed++; FF.Audio.play('flip'); render(); } }));
           }
           wrap.appendChild(actions);
 
@@ -929,15 +861,18 @@ window.FF = window.FF || {};
 
           FF.ui.clear(api.shell.root);
           const wrap = cardWrap();
-          wrap.appendChild(turnChip(entity, 'Round ' + (round + 1) + ' of ' + TOTAL));
-          wrap.appendChild(FF.ui.el('h2', { style: { fontSize: '1.5rem' } }, '🕵️ Take your guess!'));
-          wrap.appendChild(FF.ui.el('p', { class: 'hint' }, 'Revealed ' + revealed + ' clue(s) — worth ' + pointsNow() + ' points.'));
+          wrap.appendChild(turnChip(entity, roundLabel(round + 1, TOTAL)));
+          wrap.appendChild(FF.GameUI.prompt(FF.t('takeGuess', 'Take your guess')));
+          wrap.appendChild(FF.GameUI.sub(revealed === 1
+            ? FF.t('oneClueWorth', '1 clue used. Worth {n} points.', { n: pointsNow() })
+            : FF.t('cluesWorth', '{c} clues used. Worth {n} points.', { c: revealed, n: pointsNow() })));
 
           const optEls = [];
+          const group = optionGroup(wrap);
           opts.forEach(function (opt, i) {
-            const b = optionBtn(opt, function () { pick(i); });
+            const b = optionBtn(opt, function () { pick(i); }, i);
             optEls.push(b);
-            wrap.appendChild(b);
+            group.appendChild(b);
           });
 
           api.shell.root.appendChild(wrap);
@@ -956,7 +891,6 @@ window.FF = window.FF || {};
 
             for (let i = 0; i < optEls.length; i++) {
               optEls[i].disabled = true;
-              optEls[i].style.cursor = 'default';
               if (opts[i] === item.answer) markOption(optEls[i], 'correct');
               else markOption(optEls[i], 'dim');
             }
@@ -967,15 +901,15 @@ window.FF = window.FF || {};
               api.scoring.add(entity.id, value, { correct: true, fastest: elapsed });
               correctTotal++;
               api.audio.play('correct');
-              wrap.appendChild(FF.ui.el('p', { class: 'hint', style: { fontSize: '1.05rem' } }, '✅ Correct! +' + value + ' points'));
+              wrap.appendChild(correctLine(value));
             } else {
               awardWrong(api, entity.id);
               api.audio.play('wrong');
-              wrap.appendChild(FF.ui.el('p', { class: 'hint', style: { fontSize: '1.05rem' } }, '❌ Not quite.'));
+              wrap.appendChild(wrongLine());
             }
 
-            wrap.appendChild(FF.ui.el('p', { class: 'hint' }, '🎯 Answer: ' + item.answer));
-            const nextBtn = FF.Advance.button('Next ➡', function () { FF.Audio.play('click'); nextRound(); }, { class: 'btn-lg' });
+            wrap.appendChild(FF.GameUI.feedback('info', FF.t('answerWas', 'The answer was {answer}.', { answer: item.answer })));
+            const nextBtn = FF.Advance.button(FF.t('next', 'Next'), function () { FF.Audio.play('click'); nextRound(); }, { class: 'btn-lg' });
             wrap.appendChild(nextBtn);
 
             api.shell.updateScores(entity.id);
@@ -1076,19 +1010,16 @@ window.FF = window.FF || {};
         FF.ui.clear(api.shell.root);
 
         const wrap = cardWrap();
-        wrap.appendChild(turnChip(entity, 'Round ' + (round + 1) + ' of ' + TOTAL));
-        wrap.appendChild(FF.ui.el('h2', { style: { fontSize: '1.5rem', margin: '6px 0 10px' } }, p.q));
-
-        const imgBox = FF.ui.div('', api.assets.illustration(v.svg, 'picquiz-img', v.name));
-        imgBox.style.maxWidth = '300px';
-        imgBox.style.margin = '0 auto 6px';
-        wrap.appendChild(imgBox);
+        wrap.appendChild(turnChip(entity, roundLabel(round + 1, TOTAL)));
+        wrap.appendChild(FF.GameUI.prompt(p.q));
+        wrap.appendChild(FF.GameUI.media(api.assets.illustration(v.svg, 'picquiz-img', FF.t('pictureToGuess', 'Picture to guess'))));
 
         const optEls = [];
+        const group = optionGroup(wrap);
         p.options.forEach(function (opt, i) {
-          const b = optionBtn(opt, function () { onAnswer(i); });
+          const b = optionBtn(opt, function () { onAnswer(i); }, i);
           optEls.push(b);
-          wrap.appendChild(b);
+          group.appendChild(b);
         });
 
         api.shell.root.appendChild(wrap);
@@ -1106,7 +1037,6 @@ window.FF = window.FF || {};
 
           for (let i = 0; i < optEls.length; i++) {
             optEls[i].disabled = true;
-            optEls[i].style.cursor = 'default';
             if (i === p.answer) markOption(optEls[i], 'correct');
             else markOption(optEls[i], 'dim');
           }
@@ -1118,15 +1048,15 @@ window.FF = window.FF || {};
             correctTotal++;
             api.audio.play('correct');
             if (res.streak) api.audio.play('streak');
-            wrap.appendChild(FF.ui.el('p', { class: 'hint', style: { fontSize: '1.05rem' } }, '✅ Correct! +' + res.pts + ' points'));
+            wrap.appendChild(correctLine(res.pts));
           } else {
             awardWrong(api, entity.id);
             api.audio.play('wrong');
-            wrap.appendChild(FF.ui.el('p', { class: 'hint', style: { fontSize: '1.05rem' } }, '❌ Not quite.'));
+            wrap.appendChild(wrongLine());
           }
 
-          if (p.explanation) wrap.appendChild(FF.ui.el('p', { class: 'hint' }, '💡 ' + p.explanation));
-          const nextBtn = FF.Advance.button('Next ➡', function () { FF.Audio.play('click'); nextRound(); }, { class: 'btn-lg' });
+          if (p.explanation) wrap.appendChild(tipLine(p.explanation));
+          const nextBtn = FF.Advance.button(FF.t('next', 'Next'), function () { FF.Audio.play('click'); nextRound(); }, { class: 'btn-lg' });
           wrap.appendChild(nextBtn);
 
           api.shell.updateScores(entity.id);

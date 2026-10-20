@@ -10,54 +10,7 @@ window.FF = window.FF || {};
 
   /* ================= shared helpers ================= */
 
-  var STYLE_ID = 'party-games-style';
 
-  function ensureStyle() {
-    if (document.getElementById(STYLE_ID)) return;
-    var css =
-      '.pg-root { display:flex; flex-direction:column; align-items:center; gap:18px; padding:8px 4px 30px; text-align:center; max-width:900px; margin:0 auto; }' +
-      '.pg-round { font-size:0.8rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); }' +
-      '.pg-prompt { font-size:clamp(1.5rem,4.5vw,2.3rem); font-weight:800; line-height:1.2; color:var(--text); }' +
-      '.pg-question { font-size:clamp(1.1rem,3vw,1.6rem); font-weight:700; color:var(--accent); max-width:760px; line-height:1.35; }' +
-      '.pg-choices { display:flex; gap:14px; width:100%; flex-wrap:wrap; justify-content:center; }' +
-      '.pg-choice { flex:1 1 230px; min-width:210px; max-width:360px; display:flex; flex-direction:column; align-items:center; gap:10px; padding:24px 16px; border-radius:var(--radius); border:2px solid var(--border); background:var(--surface); color:var(--text); cursor:pointer; font:inherit; box-shadow:var(--shadow); transition:transform .15s ease, border-color .15s ease, box-shadow .15s ease; }' +
-      '.pg-choice:hover, .pg-choice:focus-visible { transform:translateY(-4px); border-color:var(--accent); box-shadow:var(--shadow-lg); }' +
-      '.pg-choice__tag { font-size:0.72rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }' +
-      '.pg-choice__icon { font-size:3rem; line-height:1; }' +
-      '.pg-choice__text { font-size:1.15rem; font-weight:700; line-height:1.3; }' +
-      '.pg-voter { display:flex; align-items:center; gap:8px; font-size:1.15rem; font-weight:800; color:var(--text); }' +
-      '.pg-voter__avatar { font-size:1.7rem; }' +
-      '.pg-chiprow { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }' +
-      '.pg-chip { display:inline-flex; align-items:center; gap:6px; padding:6px 13px; border-radius:999px; background:var(--surface-2); border:1px solid var(--border); color:var(--muted); font-size:0.88rem; font-weight:700; }' +
-      '.pg-chip--current { border-color:var(--accent); color:var(--text); box-shadow:0 0 0 3px var(--accent-soft); }' +
-      '.pg-chip--done { color:var(--success); }' +
-      '.pg-results { width:100%; max-width:680px; display:flex; flex-direction:column; gap:12px; }' +
-      '.pg-row { display:flex; flex-direction:column; gap:6px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px 14px; box-shadow:var(--shadow); }' +
-      '.pg-row--win { border-color:var(--warn); box-shadow:0 0 0 3px var(--accent-soft), var(--shadow); }' +
-      '.pg-row__top { display:flex; align-items:center; justify-content:space-between; gap:12px; }' +
-      '.pg-row__label { display:flex; align-items:center; gap:8px; font-weight:700; color:var(--text); font-size:1rem; text-align:left; flex:1; }' +
-      '.pg-row__emoji { font-size:1.5rem; flex:0 0 auto; }' +
-      '.pg-row__count { font-weight:800; color:var(--muted); font-variant-numeric:tabular-nums; white-space:nowrap; }' +
-      '.pg-row--win .pg-row__count { color:var(--warn); }' +
-      '.pg-row__track { height:20px; border-radius:999px; background:var(--surface-2); overflow:hidden; }' +
-      '.pg-row__fill { height:100%; width:0%; border-radius:999px; transition:width .7s cubic-bezier(.22,.8,.36,1); }' +
-      '.pg-big-emoji { font-size:4.5rem; line-height:1; }' +
-      '.pg-note { color:var(--muted); font-weight:700; font-size:0.95rem; max-width:640px; }' +
-      '.pg-cands { display:flex; flex-wrap:wrap; gap:12px; justify-content:center; }' +
-      '.pg-cand { display:flex; flex-direction:column; align-items:center; gap:6px; padding:14px 16px; min-width:120px; border-radius:var(--radius-sm); border:2px solid var(--border); background:var(--surface); color:var(--text); cursor:pointer; font:inherit; box-shadow:var(--shadow); transition:transform .15s ease, border-color .15s ease; }' +
-      '.pg-cand:hover, .pg-cand:focus-visible { transform:translateY(-3px); border-color:var(--accent); }' +
-      '.pg-cand__avatar { font-size:2rem; }' +
-      '.pg-cand__name { font-weight:700; font-size:0.95rem; }' +
-      '.pg-actions { display:flex; gap:14px; justify-content:center; flex-wrap:wrap; margin-top:4px; }' +
-      '.pg-exit { max-width:560px; margin:8vh auto; text-align:center; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:34px 26px; box-shadow:var(--shadow); }' +
-      '.pg-exit__emoji { font-size:3.4rem; }' +
-      '.pg-exit__title { font-size:1.6rem; font-weight:800; margin:10px 0 6px; color:var(--text); }' +
-      '.pg-exit__body { color:var(--muted); margin-bottom:20px; }';
-    var style = document.createElement('style');
-    style.id = STYLE_ID;
-    style.textContent = css;
-    document.head.appendChild(style);
-  }
 
   function getParty() {
     return (window.FF && window.FF.data && window.FF.data.party) ? window.FF.data.party : null;
@@ -91,13 +44,12 @@ window.FF = window.FF || {};
   }
 
   function friendlyExit(api, title, body) {
-    ensureStyle();
     api.ui.clear(api.shell.root);
     var wrap = api.ui.el('div', { class: 'pg-exit' });
     wrap.appendChild(api.ui.el('div', { class: 'pg-exit__emoji' }, '😅'));
     wrap.appendChild(api.ui.el('h2', { class: 'pg-exit__title' }, title));
     wrap.appendChild(api.ui.el('p', { class: 'pg-exit__body' }, body));
-    wrap.appendChild(api.ui.button('🏠 Back to Home', {
+    wrap.appendChild(FF.UI.button('Back to home', { icon: 'house',
       primary: true,
       class: 'btn-lg',
       onClick: function () { api.audio.play('click'); FF.GameFlow.exitToHome(); }
@@ -170,7 +122,6 @@ window.FF = window.FF || {};
 
   // opts: { dataKey, roundCount, points, prompt, bigEmoji, emptyTitle, emptyBody, colorA, colorB }
   function runChoiceGame(api, opts) {
-    ensureStyle();
     var party = getParty(api);
     var data = party && party[opts.dataKey];
     if (!data || !data.length) {
@@ -304,7 +255,6 @@ window.FF = window.FF || {};
   }
 
   function runWhoIsMostLikely(api) {
-    ensureStyle();
     var party = getParty(api);
     var data = party && party.whoIsMostLikely;
     if (!data || !data.length) {
@@ -477,7 +427,7 @@ window.FF = window.FF || {};
       if (!data || !data.length) { friendlyExit(api, 'No questions yet', 'Would You Rather questions are missing. Please add the party data pack and try again.'); return; }
       FF.Display.deck(api, {
         title: 'Would You Rather?',
-        tag: '👥 EVERYONE PLAYS — DISCUSS & CHOOSE',
+        tag: 'Everyone plays: discuss & choose',
         items: data,
         interval: 45,
         render: function (item) {
@@ -535,7 +485,7 @@ window.FF = window.FF || {};
       if (!data || !data.length) { friendlyExit(api, 'No picks yet', 'This or That choices are missing. Please add the party data pack and try again.'); return; }
       FF.Display.deck(api, {
         title: 'This or That',
-        tag: '👥 EVERYONE PLAYS — QUICK PICKS',
+        tag: 'Everyone plays: quick picks',
         items: data,
         interval: 20,
         render: function (item) {
@@ -593,7 +543,7 @@ window.FF = window.FF || {};
       if (!data || !data.length) { friendlyExit(api, 'No prompts yet', 'Who Is Most Likely prompts are missing. Please add the party data pack.'); return; }
       FF.Display.deck(api, {
         title: 'Who Is Most Likely?',
-        tag: '👥 EVERYONE PLAYS — POINT & DISCUSS',
+        tag: 'Everyone plays: point & discuss',
         items: data,
         interval: 40,
         render: function (prompt) {

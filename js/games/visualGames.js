@@ -32,47 +32,9 @@ window.FF = window.FF || {};
     return FF.util.shuffle(opts);
   }
 
-  /* ================= Shared visual styles (inline) ================= */
-  function mediaStyle() {
-    return {
-      minHeight: '260px', maxHeight: '340px',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      margin: '0 auto', padding: '12px',
-      background: 'var(--surface-2, #f8fafc)',
-      border: '1px solid var(--border, #e2e8f0)',
-      borderRadius: '20px', overflow: 'hidden'
-    };
-  }
-
-  function promptStyle() {
-    return {
-      textAlign: 'center', fontSize: '1.5rem', fontWeight: '900',
-      margin: '14px 0 16px', color: 'var(--text, #111827)', letterSpacing: '0.5px'
-    };
-  }
-
-  function optionStyle() {
-    return {
-      display: 'block', width: '100%', padding: '14px 16px',
-      borderRadius: '14px', fontSize: '1.05rem', fontWeight: '700',
-      textAlign: 'center', cursor: 'pointer',
-      background: 'var(--surface-2, #f1f5f9)', color: 'var(--text, #111827)',
-      border: '2px solid var(--border, #e2e8f0)',
-      transition: 'transform .1s ease, background .15s ease, color .15s ease'
-    };
-  }
-
-  function factStyle() {
-    return {
-      display: 'none', maxWidth: '640px', margin: '16px auto 0',
-      padding: '16px 18px',
-      background: 'var(--accent-soft, #ede9fe)',
-      border: '1px solid var(--border, #e2e8f0)', borderRadius: '16px'
-    };
-  }
-
-  function markCorrect(btn) { btn.style.background = '#16a34a'; btn.style.borderColor = '#16a34a'; btn.style.color = '#ffffff'; }
-  function markWrong(btn) { btn.style.background = '#dc2626'; btn.style.borderColor = '#dc2626'; btn.style.color = '#ffffff'; }
+  /* Styles live in css/games.css (.ffv-*); buttons come from FF.GameUI. */
+  function markCorrect(btn) { FF.GameUI.markOption(btn, 'correct'); }
+  function markWrong(btn) { FF.GameUI.markOption(btn, 'wrong'); }
 
   /* ================= Reusable multiple-choice visual round =================
      Renders the image large + centered, the question, 4 option buttons, and
@@ -82,46 +44,43 @@ window.FF = window.FF || {};
     var buttons = [];
     var correctBtn = null;
 
-    var media = FF.ui.el('div', { class: 'ffv-media', style: mediaStyle() });
+    var media = FF.ui.el('div', { class: 'ffv-media' });
     media.appendChild(opts.imageDOM);
     container.appendChild(media);
 
-    container.appendChild(FF.ui.el('h2', { class: 'ffv-prompt', style: promptStyle() }, opts.promptText));
+    container.appendChild(FF.ui.el('h2', { class: 'ffv-prompt gm-prompt' }, opts.promptText));
 
-    var grid = FF.ui.el('div', {
-      class: 'ffv-options',
-      style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px', maxWidth: '640px', margin: '0 auto' }
-    });
+    var grid = FF.GameUI.options({ columns: 2, className: 'ffv-options' });
 
-    opts.options.forEach(function (name) {
-      var btn = FF.ui.el('button', {
-        class: 'ffv-option', type: 'button', tabindex: 0, style: optionStyle(),
-        onclick: function () { choose(btn, name); }
-      }, name);
+    opts.options.forEach(function (name, i) {
+      var btn = FF.GameUI.option(name, function () { choose(btn, name); }, i, { className: 'ffv-option' });
       if (name === opts.correctName) correctBtn = btn;
       buttons.push(btn);
       grid.appendChild(btn);
     });
     container.appendChild(grid);
 
-    var factBox = FF.ui.el('div', { class: 'ffv-fact', style: factStyle() });
+    var factBox = FF.ui.el('div', { class: 'ffv-fact', role: 'status', hidden: true });
     container.appendChild(factBox);
 
     function showFact() {
       FF.ui.clear(factBox);
       if (opts.factLines && opts.factLines.length) {
+        factBox.appendChild(FF.Icons.icon('lightbulb'));
+        var lines = FF.ui.div('ffv-fact__lines');
         opts.factLines.forEach(function (line) {
-          factBox.appendChild(FF.ui.el('div', {
-            class: 'ffv-fact-line',
-            style: { fontSize: '1rem', margin: '5px 0', color: 'var(--text, #111827)', fontWeight: '600' }
-          }, line));
+          lines.appendChild(FF.ui.el('p', { class: 'ffv-fact-line' }, String(line).replace(/^💡\s*/, '')));
         });
-        factBox.style.display = 'block';
+        factBox.appendChild(lines);
+        factBox.hidden = false;
       }
     }
 
     function disableAll() {
-      buttons.forEach(function (b) { b.disabled = true; b.style.cursor = 'default'; });
+      buttons.forEach(function (b) {
+        b.disabled = true;
+        if (b !== correctBtn) FF.GameUI.markOption(b, 'dim');
+      });
     }
 
     function choose(btn, name) {
@@ -148,67 +107,32 @@ window.FF = window.FF || {};
 
   function illustrationImage(api, svg, alt) {
     var ill = api.assets.illustration(svg, 'vis-img', alt);
-    ill.style.width = '260px';
-    ill.style.height = '260px';
-    ill.style.maxWidth = '100%';
     var svgEl = ill.querySelector('svg');
-    if (svgEl) {
-      svgEl.style.width = '100%';
-      svgEl.style.height = '100%';
-      svgEl.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-    }
+    if (svgEl) svgEl.setAttribute('preserveAspectRatio', 'xMidYMid meet');
     return ill;
   }
 
   // Guess the Object: presentation changes with difficulty.
   function objectImage(api, item, difficulty) {
     var hard = (difficulty === 'hard');
-    var box = FF.ui.el('div', {
-      style: {
-        width: '300px', height: '260px', maxWidth: '100%', position: 'relative',
-        background: '#ffffff', borderRadius: '18px', overflow: 'hidden',
-        border: '1px solid var(--border, #e2e8f0)'
-      }
-    });
-    var ill = api.assets.illustration(item.svg, 'vis-img', item.name);
+    var box = FF.ui.div('obj-frame' + (hard ? ' obj-frame--zoom' : ''));
+    var ill = api.assets.illustration(item.svg, 'vis-img', FF.t('pictureToGuess', 'Picture to guess'));
     var svg = ill.querySelector('svg');
-    if (svg) {
-      svg.style.width = '100%';
-      svg.style.height = '100%';
-      svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-      if (hard) {
-        svg.style.width = '600px';
-        svg.style.height = '600px';
-        svg.style.position = 'absolute';
-        svg.style.left = '50%';
-        svg.style.top = '50%';
-        svg.style.transform = 'translate(-50%, -50%)';
-      }
-    }
+    if (svg) svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
     box.appendChild(ill);
 
     if (difficulty === 'normal') {
       // partially obscured: a semi-transparent scrim + two opaque blocks
-      box.appendChild(FF.ui.el('div', { style: { position: 'absolute', top: '0', left: '0', right: '0', bottom: '0', background: 'rgba(100,116,139,0.35)' } }));
-      box.appendChild(FF.ui.el('div', { style: { position: 'absolute', left: '10%', top: '8%', width: '44%', height: '38%', background: '#334155', borderRadius: '12px' } }));
-      box.appendChild(FF.ui.el('div', { style: { position: 'absolute', right: '8%', bottom: '10%', width: '42%', height: '36%', background: '#1e293b', borderRadius: '12px' } }));
+      box.appendChild(FF.ui.div('obj-cover obj-cover--scrim'));
+      box.appendChild(FF.ui.div('obj-cover obj-cover--a'));
+      box.appendChild(FF.ui.div('obj-cover obj-cover--b'));
     }
     return box;
   }
 
   /* ================= Friendly missing-data screen ================= */
   function showMissingData(api, label) {
-    FF.ui.clear(api.shell.root);
-    var box = FF.ui.el('div', {
-      class: 'panel',
-      style: { maxWidth: '480px', margin: '8vh auto', textAlign: 'center', padding: '30px 24px' }
-    });
-    box.appendChild(FF.ui.el('div', { style: { fontSize: '3rem' } }, '😅'));
-    box.appendChild(FF.ui.el('h2', {}, 'No ' + label + ' data'));
-    box.appendChild(FF.ui.el('p', { style: { color: 'var(--muted, #6b7280)', margin: '10px 0 18px' } },
-      'The ' + label + ' content has not been loaded yet. Please check the data files and try again.'));
-    box.appendChild(FF.ui.button('🏠 Exit', { class: 'btn-lg', primary: true, onClick: function () { FF.GameFlow.exitToHome(); } }));
-    api.shell.root.appendChild(box);
+    FF.GameUI.exitCard(api, FF.t('noDataFor', 'No {x} data', { x: label }), FF.t('noDataText', 'This content has not loaded. Check the data files and try again.'));
   }
 
   /* ================= Data access ================= */
@@ -285,14 +209,12 @@ window.FF = window.FF || {};
 
     function showNext() {
       var last = roundIndex >= rounds - 1;
-      var nextBtn = FF.Advance.button(last ? '🏁 FINISH' : 'NEXT ▶', function () {
+      var nextBtn = FF.Advance.button(last ? FF.t('finish', 'Finish') : FF.t('next', 'Next'), function () {
         roundIndex++;
         nextRound();
-      }, { class: 'btn-lg' });
-      nextBtn.style.display = 'block';
-      nextBtn.style.margin = '18px auto 0';
-      nextBtn.style.minWidth = '200px';
-      api.shell.root.appendChild(nextBtn);
+      }, { class: 'btn-lg', icon: last ? 'check' : 'arrow-right' });
+      var holder = api.shell.root.querySelector('.ffv-round') || api.shell.root;
+      holder.appendChild(nextBtn);
       FF.safe(function () { FF.Nav.focus(nextBtn); });
     }
 
@@ -335,26 +257,12 @@ window.FF = window.FF || {};
       FF.ui.clear(api.shell.root);
       api.shell.updateScores(active ? active.id : null);
 
-      var wrap = FF.ui.el('div', { class: 'ffv-round', style: { maxWidth: '720px', margin: '0 auto', paddingBottom: '20px' } });
+      var wrap = FF.GameUI.stage({ className: 'ffv-round' });
 
-      // round + turn header
-      var head = FF.ui.el('div', {
-        style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', maxWidth: '640px', margin: '0 auto 10px' }
-      });
-      head.appendChild(FF.ui.el('span', {
-        style: { fontWeight: '800', fontSize: '0.9rem', color: 'var(--muted, #6b7280)', letterSpacing: '1px' }
-      }, 'ROUND ' + (roundIndex + 1) + ' / ' + rounds));
-      // In a room nobody takes turns - everyone races the same question.
-      if (racing) {
-        head.appendChild(FF.ui.el('span', {
-          style: { fontWeight: '800', fontSize: '1rem', color: 'var(--accent, #8b5cf6)', background: 'var(--accent-soft, #ede9fe)', padding: '6px 14px', borderRadius: '999px' }
-        }, '🏁 Everyone races'));
-      } else if (active && api.config.mode !== 'solo') {
-        head.appendChild(FF.ui.el('span', {
-          style: { fontWeight: '800', fontSize: '1rem', color: 'var(--accent, #8b5cf6)', background: 'var(--accent-soft, #ede9fe)', padding: '6px 14px', borderRadius: '999px' }
-        }, (active.avatar || '😀') + ' ' + active.name + "'s turn"));
-      }
-      wrap.appendChild(head);
+      // Round + turn header. In a room nobody takes turns - everyone races
+      // the same question (FF.GameUI.turnBar handles that).
+      wrap.appendChild(FF.GameUI.turnBar(api.config.mode !== 'solo' ? active : null,
+        FF.t('roundOf', 'Round {n} of {total}', { n: roundIndex + 1, total: rounds })));
 
       var startTime = Date.now();
       var answered = false;
@@ -415,6 +323,7 @@ window.FF = window.FF || {};
   /* ================= 1. Guess the Country ================= */
   FF.registerGame({
     id: 'guessCountry',
+    featured: true,
     name: 'Guess the Country',
     description: 'Identify the country from its flag.',
     category: 'world',
@@ -440,13 +349,10 @@ window.FF = window.FF || {};
         rounds: ROUNDS,
         build: function (country) {
           var code = (FF.data && FF.data.flagCodes) ? FF.data.flagCodes[country.id] : null;
-          var flag = api.flags.render(country.flag, { code: code, cls: 'flag-big', alt: country.name });
-          flag.style.width = '360px';
-          flag.style.height = '240px';
-          flag.style.maxWidth = '100%';
+          var flag = api.flags.render(country.flag, { code: code, cls: 'flag-big', alt: FF.t('aFlag', 'A country flag') });
           return {
             imageDOM: flag,
-            promptText: 'WHICH COUNTRY?',
+            promptText: FF.t('whichCountry', 'Which country is this?'),
             correctName: country.name,
             options: makeOptions(country.name, names)
           };
@@ -493,8 +399,8 @@ window.FF = window.FF || {};
           ];
           if (item.fact) factLines.push('💡 ' + item.fact);
           return {
-            imageDOM: illustrationImage(api, item.svg, item.name),
-            promptText: 'WHERE IS THIS?',
+            imageDOM: illustrationImage(api, item.svg, FF.t('pictureToGuess', 'Picture to guess')),
+            promptText: FF.t('whereIsThis', 'Where is this?'),
             correctName: item.country,
             options: makeOptions(item.country, countries),
             factLines: factLines
@@ -536,8 +442,8 @@ window.FF = window.FF || {};
           if (item.category) factLines.push('🐾 ' + item.category);
           if (item.fact) factLines.push('💡 ' + item.fact);
           return {
-            imageDOM: illustrationImage(api, item.svg, item.name),
-            promptText: 'WHAT ANIMAL IS THIS?',
+            imageDOM: illustrationImage(api, item.svg, FF.t('pictureToGuess', 'Picture to guess')),
+            promptText: FF.t('whatAnimal', 'What animal is this?'),
             correctName: item.name,
             options: makeOptions(item.name, names),
             factLines: factLines
@@ -579,8 +485,8 @@ window.FF = window.FF || {};
           if (item.origin) factLines.push('📍 Origin: ' + item.origin);
           if (item.fact) factLines.push('💡 ' + item.fact);
           return {
-            imageDOM: illustrationImage(api, item.svg, item.name),
-            promptText: 'WHAT FOOD IS THIS?',
+            imageDOM: illustrationImage(api, item.svg, FF.t('pictureToGuess', 'Picture to guess')),
+            promptText: FF.t('whatFood', 'What food is this?'),
             correctName: item.name,
             options: makeOptions(item.name, names),
             factLines: factLines
@@ -622,7 +528,7 @@ window.FF = window.FF || {};
           if (item.fact) factLines.push('💡 ' + item.fact);
           return {
             imageDOM: objectImage(api, item, difficulty),
-            promptText: 'WHAT IS THIS?',
+            promptText: FF.t('whatIsThis', 'What is this?'),
             correctName: item.name,
             options: makeOptions(item.name, names),
             factLines: factLines
@@ -661,8 +567,8 @@ window.FF = window.FF || {};
         rounds: ROUNDS,
         build: function (item) {
           return {
-            imageDOM: illustrationImage(api, item.svg, item.name),
-            promptText: 'WHICH SPORT IS THIS?',
+            imageDOM: illustrationImage(api, item.svg, FF.t('pictureToGuess', 'Picture to guess')),
+            promptText: FF.t('whichSport', 'Which sport is this?'),
             correctName: item.name,
             options: makeOptions(item.name, names),
             factLines: ['🏅 ' + item.name]
@@ -701,8 +607,8 @@ window.FF = window.FF || {};
         rounds: ROUNDS,
         build: function (item) {
           return {
-            imageDOM: illustrationImage(api, item.svg, item.name),
-            promptText: 'WHAT VEHICLE IS THIS?',
+            imageDOM: illustrationImage(api, item.svg, FF.t('pictureToGuess', 'Picture to guess')),
+            promptText: FF.t('whatVehicle', 'What vehicle is this?'),
             correctName: item.name,
             options: makeOptions(item.name, names),
             factLines: ['🚗 ' + item.name]
