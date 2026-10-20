@@ -24,7 +24,8 @@ window.FF = window.FF || {};
   var DEVICE_KEYS = [
     'session', 'language', 'theme', 'accent', 'font', 'textSize', 'mixAccents',
     'reduceMotion', 'iconStyle', 'devRooms', 'devAuth', 'devAccounts',
-    'roomIdentity', 'migratedFromFamilyFun', 'legacyClaimedBy', 'lastTab'
+    'roomIdentity', 'migratedFromFamilyFun', 'legacyClaimedBy', 'lastTab',
+    'guestId', 'guestProfile', 'guestUpgrade', 'playerCount', 'installDismissed'
   ];
 
   FF.Storage = {
@@ -137,6 +138,22 @@ window.FF = window.FF || {};
       });
       this._write(PREFIX + 'legacyClaimedBy', uid);
       return moved > 0;
+    },
+
+    /* Move one account's data to another (guest -> new account). Keys the
+       target already has are kept; the source is emptied. */
+    moveScope: function (fromUid, toUid) {
+      if (!fromUid || !toUid || fromUid === toUid) return 0;
+      var self = this;
+      var from = PREFIX + 'u:' + fromUid + ':';
+      var moved = 0;
+      this._allRawKeys().forEach(function (k) {
+        if (!k || k.indexOf(from) !== 0) return;
+        var target = PREFIX + 'u:' + toUid + ':' + k.slice(from.length);
+        if (self._read(target, undefined) === undefined) { self._write(target, self._read(k, null)); moved++; }
+        if (self.available) { try { window.localStorage.removeItem(k); } catch (e) {} } else { delete self._mem[k]; }
+      });
+      return moved;
     },
 
     _allRawKeys: function () {

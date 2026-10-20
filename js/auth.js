@@ -65,6 +65,9 @@ window.FF = window.FF || {};
 
   // Make a session current: scope storage to it and mirror it into the roster.
   function apply(next) {
+    if (session && session.mode === 'guest' && next && next.mode !== 'guest') {
+      FF.Storage.set('guestUpgrade', session.uid);
+    }
     session = next;
     if (next) {
       FF.Storage.set('session', next);
@@ -80,6 +83,39 @@ window.FF = window.FF || {};
   }
 
   function online() { return typeof navigator === 'undefined' || navigator.onLine !== false; }
+
+  /* ---------------- Guests ---------------- */
+  // A guest plays without an account. Their data stays on this device under
+  // one guest id, and moves into the account if they sign up later.
+  function guestSession() {
+    var id = FF.Storage.get('guestId', null);
+    if (!id) { id = FF.util.uid() + FF.util.uid(); FF.Storage.set('guestId', id); }
+    var saved = FF.Storage.get('guestProfile', null) || {};
+    var avatar = saved.avatar || (FF.Avatars ? FF.Avatars.random() : '');
+    if (!saved.avatar) FF.Storage.set('guestProfile', { displayName: saved.displayName || '', avatar: avatar });
+    return {
+      uid: 'guest-' + id, guest: true, mode: 'guest', provider: 'guest',
+      username: null, email: null,
+      displayName: saved.displayName || t('guest', 'Guest'), avatar: avatar, createdAt: Date.now()
+    };
+  }
+
+  // A new account takes over what the person did as a guest on this device.
+  function adoptGuest(uid) {
+    var from = session && session.mode === 'guest' ? session.uid : FF.Storage.get('guestUpgrade', null);
+    if (from && from !== uid) {
+      FF.Storage.moveScope(from, uid);
+      FF.Storage.remove('guestProfile');
+    }
+    FF.Storage.remove('guestUpgrade');
+  }
+
+  // Public player count shown on the landing page (Firebase only).
+  function countNewPlayer(firebase) {
+    try {
+      firebase.database().ref('stats/players').transaction(function (n) { return (n || 0) + 1; }).catch(function () {});
+    } catch (e) {}
+  }
 
   /* ---------------- Local (on-device) accounts ---------------- */
   function sha256(text) {
@@ -250,6 +286,13 @@ window.FF = window.FF || {};
 
     mode: function () { return mode; },
     isLocal: function () { return mode === 'local'; },
+    isGuest: function () { return !!(session && session.mode === 'guest'); },
+
+    // Play without an account. Progress stays on this device.
+    playAsGuest: function () {
+      if (session && session.mode !== 'guest') return Promise.resolve(session);
+      return Promise.resolve(apply(guestSession()));
+    },
     googleAvailable: function () {
       return mode === 'firebase' && typeof location !== 'undefined' && /^https?:$/.test(location.protocol);
     },
@@ -272,6 +315,10 @@ window.FF = window.FF || {};
       var useLocal = fromDisk || !!FF.Storage.get('devAuth', false) || !(FF.Net && FF.Net.sdkConfigured && FF.Net.sdkConfigured());
       mode = useLocal ? 'local' : 'firebase';
       var cached = FF.Storage.get('session', null);
+      if (cached && cached.mode === 'guest') {
+        apply(guestSession());
+        return Promise.resolve(session);
+      }
       if (cached && cached.mode !== mode) cached = null;
 
       if (mode === 'local') {
@@ -335,7 +382,7 @@ window.FF = window.FF || {};
 
       if (mode === 'local') {
         return Local.signUp({ email: email, username: username, password: o.password, displayName: displayName, avatar: avatar })
-          .then(function (acct) { return apply(localSession(acct)); });
+          .then(function (acct) { adoptGuest(acct.uid); return apply(localSession(acct)); });
       }
       if (!online()) return Promise.reject(err('auth/network-request-failed', t('noNetwork', 'No internet connection. Check your connection and try again.')));
 
@@ -354,6 +401,8 @@ window.FF = window.FF || {};
             created.updateProfile({ displayName: displayName })
           ]).then(function () {
             var s = { uid: created.uid, email: email, username: username, displayName: displayName, avatar: avatar, provider: 'password', mode: 'firebase', createdAt: profile.createdAt };
+            adoptGuest(s.uid);
+            countNewPlayer(firebase);
             apply(s);
             startSync(s);
             return s;
@@ -370,6 +419,7 @@ window.FF = window.FF || {};
     signIn: function (identifier, password) {
       identifier = String(identifier || '').trim();
       if (!identifier || !password) return Promise.reject(err('auth/invalid', t('fillBoth', 'Enter your email or username and your password.')));
+      FF.Storage.remove('guestUpgrade');
       if (mode === 'local') {
         return Local.signIn(identifier, password).then(function (acct) { return apply(localSession(acct)); });
       }
@@ -427,6 +477,7 @@ window.FF = window.FF || {};
       var uid = session.uid;
       if (mode === 'local') {
         Local.update(uid, { username: username, displayName: displayName, avatar: avatar });
+        adoptGuest(uid);
         return Promise.resolve(apply(Object.assign({}, session, { username: username, displayName: displayName, avatar: avatar, needsProfile: false })));
       }
       return fb().then(function (firebase) {
@@ -434,6 +485,8 @@ window.FF = window.FF || {};
           var profile = { username: username, displayName: displayName, avatar: avatar, createdAt: Date.now() };
           return profileRef(firebase, uid).set(profile).then(function () {
             var s = Object.assign({}, session, profile, { needsProfile: false });
+            adoptGuest(uid);
+            countNewPlayer(firebase);
             apply(s);
             startSync(s);
             return s;
@@ -449,7 +502,7 @@ window.FF = window.FF || {};
       var next = Object.assign({}, session);
       var oldUsername = session.username;
       var newUsername = patch.username != null ? normalizeUsername(patch.username) : oldUsername;
-      if (newUsername !== oldUsername) {
+      if (newUsername !== oldUsername && session.mode !== 'guest') {
         var problem = usernameError(newUsername);
         if (problem) return Promise.reject(err('auth/invalid', problem));
       }
@@ -465,6 +518,11 @@ window.FF = window.FF || {};
         return next;
       }
 
+      if (next.mode === 'guest') {
+        next.username = null;
+        FF.Storage.set('guestProfile', { displayName: next.displayName, avatar: next.avatar });
+        return Promise.resolve(finish());
+      }
       if (mode === 'local') {
         try { Local.update(next.uid, { displayName: next.displayName, avatar: next.avatar, username: next.username }); } catch (e) { return Promise.reject(e); }
         return Promise.resolve(finish());
@@ -517,7 +575,7 @@ window.FF = window.FF || {};
 
     signOut: function () {
       if (FF.Sync) FF.Sync.stop();
-      var wasFirebase = mode === 'firebase';
+      var wasFirebase = mode === 'firebase' && !(session && session.mode === 'guest');
       apply(null);
       if (!wasFirebase) return Promise.resolve();
       return fb().then(function (firebase) { return firebase.auth().signOut(); }).catch(function () {});

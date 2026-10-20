@@ -123,6 +123,11 @@ window.FF = window.FF || {};
         this.stop();
         // The landing page links to play.html?view=signup for new players.
         var wantsSignup = /[?&]view=signup\b/.test(window.location.search);
+        if (/[?&]view=guest\b/.test(window.location.search) && !this._guestTried) {
+          this._guestTried = true;
+          FF.Auth.playAsGuest();
+          return;
+        }
         var cur = FF.AuthUI.current();
         if (cur === 'personalize') cur = null;
         FF.AuthUI.show(wantsSignup && !cur ? 'signup' : (cur || 'signin'));
@@ -137,6 +142,7 @@ window.FF = window.FF || {};
       }
       if (splash) splash.parentNode.removeChild(splash);
       FF.AuthUI.hide();
+      if (this._started && this._uid !== s.uid) this.stop();
       if (!this._started) this.start();
       else this._refreshAccount();
     },
@@ -144,6 +150,19 @@ window.FF = window.FF || {};
     start: function () {
       if (this._started) return;
       this._started = true;
+      this._uid = FF.Auth.user() ? FF.Auth.user().uid : null;
+      // The browser may offer installing after Home has drawn: add the card then.
+      if (FF.Install && !this._installHooked) {
+        this._installHooked = true;
+        FF.Install.onChange(function () {
+          var card = document.getElementById('install-card');
+          if (card && !FF.Install.available()) { card.parentNode.removeChild(card); return; }
+          if (card || FF.App._currentView !== 'home' || (FF.GameFlow && FF.GameFlow.current)) return;
+          var c = FF.App.installCard();
+          var r = FF.App.root();
+          if (c && r) r.appendChild(c);
+        });
+      }
       FF.AuthUI.hide();
       // Drop ?view=signup so signing out later shows the sign-in screen.
       if (window.location.search && window.history && history.replaceState) {
@@ -696,6 +715,7 @@ window.FF = window.FF || {};
         var greet = hour < 12 ? t('goodMorning', 'Good morning') : (hour < 18 ? t('goodAfternoon', 'Good afternoon') : t('goodEvening', 'Good evening'));
 
         if (FF.Players.isTemporary()) main.appendChild(FF.App.demoBanner());
+        else if (FF.Auth.isGuest()) main.appendChild(FF.App.guestBanner());
 
         var top = FF.ui.div('home-top');
         var hero = FF.ui.el('section', { class: 'home-hero on-art', 'aria-labelledby': 'home-title' });
@@ -779,6 +799,8 @@ window.FF = window.FF || {};
         cta.appendChild(icon('arrow-right'));
         gn.appendChild(cta);
         main.appendChild(gn);
+        var inst = FF.App.installCard();
+        if (inst) main.appendChild(inst);
       },
 
       games: function (main, params) {
@@ -1011,6 +1033,7 @@ window.FF = window.FF || {};
     /* ================= Settings tabs ================= */
     settingsTabs: {
       account: function (panel) {
+        if (FF.Auth.isGuest()) { FF.App.guestAccount(panel); return; }
         var p = FF.Auth.profile() || {};
         var card = FF.ui.el('section', { class: 'settings-section account-card' });
         var head = FF.ui.div('account-card__head');
@@ -1153,7 +1176,7 @@ window.FF = window.FF || {};
         privacy.appendChild(icon('shield'));
         privacy.appendChild(FF.ui.el('div', {}, [
           FF.ui.el('strong', {}, t('privacyTitle', 'Your data, kept simple')),
-          FF.ui.el('p', { class: 'setting__desc' }, FF.Auth.isLocal()
+          FF.ui.el('p', { class: 'setting__desc' }, (FF.Auth.isLocal() || FF.Auth.isGuest())
             ? t('privacyBodyLocal', 'No ads and no tracking. Everything is saved on this device. Online rooms share only your display name and character, and only while you are in a room.')
             : t('privacyBodyCloud', 'No ads and no tracking. Your account keeps your profile, players, stats and settings so they follow you between devices. Photos never leave the device that took them. Online rooms share only your display name and character.'))
         ]));
@@ -1171,6 +1194,13 @@ window.FF = window.FF || {};
 
       about: function (panel) {
         panel.appendChild(FF.App.aboutCard());
+        if (FF.Install && FF.Install.available()) {
+          FF.App.settingsSection(panel, 'download', t('installApp', 'Install the app'), [
+            FF.UI.settingRow(t('installPlayMora', 'Install PlayMora'),
+              FF.UI.button(t('install', 'Install'), { class: 'btn-primary', icon: 'download', onClick: function () { FF.App.install(); } }),
+              t('installDesc', 'Opens full screen from your home screen and works offline.'))
+          ]);
+        }
         var info = FF.ui.div('btn-stack');
         info.appendChild(FF.UI.button(t('credits', 'Credits'), { class: 'btn-ghost', icon: 'info', onClick: function () { FF.Nav.go('credits'); } }));
         info.appendChild(FF.ui.el('a', { class: 'btn btn-ghost', href: 'privacy.html', target: '_blank', rel: 'noopener' }, t('privacyNotice', 'Privacy notice')));
@@ -1345,6 +1375,95 @@ window.FF = window.FF || {};
       return sheet;
     },
 
+    // Install PlayMora as an app (browser prompt, or steps on iPhone/iPad).
+    install: function () {
+      if (!FF.Install) return;
+      if (FF.Install.kind() === 'ios') {
+        FF.UI.dialog({
+          title: t('installApp', 'Install the app'),
+          body: FF.ui.el('ol', { class: 'install-steps' }, [
+            FF.ui.el('li', {}, t('iosStep1', 'Tap the Share button in Safari.')),
+            FF.ui.el('li', {}, t('iosStep2', 'Choose Add to Home Screen.')),
+            FF.ui.el('li', {}, t('iosStep3', 'Tap Add. PlayMora appears with your other apps.'))
+          ]),
+          actions: [{ label: t('gotIt', 'Got it'), primary: true }]
+        });
+        return;
+      }
+      FF.Install.prompt().then(function (outcome) {
+        if (outcome === 'accepted') FF.UI.toast(t('installed', 'PlayMora is installing'), { type: 'success' });
+        var card = document.getElementById('install-card');
+        if (card && !FF.Install.available()) card.parentNode.removeChild(card);
+      });
+    },
+
+    // A card at the bottom of Home offering to install the app.
+    installCard: function () {
+      if (!FF.Install || !FF.Install.available() || FF.Install.dismissed()) return null;
+      var card = FF.ui.el('section', { class: 'install-card', id: 'install-card', 'aria-labelledby': 'install-card-title' });
+      card.appendChild(FF.ui.el('img', { class: 'install-card__icon', src: 'assets/brand/icon-192.png', alt: '', width: 56, height: 56 }));
+      card.appendChild(FF.ui.div('install-card__text', [
+        FF.ui.el('strong', { id: 'install-card-title' }, t('installTitle', 'Get the PlayMora app')),
+        FF.ui.el('span', {}, FF.Install.kind() === 'ios'
+          ? t('installIosSub', 'Add it to your home screen from Safari’s Share menu.')
+          : t('installSub', 'Opens full screen and works offline. Free, no app store needed.'))
+      ]));
+      card.appendChild(FF.UI.button(FF.Install.kind() === 'ios' ? t('showMe', 'Show me how') : t('install', 'Install'), { class: 'btn-primary', icon: 'download', onClick: function () { FF.App.install(); } }));
+      card.appendChild(FF.UI.iconButton('close', t('notNow', 'Not now'), function () {
+        FF.Install.dismiss();
+        if (card.parentNode) card.parentNode.removeChild(card);
+      }, 'install-card__close icon-btn--ghost'));
+      return card;
+    },
+
+    // Guests: one tap to an account that keeps their progress.
+    guestBanner: function () {
+      var b = FF.ui.el('div', { class: 'notice notice--info', role: 'status' });
+      b.appendChild(icon('user'));
+      b.appendChild(FF.ui.span('notice__text', t('guestNotice', 'You are playing as a guest. Create a free account to keep your progress on every device.')));
+      b.appendChild(FF.UI.button(t('createAccount', 'Create account'), { class: 'btn-sm btn-primary', onClick: function () { FF.App.openAccount('signup'); } }));
+      return b;
+    },
+
+    // Show the sign-in screens over the app (guests upgrading).
+    openAccount: function (view) {
+      if (FF.GameFlow && FF.GameFlow.current) FF.GameFlow.close('home');
+      FF.AuthUI.show(view || 'signup');
+      window.scrollTo(0, 0);
+    },
+
+    // Settings > Account while playing as a guest.
+    guestAccount: function (panel) {
+      var p = FF.Auth.profile() || {};
+      var card = FF.ui.el('section', { class: 'settings-section account-card' });
+      var head = FF.ui.div('account-card__head');
+      head.appendChild(FF.Avatars.img(p.avatar, 'account-card__ava'));
+      var who = FF.ui.div('account-card__who');
+      who.appendChild(FF.ui.el('strong', { class: 'account-card__name' }, p.displayName || t('guest', 'Guest')));
+      who.appendChild(FF.ui.span('account-card__user', t('playingAsGuest', 'Playing as a guest')));
+      head.appendChild(who);
+      card.appendChild(head);
+      var acts = FF.ui.div('btn-stack');
+      acts.appendChild(FF.UI.button(t('createAccount', 'Create account'), { class: 'btn-primary', icon: 'user', onClick: function () { FF.App.openAccount('signup'); } }));
+      acts.appendChild(FF.UI.button(t('signIn', 'Sign in'), { icon: 'arrow-right', onClick: function () { FF.App.openAccount('signin'); } }));
+      acts.appendChild(FF.UI.button(t('editProfile', 'Edit profile'), { class: 'btn-ghost', icon: 'pencil', onClick: function () { FF.App.editProfile(); } }));
+      card.appendChild(acts);
+      panel.appendChild(card);
+
+      var info = FF.ui.div('about-privacy');
+      info.appendChild(icon('monitor'));
+      info.appendChild(FF.ui.el('div', {}, [
+        FF.ui.el('strong', {}, t('guestSavedTitle', 'Saved on this device')),
+        FF.ui.el('p', { class: 'setting__desc' }, t('guestSavedDesc', 'As a guest, your players and stats stay in this browser. Create an account and they come with you, to every device.'))
+      ]));
+      panel.appendChild(info);
+      FF.App.settingsSection(panel, 'arrow-right', t('guestLeave', 'Guest play'), [
+        FF.UI.settingRow(t('leaveGuest', 'Stop guest play'),
+          FF.UI.button(t('leaveGuestBtn', 'Stop'), { class: 'btn-ghost', icon: 'arrow-right', onClick: function () { FF.App.confirmSignOut(); } }),
+          t('leaveGuestDesc', 'Back to the sign-in screen. Your guest progress stays on this device.'))
+      ]);
+    },
+
     demoBanner: function () {
       var b = FF.ui.el('div', { class: 'notice', role: 'status' });
       b.appendChild(icon('dice'));
@@ -1507,7 +1626,7 @@ window.FF = window.FF || {};
       head.appendChild(ava);
       var info = FF.ui.div('profile-head__info');
       info.appendChild(FF.ui.el('h1', { class: 'profile-head__name' }, p.displayName || ''));
-      info.appendChild(FF.ui.el('p', { class: 'profile-head__user' }, '@' + (p.username || '')));
+      info.appendChild(FF.ui.el('p', { class: 'profile-head__user' }, p.username ? '@' + p.username : t('playingAsGuest', 'Playing as a guest')));
       var chips = FF.ui.div('profile-head__chips');
       var lv = FF.ui.span('badge badge--level');
       lv.appendChild(icon('star-fill'));
@@ -1580,7 +1699,8 @@ window.FF = window.FF || {};
         return { input: input, error: function (m) { err.textContent = m || ''; input.setAttribute('aria-invalid', m ? 'true' : 'false'); } };
       }
       var name = field(t('displayName', 'Display name'), p.displayName, 24);
-      var user = field(t('username', 'Username'), p.username, 20, t('usernameHint', '3 to 20 letters, numbers, dots or underscores. Shown to other players.'));
+      var isGuest = FF.Auth.isGuest();
+      var user = isGuest ? null : field(t('username', 'Username'), p.username, 20, t('usernameHint', '3 to 20 letters, numbers, dots or underscores. Shown to other players.'));
       pick.addEventListener('click', function () {
         FF.Players.pickLook(null, { kind: 'profile', current: chosen, name: name.input.value, onDone: function (aid) {
           if (aid) { chosen = aid; img.src = FF.Avatars.url(aid); }
@@ -1592,13 +1712,15 @@ window.FF = window.FF || {};
         actions: [
           { label: t('cancel', 'Cancel') },
           { label: t('save', 'Save'), primary: true, keepOpen: true, onClick: function (api) {
-            name.error(''); user.error('');
+            name.error(''); if (user) user.error('');
             if (!name.input.value.trim()) { name.error(t('enterName', 'Enter a name.')); return; }
-            var problem = FF.Auth.usernameError(user.input.value);
+            var problem = user ? FF.Auth.usernameError(user.input.value) : null;
             if (problem) { user.error(problem); return; }
-            FF.Auth.usernameAvailable(user.input.value).then(function (ok) {
+            (user ? FF.Auth.usernameAvailable(user.input.value) : Promise.resolve(true)).then(function (ok) {
               if (!ok) { user.error(t('usernameTaken', 'That username is taken. Try another.')); return; }
-              return FF.Auth.updateProfile({ displayName: name.input.value, username: user.input.value, avatar: chosen }).then(function () {
+              var patchP = { displayName: name.input.value, avatar: chosen };
+              if (user) patchP.username = user.input.value;
+              return FF.Auth.updateProfile(patchP).then(function () {
                 api.close();
                 FF.UI.toast(t('profileSaved', 'Profile saved'), { type: 'success' });
                 FF.App.buildShell();
@@ -1823,6 +1945,15 @@ window.FF = window.FF || {};
     },
 
     confirmSignOut: function () {
+      if (FF.Auth.isGuest()) {
+        FF.UI.confirm({
+          title: t('leaveGuestQ', 'Stop playing as a guest?'),
+          body: t('leaveGuestBody', 'Your guest progress stays on this device. Play as a guest again to pick it up, or create an account to keep it for good.'),
+          confirmLabel: t('leaveGuest', 'Stop guest play'),
+          onConfirm: function () { FF.Auth.signOut(); }
+        });
+        return;
+      }
       FF.UI.confirm({
         title: t('signOutQ', 'Sign out of PlayMora?'),
         body: FF.Auth.isLocal()

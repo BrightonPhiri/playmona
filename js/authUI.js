@@ -145,6 +145,36 @@ window.FF = window.FF || {};
     return nav;
   }
 
+  // Play without an account (not shown to someone who is already a guest).
+  function guestBlock() {
+    if (FF.Auth.isGuest()) return null;
+    var wrap = FF.ui.div('auth__guest');
+    var b = FF.UI.button(t('playAsGuest', 'Play as guest'), { class: 'btn-lg btn-block btn-ghost auth__guest-btn', icon: 'user', onClick: function () {
+      if (busy) return;
+      FF.Auth.playAsGuest();
+    } });
+    wrap.appendChild(b);
+    wrap.appendChild(FF.ui.el('p', { class: 'auth__fine' }, t('guestFine', 'No account needed. Your progress stays on this device until you create one.')));
+    return wrap;
+  }
+
+  // Leave the sign-in screen: back to the game for guests, else to the home page.
+  function cancelLink() {
+    var bar = FF.ui.div('auth__top');
+    if (FF.Auth.isGuest()) {
+      bar.appendChild(FF.UI.button(t('backToGames', 'Back to the games'), { class: 'btn-ghost btn-sm auth__cancel', icon: 'arrow-left', onClick: function () {
+        FF.AuthUI.hide();
+        if (FF.App && FF.App._route) FF.App._route(FF.Auth.user());
+      } }));
+    } else {
+      var a = FF.ui.el('a', { class: 'btn btn-ghost btn-sm auth__cancel', href: 'index.html' });
+      a.appendChild(icon('arrow-left'));
+      a.appendChild(FF.ui.span('', t('cancel', 'Cancel')));
+      bar.appendChild(a);
+    }
+    return bar;
+  }
+
   function localNote() {
     if (!FF.Auth.isLocal()) return null;
     return FF.ui.el('p', { class: 'auth__fine' }, t('localAccounts', 'Accounts are saved on this device only. They do not sync to other devices.'));
@@ -182,16 +212,18 @@ window.FF = window.FF || {};
     });
     panel.appendChild(form);
     var g = googleButton(showError);
-    if (g) {
-      panel.appendChild(FF.ui.div('auth__divider', FF.ui.span('', t('or', 'or'))));
-      panel.appendChild(g);
-    }
+    var guest = guestBlock();
+    if (g || guest) panel.appendChild(FF.ui.div('auth__divider', FF.ui.span('', t('or', 'or'))));
+    if (g) panel.appendChild(g);
+    if (guest) panel.appendChild(guest);
     return who.input;
   }
 
   function signUpView(panel) {
     panel.appendChild(FF.ui.el('h1', { class: 'auth__title' }, t('joinPlayMora', 'Join PlayMora')));
-    panel.appendChild(FF.ui.el('p', { class: 'auth__sub' }, t('signUpSub', 'Free account. Your players, scores and favourites follow you to every device.')));
+    panel.appendChild(FF.ui.el('p', { class: 'auth__sub' }, FF.Auth.isGuest()
+      ? t('signUpGuestSub', 'Free account. Everything you did as a guest comes with you, on every device.')
+      : t('signUpSub', 'Free account. Your players, scores and favourites follow you to every device.')));
     panel.appendChild(tabs());
     var form = FF.ui.el('form', { class: 'auth__form', novalidate: true });
     var email = field({ name: 'email', type: 'email', label: t('email', 'Email'), autocomplete: 'email', placeholder: 'you@example.com' });
@@ -248,10 +280,10 @@ window.FF = window.FF || {};
     });
     panel.appendChild(form);
     var g = googleButton(showError);
-    if (g) {
-      panel.appendChild(FF.ui.div('auth__divider', FF.ui.span('', t('or', 'or'))));
-      panel.appendChild(g);
-    }
+    var guest = guestBlock();
+    if (g || guest) panel.appendChild(FF.ui.div('auth__divider', FF.ui.span('', t('or', 'or'))));
+    if (g) panel.appendChild(g);
+    if (guest) panel.appendChild(guest);
     var fine = FF.ui.el('p', { class: 'auth__fine' });
     fine.appendChild(document.createTextNode(t('agreeLead', 'By creating an account you agree to how we handle your data in our ')));
     fine.appendChild(FF.ui.el('a', { href: 'privacy.html', target: '_blank', rel: 'noopener' }, t('privacyNotice', 'privacy notice')));
@@ -396,6 +428,7 @@ window.FF = window.FF || {};
       mobileBrand.appendChild(FF.ui.el('img', { src: 'assets/brand/mark-256.webp', alt: '', width: 40, height: 40 }));
       mobileBrand.appendChild(wordmark());
       panel.appendChild(mobileBrand);
+      if (view !== 'personalize') panel.appendChild(cancelLink());
       var off = offlineNote();
       if (off) panel.appendChild(off);
       var firstInput;

@@ -14,6 +14,10 @@ own phone. It is a static web app with no build step.
   Party, World, Bible).
 - **Accounts**: email or username + password, or Google. The profile holds your character,
   level, streak, medals and stats, and syncs between devices.
+- **Guest play**: play without an account; progress stays on the device and moves into the
+  account if the guest signs up later.
+- **Install as an app** from the landing page banner or Settings › About (Chrome, Edge,
+  Samsung Internet; step-by-step help on iPhone and iPad).
 - **Saved players**: keep up to 24 regular players and tap who is in each game (1–8). Nobody is
   deleted to play alone. Teams of 2–4.
 - **Dashboard**: level and XP, weekly activity, favourite kinds of game, medals.
@@ -29,11 +33,12 @@ own phone. It is a static web app with no build step.
 
 | File | What it is |
 |------|------------|
-| `index.html` | Public landing page for playmora.com. Standalone (no app scripts). |
+| `index.html` | Public landing page for playmora.com (`js/landing.js`): rotating hero pictures, live player count, install banner. |
 | `play.html` | The app: sign-in, home, games, online rooms, profile, settings. |
 | `privacy.html` | Privacy notice (draft, needs a legal review before launch). |
 | `manifest.webmanifest`, `sw.js` | Install to home screen and offline support. |
 
+`play.html?view=signup` opens sign-up and `play.html?view=guest` starts guest play.
 Old shared room links (`index.html#room=ABC123`) are forwarded to `play.html`.
 
 ---

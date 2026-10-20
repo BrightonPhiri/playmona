@@ -4,7 +4,7 @@
    the next load; the cache is the fallback when offline.
    On install it caches play.html and every file it links to.
    ============================================================ */
-var CACHE = 'playmora-v3';
+var CACHE = 'playmora-v4';
 var SDK_HOST = 'https://www.gstatic.com/firebasejs/';
 
 self.addEventListener('install', function (event) {
@@ -13,7 +13,9 @@ self.addEventListener('install', function (event) {
       if (!res.ok) return;
       var copy = res.clone();
       return res.text().then(function (html) {
-        var urls = ['./', 'index.html', 'manifest.webmanifest', 'assets/brand/mark-256.webp'];
+        // The public pages too, so each one opens offline as itself.
+        var urls = ['./', 'index.html', 'privacy.html', 'css/landing.css', 'js/install.js',
+          'manifest.webmanifest', 'assets/brand/mark-256.webp'];
         html.replace(/(?:src|href)="([^"#:]+)"/g, function (m, url) { urls.push(url); return m; });
         return cache.put('play.html', copy).then(function () {
           // One missing file must not stop the rest from caching.
@@ -47,7 +49,13 @@ self.addEventListener('fetch', function (event) {
   }).catch(function () {
     return caches.match(req, { ignoreSearch: req.mode === 'navigate' }).then(function (hit) {
       if (hit) return hit;
-      if (req.mode === 'navigate') return caches.match('play.html');
+      if (req.mode === 'navigate') {
+        // Offline and never cached: the app for app links, else the home page.
+        var path = new URL(req.url).pathname;
+        return caches.match(/play\.html$/.test(path) ? 'play.html' : 'index.html').then(function (page) {
+          return page || Response.error();
+        });
+      }
       return Response.error();
     });
   }));

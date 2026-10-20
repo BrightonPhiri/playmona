@@ -218,3 +218,57 @@ test('auth: a signed-in session survives a reload', async function () {
   const again = await FF.Auth.init();
   assert(again && again.username === 'alice', 'cached session restores');
 });
+
+/* ---------- Guests ---------- */
+test('guest: plays without an account and comes back to the same data', async function () {
+  const FF = bootAuth();
+  await FF.Auth.init();
+  await FF.Auth.playAsGuest();
+  assert(FF.Auth.isGuest(), 'guest session');
+  assertEqual(FF.Auth.profile().username, null);
+  const uid = FF.Auth.user().uid;
+  FF.Storage.set('favorites', ['quickTap']);
+  await FF.Auth.signOut();
+  await FF.Auth.playAsGuest();
+  assertEqual(FF.Auth.user().uid, uid, 'same guest id on this device');
+  assertEqual(FF.Storage.get('favorites', []), ['quickTap']);
+});
+
+test('guest: a cached guest session restores after a reload', async function () {
+  const FF = bootAuth();
+  await FF.Auth.init();
+  await FF.Auth.playAsGuest();
+  await FF.Auth.updateProfile({ displayName: 'Robin', avatar: 'fox' });
+  const again = await FF.Auth.init();
+  assert(again && again.mode === 'guest');
+  assertEqual([again.displayName, again.avatar], ['Robin', 'fox']);
+});
+
+test('guest: signing up keeps what the guest did', async function () {
+  const FF = bootAuth();
+  await FF.Auth.init();
+  await FF.Auth.playAsGuest();
+  FF.Players.add('Sam', 'panda');
+  FF.Stats.recordGamePlayed('quickTap', 'Quick Tap', 'reaction');
+  await FF.Auth.signUp({ email: 'g@example.com', username: 'guesty', password: 'password1', displayName: 'Guesty', avatar: 'nia' });
+  assert(!FF.Auth.isGuest());
+  assertEqual(FF.Players.all().map(function (p) { return p.name; }), ['Guesty', 'Sam']);
+  assertEqual(FF.Stats.get().gamesPlayed, 1);
+  await FF.Auth.signOut();
+  await FF.Auth.playAsGuest();
+  assertEqual(FF.Stats.get().gamesPlayed, 0, 'guest data moved, not copied');
+});
+
+test('guest: signing in to an existing account leaves guest data alone', async function () {
+  const FF = bootAuth();
+  await FF.Auth.init();
+  await FF.Auth.signUp({ email: 'a@example.com', username: 'alice', password: 'password1', displayName: 'Alice', avatar: 'nia' });
+  await FF.Auth.signOut();
+  await FF.Auth.playAsGuest();
+  FF.Storage.set('favorites', ['guessFlag']);
+  await FF.Auth.signIn('alice', 'password1');
+  assertEqual(FF.Storage.get('favorites', []), []);
+  await FF.Auth.signOut();
+  await FF.Auth.playAsGuest();
+  assertEqual(FF.Storage.get('favorites', []), ['guessFlag']);
+});

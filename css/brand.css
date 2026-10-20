@@ -136,6 +136,14 @@ body.auth-open { background: var(--bg); }
 }
 @keyframes pm-spin { to { transform: rotate(360deg); } }
 
+/* Cancel / back link and guest play */
+body.auth-open #app { display: none; }
+.auth__top { display: flex; margin: calc(-1 * var(--sp-2)) 0 var(--sp-1) calc(-1 * var(--sp-2)); }
+.auth__cancel { color: var(--muted); }
+.auth__cancel:hover { color: var(--text); }
+.auth__guest { display: flex; flex-direction: column; gap: var(--sp-2); }
+.auth__guest-btn { border: 2px solid var(--border-strong); }
+
 /* Form fields */
 .field { display: flex; flex-direction: column; gap: 6px; }
 .field__label { font-weight: 700; font-size: var(--fs-sm); }
@@ -181,6 +189,8 @@ body.auth-open { background: var(--bg); }
 }
 .notice > .icon-svg { color: var(--warn); font-size: 1.3rem; }
 .notice__text { flex: 1; font-weight: 700; min-width: 180px; }
+.notice--info { background: var(--accent-soft); border-color: var(--accent); }
+.notice--info > .icon-svg { color: var(--accent); }
 
 /* ============ Home top: hero + who's playing ============ */
 .home-top { display: grid; gap: var(--sp-4); grid-template-columns: 1fr; }
@@ -396,3 +406,19 @@ body.auth-open { background: var(--bg); }
 /* ============ Motion preferences ============ */
 :root[data-reduce="1"] .auth__cast-ava, :root[data-reduce="1"] .splash__mark { animation: none; }
 @media (prefers-reduced-motion: reduce) { .auth__cast-ava, .splash__mark { animation: none; } }
+
+/* ============ Install the app ============ */
+.install-card {
+  position: relative; display: flex; align-items: center; gap: var(--sp-4); flex-wrap: wrap;
+  margin-top: var(--sp-6); padding: var(--sp-4) var(--sp-5); border-radius: var(--r-lg);
+  color: #fff; background: linear-gradient(120deg, #1a2466 0%, var(--brand-navy) 65%);
+  border: 1px solid rgba(255, 255, 255, 0.12); box-shadow: var(--shadow-2);
+}
+.install-card__icon { width: 56px; height: 56px; border-radius: 16px; flex: none; }
+.install-card__text { flex: 1 1 200px; display: flex; flex-direction: column; gap: 2px; padding-right: 36px; }
+.install-card__text strong { font-family: var(--font-display); font-size: var(--fs-lg); font-weight: 600; }
+.install-card__text span { color: rgba(255, 255, 255, 0.78); font-size: var(--fs-sm); }
+.install-card .btn-primary { flex: none; }
+.install-card__close { position: absolute; top: 8px; right: 8px; color: rgba(255, 255, 255, 0.8); }
+@media (max-width: 520px) { .install-card .btn-primary { flex: 1 1 100%; } }
+.install-steps { padding-left: 1.3em; display: flex; flex-direction: column; gap: var(--sp-2); }

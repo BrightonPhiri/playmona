@@ -61,6 +61,12 @@ Open **Realtime Database → Rules**, replace everything with the contents of
 
 On top of the room rules explained below, that file adds:
 
+- `/stats/players`: the public player count on the landing page ("120+ players").
+  Anyone can read it; a signed-in user can only add 1 to it, which the app does once
+  when an account is created. It starts counting from the first sign-up after you
+  publish the rules. To start from your current number of users, set it once by hand
+  in **Realtime Database → Data** (add `stats` → `players` with a number).
+
 - `/users/{uid}`: only that signed-in (non-anonymous) user can read or write
   it. Synced values are capped at about 200 KB each.
 - `/usernames/{name}`: anyone can look up one name (sign-in by username needs

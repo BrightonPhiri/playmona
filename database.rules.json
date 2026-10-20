@@ -1,5 +1,12 @@
 {
   "rules": {
+    "stats": {
+      "players": {
+        ".read": true,
+        ".write": "auth != null && auth.token.firebase.sign_in_provider !== 'anonymous'",
+        ".validate": "newData.isNumber() && newData.val() === (data.exists() ? data.val() : 0) + 1"
+      }
+    },
     "users": {
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
@@ -14,7 +21,6 @@
         }
       }
     },
-
     "usernames": {
       "$name": {
         ".read": true,
@@ -22,26 +28,21 @@
         ".validate": "$name.matches(/^[a-z0-9_.]{3,20}$/) && newData.hasChildren(['uid']) && (!newData.hasChild('email') || newData.child('email').val() === auth.token.email)"
       }
     },
-
     "rooms": {
       "$code": {
         ".read": "auth != null",
-
         "meta": {
           ".write": "auth != null && (!data.exists() || data.child('hostUid').val() === auth.uid || root.child('rooms').child($code).child('players').child(data.child('hostUid').val()).child('online').val() !== true)",
           ".validate": "newData.hasChildren(['seed', 'status', 'appVersion'])"
         },
-
         "players": {
           "$uid": {
             ".write": "auth != null && $uid === auth.uid",
             ".validate": "newData.hasChildren(['name'])"
           }
         },
-
         "rounds": {
           ".write": "auth != null && !newData.exists() && root.child('rooms').child($code).child('meta').child('hostUid').val() === auth.uid",
-
           "$index": {
             "startedAt": {
               ".write": "auth != null && !data.exists()"

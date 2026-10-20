@@ -99,6 +99,7 @@ window.FF = window.FF || {};
      style; the Phosphor style falls back to these automatically. */
   var extra = {
     'close': '<path d="M6 6l12 12M18 6L6 18"/>',
+    'download': '<path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/>',
     'pause': '<rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/>',
     'restart': '<path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v5h5"/>',
     'arrow-left': '<path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/>',

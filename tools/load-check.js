@@ -10,6 +10,7 @@ const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
 const ORDER = [
+  'js/install.js',
   'js/core.js',
   'js/ui-kit.js',
   'js/storage.js',
