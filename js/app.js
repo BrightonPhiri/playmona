@@ -231,11 +231,138 @@ window.FF = window.FF || {};
       var p = FF.Auth.profile();
       var b = FF.ui.el('button', {
         type: 'button', class: 'account-chip', id: 'topbar-account',
-        'aria-label': t('yourProfile', 'Your profile: {name}', { name: p ? p.displayName : '' }),
-        onclick: function () { FF.App._navTo('profile'); }
+        'aria-label': t('accountMenu', 'Account menu: {name}', { name: p ? p.displayName : '' }),
+        'aria-haspopup': 'menu', 'aria-expanded': 'false',
+        onclick: function () { FF.App.toggleAccountMenu(b); }
       });
       if (p) b.appendChild(FF.Avatars.img(p.avatar, 'account-chip__ava'));
       return b;
+    },
+
+    /* ================= Account menu ================= */
+    toggleAccountMenu: function (anchor) {
+      if (document.getElementById('account-menu')) { this.closeAccountMenu(); return; }
+      this.openAccountMenu(anchor);
+    },
+
+    closeAccountMenu: function (returnFocus) {
+      var m = document.getElementById('account-menu');
+      if (!m) return;
+      if (m._cleanup) m._cleanup();
+      m.parentNode.removeChild(m);
+      var chip = document.getElementById('topbar-account');
+      if (chip) {
+        chip.setAttribute('aria-expanded', 'false');
+        if (returnFocus) chip.focus();
+      }
+    },
+
+    openAccountMenu: function (anchor) {
+      var self = this;
+      var p = FF.Auth.profile() || {};
+      var guest = FF.Auth.isGuest();
+      var lvl = FF.Stats.level(FF.Stats.get().xp);
+      var menu = FF.ui.el('div', { class: 'acct-menu', id: 'account-menu', 'data-own-arrows': 'true' });
+
+      // Who is signed in, with their level.
+      var head = FF.ui.div('acct-menu__head');
+      var ava = FF.ui.div('acct-menu__ava');
+      ava.appendChild(FF.Avatars.img(p.avatar, 'acct-menu__img'));
+      head.appendChild(ava);
+      var who = FF.ui.div('acct-menu__who');
+      who.appendChild(FF.ui.el('strong', { class: 'acct-menu__name' }, p.displayName || ''));
+      who.appendChild(FF.ui.span('acct-menu__user', guest ? t('playingAsGuest', 'Playing as a guest') : '@' + (p.username || '')));
+      var lv = FF.ui.div('acct-menu__level');
+      lv.appendChild(FF.ui.span('acct-menu__lvl', t('levelN', 'Level {n}', { n: lvl.level })));
+      var bar = FF.ui.el('span', { class: 'acct-menu__bar', role: 'img', 'aria-label': t('xpOf', '{a} of {b} XP', { a: lvl.into, b: lvl.need }) });
+      var fill = FF.ui.span('acct-menu__fill');
+      fill.style.width = Math.round(lvl.progress * 100) + '%';
+      bar.appendChild(fill);
+      lv.appendChild(bar);
+      who.appendChild(lv);
+      head.appendChild(who);
+      menu.appendChild(head);
+
+      if (guest) {
+        var up = FF.UI.button(t('createAccount', 'Create account'), { class: 'btn-primary btn-block acct-menu__cta', icon: 'user', onClick: function () { self.closeAccountMenu(); FF.App.openAccount('signup'); } });
+        up.setAttribute('role', 'menuitem');
+        menu.appendChild(up);
+      }
+
+      var list = FF.ui.el('div', { class: 'acct-menu__list', role: 'menu', 'aria-label': t('account', 'Account') });
+      function item(iconKey, label, onClick, opts) {
+        opts = opts || {};
+        var b = FF.ui.el('button', { type: 'button', class: 'acct-menu__item' + (opts.cls ? ' ' + opts.cls : ''), role: opts.role || 'menuitem' });
+        if (opts.checked != null) b.setAttribute('aria-checked', opts.checked ? 'true' : 'false');
+        b.appendChild(FF.Icons.icon(iconKey));
+        b.appendChild(FF.ui.span('acct-menu__label', label));
+        if (opts.hint) b.appendChild(FF.ui.span('acct-menu__hint', opts.hint));
+        b.addEventListener('click', function () {
+          if (!opts.keepOpen) self.closeAccountMenu();
+          onClick(b);
+        });
+        list.appendChild(b);
+        return b;
+      }
+      function divider() { list.appendChild(FF.ui.el('div', { class: 'acct-menu__sep', role: 'separator' })); }
+
+      item('user', t('myProfile', 'My profile'), function () { FF.App._navTo('profile'); });
+      item('users', t('savedPlayers', 'Saved players'), function () { FF.Nav.go('profile', { tab: 'players' }); },
+        { hint: String(FF.Players.all().length) });
+      item('chart-line', t('myStats', 'My stats'), function () { FF.Nav.go('profile', { tab: 'overview' }); });
+      item('sliders', t('navSettings', 'Settings'), function () { FF.App._navTo('settings'); });
+      divider();
+      var dark = FF.Theme.resolvedTheme() === 'dark';
+      item(dark ? 'moon' : 'sun', t('darkMode', 'Dark mode'), function (b) {
+        var nowDark = FF.Theme.resolvedTheme() !== 'dark';
+        FF.Theme.setTheme(nowDark ? 'dark' : 'light');
+        b.setAttribute('aria-checked', nowDark ? 'true' : 'false');
+        FF.ui.clear(b);
+        b.appendChild(FF.Icons.icon(nowDark ? 'moon' : 'sun'));
+        b.appendChild(FF.ui.span('acct-menu__label', t('darkMode', 'Dark mode')));
+        b.appendChild(FF.ui.span('acct-menu__switch'));
+      }, { role: 'menuitemcheckbox', checked: dark, keepOpen: true, cls: 'acct-menu__item--toggle' });
+      list.lastChild.appendChild(FF.ui.span('acct-menu__switch'));
+      if (FF.Install && FF.Install.available()) item('download', t('installApp', 'Install the app'), function () { FF.App.install(); });
+      item('info', t('privacyNotice', 'Privacy notice'), function () { window.open('privacy.html', '_blank', 'noopener'); });
+      divider();
+      item('sign-out', guest ? t('leaveGuest', 'Stop guest play') : t('signOut', 'Log out'), function () { FF.App.confirmSignOut(); }, { cls: 'acct-menu__item--danger' });
+      menu.appendChild(list);
+
+      document.body.appendChild(menu);
+      anchor.setAttribute('aria-expanded', 'true');
+
+      // Sit under the avatar, right-aligned with it.
+      function place() {
+        var r = anchor.getBoundingClientRect();
+        menu.style.top = Math.round(r.bottom + 8) + 'px';
+        menu.style.right = Math.max(12, Math.round(window.innerWidth - r.right)) + 'px';
+      }
+      place();
+
+      var items = function () { return FF.ui.$$('.acct-menu__cta, .acct-menu__item', menu); };
+      menu.addEventListener('keydown', function (e) {
+        var all = items();
+        var i = all.indexOf(document.activeElement);
+        if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); self.closeAccountMenu(true); return; }
+        if (e.key === 'Tab') { self.closeAccountMenu(); return; }
+        var next = null;
+        if (e.key === 'ArrowDown') next = all[(i + 1) % all.length];
+        else if (e.key === 'ArrowUp') next = all[(i - 1 + all.length) % all.length];
+        else if (e.key === 'Home') next = all[0];
+        else if (e.key === 'End') next = all[all.length - 1];
+        if (next) { e.preventDefault(); e.stopPropagation(); next.focus(); }
+      });
+      var outside = function (e) { if (!menu.contains(e.target) && !anchor.contains(e.target)) self.closeAccountMenu(); };
+      var onResize = function () { self.closeAccountMenu(); };
+      setTimeout(function () { document.addEventListener('pointerdown', outside, true); }, 0);
+      window.addEventListener('resize', onResize);
+      menu._cleanup = function () {
+        document.removeEventListener('pointerdown', outside, true);
+        window.removeEventListener('resize', onResize);
+      };
+      var first = items()[0];
+      if (first) setTimeout(function () { try { first.focus({ preventScroll: true }); } catch (e) {} }, 0);
     },
 
     /* ================= Shell ================= */
@@ -374,6 +501,7 @@ window.FF = window.FF || {};
 
     /* ================= Render router ================= */
     render: function (view, params) {
+      this.closeAccountMenu();
       params = params || {};
       if (ALIASES[view]) {
         var alias = ALIASES[view];
@@ -730,7 +858,7 @@ window.FF = window.FF || {};
         actions.appendChild(FF.UI.button(t('quickPlay', 'Quick play'), { class: 'btn-lg btn-primary', icon: 'play', onClick: function () { FF.App.quickPlay(); } }));
         actions.appendChild(FF.UI.button(t('gameNight', 'Game night'), { class: 'btn-glass', icon: 'trophy', onClick: function () { FF.Nav.go('gamenight'); } }));
         if (onlineEnabled()) {
-          actions.appendChild(FF.UI.button(t('playTogether', 'Play together'), { class: 'btn-glass', icon: 'wifi', onClick: function () { FF.Nav.go('online'); } }));
+          actions.appendChild(FF.UI.button(t('playOnline', 'Play online'), { class: 'btn-glass', icon: 'wifi', onClick: function () { FF.Nav.go('online'); } }));
         } else {
           actions.appendChild(FF.UI.button(t('quickRound', 'Quick round'), { class: 'btn-glass', icon: 'lightning', onClick: function () { FF.App.quickRound(); } }));
         }

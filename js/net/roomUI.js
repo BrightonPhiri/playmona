@@ -181,15 +181,140 @@ window.FF = window.FF || {};
       };
     },
 
+    /* The Online page: the ways to play with other people. */
     showHome: function (main) {
       FF.Room.offAll();
       FF.ui.clear(main);
       var self = this;
+      var t = FF.t;
+
+      var head = FF.ui.div('online-head');
+      head.appendChild(FF.ui.el('h1', { class: 'page-title' }, t('playOnline', 'Play online')));
+      head.appendChild(FF.ui.el('p', { class: 'page-sub' }, t('playOnlineSub', 'Play with people on their own phones, wherever they are.')));
+      main.appendChild(head);
+
+      var grid = FF.ui.el('ul', { class: 'mode-grid' });
+      function card(o) {
+        var li = FF.ui.el('li', { class: 'mode-card-item' });
+        var b = FF.ui.el('button', { type: 'button', class: 'mode-card mode-card--' + o.tone, 'aria-describedby': o.id + '-desc' });
+        var top = FF.ui.div('mode-card__top');
+        var ic = FF.ui.span('mode-card__icon');
+        ic.appendChild(FF.Icons.icon(o.icon));
+        top.appendChild(ic);
+        if (o.soon) top.appendChild(FF.ui.span('mode-card__soon', t('comingSoon', 'Coming soon')));
+        else if (o.cast) top.appendChild(o.cast);
+        b.appendChild(top);
+        b.appendChild(FF.ui.el('h2', { class: 'mode-card__title', id: o.id }, o.title));
+        b.appendChild(FF.ui.el('p', { class: 'mode-card__desc', id: o.id + '-desc' }, o.desc));
+        var go = FF.ui.span('mode-card__go', o.cta);
+        go.appendChild(FF.Icons.icon('arrow-right'));
+        b.appendChild(go);
+        b.addEventListener('click', o.onClick);
+        li.appendChild(b);
+        grid.appendChild(li);
+      }
+
+      var cast = FF.ui.span('mode-card__cast');
+      ['nia', 'fox', 'kenji', 'unicorn'].forEach(function (id) { cast.appendChild(FF.Avatars.img(id, 'mode-card__ava')); });
+
+      card({
+        id: 'mode-friends', tone: 'blue', icon: 'users', cast: cast,
+        title: t('playWithFriends', 'Play with friends'),
+        desc: t('playWithFriendsDesc', 'Make a private room and share the code. Everyone plays the same game at the same time on their own phone.'),
+        cta: t('createOrJoin', 'Create or join a room'),
+        onClick: function () { self.showFriends(main); }
+      });
+      card({
+        id: 'mode-match', tone: 'green', icon: 'globe', soon: true,
+        title: t('quickMatch', 'Quick match'),
+        desc: t('quickMatchDesc', 'Get matched with players or teams who are online and ready to play right now.'),
+        cta: t('seeWhatsComing', 'See what is coming'),
+        onClick: function () { self.showQuickMatch(main); }
+      });
+      card({
+        id: 'mode-tours', tone: 'orange', icon: 'trophy', soon: true,
+        title: t('tournaments', 'Tournaments'),
+        desc: t('tournamentsDesc', 'Register for tournaments hosted by PlayMora. Play the rounds and climb the leaderboard.'),
+        cta: t('seeWhatsComing', 'See what is coming'),
+        onClick: function () { self.showTournaments(main); }
+      });
+      main.appendChild(grid);
+
+      // Shortcut for the most common case: someone sent you a code.
+      var quick = FF.ui.div('online-quick');
+      quick.appendChild(FF.ui.span('online-quick__text', t('haveCode', 'Got a room code from a friend?')));
+      quick.appendChild(FF.UI.button(t('joinRoom', 'Join with a code'), { class: 'btn-sm', icon: 'arrow-right', onClick: function () { self.showJoin(main, FF.Room.codeFromUrl()); } }));
+      main.appendChild(quick);
+      FF.Nav.focusFirst(main);
+    },
+
+    /* Play with friends: private rooms with a code. */
+    showFriends: function (main) {
+      FF.Room.offAll();
+      FF.ui.clear(main);
+      var self = this;
       main.appendChild(panel([
-        hero('wifi', FF.t('playTogether', 'Play together'), FF.t('playTogetherLead', 'Everyone plays the same game at the same time, each on their own phone or tablet. The first correct answer wins the point.')),
+        hero('users', FF.t('playWithFriends', 'Play with friends'), FF.t('playTogetherLead', 'Everyone plays the same game at the same time, each on their own phone or tablet. The first correct answer wins the point.')),
         FF.UI.button(FF.t('createRoom', 'Create a room'), { class: 'btn-lg btn-primary', icon: 'plus', onClick: function () { self.showModePicker(main); } }),
         FF.UI.button(FF.t('joinRoom', 'Join with a code'), { class: 'btn-lg', icon: 'arrow-right', onClick: function () { self.showJoin(main, FF.Room.codeFromUrl()); } }),
-        FF.ui.el('p', { class: 'rm-hint' }, FF.t('roomPrivacy', 'Rooms are private: only people with the code can join. Names and emoji pictures are shared while the room is open.'))
+        FF.ui.el('p', { class: 'rm-hint' }, FF.t('roomPrivacy', 'Rooms are private: only people with the code can join. Names and characters are shared while the room is open.')),
+        backButton(function () { self.showHome(main); })
+      ]));
+      FF.Nav.focusFirst(main);
+    },
+
+    // Quick match: placeholder until matchmaking is planned.
+    showQuickMatch: function (main) {
+      this.showComingSoon(main, {
+        icon: 'globe', tone: 'green',
+        title: FF.t('quickMatch', 'Quick match'),
+        lead: FF.t('quickMatchLead', 'Soon you will be able to play with anyone who is online, not just people you know.'),
+        planned: [
+          FF.t('findPlan1', 'Quick match: pick a game and get paired with players who are online now.'),
+          FF.t('findPlan2', 'Join a team that needs players, or fill your own team.'),
+          FF.t('findPlan3', 'See who is online and ready to play.')
+        ]
+      });
+    },
+
+    // Tournaments: placeholder until they are planned.
+    showTournaments: function (main) {
+      this.showComingSoon(main, {
+        icon: 'trophy', tone: 'orange',
+        title: FF.t('tournaments', 'Tournaments'),
+        lead: FF.t('tournamentsLead', 'Game tournaments hosted by PlayMora, open to everyone who registers.'),
+        planned: [
+          FF.t('tourPlan1', 'Browse upcoming tournaments and register to join.'),
+          FF.t('compPlan2', 'Play the rounds at set times, on your own or in a team.'),
+          FF.t('compPlan3', 'Follow the live leaderboard and see the winners.')
+        ],
+        empty: FF.t('noTournaments', 'No tournaments are open yet.')
+      });
+    },
+
+    showComingSoon: function (main, o) {
+      FF.Room.offAll();
+      FF.ui.clear(main);
+      var self = this;
+      var h = hero(o.icon, o.title, o.lead);
+      h.classList.add('rm-hero--' + o.tone);
+      h.insertBefore(FF.ui.span('mode-card__soon', FF.t('comingSoon', 'Coming soon')), h.children[1]);
+      var plan = FF.ui.el('section', { class: 'soon-plan', 'aria-labelledby': 'soon-plan-title' });
+      plan.appendChild(FF.ui.el('h2', { class: 'soon-plan__title', id: 'soon-plan-title' }, FF.t('whatsPlanned', 'What is planned')));
+      var list = FF.ui.el('ul', { class: 'soon-plan__list' });
+      o.planned.forEach(function (line) {
+        var li = FF.ui.el('li', {});
+        li.appendChild(FF.Icons.icon('check'));
+        li.appendChild(FF.ui.span('', line));
+        list.appendChild(li);
+      });
+      plan.appendChild(list);
+      main.appendChild(panel([
+        h,
+        o.empty ? FF.ui.el('p', { class: 'soon-empty' }, o.empty) : null,
+        plan,
+        FF.UI.button(FF.t('playWithFriendsNow', 'Play with friends now'), { class: 'btn-lg btn-primary', icon: 'users', onClick: function () { self.showFriends(main); } }),
+        backButton(function () { self.showHome(main); })
       ]));
       FF.Nav.focusFirst(main);
     },
@@ -203,7 +328,7 @@ window.FF = window.FF || {};
         FF.ui.div('rm-hint', FF.t('asIndividualsDesc', 'Each device is one player with their own score.')),
         FF.UI.button(FF.t('inTeams', 'In teams'), { class: 'btn-lg', icon: 'users', onClick: function () { self.showCreate(main, 'teams'); } }),
         FF.ui.div('rm-hint', FF.t('inTeamsDesc', 'Each device picks a team, and points go to the team.')),
-        backButton(function () { self.showHome(main); })
+        backButton(function () { self.showFriends(main); })
       ]));
       FF.Nav.focusFirst(main);
     },
@@ -300,7 +425,7 @@ window.FF = window.FF || {};
         nameInput,
         error,
         joinBtn,
-        backButton(function () { self.showHome(main); })
+        backButton(function () { self.showFriends(main); })
       ]));
       FF.Nav.focusFirst(main);
     },
@@ -442,7 +567,7 @@ window.FF = window.FF || {};
           onClick: function () {
             if (FF.Voice) FF.Voice.leave();
             FF.Room.leave();
-            self.showHome(main);
+            self.showFriends(main);
           }
         }));
 
@@ -581,7 +706,7 @@ window.FF = window.FF || {};
 
         children.push(FF.UI.button(FF.t('leaveRoom', 'Leave room'), { icon: 'close',
           class: 'btn-lg btn-ghost',
-          onClick: function () { FF.Room.leave(); self.showHome(main); }
+          onClick: function () { FF.Room.leave(); self.showFriends(main); }
         }));
 
         main.appendChild(panel(children));
@@ -615,7 +740,7 @@ window.FF = window.FF || {};
       main.appendChild(panel([
         hero('alert', FF.t('oops', 'Something went wrong')),
         FF.ui.el('div', { class: 'rm-error', role: 'alert' }, message),
-        FF.UI.button(FF.t('back', 'Back'), { class: 'btn-lg btn-primary', icon: 'arrow-left', onClick: function () { self.showHome(main); } })
+        FF.UI.button(FF.t('back', 'Back'), { class: 'btn-lg btn-primary', icon: 'arrow-left', onClick: function () { self.showFriends(main); } })
       ]));
       FF.Nav.focusFirst(main);
     },
