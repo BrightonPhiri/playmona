@@ -13,9 +13,19 @@ window.FF = window.FF || {};
     current: 'home',
     params: {},
 
+    // 'keyboard' (keyboard, TV remote, D-pad) or 'pointer' (mouse, touch,
+    // pen). Focus rings and the .focused highlight only show for keyboard
+    // users, so a touch tap never leaves an answer looking "pre-selected".
+    modality: 'pointer',
+
     init: function () {
       const self = this;
-      document.addEventListener('keydown', function (e) { self._keydown(e); });
+      if (FF.device && FF.device.isTV && FF.device.isTV()) this._setModality('keyboard');
+      document.addEventListener('keydown', function (e) {
+        if (!e.metaKey && !e.ctrlKey && !e.altKey) self._setModality('keyboard');
+        self._keydown(e);
+      });
+      document.addEventListener('pointerdown', function () { self._setModality('pointer'); }, true);
       document.addEventListener('click', function (e) { FF.Audio.unlock(); }, true);
       document.addEventListener('pointerdown', function (e) { FF.Audio.unlock(); }, true);
 
@@ -104,22 +114,44 @@ window.FF = window.FF || {};
       });
     },
 
+    _setModality: function (m) {
+      if (this.modality === m) return;
+      this.modality = m;
+      document.documentElement.setAttribute('data-input', m);
+      if (m === 'pointer') {
+        const prev = document.querySelector('.focused');
+        if (prev) prev.classList.remove('focused');
+      }
+    },
+
     focus: function (el) {
       if (!el) return;
       const prev = document.querySelector('.focused');
       if (prev && prev !== el) prev.classList.remove('focused');
-      el.classList.add('focused');
+      if (this.modality === 'keyboard') el.classList.add('focused');
       try { el.focus({ preventScroll: true }); } catch (e) { try { el.focus(); } catch (e2) {} }
     },
 
+    // Put focus on the first control of a new screen, but only for keyboard
+    // and remote users. Touch and mouse users get no programmatic focus, so
+    // nothing on the new screen looks selected before they choose it.
     focusFirst: function (root) {
-      const els = this.focusables(root || (typeof FF.App !== 'undefined' ? FF.App.root() : document));
+      if (this.modality !== 'keyboard') return;
+      if (!root) {
+        const dialogs = document.querySelectorAll('.ff-dialog');
+        if (dialogs.length) root = dialogs[dialogs.length - 1];
+        else if (document.body.classList.contains('game-active')) root = FF.ui.$('#game-screen');
+        else root = FF.ui.$('#app-main');
+      }
+      const els = this.focusables(root || document);
       if (els.length) this.focus(els[0]);
     },
 
     _activeContainer: function () {
+      const dialogs = document.querySelectorAll('.ff-dialog');
+      if (dialogs.length) return dialogs[dialogs.length - 1];
       if (document.body.classList.contains('game-active')) return FF.ui.$('#game-screen') || document;
-      return FF.ui.$('#app-main') || document;
+      return FF.ui.$('#app') || document;
     },
 
     // Whether the user is currently typing in a text field, in which case
@@ -128,7 +160,21 @@ window.FF = window.FF || {};
       const a = document.activeElement;
       if (!a || !a.tagName) return false;
       const tag = a.tagName.toLowerCase();
-      return tag === 'input' || tag === 'textarea' || tag === 'select' || a.isContentEditable;
+      if (tag === 'input') {
+        const type = (a.getAttribute('type') || 'text').toLowerCase();
+        return ['button', 'submit', 'reset', 'checkbox', 'radio', 'image'].indexOf(type) === -1;
+      }
+      return tag === 'textarea' || tag === 'select' || a.isContentEditable;
+    },
+
+    // Controls that use the arrow keys themselves: text fields (caret),
+    // sliders, selects, and widgets that manage their own arrows
+    // (radio groups, tab lists).
+    _ownsArrows: function () {
+      const a = document.activeElement;
+      if (!a || !a.tagName) return false;
+      if (this._isTextEditing()) return true;
+      return !!(a.closest && a.closest('[role="radiogroup"],[role="tablist"],[data-own-arrows]'));
     },
 
     _keydown: function (e) {
@@ -154,6 +200,7 @@ window.FF = window.FF || {};
       }
 
       if (dir) {
+        if (this._ownsArrows() || e.defaultPrevented) return;
         e.preventDefault();
         const container = this._activeContainer();
         const els = this.focusables(container);

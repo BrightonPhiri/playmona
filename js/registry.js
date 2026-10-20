@@ -175,65 +175,57 @@ window.FF = window.FF || {};
   function buildShell(def, config, api) {
     const screen = FF.ui.$('#game-screen');
     FF.ui.clear(screen);
+    screen.className = 'game-screen';
 
     const shell = FF.ui.el('div', { class: 'game-shell' });
 
     const bar = FF.ui.el('header', { class: 'game-shell__bar' });
-    const exitBtn = FF.ui.button('', { class: 'shell-btn exit', ariaLabel: 'Exit game', onClick: function () { FF.GameFlow.confirmExit(); } });
-    exitBtn.appendChild(FF.Icons.icon('house', '🏠'));
-    const title = FF.ui.div('game-shell__title', def.icon + ' ' + def.name);
-    const timerEl = FF.ui.div('game-shell__timer hidden', '');
-    const hostBtn = FF.ui.button('', { class: 'shell-btn', ariaLabel: 'Host controls', onClick: function () { FF.GameFlow.toggleHost(); } });
-    hostBtn.appendChild(FF.Icons.icon('sliders', '🎛️'));
-    const restartBtn = FF.ui.button('🔄', { class: 'shell-btn', ariaLabel: 'Restart game', onClick: function () { FF.GameFlow.restart(); } });
-    const pauseBtn = FF.ui.button('⏸️', { class: 'shell-btn', ariaLabel: 'Pause', onClick: function () { FF.GameFlow.pause(); } });
+    const exitBtn = FF.UI.iconButton('close', FF.t('exitGame', 'Exit game'), function () { FF.GameFlow.confirmExit(); }, 'shell-btn exit');
+    const title = FF.ui.div('game-shell__title');
+    title.appendChild(FF.Icons.icon(FF.Icons.game[def.id] || (FF.Categories[def.category] || {}).iconKey, def.icon));
+    const titleText = FF.ui.el('h1', { class: 'game-shell__title-text', style: { font: 'inherit' } }, def.name);
+    title.appendChild(titleText);
+    if (config.round) title.appendChild(FF.ui.span('game-shell__round', FF.t('roundOf', 'Round {n} of {total}', { n: config.round.index, total: config.round.total })));
+    const timerEl = FF.ui.el('div', { class: 'game-shell__timer hidden', role: 'timer', 'aria-label': FF.t('timeLeft', 'Time left') }, '');
+    const pauseBtn = FF.UI.iconButton('pause', FF.t('pause', 'Pause'), function () { FF.GameFlow.pause(); }, 'shell-btn');
 
     bar.appendChild(exitBtn);
     bar.appendChild(title);
     bar.appendChild(timerEl);
-    bar.appendChild(hostBtn);
-    bar.appendChild(restartBtn);
-    bar.appendChild(pauseBtn);
 
     if (FF.Voice && (FF.Voice.isActive() || (config.room && FF.Voice.isSupported()))) {
-      const voiceBtn = FF.ui.button(FF.Voice.isActive() ? (FF.Voice.isMuted() ? '🔇' : '🎙️') : '🎙️', {
-        class: 'shell-btn voice-btn' + (FF.Voice.isActive() ? (FF.Voice.isMuted() ? ' muted' : ' voice-active') : ''),
-        ariaLabel: 'Voice Chat',
-        onClick: function () {
-          if (!FF.Voice.isActive()) {
-            FF.Voice.join().then(function () {
-              syncVoiceBtn();
-            }).catch(function (e) {
-              if (shellObj && shellObj.toast) shellObj.toast(e.message || 'Mic blocked');
-            });
-          } else {
-            FF.Voice.toggleMute();
-            syncVoiceBtn();
-          }
+      const voiceBtn = FF.ui.el('button', { type: 'button', class: 'shell-btn voice-btn' });
+      const syncVoiceBtn = function () {
+        FF.ui.clear(voiceBtn);
+        const active = FF.Voice.isActive();
+        const muted = active && FF.Voice.isMuted();
+        voiceBtn.appendChild(FF.Icons.icon(muted ? 'mic-off' : 'mic'));
+        voiceBtn.classList.toggle('voice-active', active && !muted);
+        voiceBtn.classList.toggle('muted', muted);
+        voiceBtn.setAttribute('aria-pressed', active && !muted ? 'true' : 'false');
+        const label = !active ? FF.t('joinVoice', 'Join voice chat') : (muted ? FF.t('micUnmute', 'Unmute microphone') : FF.t('micMute', 'Mute microphone'));
+        voiceBtn.setAttribute('aria-label', label);
+        voiceBtn.title = label;
+      };
+      voiceBtn.addEventListener('click', function () {
+        if (!FF.Voice.isActive()) {
+          FF.Voice.join().then(syncVoiceBtn).catch(function (e) {
+            FF.UI.toast((e && e.message) || FF.t('micBlocked', 'Microphone access blocked.'), { type: 'error' });
+          });
+        } else {
+          FF.Voice.toggleMute();
+          syncVoiceBtn();
         }
       });
-      function syncVoiceBtn() {
-        if (!FF.Voice.isActive()) {
-          voiceBtn.textContent = '🎙️';
-          voiceBtn.classList.remove('voice-active', 'muted');
-        } else if (FF.Voice.isMuted()) {
-          voiceBtn.textContent = '🔇';
-          voiceBtn.classList.add('muted');
-          voiceBtn.classList.remove('voice-active');
-        } else {
-          voiceBtn.textContent = '🎙️';
-          voiceBtn.classList.add('voice-active');
-          voiceBtn.classList.remove('muted');
-        }
-      }
+      syncVoiceBtn();
       FF.Voice.on('change', syncVoiceBtn);
       bar.appendChild(voiceBtn);
     }
+    bar.appendChild(pauseBtn);
 
-    const scoreBar = FF.ui.div('game-shell__scores');
+    const scoreBar = FF.ui.el('div', { class: 'game-shell__scores', role: 'list', 'aria-label': FF.t('scores', 'Scores') });
     if (config.variation === 'display') scoreBar.classList.add('hidden');
-    const content = FF.ui.div('game-shell__content');
-    content.id = 'game-content';
+    const content = FF.ui.el('main', { class: 'game-shell__content', id: 'game-content' });
 
     shell.appendChild(bar);
     shell.appendChild(scoreBar);
@@ -246,26 +238,22 @@ window.FF = window.FF || {};
         timerEl.textContent = FF.util.formatTime(remaining);
         if (remaining <= 5 && remaining > 0) timerEl.classList.add('warning');
         else timerEl.classList.remove('warning');
+        if (remaining === 10 || remaining === 5) FF.UI.announce(FF.t('secondsLeft', '{n} seconds left', { n: remaining }));
         if (extraTick) extraTick(remaining);
       },
       onFinish: function () {
-        timerEl.textContent = "TIME!";
+        timerEl.textContent = FF.t('timeUpShort', 'Time!');
+        timerEl.classList.remove('warning');
+        FF.UI.announce(FF.t('timeUpLong', 'Time is up'));
         FF.Audio.play('roundEnd');
         if (shellTimer.onFinish) shellTimer.onFinish();
       }
     });
 
+    // Kept for older games that reach for api.shell.host; no longer shown.
     const host = FF.ui.el('div', { class: 'host-panel hidden' });
-    host.appendChild(FF.ui.div('host-panel__title', 'HOST CONTROLS'));
-    function hostAction(label, fn) {
-      return FF.ui.button(label, { class: 'host-btn', onClick: function () { fn(); FF.GameFlow.toggleHost(); } });
-    }
-    host.appendChild(hostAction('⏸ Pause', function () { FF.GameFlow.pause(); }));
-    host.appendChild(hostAction('▶ Resume', function () { FF.GameFlow.resume(); }));
-    host.appendChild(hostAction('🔄 Restart', function () { FF.GameFlow.restart(); }));
-    host.appendChild(hostAction('🏠 End Game', function () { FF.GameFlow.confirmExit(); }));
-    screen.appendChild(host);
 
+    let lastActive = null;
     const shellObj = {
       def: def,
       config: config,
@@ -276,7 +264,7 @@ window.FF = window.FF || {};
       timer: shellTimer,
       host: host,
 
-      setTitle: function (t) { title.textContent = t; },
+      setTitle: function (text) { titleText.textContent = text; },
 
       setOnTick: function (fn) { extraTick = fn; },
       displayMode: config.variation === 'display',
@@ -297,26 +285,41 @@ window.FF = window.FF || {};
         if (this.displayMode) return;
         const scorers = FF.Scoring._entities;
         const lb = FF.Scoring.leaderboard();
+        const many = scorers.length > 1;
         scorers.forEach(function (e) {
           const r = FF.Scoring.record(e.id);
+          const pts = r ? r.points : 0;
+          const isActive = many && activeId === e.id;
           const isSpk = FF.Voice && FF.Voice.isSpeaking(e.id);
           const chip = FF.ui.el('div', {
-            class: 'score-chip' + (activeId === e.id ? ' active' : '') + (lb[0] && lb[0].id === e.id && r.points > 0 ? ' leader' : '') + (isSpk ? ' speaking' : ''),
-            style: { '--chip-color': e.color || '#8b5cf6' }
+            class: 'score-chip' + (isActive ? ' active' : '') + (lb[0] && lb[0].id === e.id && pts > 0 ? ' leader' : '') + (isSpk ? ' speaking' : ''),
+            role: 'listitem',
+            style: { '--chip-color': e.color || '#8b5cf6' },
+            'aria-label': e.name + ', ' + FF.t('pointsN', '{n} points', { n: FF.util.formatNumber(pts) }) + (isActive ? ', ' + FF.t('theirTurn', 'their turn') : '')
           });
           chip.appendChild(FF.Players.avatarEl(e, 'score-chip__avatar'));
           chip.appendChild(FF.ui.el('span', { class: 'score-chip__name' }, e.name));
-          chip.appendChild(FF.ui.el('span', { class: 'score-chip__points' }, FF.util.formatNumber(r ? r.points : 0)));
+          chip.appendChild(FF.ui.el('span', { class: 'score-chip__points' }, FF.util.formatNumber(pts)));
+          if (isActive) chip.appendChild(FF.ui.el('span', { class: 'score-chip__turn', 'aria-hidden': 'true' }, FF.t('turn', 'Turn')));
           scoreBar.appendChild(chip);
+          if (isActive && chip.scrollIntoView) {
+            try { chip.scrollIntoView({ inline: 'nearest', block: 'nearest' }); } catch (err) {}
+          }
         });
+        if (many && activeId && activeId !== lastActive) {
+          const who = scorers.filter(function (s) { return s.id === activeId; })[0];
+          if (who) FF.UI.announce(FF.t('turnOf', '{name}’s turn', { name: who.name }));
+        }
+        if (activeId) lastActive = activeId;
       },
 
       highlight: function (activeId) { this.updateScores(activeId); },
 
       toast: function (msg, cls) {
-        const t = FF.ui.el('div', { class: 'toast ' + (cls || ''), text: msg });
-        screen.appendChild(t);
-        setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, 1600);
+        let type = 'info';
+        if (cls === 'error' || cls === 'bad' || cls === 'wrong') type = 'error';
+        else if (cls === 'good' || cls === 'success' || cls === 'correct') type = 'success';
+        FF.UI.toast(msg, { type: type, duration: 1600 });
       }
     };
     return shellObj;
@@ -393,76 +396,15 @@ window.FF = window.FF || {};
       }
     },
 
-    showIntro: function (def, config) {
+    // One screen to understand a game, check who is playing, adjust
+    // options and start. Replaces the old Intro → Settings modal pair.
+    // opts.open: 'howto' | 'players' | 'options'
+    showDetails: function (def, config, opts) {
+      opts = opts || {};
       const screen = FF.ui.$('#game-screen');
-      FF.ui.clear(screen);
-      screen.classList.add('game-screen--art');
-      screen.style.setProperty('--art', FF.Assets.artUrl('covers', def.id));
-      screen.style.setProperty('--wash', FF.Assets.wash(def.category));
-      const catMeta = FF.Categories[def.category];
-      if (catMeta && catMeta.color) screen.style.setProperty('--card-color', catMeta.color);
-      const card = FF.ui.el('div', { class: 'game-intro' });
-      const introIcon = FF.ui.div('game-intro__icon');
-      introIcon.appendChild(FF.Icons.icon(FF.Icons.game[def.id], def.icon));
-      card.appendChild(introIcon);
-      card.appendChild(FF.ui.el('h1', { class: 'game-intro__title' }, def.name));
-      card.appendChild(FF.ui.el('p', { class: 'game-intro__desc' }, def.description));
-
-      const meta = FF.ui.div('game-intro__meta');
-      meta.appendChild(FF.ui.el('span', { class: 'meta-chip' }, config.scorers.length <= 1 ? '👤 Solo' : '👥 ' + FF.util.plural(config.scorers.length, 'Player')));
-      meta.appendChild(FF.ui.el('span', { class: 'meta-chip' }, '⭐ ' + (def.difficulty || 'Normal')));
-      meta.appendChild(FF.ui.el('span', { class: 'meta-chip' }, '⏱ ' + (def.duration || 5) + ' min'));
-      meta.appendChild(FF.ui.el('span', { class: 'meta-chip' }, def.icon + ' ' + (def.category || '').toUpperCase()));
-      card.appendChild(meta);
-
-      const actions = FF.ui.div('game-intro__actions');
-      const startBtn = FF.ui.button('▶ START GAME', { class: 'btn-lg', primary: true, onClick: function () { FF.GameFlow.showGameSettings(def, config); } });
-      const howBtn = FF.ui.button('📖 HOW TO PLAY', { class: 'btn-lg', onClick: function () { FF.GameFlow.showHowTo(def); } });
-      const setBtn = FF.ui.button('⚙ SETTINGS', { class: 'btn-lg', onClick: function () { FF.GameFlow.showGameSettings(def, config); } });
-      const backBtn = FF.ui.button('← BACK', { class: 'btn-lg', onClick: function () { FF.GameFlow.exitToHome(); } });
-      actions.appendChild(startBtn);
-      actions.appendChild(howBtn);
-      actions.appendChild(setBtn);
-      if (def.display) {
-        const tvBtn = FF.ui.button('🖥 TV DISPLAY', { class: 'btn-lg', onClick: function () {
-          config.variation = 'display';
-          FF.GameFlow.showGameSettings(def, config);
-        } });
-        actions.appendChild(tvBtn);
-      }
-      actions.appendChild(backBtn);
-      card.appendChild(actions);
-      screen.appendChild(card);
-      FF.Nav.focusFirst(screen);
-    },
-
-    showHowTo: function (def) {
-      const screen = FF.ui.$('#game-screen');
-      FF.ui.clear(screen);
-      const modal = FF.ui.div('modal');
-      const box = FF.ui.div('modal__box');
-      box.appendChild(FF.ui.el('h2', {}, def.name));
-      box.appendChild(FF.ui.el('h3', {}, 'HOW TO PLAY'));
-      const steps = def.howToPlay && def.howToPlay.length
-        ? def.howToPlay
-        : ['1. Read the on-screen instructions.', '2. Play the game.', '3. Earn points to win.'];
-      const ol = FF.ui.el('ol', { class: 'howto-list' });
-      steps.forEach(function (s, i) { ol.appendChild(FF.ui.el('li', {}, s)); });
-      box.appendChild(ol);
-      box.appendChild(FF.ui.button('GOT IT', { primary: true, class: 'btn-lg', onClick: function () { FF.GameFlow.showIntro(def, FF.GameFlow.current.config); } }));
-      box.appendChild(FF.ui.button('🏠 Back to Home', { class: 'btn-lg', onClick: function () { FF.GameFlow.exitToHome(); } }));
-      modal.appendChild(box);
-      screen.appendChild(modal);
-      FF.Nav.focusFirst(screen);
-    },
-
-    showGameSettings: function (def, config) {
-      const screen = FF.ui.$('#game-screen');
-      FF.ui.clear(screen);
-      const modal = FF.ui.div('modal');
-      const box = FF.ui.div('modal__box modal__box--wide');
-      modal.appendChild(box);
-      screen.appendChild(modal);
+      const flow = this;
+      const t = FF.t;
+      const cat = FF.Categories.meta ? FF.Categories.meta(def.category) : { name: def.category, iconKey: 'game-controller', color: '#8b5cf6' };
 
       config.variation = config.variation || 'standard';
       if (config.displaySeconds == null) config.displaySeconds = FF.Settings.get('displaySeconds') || 60;
@@ -473,6 +415,13 @@ window.FF = window.FF || {};
       const soloOk = FF.Games.allowsSolo(def);
       const teamOk = def.modes && def.modes.indexOf('team') !== -1;
       if (FF.Players.get().length < minP) FF.Players.ensureCount(minP);
+
+      const played = FF.Recents.get().some(function (r) { return r.id === def.id; });
+      const ui = {
+        howOpen: opts.open === 'howto' || (!played && opts.open == null),
+        editing: opts.open === 'players' || FF.Players.get().length < minP,
+        optionsOpen: opts.open === 'options'
+      };
 
       function syncModeFromRoster() {
         const n = FF.Players.get().length;
@@ -488,96 +437,52 @@ window.FF = window.FF || {};
         }
       }
 
-      function row(label, build) {
-        const r = FF.ui.div('settings-row');
-        r.appendChild(FF.ui.div('settings-row__label', label));
-        r.appendChild(build());
-        return r;
-      }
-      function seg(values, current, key, onPick) {
-        const wrap = FF.ui.div('seg');
-        values.forEach(function (v) {
-          const b = FF.ui.button(v.label, {
-            class: 'seg__btn' + (v.value === current ? ' active' : ''),
-            onClick: function () {
-              config[key] = v.value;
-              FF.ui.$$('.seg__btn', wrap).forEach(function (x) { x.classList.remove('active'); });
-              b.classList.add('active');
-              if (onPick) onPick(v.value);
-              else if (key === 'variation') render();
-            }
-          });
-          wrap.appendChild(b);
-        });
-        return wrap;
+      function chip(iconKey, text, cls) {
+        const c = FF.ui.span('meta-chip' + (cls ? ' ' + cls : ''));
+        c.appendChild(FF.Icons.icon(iconKey));
+        c.appendChild(document.createTextNode(text));
+        return c;
       }
 
       function playerRow(p, canRemove) {
-        const rowEl = FF.ui.el('div', { class: 'setup-player', style: { '--p-color': p.color } });
+        const rowEl = FF.ui.el('li', { class: 'setup-player', style: { '--p-color': p.color } });
         const avaBtn = FF.ui.el('button', {
-          class: 'setup-player__photo',
-          type: 'button',
-          ariaLabel: 'Change picture for ' + p.name,
-          onclick: function () {
-            FF.Players.pickLook(p.id, { onDone: render });
-          }
+          type: 'button', class: 'setup-player__photo',
+          'aria-label': t('changePictureFor', 'Change picture for {name}', { name: p.name }),
+          onclick: function () { FF.Players.pickLook(p.id, { onDone: render }); }
         });
         avaBtn.appendChild(FF.Players.avatarEl(p, 'setup-player__face'));
         rowEl.appendChild(avaBtn);
-
         const name = FF.ui.el('input', {
-          type: 'text',
-          class: 'setup-name',
-          value: p.name,
-          maxlength: 24,
-          placeholder: 'Name or team name',
-          'aria-label': 'Player name'
+          type: 'text', class: 'setup-name', value: p.name, maxlength: 24,
+          placeholder: t('playerName', 'Player name'), 'aria-label': t('playerName', 'Player name'), autocomplete: 'off'
         });
         name.addEventListener('input', function () {
           const next = name.value.trim();
-          if (next) FF.Players.rename(p.id, next);
+          if (next) { FF.Players.rename(p.id, next); renderSummary(); }
         });
-        name.addEventListener('blur', function () {
-          if (!name.value.trim()) {
-            name.value = p.name;
-          }
-        });
+        name.addEventListener('blur', function () { if (!name.value.trim()) name.value = p.name; });
         rowEl.appendChild(name);
-
         if (canRemove) {
-          rowEl.appendChild(FF.ui.button('✕', {
-            class: 'icon-btn danger',
-            ariaLabel: 'Remove ' + p.name,
-            onClick: function () {
-              FF.Players.remove(p.id);
-              syncModeFromRoster();
-              render();
-            }
-          }));
+          rowEl.appendChild(FF.UI.iconButton('trash', t('removePlayer', 'Remove {name}', { name: p.name }), function () {
+            FF.Players.remove(p.id);
+            syncModeFromRoster();
+            render();
+          }, 'icon-btn--danger'));
         }
         return rowEl;
       }
 
       function teamRow(tm) {
-        const rowEl = FF.ui.el('div', { class: 'setup-player', style: { '--p-color': tm.color } });
+        const rowEl = FF.ui.el('li', { class: 'setup-player', style: { '--p-color': tm.color } });
         const avaBtn = FF.ui.el('button', {
-          class: 'setup-player__photo',
-          type: 'button',
-          ariaLabel: 'Change picture for ' + tm.name,
-          onclick: function () {
-            FF.Players.pickLook(tm.id, { kind: 'team', onDone: render });
-          }
+          type: 'button', class: 'setup-player__photo',
+          'aria-label': t('changePictureFor', 'Change picture for {name}', { name: tm.name }),
+          onclick: function () { FF.Players.pickLook(tm.id, { kind: 'team', onDone: render }); }
         });
         avaBtn.appendChild(FF.Players.avatarEl({ name: tm.name, avatar: tm.avatar || '👥', photo: tm.photo }, 'setup-player__face'));
         rowEl.appendChild(avaBtn);
-        const name = FF.ui.el('input', {
-          type: 'text',
-          class: 'setup-name',
-          value: tm.name,
-          maxlength: 24,
-          placeholder: 'Team name',
-          'aria-label': 'Team name'
-        });
+        const name = FF.ui.el('input', { type: 'text', class: 'setup-name', value: tm.name, maxlength: 24, 'aria-label': t('teamName', 'Team name'), autocomplete: 'off' });
         name.addEventListener('input', function () {
           const next = name.value.trim();
           if (next) FF.Teams.rename(tm.id, next);
@@ -586,145 +491,219 @@ window.FF = window.FF || {};
         return rowEl;
       }
 
+      let summaryText = null;
+      function rosterSummary() {
+        const players = FF.Players.get();
+        if (config.variation === 'display') return t('tvSummary', 'Everyone watches the TV together. Keep score out loud.');
+        if (players.length <= 1) return t('soloSummary', '{name} is playing solo.', { name: players[0] ? players[0].name : t('playerLabel', 'Player') });
+        if (config.mode === 'team') return t('teamSummary', '{n} players in {t} teams.', { n: players.length, t: FF.Teams.get().teams.length });
+        return t('turnSummary', '{n} players, taking turns.', { n: players.length });
+      }
+      function renderSummary() { if (summaryText) summaryText.textContent = rosterSummary(); }
+
+      function disclosure(iconKey, title, hint, open, onToggle, bodyNode) {
+        const d = FF.ui.el('details', { class: 'disclosure details__section' });
+        if (open) d.open = true;
+        const s = FF.ui.el('summary', {});
+        s.appendChild(FF.Icons.icon(iconKey));
+        s.appendChild(FF.ui.span('', title));
+        if (hint) s.appendChild(FF.ui.span('disclosure__hint', hint));
+        const chev = FF.Icons.icon('chevron-down');
+        chev.classList.add('disclosure__chev');
+        s.appendChild(chev);
+        d.appendChild(s);
+        const b = FF.ui.div('disclosure__body');
+        b.appendChild(bodyNode);
+        d.appendChild(b);
+        d.addEventListener('toggle', function () { onToggle(d.open); });
+        return d;
+      }
+
+      function startGame() {
+        FF.Audio.setEffects(config.sound);
+        FF.Settings.set('timer', config.timer);
+        const fresh = flow.buildConfig(def, {
+          mode: config.mode,
+          difficulty: config.difficulty,
+          length: config.length,
+          timer: config.timer,
+          variation: config.variation,
+          displaySeconds: config.displaySeconds,
+          tournament: config.tournament,
+          round: config.round,
+          onEnd: config.onEnd,
+          room: config.room
+        });
+        flow.current.config = fresh;
+        FF.Audio.play('roundStart');
+        flow.start(def, fresh);
+      }
+
       function render() {
-        FF.ui.clear(box);
+        const keepScroll = screen.scrollTop;
+        FF.ui.clear(screen);
+        screen.className = 'game-screen';
         const players = FF.Players.get();
         const teams = FF.Teams.get();
-        box.appendChild(FF.ui.el('h2', {}, 'Get ready'));
-        box.appendChild(FF.ui.el('p', { class: 'setup-lead' }, def.name));
 
-        if (def.display) {
-          box.appendChild(row('Play style', function () {
-            return seg([
-              { label: '🎮 Standard', value: 'standard' },
-              { label: '🖥 TV Display', value: 'display' }
-            ], config.variation, 'variation');
-          }));
+        const page = FF.ui.div('details');
+
+        // ---- Hero ----
+        const hero = FF.ui.el('header', {
+          class: 'details__hero on-art',
+          dataset: { cat: def.category },
+          style: { '--art': FF.Assets.artUrl('covers', def.id), '--wash': FF.Assets.wash(def.category), '--card-color': cat.color }
+        });
+        hero.appendChild(FF.UI.iconButton('arrow-left', t('back', 'Back'), function () { flow.exitToHome(); }, 'icon-btn--glass details__close'));
+        const heroInner = FF.ui.div('');
+        const ic = FF.ui.div('details__icon');
+        ic.appendChild(FF.Icons.icon(FF.Icons.game[def.id] || cat.iconKey, def.icon));
+        heroInner.appendChild(ic);
+        heroInner.appendChild(FF.ui.el('h1', { class: 'details__title', id: 'details-title' }, def.name));
+        heroInner.appendChild(FF.ui.el('p', { class: 'details__desc' }, def.description));
+        const meta = FF.ui.div('details__meta');
+        meta.style.marginTop = 'var(--sp-3)';
+        meta.appendChild(chip(cat.iconKey, cat.name));
+        meta.appendChild(chip('users', minP === maxP ? String(minP) : t('playersRange', '{a}–{b} players', { a: minP, b: maxP })));
+        meta.appendChild(chip('clock', t('aboutMin', 'About {n} min', { n: def.duration || 5 })));
+        meta.appendChild(chip('target', t('diff_' + String(def.difficulty || 'Normal').toLowerCase(), def.difficulty || 'Normal')));
+        if (config.round) meta.appendChild(chip('trophy', t('roundOf', 'Round {n} of {total}', { n: config.round.index, total: config.round.total })));
+        if (FF.RoomUI && FF.RoomUI.ONLINE_GAMES && FF.RoomUI.ONLINE_GAMES.indexOf(def.id) !== -1 && FF.Net && FF.Net.configured && FF.Net.configured()) {
+          const ob = FF.ui.span('badge badge--online');
+          ob.appendChild(FF.Icons.icon('wifi'));
+          ob.appendChild(document.createTextNode(t('online', 'Online')));
+          meta.appendChild(ob);
         }
+        heroInner.appendChild(meta);
+        hero.appendChild(heroInner);
+        page.appendChild(hero);
 
+        const body = FF.ui.div('details__body');
+
+        // ---- How to play ----
+        const steps = def.howToPlay && def.howToPlay.length ? def.howToPlay : [t('howDefault1', 'Read the question on screen.'), t('howDefault2', 'Answer before the time runs out.'), t('howDefault3', 'Most points wins.')];
+        const ol = FF.ui.el('ol', { class: 'howto-list' });
+        steps.forEach(function (s) { ol.appendChild(FF.ui.el('li', {}, String(s).replace(/^\s*\d+[.)]\s*/, ''))); });
+        body.appendChild(disclosure('lightbulb', t('howToPlay', 'How to play'), t('stepsN', '{n} steps', { n: steps.length }), ui.howOpen, function (o) { ui.howOpen = o; }, ol));
+
+        // ---- Who is playing ----
+        const who = FF.ui.el('section', { class: 'details__section', 'aria-labelledby': 'who-title' });
+        const whoHead = FF.ui.div('details__section-head');
+        const whoTitle = FF.ui.el('h2', { class: 'details__section-title', id: 'who-title' }, t('whoPlaying', 'Who is playing'));
+        whoHead.appendChild(whoTitle);
         if (config.variation !== 'display') {
-          box.appendChild(FF.ui.el('h3', { class: 'settings-group' }, 'Who is playing'));
+          const editBtn = FF.UI.button(ui.editing ? t('done', 'Done') : t('edit', 'Edit'), {
+            class: 'btn-sm' + (ui.editing ? ' btn-primary' : ''), icon: ui.editing ? 'check' : 'pencil',
+            onClick: function () { ui.editing = !ui.editing; render(); }
+          });
+          editBtn.setAttribute('aria-expanded', ui.editing ? 'true' : 'false');
+          whoHead.appendChild(editBtn);
+        }
+        who.appendChild(whoHead);
+        const sum = FF.ui.div('details__roster-summary');
+        if (config.variation !== 'display') sum.appendChild(FF.App.avatarStack(config.mode === 'team' ? FF.Teams.entities() : players, 8));
+        summaryText = FF.ui.span('details__note');
+        sum.appendChild(summaryText);
+        who.appendChild(sum);
+        renderSummary();
+
+        if (ui.editing && config.variation !== 'display') {
+          const editor = FF.ui.div('');
+          editor.style.marginTop = 'var(--sp-3)';
           const countOpts = [];
           const startCount = soloOk ? Math.min(minP, 1) : minP;
           for (let n = startCount; n <= Math.min(maxP, FF.Players.MAX); n++) {
             if (n === 1 && !soloOk) continue;
             countOpts.push({ label: String(n), value: n });
           }
-          box.appendChild(row('Players', function () {
-            return seg(countOpts, players.length, '_count', function (n) {
-              FF.Players.ensureCount(n);
-              syncModeFromRoster();
-              render();
-            });
-          }));
-          if (soloOk) {
-            box.appendChild(FF.ui.div('hint', players.length <= 1
-              ? 'Playing on your own — you can still set a name and a timer.'
-              : 'Type each player’s name. A profile photo is optional.'));
-          } else {
-            box.appendChild(FF.ui.div('hint', 'This game needs at least ' + minP + ' players. Type each name — a photo is optional.'));
-          }
-
-          const roster = FF.ui.div('setup-roster');
-          players.forEach(function (p) {
-            roster.appendChild(playerRow(p, players.length > Math.max(minP, 1)));
-          });
-          box.appendChild(roster);
-
+          editor.appendChild(FF.UI.settingRow(t('howManyPlayers', 'How many players?'), FF.UI.segmented({
+            label: t('howManyPlayers', 'How many players?'), value: players.length, options: countOpts, compact: true,
+            onChange: function (n) { FF.Players.ensureCount(n); syncModeFromRoster(); render(); }
+          }), soloOk ? null : t('needsN', 'This game needs at least {n} players.', { n: minP })));
+          const roster = FF.ui.el('ul', { class: 'setup-roster', style: { listStyle: 'none' } });
+          players.forEach(function (p) { roster.appendChild(playerRow(p, players.length > Math.max(minP, 1))); });
+          editor.appendChild(roster);
           if (players.length < maxP && players.length < FF.Players.MAX) {
-            box.appendChild(FF.ui.button('+ Add player', {
-              class: 'btn',
-              onClick: function () {
-                FF.Players.add();
-                syncModeFromRoster();
+            editor.appendChild(FF.UI.button(t('addPlayer', 'Add player'), { class: 'btn-sm', icon: 'plus', onClick: function () { FF.Players.add(); syncModeFromRoster(); render(); } }));
+          }
+          if (teamOk && players.length >= 2) {
+            editor.appendChild(FF.UI.settingRow(t('playAs', 'Play as'), FF.UI.segmented({
+              label: t('playAs', 'Play as'), value: config.mode === 'team' ? 'team' : 'players',
+              options: [{ label: t('individuals', 'Individuals'), value: 'players', icon: 'user' }, { label: t('teams', 'Teams'), value: 'team', icon: 'users' }],
+              onChange: function (v) {
+                config.mode = v === 'team' ? 'team' : (def.modes.indexOf('turn') !== -1 ? 'turn' : (def.defaultMode === 'team' ? 'turn' : def.defaultMode));
+                if (v === 'team' && !FF.Teams.enabled()) FF.Teams.setEnabled(true);
                 render();
               }
-            }));
-          }
-
-          if (teamOk && players.length >= 2) {
-            box.appendChild(row('Team play', function () {
-              return seg([
-                { label: 'Players', value: 'players' },
-                { label: 'Teams', value: 'team' }
-              ], config.mode === 'team' ? 'team' : 'players', '_teams', function (v) {
-                config.mode = v === 'team' ? 'team' : (def.modes.indexOf('turn') !== -1 ? 'turn' : (def.defaultMode === 'team' ? 'turn' : def.defaultMode));
-                if (v === 'team' && !FF.Teams.enabled()) {
-                  FF.Teams.setEnabled(true);
-                }
-                render();
-              });
-            }));
+            })));
             if (config.mode === 'team') {
-              box.appendChild(FF.ui.div('hint', 'Enter a team name. A team photo is optional.'));
-              const teamRoster = FF.ui.div('setup-roster');
+              const teamRoster = FF.ui.el('ul', { class: 'setup-roster', style: { listStyle: 'none' } });
               teams.teams.forEach(function (tm) { teamRoster.appendChild(teamRow(tm)); });
-              box.appendChild(teamRoster);
+              editor.appendChild(teamRoster);
             }
           }
+          who.appendChild(editor);
         }
+        body.appendChild(who);
 
+        // ---- Options ----
+        const optBox = FF.ui.div('');
+        if (def.display) {
+          optBox.appendChild(FF.UI.settingRow(t('playStyle', 'Play style'), FF.UI.segmented({
+            label: t('playStyle', 'Play style'), value: config.variation,
+            options: [{ label: t('styleStandard', 'Take turns'), value: 'standard', icon: 'game-controller' }, { label: t('styleTV', 'TV display'), value: 'display', icon: 'tv' }],
+            onChange: function (v) { config.variation = v; render(); }
+          }), t('styleTVDesc', 'TV display shows big cards for the whole room. No turns, no typing.')));
+        }
         if (config.variation === 'display') {
-          box.appendChild(row('Time limit', function () {
-            return FF.SettingsUI.duration(config.displaySeconds, function (s) {
-              config.displaySeconds = s;
-              FF.Settings.set('displaySeconds', s);
-            });
-          }));
-          box.appendChild(FF.ui.div('hint', '🖥 Shown on the TV for the whole group. No turns and no typing — score is counted manually.'));
+          optBox.appendChild(FF.UI.settingRow(t('timeLimit', 'Time limit'), FF.SettingsUI.duration(config.displaySeconds, function (s) {
+            config.displaySeconds = s;
+            FF.Settings.set('displaySeconds', s);
+          })));
         } else {
-          box.appendChild(FF.ui.el('h3', { class: 'settings-group' }, 'Game options'));
-          box.appendChild(row('Difficulty', function () {
-            return seg([{ label: 'Easy', value: 'easy' }, { label: 'Normal', value: 'normal' }, { label: 'Hard', value: 'hard' }], config.difficulty, 'difficulty');
-          }));
-          box.appendChild(row('Game length', function () {
-            return seg([{ label: 'Quick', value: 'quick' }, { label: 'Short', value: 'short' }, { label: 'Normal', value: 'normal' }, { label: 'Long', value: 'long' }], config.length, 'length');
-          }));
-          box.appendChild(row('Time limit', function () {
-            return FF.SettingsUI.duration(config.timer, function (s) {
-              config.timer = s;
-              FF.Settings.set('timer', s);
-            }, { allowOff: true });
-          }));
-          box.appendChild(FF.ui.div('hint', 'Off means no countdown. Custom lets you pick any minutes and seconds.'));
+          optBox.appendChild(FF.UI.settingRow(t('difficulty', 'Difficulty'), FF.UI.segmented({
+            label: t('difficulty', 'Difficulty'), value: config.difficulty,
+            options: [{ label: t('easy', 'Easy'), value: 'easy' }, { label: t('normal', 'Normal'), value: 'normal' }, { label: t('hard', 'Hard'), value: 'hard' }],
+            onChange: function (v) { config.difficulty = v; }
+          })));
+          optBox.appendChild(FF.UI.settingRow(t('gameLength', 'Game length'), FF.UI.segmented({
+            label: t('gameLength', 'Game length'), value: config.length,
+            options: [{ label: t('lenQuick', 'Quick'), value: 'quick' }, { label: t('lenShort', 'Short'), value: 'short' }, { label: t('lenNormal', 'Normal'), value: 'normal' }, { label: t('lenLong', 'Long'), value: 'long' }],
+            onChange: function (v) { config.length = v; }
+          })));
+          optBox.appendChild(FF.UI.settingRow(t('timeLimit', 'Time limit'), FF.SettingsUI.duration(config.timer, function (s) {
+            config.timer = s;
+            FF.Settings.set('timer', s);
+          }, { allowOff: true }), t('timeLimitDesc', 'Off means no countdown.')));
         }
+        optBox.appendChild(FF.UI.switchRow({ label: t('soundEffects', 'Sound effects'), checked: !!config.sound, onChange: function (on) { config.sound = on; } }));
+        const optHint = config.variation === 'display'
+          ? t('styleTV', 'TV display')
+          : [t('diff_' + config.difficulty, config.difficulty), config.timer ? FF.util.formatTime(config.timer) : t('noTimer', 'No timer')].join(' · ');
+        body.appendChild(disclosure('sliders', t('options', 'Options'), optHint, ui.optionsOpen, function (o) { ui.optionsOpen = o; }, optBox));
 
-        box.appendChild(row('Sound effects', function () {
-          return seg([{ label: 'On', value: true }, { label: 'Off', value: false }], config.sound, 'sound');
+        page.appendChild(body);
+
+        // ---- Call to action ----
+        const cta = FF.ui.div('details__cta');
+        cta.appendChild(FF.UI.button(config.variation === 'display' ? t('playOnTV', 'Play on the TV') : t('play', 'Play'), {
+          class: 'btn-lg btn-primary', icon: 'play', onClick: startGame
         }));
+        page.appendChild(cta);
 
-        const done = FF.ui.button('▶ START GAME', { primary: true, class: 'btn-lg', onClick: function () {
-          FF.Audio.setEffects(config.sound);
-          FF.Settings.set('timer', config.timer);
-          const fresh = FF.GameFlow.buildConfig(def, {
-            mode: config.mode,
-            difficulty: config.difficulty,
-            length: config.length,
-            timer: config.timer,
-            variation: config.variation,
-            displaySeconds: config.displaySeconds,
-            tournament: config.tournament,
-            round: config.round,
-            onEnd: config.onEnd,
-            room: config.room
-          });
-          FF.GameFlow.current.config = fresh;
-          FF.Audio.play('roundStart');
-          FF.GameFlow.start(def, fresh);
-        } });
-        box.appendChild(done);
-
-        const settingsNav = FF.ui.div('results__actions');
-        settingsNav.appendChild(FF.ui.button('← Back to Intro', { class: 'btn-lg', onClick: function () { FF.GameFlow.showIntro(def, config); } }));
-        settingsNav.appendChild(FF.ui.button('🏠 Home', { class: 'btn-lg', onClick: function () { FF.GameFlow.exitToHome(); } }));
-        box.appendChild(settingsNav);
-
+        screen.appendChild(page);
+        screen.scrollTop = keepScroll;
         FF.Nav.focusFirst(screen);
       }
 
       syncModeFromRoster();
       render();
     },
+
+    // Older entry points, now views of the details screen.
+    showIntro: function (def, config) { this.showDetails(def, config); },
+    showGameSettings: function (def, config) { this.showDetails(def, config, { open: 'players' }); },
+    showHowTo: function (def) { this.showDetails(def, this.current.config, { open: 'howto' }); },
 
     start: function (def, config) {
       const screen = FF.ui.$('#game-screen');
@@ -913,12 +892,12 @@ window.FF = window.FF || {};
           if (flow.current !== cur) return;
           const ranked = snapshot.ranked || [];
           if (typeof FF.App !== 'undefined' && FF.App.onGameEnded) FF.App.onGameEnded({ results: ranked });
-          flow.showResults({ results: ranked, room: true, title: 'GAME COMPLETE!' });
+          flow.showResults({ results: ranked, room: true, title: FF.t('gameComplete', 'Game complete!') });
         }).catch(function (err) {
           cur.roomEnding = false;
           if (window.console) console.error('[FF.Room results]', err);
           const ranked = flow._rankRoomScores();
-          flow.showResults({ results: ranked, room: true, title: 'GAME COMPLETE!' });
+          flow.showResults({ results: ranked, room: true, title: FF.t('gameComplete', 'Game complete!') });
         });
         return;
       }
@@ -959,64 +938,75 @@ window.FF = window.FF || {};
     showResults: function (results) {
       const screen = FF.ui.$('#game-screen');
       FF.ui.clear(screen);
+      screen.className = 'game-screen';
+      const t = FF.t;
       const ranked = results.results || [];
       const winner = ranked[0];
       const top = winner ? (winner.points || 0) : 0;
       const tied = ranked.filter(function (r) { return (r.points || 0) === top && top > 0; });
       const isTie = tied.length > 1;
+      const solo = ranked.length === 1;
 
-      const wrap = FF.ui.div('results');
-      wrap.appendChild(FF.ui.div('results__crown', isTie ? '🤝' : '🏆'));
-      wrap.appendChild(FF.ui.el('h1', { class: 'results__title' }, results.title || (isTie ? "IT'S A TIE!" : 'GAME COMPLETE!')));
+      const wrap = FF.ui.el('main', { class: 'results', 'aria-labelledby': 'results-title' });
+      wrap.appendChild(FF.ui.el('div', { class: 'results__crown', 'aria-hidden': 'true' }, isTie ? '🤝' : '🏆'));
+      const title = results.title || (isTie ? t('itsATie', 'It’s a tie!') : (solo ? t('wellPlayed', 'Well played!') : t('gameComplete', 'Game complete!')));
+      wrap.appendChild(FF.ui.el('h1', { class: 'results__title', id: 'results-title' }, title));
 
-      if (winner && top > 0) {
+      if (winner && (top > 0 || solo)) {
         const card = FF.ui.div('results__winner-card');
         const ava = FF.ui.div('results__winner-avatar');
         if (isTie) ava.textContent = '🏆';
-        else if (FF.Players && FF.Players.avatarEl) ava.appendChild(FF.Players.avatarEl(winner, 'results__winner-face'));
-        else ava.textContent = winner.avatar || '🏅';
+        else ava.appendChild(FF.Players.avatarEl(winner, 'results__winner-face'));
         card.appendChild(ava);
-        const names = (isTie ? tied : [winner]).map(function (t) { return t.name; }).join(' & ');
-        card.appendChild(FF.ui.el('div', { class: 'results__winner-name' }, names.toUpperCase()));
-        card.appendChild(FF.ui.el('div', { class: 'results__winner-sub' }, isTie ? 'SHARED CROWN' : 'FAMILY FUN CHAMPION'));
-        card.appendChild(FF.ui.el('div', { class: 'results__winner-points' }, FF.util.formatNumber(winner.points) + ' POINTS'));
+        const names = (isTie ? tied : [winner]).map(function (x) { return x.name; }).join(' & ');
+        card.appendChild(FF.ui.el('div', { class: 'results__winner-name' }, names));
+        card.appendChild(FF.ui.el('div', { class: 'results__winner-sub' }, isTie ? t('sharedWin', 'Shared win') : (solo ? t('yourScore', 'Your score') : t('champion', 'Champion'))));
+        card.appendChild(FF.ui.el('div', { class: 'results__winner-points' }, t('pointsN', '{n} points', { n: FF.util.formatNumber(winner.points) })));
         wrap.appendChild(card);
+        FF.UI.announce(isTie ? t('tieBetween', 'Tie between {names}', { names: names }) : t('winnerIs', '{name} wins with {n} points', { name: names, n: winner.points }));
       }
 
-      const lb = FF.ui.div('results__leaderboard');
-      ranked.forEach(function (r, i) {
-        const medal = ['🥇', '🥈', '🥉'][i] || (i + 1);
-        const row = FF.ui.div('results__row' + (i === 0 && top > 0 ? ' results__row--winner' : ''));
-        row.appendChild(FF.ui.el('span', { class: 'results__rank' }, medal));
-        row.appendChild(FF.Players.avatarEl(r, 'results__avatar'));
-        row.appendChild(FF.ui.el('span', { class: 'results__name' }, r.name));
-        row.appendChild(FF.ui.el('span', { class: 'results__pts' }, FF.util.formatNumber(r.points)));
-        lb.appendChild(row);
-      });
-      wrap.appendChild(lb);
+      if (ranked.length > 1) {
+        const lb = FF.ui.el('ol', { class: 'results__leaderboard', 'aria-label': t('leaderboard', 'Leaderboard'), style: { listStyle: 'none' } });
+        ranked.forEach(function (r, i) {
+          const row = FF.ui.el('li', { class: 'results__row' + (i === 0 && top > 0 ? ' results__row--winner' : '') });
+          row.appendChild(FF.ui.el('span', { class: 'results__rank', 'aria-label': t('place', 'Place {n}', { n: i + 1 }) }, ['🥇', '🥈', '🥉'][i] || String(i + 1)));
+          row.appendChild(FF.Players.avatarEl(r, 'results__avatar'));
+          row.appendChild(FF.ui.el('span', { class: 'results__name' }, r.name));
+          row.appendChild(FF.ui.el('span', { class: 'results__pts' }, FF.util.formatNumber(r.points)));
+          lb.appendChild(row);
+        });
+        wrap.appendChild(lb);
+      }
 
       const stats = FF.ui.div('results__stats');
-      if (results.bestStreak) stats.appendChild(FF.ui.el('span', { class: 'results__stat' }, '🔥 ' + results.bestStreak + ' Streak'));
-      if (results.fastest != null) stats.appendChild(FF.ui.el('span', { class: 'results__stat' }, '⚡ ' + results.fastest.toFixed(3) + 's'));
-      if (results.mostWords) stats.appendChild(FF.ui.el('span', { class: 'results__stat' }, '🔤 ' + results.mostWords + ' Words'));
-      if (results.quizCorrect) stats.appendChild(FF.ui.el('span', { class: 'results__stat' }, '🧠 ' + results.quizCorrect + ' Correct'));
+      function stat(iconKey, text) {
+        const s = FF.ui.span('results__stat');
+        s.appendChild(FF.Icons.icon(iconKey));
+        s.appendChild(document.createTextNode(text));
+        stats.appendChild(s);
+      }
+      if (results.bestStreak) stat('flame', t('streakN', 'Best streak {n}', { n: results.bestStreak }));
+      if (results.fastest != null) stat('lightning', t('fastestN', 'Fastest {n} s', { n: results.fastest.toFixed(2) }));
+      if (results.mostWords) stat('text-aa', t('wordsN', '{n} words', { n: results.mostWords }));
+      if (results.quizCorrect) stat('check-circle', t('correctN', '{n} correct', { n: results.quizCorrect }));
       if (stats.childNodes.length) wrap.appendChild(stats);
 
       const actions = FF.ui.div('results__actions');
       if (results.room && FF.Room && FF.Room.current()) {
         if (FF.Room.current().isHost) {
-          actions.appendChild(FF.ui.button('🔄 PLAY AGAIN', { class: 'btn-lg', primary: true, onClick: function () {
+          actions.appendChild(FF.UI.button(t('playAgain', 'Play again'), { class: 'btn-lg btn-primary', icon: 'restart', onClick: function () {
             FF.Audio.play('click');
             FF.Room.playAgain().catch(function (err) {
               if (FF.RoomUI && FF.RoomUI.banner) {
-                FF.RoomUI.banner((err && err.message) || 'The room could not be restarted.');
+                FF.RoomUI.banner((err && err.message) || t('restartFailed', 'The room could not be restarted.'));
               }
             });
           } }));
         } else {
-          wrap.appendChild(FF.ui.div('hint', 'Waiting for the host to start another round…'));
+          wrap.appendChild(FF.ui.div('hint', t('waitingHostAgain', 'Waiting for the host to start another round…')));
         }
-        actions.appendChild(FF.ui.button('🌐 BACK TO ROOM', { class: 'btn-lg', onClick: function () { FF.GameFlow.close('online'); } }));
+        actions.appendChild(FF.UI.button(t('backToRoom', 'Back to the room'), { class: 'btn-lg', icon: 'users', onClick: function () { FF.GameFlow.close('online'); } }));
         FF.Room.offAll();
         FF.Room.on('meta', function (meta) {
           if (meta && (meta.status === 'lobby' || meta.status === 'playing')) {
@@ -1024,15 +1014,16 @@ window.FF = window.FF || {};
           }
         });
       } else {
-        actions.appendChild(FF.ui.button('🔄 PLAY AGAIN', { class: 'btn-lg', primary: true, onClick: function () { FF.Audio.play('roundStart'); FF.GameFlow.launch(FF.GameFlow.current.def.id, { skipIntro: true }); } }));
-        actions.appendChild(FF.ui.button('🏠 HOME', { class: 'btn-lg', onClick: function () { FF.GameFlow.exitToHome(); } }));
+        actions.appendChild(FF.UI.button(t('playAgain', 'Play again'), { class: 'btn-lg btn-primary', icon: 'restart', onClick: function () { FF.Audio.play('roundStart'); FF.GameFlow.launch(FF.GameFlow.current.def.id, { skipIntro: true }); } }));
+        actions.appendChild(FF.UI.button(t('anotherGame', 'Choose another game'), { class: 'btn-lg', icon: 'game-controller', onClick: function () { FF.GameFlow.close('games'); } }));
+        actions.appendChild(FF.UI.button(t('navHome', 'Home'), { class: 'btn-lg btn-ghost', icon: 'house', onClick: function () { FF.GameFlow.exitToHome(); } }));
       }
       wrap.appendChild(actions);
 
       screen.appendChild(wrap);
 
       FF.Audio.play('winner');
-      if (FF.Settings.get('animations') && FF.Confetti) {
+      if (FF.Settings.get('animations') && !FF.Settings.get('reduceMotion') && FF.Confetti) {
         FF.Confetti.burst(160);
         if (FF.Confetti.sideCannons) FF.Confetti.sideCannons();
         if (FF.Confetti.rain) FF.Confetti.rain(80);
@@ -1043,20 +1034,22 @@ window.FF = window.FF || {};
     showDisplayResults: function (results) {
       const screen = FF.ui.$('#game-screen');
       FF.ui.clear(screen);
+      screen.className = 'game-screen';
       const cur = this.current;
+      const t = FF.t;
 
-      const wrap = FF.ui.div('results');
-      wrap.appendChild(FF.ui.div('results__banner', '⏰'));
-      wrap.appendChild(FF.ui.el('h1', { class: 'results__title' }, results.title || "TIME'S UP!"));
-      wrap.appendChild(FF.ui.el('p', { class: 'results__sub' }, 'No points were tracked here — count everyone\u2019s score manually.'));
+      const wrap = FF.ui.el('main', { class: 'results' });
+      wrap.appendChild(FF.ui.el('div', { class: 'results__banner', 'aria-hidden': 'true' }, '⏰'));
+      wrap.appendChild(FF.ui.el('h1', { class: 'results__title' }, results.title && !/^[A-Z' !]+$/.test(results.title) ? results.title : t('timesUp', 'Time’s up!')));
+      wrap.appendChild(FF.ui.el('p', { class: 'results__sub' }, t('displayNoScore', 'No points were tracked on the TV. Add up everyone’s score out loud.')));
       if (results.note) wrap.appendChild(FF.ui.el('p', { class: 'results__sub' }, results.note));
 
       const actions = FF.ui.div('results__actions');
-      actions.appendChild(FF.ui.button('🔄 PLAY AGAIN', { class: 'btn-lg', primary: true, onClick: function () {
+      actions.appendChild(FF.UI.button(t('playAgain', 'Play again'), { class: 'btn-lg btn-primary', icon: 'restart', onClick: function () {
         FF.Audio.play('roundStart');
         FF.GameFlow.launch(cur.def.id, { skipIntro: true, variation: 'display', displaySeconds: cur.config.displaySeconds });
       } }));
-      actions.appendChild(FF.ui.button('🏠 HOME', { class: 'btn-lg', onClick: function () { FF.GameFlow.exitToHome(); } }));
+      actions.appendChild(FF.UI.button(t('navHome', 'Home'), { class: 'btn-lg', icon: 'house', onClick: function () { FF.GameFlow.exitToHome(); } }));
       wrap.appendChild(actions);
 
       screen.appendChild(wrap);
@@ -1064,20 +1057,56 @@ window.FF = window.FF || {};
       FF.Nav.focusFirst(screen);
     },
 
+    // A modal card over the game, used for pause and exit confirmation.
+    _overlay: function (opts) {
+      const screen = FF.ui.$('#game-screen');
+      const old = screen && FF.ui.$('.pause-overlay', screen);
+      if (old) old.parentNode.removeChild(old);
+      const overlay = FF.ui.div('pause-overlay');
+      const card = FF.ui.el('div', { class: 'pause-card', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'pause-title', tabindex: -1 });
+      if (opts.icon) {
+        const ic = FF.ui.div('pause-card__icon');
+        ic.appendChild(FF.Icons.icon(opts.icon));
+        card.appendChild(ic);
+      }
+      card.appendChild(FF.ui.el('h2', { id: 'pause-title' }, opts.title));
+      if (opts.sub) card.appendChild(FF.ui.el('p', { class: 'pause-sub' }, opts.sub));
+      const actions = FF.ui.div('pause-actions');
+      opts.actions.forEach(function (a) {
+        actions.appendChild(FF.UI.button(a.label, { class: 'btn-lg' + (a.primary ? ' btn-primary' : '') + (a.danger ? ' btn-danger' : '') + (a.ghost ? ' btn-ghost' : ''), icon: a.icon, onClick: a.onClick }));
+      });
+      card.appendChild(actions);
+      overlay.appendChild(card);
+      screen.appendChild(overlay);
+      if (FF.Nav.modality === 'keyboard') FF.Nav.focusFirst(overlay);
+      else { try { card.focus({ preventScroll: true }); } catch (e) {} }
+      return overlay;
+    },
+
     pause: function () {
       const cur = this.current;
       if (!cur) return;
       if (FF.Advance) FF.Advance.pauseAll();
       if (cur.shell && cur.shell.timer && cur.shell.timer.isRunning()) cur.shell.timer.pause();
-      const overlay = FF.ui.div('pause-overlay');
-      overlay.appendChild(FF.ui.el('h2', {}, '⏸ GAME PAUSED'));
-      const actions = FF.ui.div('pause-actions');
-      actions.appendChild(FF.ui.button('▶ Resume', { class: 'btn-lg', primary: true, onClick: function () { FF.GameFlow.resume(); } }));
-      actions.appendChild(FF.ui.button('🔄 Restart', { class: 'btn-lg', onClick: function () { FF.GameFlow.restart(); } }));
-      actions.appendChild(FF.ui.button('🏠 Exit Game', { class: 'btn-lg', onClick: function () { FF.GameFlow.exitToHome(); } }));
-      overlay.appendChild(actions);
-      FF.ui.$('#game-screen').appendChild(overlay);
-      FF.Nav.focusFirst(overlay);
+      const t = FF.t;
+      this._overlay({
+        icon: 'pause',
+        title: t('paused', 'Paused'),
+        sub: cur.def.name,
+        actions: [
+          { label: t('resume', 'Resume'), primary: true, icon: 'play', onClick: function () { FF.GameFlow.resume(); } },
+          { label: t('howToPlay', 'How to play'), icon: 'lightbulb', onClick: function () { FF.GameFlow.showRules(cur.def); } },
+          { label: t('restart', 'Restart'), icon: 'restart', onClick: function () { FF.GameFlow.restart(); } },
+          { label: t('exitGame', 'Exit game'), ghost: true, icon: 'close', onClick: function () { FF.GameFlow.exitToHome(); } }
+        ]
+      });
+    },
+
+    showRules: function (def) {
+      const steps = def.howToPlay && def.howToPlay.length ? def.howToPlay : [];
+      const ol = FF.ui.el('ol', { class: 'howto-list' });
+      steps.forEach(function (s) { ol.appendChild(FF.ui.el('li', {}, String(s).replace(/^\s*\d+[.)]\s*/, ''))); });
+      FF.UI.dialog({ title: FF.t('howToPlayName', 'How to play {name}', { name: def.name }), body: ol, actions: [{ label: FF.t('gotIt', 'Got it'), primary: true }] });
     },
 
     resume: function () {
@@ -1125,24 +1154,30 @@ window.FF = window.FF || {};
     },
 
     confirmExit: function () {
-      const screen = FF.ui.$('#game-screen');
-      const overlay = FF.ui.div('pause-overlay');
-      overlay.appendChild(FF.ui.el('h2', {}, 'EXIT GAME?'));
-      overlay.appendChild(FF.ui.el('p', { class: 'pause-sub' }, 'Your progress in this game will be lost.'));
-      const actions = FF.ui.div('pause-actions');
-      actions.appendChild(FF.ui.button('← Keep Playing', { class: 'btn-lg', primary: true, onClick: function () { overlay.parentNode.removeChild(overlay); FF.GameFlow.resume(); } }));
-      actions.appendChild(FF.ui.button('🏠 Exit Game', { class: 'btn-lg', onClick: function () { FF.GameFlow.exitToHome(); } }));
-      overlay.appendChild(actions);
-      screen.appendChild(overlay);
-      FF.Nav.focusFirst(overlay);
+      const t = FF.t;
+      const cur = this.current;
+      // Local games pause while the question is open; room games keep
+      // running because the round clock is shared with other devices.
+      if (cur && !(cur.config && cur.config.room)) {
+        if (FF.Advance) FF.Advance.pauseAll();
+        if (cur.shell && cur.shell.timer && cur.shell.timer.isRunning()) cur.shell.timer.pause();
+      }
+      this._overlay({
+        icon: 'alert',
+        title: t('leaveGameQ', 'Leave this game?'),
+        sub: t('progressLost', 'Scores from this game will not be saved.'),
+        actions: [
+          { label: t('keepPlaying', 'Keep playing'), primary: true, icon: 'play', onClick: function () { FF.GameFlow.resume(); } },
+          { label: t('leaveGame', 'Leave game'), danger: true, icon: 'close', onClick: function () { FF.GameFlow.exitToHome(); } }
+        ]
+      });
     },
 
     close: function (view) {
       if (FF.Advance) FF.Advance.cancelAll();
       const screen = FF.ui.$('#game-screen');
       if (screen) {
-        screen.classList.add('hidden');
-        screen.classList.remove('game-screen--art');
+        screen.className = 'game-screen hidden';
         screen.style.removeProperty('--art');
         screen.style.removeProperty('--wash');
         screen.style.removeProperty('--card-color');
@@ -1161,24 +1196,26 @@ window.FF = window.FF || {};
     },
 
     toggleHost: function () {
-      if (!this.current || !this.current.shell) return;
-      this.current.shell.host.classList.toggle('hidden');
-      if (!this.current.shell.host.classList.contains('hidden')) FF.Nav.focusFirst(this.current.shell.host);
+      // The host panel was folded into the pause menu.
+      this.pause();
     },
 
     fail: function (msg) {
       const screen = FF.ui.$('#game-screen');
       FF.ui.clear(screen);
-      const box = FF.ui.div('modal');
-      const inner = FF.ui.div('modal__box');
-      inner.appendChild(FF.ui.el('h2', {}, '😅 Oops!'));
-      inner.appendChild(FF.ui.el('p', {}, 'Something went wrong with this game.'));
+      screen.className = 'game-screen';
       if (msg && window.console) console.error('[FamilyFun game error]', msg);
-      inner.appendChild(FF.ui.button('🏠 Back to Home', { primary: true, class: 'btn-lg', onClick: function () { FF.GameFlow.exitToHome(); } }));
-      box.appendChild(inner);
-      screen.appendChild(box);
+      const wrap = FF.ui.el('main', { class: 'results' });
+      wrap.appendChild(FF.UI.emptyState({
+        icon: 'alert',
+        title: FF.t('oops', 'Something went wrong'),
+        text: FF.t('oopsText', 'This game hit a problem and had to stop. Your other games are fine.'),
+        action: { label: FF.t('backHome', 'Back to home'), icon: 'house', onClick: function () { FF.GameFlow.exitToHome(); } }
+      }));
+      screen.appendChild(wrap);
       FF.Nav.focusFirst(screen);
     }
+
   };
 
   /* ================= TV Display variation helper ================= */
@@ -1216,20 +1253,20 @@ window.FF = window.FF || {};
       api.shell.setTitle(api.def.name);
 
       const wrap = FF.ui.div('dsp-wrap');
-      wrap.appendChild(FF.ui.div('dsp-tag', opts.tag || '👥 EVERYONE PLAYS'));
+      wrap.appendChild(FF.ui.div('dsp-tag', opts.tag || FF.t('everyonePlays', 'Everyone plays')));
       wrap.appendChild(FF.ui.div('dsp-title', opts.title || api.def.name));
 
       const card = FF.ui.div('dsp-card');
-      const counter = FF.ui.div('dsp-counter', '');
+      const counter = FF.ui.el('div', { class: 'dsp-counter', 'aria-live': 'polite' }, '');
       const timerEl = FF.ui.div('dsp-timer', FF.util.formatTime(seconds));
       wrap.appendChild(card);
       wrap.appendChild(counter);
       wrap.appendChild(timerEl);
 
       const actions = FF.ui.div('dsp-actions');
-      actions.appendChild(FF.ui.button('⏮ Prev', { class: 'btn btn-lg', onClick: function () { shift(-1); resetCard(); } }));
-      actions.appendChild(FF.ui.button('⏭ Next', { class: 'btn btn-lg', onClick: function () { shift(1); resetCard(); } }));
-      actions.appendChild(FF.ui.button('🏁 Finish', { class: 'btn btn-lg', primary: true, onClick: finish }));
+      actions.appendChild(FF.UI.button(FF.t('previous', 'Previous'), { class: 'btn-lg', icon: 'chevron-left', onClick: function () { shift(-1); resetCard(); } }));
+      actions.appendChild(FF.UI.button(FF.t('next', 'Next'), { class: 'btn-lg', icon: 'chevron-right', onClick: function () { shift(1); resetCard(); } }));
+      actions.appendChild(FF.UI.button(FF.t('finish', 'Finish'), { class: 'btn-lg btn-primary', icon: 'check', onClick: finish }));
       wrap.appendChild(actions);
 
       root.appendChild(wrap);
@@ -1240,7 +1277,7 @@ window.FF = window.FF || {};
         const item = order[idx % order.length];
         appendInto(card, opts.render(item));
         if (opts.label) card.appendChild(FF.ui.div('dsp-label', opts.label(item)));
-        counter.textContent = 'Card ' + ((idx % order.length) + 1) + ' of ' + order.length;
+        counter.textContent = FF.t('cardOf', 'Card {n} of {total}', { n: (idx % order.length) + 1, total: order.length });
       }
 
       function shift(delta) {
@@ -1259,7 +1296,7 @@ window.FF = window.FF || {};
         ended = true;
         if (cardTimer) clearInterval(cardTimer);
         api.shell.hideTimer();
-        api.end({ title: "TIME'S UP!" });
+        api.end({ title: FF.t('timesUp', 'Time\u2019s up!') });
       }
 
       refill();
@@ -1341,16 +1378,18 @@ window.FF = window.FF || {};
       FF.ui.clear(screen);
       const s = this.state;
 
-      const wrap = FF.ui.div('results');
-      wrap.appendChild(FF.ui.div('results__banner', '🎮'));
-      wrap.appendChild(FF.ui.el('h1', { class: 'results__title' }, 'ROUND ' + (s.index) + ' COMPLETE!'));
+      screen.className = 'game-screen';
+      const wrap = FF.ui.el('main', { class: 'results' });
+      wrap.appendChild(FF.ui.el('div', { class: 'results__banner', 'aria-hidden': 'true' }, '🎮'));
+      wrap.appendChild(FF.ui.el('h1', { class: 'results__title' }, FF.t('roundComplete', 'Round {n} of {total} done', { n: s.index, total: s.schedule.length })));
+      wrap.appendChild(FF.ui.el('p', { class: 'results__sub' }, FF.t('standings', 'Standings so far')));
 
       // overall standings
       const standings = s.players.slice().sort(function (a, b) { return (s.totals[b.id] || 0) - (s.totals[a.id] || 0); });
-      const lb = FF.ui.div('results__leaderboard');
+      const lb = FF.ui.el('ol', { class: 'results__leaderboard', style: { listStyle: 'none' } });
       standings.forEach(function (p, i) {
-        const row = FF.ui.div('results__row');
-        row.appendChild(FF.ui.el('span', { class: 'results__rank' }, (i + 1) + '.'));
+        const row = FF.ui.el('li', { class: 'results__row' + (i === 0 ? ' results__row--winner' : '') });
+        row.appendChild(FF.ui.el('span', { class: 'results__rank' }, String(i + 1)));
         row.appendChild(FF.Players.avatarEl(p, 'results__avatar'));
         row.appendChild(FF.ui.el('span', { class: 'results__name' }, p.name));
         row.appendChild(FF.ui.el('span', { class: 'results__pts' }, FF.util.formatNumber(s.totals[p.id] || 0)));
@@ -1360,11 +1399,11 @@ window.FF = window.FF || {};
 
       const actions = FF.ui.div('results__actions');
       if (s.index < s.schedule.length) {
-        actions.appendChild(FF.ui.button('▶ NEXT ROUND', { class: 'btn-lg', primary: true, onClick: function () { FF.Audio.play('roundStart'); FF.GameNight.playNext(); } }));
+        actions.appendChild(FF.UI.button(FF.t('nextRound', 'Next round'), { class: 'btn-lg btn-primary', icon: 'play', onClick: function () { FF.Audio.play('roundStart'); FF.GameNight.playNext(); } }));
       } else {
-        actions.appendChild(FF.ui.button('🏆 FINAL RESULTS', { class: 'btn-lg', primary: true, onClick: function () { FF.GameNight.finish(); } }));
+        actions.appendChild(FF.UI.button(FF.t('finalResults', 'See the champion'), { class: 'btn-lg btn-primary', icon: 'trophy', onClick: function () { FF.GameNight.finish(); } }));
       }
-      actions.appendChild(FF.ui.button('🏠 END GAME NIGHT', { class: 'btn-lg', onClick: function () { FF.GameNight.abort(); } }));
+      actions.appendChild(FF.UI.button(FF.t('endGameNight', 'End game night'), { class: 'btn-lg btn-ghost', icon: 'close', onClick: function () { FF.GameNight.confirmAbort(); } }));
       wrap.appendChild(actions);
 
       screen.appendChild(wrap);
@@ -1383,7 +1422,7 @@ window.FF = window.FF || {};
       }
 
       const results = {
-        title: 'GAME NIGHT COMPLETE!',
+        title: FF.t('gameNightDone', 'Game night champion!'),
         results: standings.map(function (p) {
           return { id: p.id, name: p.name, avatar: p.avatar, photo: p.photo, color: p.color, points: s.totals[p.id] || 0 };
         }),
@@ -1397,13 +1436,14 @@ window.FF = window.FF || {};
     tieBreak: function (a, b) {
       const screen = FF.ui.$('#game-screen');
       FF.ui.clear(screen);
-      const wrap = FF.ui.div('results');
-      wrap.appendChild(FF.ui.div('results__banner', '⚡'));
-      wrap.appendChild(FF.ui.el('h1', { class: 'results__title' }, 'TIE BREAKER!'));
-      wrap.appendChild(FF.ui.el('p', { class: 'results__sub' }, a.name + ' vs ' + b.name));
-      wrap.appendChild(FF.ui.el('p', { class: 'results__sub' }, 'Quick Tap — fastest reaction wins.'));
+      screen.className = 'game-screen';
+      const wrap = FF.ui.el('main', { class: 'results' });
+      wrap.appendChild(FF.ui.el('div', { class: 'results__banner', 'aria-hidden': 'true' }, '⚡'));
+      wrap.appendChild(FF.ui.el('h1', { class: 'results__title' }, FF.t('tieBreaker', 'Tie breaker!')));
+      wrap.appendChild(FF.ui.el('p', { class: 'results__sub' }, FF.t('versus', '{a} vs {b}', { a: a.name, b: b.name })));
+      wrap.appendChild(FF.ui.el('p', { class: 'results__sub' }, FF.t('tieBreakRule', 'Quick Tap: the fastest reaction wins the crown.')));
       const tieActions = FF.ui.div('results__actions');
-      tieActions.appendChild(FF.ui.button('⚡ START TIE BREAKER', { class: 'btn-lg', primary: true, onClick: function () {
+      tieActions.appendChild(FF.UI.button(FF.t('startTieBreak', 'Start the tie breaker'), { class: 'btn-lg btn-primary', icon: 'lightning', onClick: function () {
         FF.GameNight._tieWinner = null;
         FF.GameNight._tiePair = [a, b];
         FF.GameFlow.launch('quickTap', {
@@ -1413,7 +1453,7 @@ window.FF = window.FF || {};
           onEnd: function (results) { FF.GameNight.tieBreakDone(results); }
         });
       } }));
-      tieActions.appendChild(FF.ui.button('🏠 End Game Night', { class: 'btn-lg', onClick: function () { FF.GameNight.abort(); } }));
+      tieActions.appendChild(FF.UI.button(FF.t('endGameNight', 'End game night'), { class: 'btn-lg btn-ghost', icon: 'close', onClick: function () { FF.GameNight.confirmAbort(); } }));
       wrap.appendChild(tieActions);
       screen.appendChild(wrap);
       FF.Nav.focusFirst(screen);
@@ -1428,10 +1468,20 @@ window.FF = window.FF || {};
       this.state = null;
       FF.Stats.unlock('champion');
       FF.GameFlow.showResults({
-        title: 'GAME NIGHT COMPLETE!',
+        title: FF.t('gameNightDone', 'Game night champion!'),
         results: standings.map(function (p) {
           return { id: p.id, name: p.name, avatar: p.avatar, photo: p.photo, color: p.color, points: s.totals[p.id] || 0 };
         })
+      });
+    },
+
+    confirmAbort: function () {
+      FF.UI.confirm({
+        title: FF.t('endGameNightQ', 'End game night?'),
+        body: FF.t('endGameNightBody', 'The tournament scores will be lost.'),
+        confirmLabel: FF.t('endGameNight', 'End game night'),
+        danger: true,
+        onConfirm: function () { FF.GameNight.abort(); }
       });
     },
 

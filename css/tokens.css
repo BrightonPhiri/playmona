@@ -1,0 +1,168 @@
+/* ============================================================
+   FAMILY FUN — tokens.css
+   Design tokens: the single source of truth for colour, type,
+   spacing, shape, depth and motion. Every other stylesheet and
+   every game reads these variables — never hardcode a colour.
+
+   Contrast rules (checked with tools/contrast-check.js):
+   - --text and --muted pass 4.5:1 on --bg, --surface, --surface-2.
+   - --accent passes 4.5:1 as TEXT on surfaces, and as a FILL
+     under --accent-text, in both themes. That is why the dark
+     theme uses a light accent with dark text on it.
+   - --accent-vivid is decoration only (washes, glows, icons on art).
+   ============================================================ */
+
+:root {
+  /* ---------- Type ---------- */
+  --font-system: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Fredoka", var(--font-system);
+  --font-body: "Nunito", var(--font-system);
+  --font-ui: var(--font-body);
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --text-scale: 1;
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.875rem;
+  --fs-md: 1rem;
+  --fs-lg: 1.125rem;
+  --fs-xl: clamp(1.25rem, 1.1rem + 0.6vw, 1.4rem);
+  --fs-2xl: clamp(1.5rem, 1.25rem + 1vw, 1.75rem);
+  --fs-3xl: clamp(1.75rem, 1.4rem + 1.6vw, 2.25rem);
+  --fs-4xl: clamp(2.1rem, 1.6rem + 2.4vw, 3rem);
+
+  --lh-tight: 1.15;
+  --lh-body: 1.5;
+
+  /* ---------- Space (4px grid) ---------- */
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 20px; --sp-6: 24px; --sp-8: 32px; --sp-10: 40px; --sp-12: 48px;
+  --gutter: 16px;
+  --page-max: 1280px;
+
+  /* ---------- Shape ---------- */
+  --r-xs: 8px; --r-sm: 12px; --r-md: 16px; --r-lg: 24px; --r-pill: 999px;
+
+  /* ---------- Motion ---------- */
+  --ease: cubic-bezier(.2, .7, .2, 1);
+  --dur-fast: 120ms; --dur: 180ms; --dur-slow: 260ms;
+
+  /* ---------- Layers ---------- */
+  --z-header: 40; --z-tabbar: 45; --z-game: 50; --z-overlay: 58;
+  --z-dialog: 70; --z-toast: 90;
+
+  /* ---------- Sizes ---------- */
+  --tap: 44px;
+  --tap-lg: 52px;
+  --header-h: 60px;
+  --tabbar-h: 64px;
+
+  /* ---------- Fixed palette (theme independent) ---------- */
+  --on-art: #ffffff;              /* text on photos under a scrim */
+  --on-art-muted: rgba(255, 255, 255, 0.84);
+  --scrim: rgba(12, 10, 22, 0.62);
+  --art-ink: #121022;             /* base colour under artwork */
+
+  /* Category colours: vivid (decoration) + text-safe ink per theme. */
+  --cat-words: #8b5cf6;   --cat-quiz: #3b82f6;  --cat-bible: #9333ea;
+  --cat-visual: #10b981;  --cat-memory: #f97316; --cat-reaction: #ef4444;
+  --cat-creative: #ec4899; --cat-numbers: #06b6d4; --cat-party: #eab308;
+  --cat-world: #14b8a6;
+
+  /* Answer-option markers (Kahoot-style shape + colour, never colour alone) */
+  --opt-a: #e11d48; --opt-b: #2563eb; --opt-c: #ca8a04; --opt-d: #059669;
+}
+
+/* ============ Light theme (default) ============ */
+:root,
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #fbf7f0;
+  --bg-2: #f4efe6;
+  --surface: #ffffff;
+  --surface-2: #f4efe6;
+  --surface-3: #e9e2d5;
+  --text: #1d1b2e;
+  --muted: #5f5a74;
+  --border: #e4ddd0;
+  --border-strong: #cbc1b0;
+
+  --success: #15803d; --success-soft: rgba(21, 128, 61, 0.12);
+  --danger: #b91c1c;  --danger-soft: rgba(185, 28, 28, 0.10);
+  --warn: #b45309;    --warn-soft: rgba(180, 83, 9, 0.12);
+  --on-status: #ffffff;
+
+  --shadow-1: 0 1px 2px rgba(29, 27, 46, 0.06), 0 2px 8px rgba(29, 27, 46, 0.06);
+  --shadow-2: 0 4px 12px rgba(29, 27, 46, 0.08), 0 12px 32px rgba(29, 27, 46, 0.08);
+  --shadow-3: 0 18px 48px rgba(29, 27, 46, 0.18);
+  --press-edge: rgba(29, 27, 46, 0.14);
+
+  --header-bg: rgba(251, 247, 240, 0.9);
+  --overlay: rgba(20, 17, 31, 0.55);
+  --focus-ring: #1d4ed8;
+}
+
+/* ============ Dark theme ============ */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #14111f;
+  --bg-2: #1a1628;
+  --surface: #1f1a30;
+  --surface-2: #29233d;
+  --surface-3: #352e4f;
+  --text: #f5f1ea;
+  --muted: #b4adc8;
+  --border: #352e4f;
+  --border-strong: #4c4370;
+
+  --success: #4ade80; --success-soft: rgba(74, 222, 128, 0.14);
+  --danger: #fca5a5;  --danger-soft: rgba(252, 165, 165, 0.14);
+  --warn: #fbbf24;    --warn-soft: rgba(251, 191, 36, 0.14);
+  --on-status: #14111f;
+
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.25);
+  --shadow-2: 0 6px 16px rgba(0, 0, 0, 0.35), 0 14px 36px rgba(0, 0, 0, 0.3);
+  --shadow-3: 0 22px 56px rgba(0, 0, 0, 0.55);
+  --press-edge: rgba(0, 0, 0, 0.45);
+
+  --header-bg: rgba(20, 17, 31, 0.9);
+  --overlay: rgba(6, 5, 12, 0.7);
+  --focus-ring: #93b4fd;
+}
+
+/* ============ Accents ============
+   --accent        text-safe colour AND fill under --accent-text
+   --accent-vivid  decoration
+   --accent-soft   tinted background
+   --accent-edge   darker bottom edge for "toy" buttons */
+:root[data-accent="purple"], :root:not([data-accent]) { --accent: #6d28d9; --accent-vivid: #8b5cf6; --accent-soft: rgba(139, 92, 246, 0.14); --accent-edge: #4c1d95; --accent-text: #ffffff; }
+:root[data-accent="blue"]   { --accent: #1d4ed8; --accent-vivid: #3b82f6; --accent-soft: rgba(59, 130, 246, 0.14); --accent-edge: #1e3a8a; --accent-text: #ffffff; }
+:root[data-accent="green"]  { --accent: #047857; --accent-vivid: #10b981; --accent-soft: rgba(16, 185, 129, 0.15); --accent-edge: #064e3b; --accent-text: #ffffff; }
+:root[data-accent="orange"] { --accent: #c2410c; --accent-vivid: #f97316; --accent-soft: rgba(249, 115, 22, 0.15); --accent-edge: #7c2d12; --accent-text: #ffffff; }
+:root[data-accent="red"]    { --accent: #b91c1c; --accent-vivid: #ef4444; --accent-soft: rgba(239, 68, 68, 0.13); --accent-edge: #7f1d1d; --accent-text: #ffffff; }
+:root[data-accent="pink"]   { --accent: #be185d; --accent-vivid: #ec4899; --accent-soft: rgba(236, 72, 153, 0.13); --accent-edge: #831843; --accent-text: #ffffff; }
+:root[data-accent="gold"]   { --accent: #8d5a00; --accent-vivid: #eab308; --accent-soft: rgba(234, 179, 8, 0.18); --accent-edge: #5c3a00; --accent-text: #ffffff; }
+
+:root[data-theme="dark"][data-accent="purple"], :root[data-theme="dark"]:not([data-accent]) { --accent: #b9a2fb; --accent-soft: rgba(139, 92, 246, 0.24); --accent-edge: #7c5ce0; --accent-text: #1a1625; }
+:root[data-theme="dark"][data-accent="blue"]   { --accent: #93b4fd; --accent-soft: rgba(59, 130, 246, 0.24); --accent-edge: #5b85e6; --accent-text: #1a1625; }
+:root[data-theme="dark"][data-accent="green"]  { --accent: #5fdcb0; --accent-soft: rgba(16, 185, 129, 0.22); --accent-edge: #2ea882; --accent-text: #1a1625; }
+:root[data-theme="dark"][data-accent="orange"] { --accent: #fdac74; --accent-soft: rgba(249, 115, 22, 0.22); --accent-edge: #d77b3c; --accent-text: #1a1625; }
+:root[data-theme="dark"][data-accent="red"]    { --accent: #fca5a5; --accent-soft: rgba(239, 68, 68, 0.22); --accent-edge: #d66b6b; --accent-text: #1a1625; }
+:root[data-theme="dark"][data-accent="pink"]   { --accent: #f9a8d4; --accent-soft: rgba(236, 72, 153, 0.22); --accent-edge: #d06aa3; --accent-text: #1a1625; }
+:root[data-theme="dark"][data-accent="gold"]   { --accent: #fcd34d; --accent-soft: rgba(234, 179, 8, 0.22); --accent-edge: #c99a12; --accent-text: #1a1625; }
+
+/* ============ Text size (Settings → Appearance) ============ */
+:root[data-text-size="large"] { --text-scale: 1.125; }
+:root[data-text-size="xl"]    { --text-scale: 1.25; }
+
+/* ============ Legacy aliases ============
+   Older game code and inline styles still read these names. */
+:root {
+  --bg2: var(--bg-2);
+  --accent-dark: var(--accent-edge);
+  --shadow: var(--shadow-1);
+  --shadow-lg: var(--shadow-3);
+  --radius: var(--r-lg);
+  --radius-sm: var(--r-sm);
+  --lamp: #f4efe4;
+  --ink: #08141f;
+}

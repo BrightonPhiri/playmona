@@ -11,6 +11,7 @@ const path = require('path');
 const ROOT = path.join(__dirname, '..');
 const ORDER = [
   'js/core.js',
+  'js/ui-kit.js',
   'js/storage.js',
   'js/i18n.js',
   'js/theme.js',
@@ -19,11 +20,14 @@ const ORDER = [
   'js/confetti.js',
   'js/scoring.js',
   'js/players.js',
+  'js/data/assetManifest.js',
   'js/assets.js',
   'js/flagrenderer.js',
   'js/icons.js',
+  'js/icons-custom.js',
   'js/registry.js',
   'js/navigation.js',
+  'js/gameUI.js',
   'js/data/quiz.js',
   'js/data/words.js',
   'js/data/wordlist.js',
@@ -99,7 +103,11 @@ try {
     const dupes = ids.filter(function (v, i) { return ids.indexOf(v) !== i; });
     if (dupes.length) console.log('DUPLICATE IDS: ' + [...new Set(dupes)].join(', '));
     if (sandbox.FF.Icons && sandbox.FF.Icons.game) {
-      const missingIcons = games.filter(function (g) { return !sandbox.FF.Icons.game[g.id] || !sandbox.FF.Icons.set[sandbox.FF.Icons.game[g.id]]; }).map(function (g) { return g.id; });
+      const custom = sandbox.FF.Icons.custom || {};
+      const missingIcons = games.filter(function (g) {
+        const key = sandbox.FF.Icons.game[g.id];
+        return !key || !(sandbox.FF.Icons.set[key] || custom[key]);
+      }).map(function (g) { return g.id; });
       console.log('icons: set=' + Object.keys(sandbox.FF.Icons.set).length + ' nav=' + Object.keys(sandbox.FF.Icons.nav).length + ' category=' + Object.keys(sandbox.FF.Icons.category).length + ' game=' + Object.keys(sandbox.FF.Icons.game).length);
       if (missingIcons.length) console.log('MISSING ICONS: ' + missingIcons.join(', '));
     }

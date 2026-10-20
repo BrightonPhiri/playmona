@@ -78,7 +78,17 @@ window.FF = window.FF || {};
       }
       return 'url("' + href.replace(/"/g, '\\"') + '")';
     },
+    // Whether a piece of optional art exists (js/data/assetManifest.js).
+    // Without a manifest, assume it does and let CSS fall back.
+    has: function (folder, id) {
+      const m = FF.AssetManifest;
+      if (!m || !m[folder]) return true;
+      return !!m[folder][id];
+    },
+    // CSS url() for optional art, or 'none' when the file is not bundled,
+    // so missing covers never cost a network request.
     artUrl: function (folder, id) {
+      if (!this.has(folder, id)) return 'none';
       return this.cssUrl(this.artPath(folder, id));
     },
     // Category colour wash used behind (or instead of) a cover photo.
@@ -92,7 +102,8 @@ window.FF = window.FF || {};
         creative: 'linear-gradient(160deg, #ec4899 0%, #5a1640 58%, #2a0c1c 100%)',
         numbers:  'linear-gradient(160deg, #22d3ee 0%, #0d3d4a 58%, #071c24 100%)',
         party:    'linear-gradient(160deg, #eab308 0%, #5a3d08 58%, #2a1c06 100%)',
-        world:    'linear-gradient(160deg, #14b8a6 0%, #0d3d38 58%, #071c1a 100%)'
+        world:    'linear-gradient(160deg, #14b8a6 0%, #0d3d38 58%, #071c1a 100%)',
+        bible:    'linear-gradient(160deg, #9333ea 0%, #3b1260 58%, #1a0a2c 100%)'
       };
       return washes[category] || 'linear-gradient(160deg, var(--accent) 0%, #121826 100%)';
     },

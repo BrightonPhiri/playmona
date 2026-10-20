@@ -110,8 +110,43 @@ window.FF = window.FF || {};
 - Interactive elements: use real `<button>` so keyboard/Enter and the TV focus system work.
   For a clickable `<div>`, add `tabindex: 0` and `'data-focusable': 'true'`.
 - Common CSS classes already exist: `btn`, `btn-primary`, `btn-lg`, `icon-btn`, `seg`, `seg__btn`,
-  `seg__btn active`, `panel`, `modal`, `modal__box`, `game-grid`, `game-card`, `meta-chip`,
-  `results__row`, `score-chip`, `toast`, `hint`, `empty`. Reuse them; add small inline styles only when needed.
+  `seg__btn active`, `panel`, `meta-chip`, `results__row`, `score-chip`, `hint`.
+
+### Building game screens with `FF.GameUI` (js/gameUI.js, css/games.css)
+
+Every game builds its screens from these helpers. **Do not hand-style
+games with inline `style` objects or hex colours**, and never inject
+`<style>` tags. Inline styles are only for values computed at run time
+(positions, sizes, colours that come from data).
+
+- `FF.GameUI.stage({ wide, center })`: the centred column for one screen.
+- `FF.GameUI.turnBar(entity, roundText)`: whose turn plus the round pill. It shows
+  "Everyone races" automatically in online rooms and hides the turn pill in solo play.
+- `FF.GameUI.prompt(text, 'sm'|'md'|'xl')`, `kicker(text)`, `sub(text)`, `note(text)`.
+- `FF.GameUI.options({ columns: 1|2|'auto' })` plus `option(label, onClick, index)`:
+  answer buttons with A/B/C/D markers. `markOption(btn, 'correct'|'wrong'|'dim')`
+  adds a ✓/✗ icon and screen-reader text, so results never rely on colour alone.
+- `FF.GameUI.duo()` plus `duoButton(label, onClick, 'yes'|'no'|'up'|'down', iconKey)`:
+  big two-way choices.
+- `FF.GameUI.feedback('good'|'bad'|'info'|'tip', text)`: an announced result line.
+  `FF.GameUI.correctText(points)` gives the standard "Correct! +N points".
+- `FF.GameUI.inputRow({ placeholder, onSubmit })`, `tiles(letters)`, `meter(fraction)`,
+  `media(node)`, `action(label, onClick, { icon })`.
+- `FF.GameUI.exitCard(api, title, text)`: the friendly screen when data is missing.
+- Text goes through `FF.t(key, 'English fallback', { vars })`, in sentence case.
+  Never write ALL CAPS, and never put emoji in buttons. Pass an icon instead:
+  `FF.UI.button(label, { icon: 'check', class: 'btn-lg btn-primary', onClick })`.
+- Never label an image with the answer (`alt`/`aria-label`); use a neutral label
+  such as `FF.t('pictureToGuess', 'Picture to guess')`.
+
+### App-level components (`FF.UI`, js/ui-kit.js)
+
+`FF.UI.dialog/sheet/confirm` (focus-trapped, Esc to close), `FF.UI.toast`,
+`FF.UI.announce` (screen readers), `FF.UI.switchRow`, `FF.UI.segmented`,
+`FF.UI.settingRow`, `FF.UI.chip`, `FF.UI.iconButton(icon, label, onClick)` and
+`FF.UI.emptyState`. Design tokens (colour, type, spacing, motion) live in
+`css/tokens.css`. After changing colours, run `node tools/contrast-check.js`.
+After adding cover or category art, run `node tools/gen-asset-manifest.js`.
 
 ### Scoring (`api.scoring`)
 
@@ -245,5 +280,8 @@ Prefer a light rounded background so illustrations look good in dark mode.
 - [ ] Games register with a valid `start` and call `api.end(...)`.
 - [ ] Family-friendly, non-explicit content throughout.
 - [ ] No "TODO"/"placeholder"/"coming soon" text.
+- [ ] Screens use `FF.GameUI` and design tokens: no hardcoded hex colours, no injected `<style>`,
+      no emoji in buttons, no ALL CAPS, and every user-facing string goes through `FF.t()`.
+- [ ] Works at 360 px wide with no horizontal scrolling, and every control is at least 44 px.
 
 Write the file now. Be complete and generous with content — quality and quantity both matter.

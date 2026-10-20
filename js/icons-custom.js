@@ -94,6 +94,61 @@ window.FF = window.FF || {};
     'speaker': ico('<path d="M4 9h3.2L12 5v14l-4.8-4H4V9z"/><path d="M16 9.2a3.4 3.4 0 0 1 0 5.6"/><path d="M18.4 7a6 6 0 0 1 0 10"/>')
   };
 
+  /* ---------- Interface icons (shell, dialogs, game chrome) ----------
+     Semantic names used by the redesigned UI. Only drawn in the custom
+     style; the Phosphor style falls back to these automatically. */
+  var extra = {
+    'close': '<path d="M6 6l12 12M18 6L6 18"/>',
+    'pause': '<rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/>',
+    'restart': '<path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v5h5"/>',
+    'arrow-left': '<path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/>',
+    'arrow-right': '<path d="M5 12h14"/><path d="M13 6l6 6-6 6"/>',
+    'arrow-up': '<path d="M12 19V5"/><path d="M6 11l6-6 6 6"/>',
+    'arrow-down': '<path d="M12 5v14"/><path d="M6 13l6 6 6-6"/>',
+    'chevron-down': '<path d="M6 9l6 6 6-6"/>',
+    'chevron-right': '<path d="M9 6l6 6-6 6"/>',
+    'chevron-left': '<path d="M15 6l-6 6 6 6"/>',
+    'search': '<circle cx="11" cy="11" r="6.5"/><path d="M16 16l5 5"/>',
+    'filter': '<path d="M4 6h16M7 12h10M10 18h4"/>',
+    'plus': '<path d="M12 5v14M5 12h14"/>',
+    'minus': '<path d="M5 12h14"/>',
+    'trash': '<path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/><path d="M10 11v6M14 11v6"/>',
+    'book-open': '<path d="M3 5.5C5.5 4 8.5 4 12 6c3.5-2 6.5-2 9-.5V19c-2.5-1.5-5.5-1.5-9 .5-3.5-2-6.5-2-9-.5V5.5Z"/><path d="M12 6v13.5"/>',
+    'scroll': '<path d="M7 4h11a2 2 0 0 1 2 2v1h-4"/><path d="M16 7v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1h10"/><path d="M7 4a2 2 0 0 0-2 2v11"/><path d="M9 9h4M9 13h4"/>',
+    'user': '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-6.5 8-6.5s8 2.5 8 6.5"/>',
+    'users': '<circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3 2.5-5 6-5s6 2 6 5"/><circle cx="17" cy="9" r="2.5"/><path d="M16 15c3 0 5 2 5 5"/>',
+    'mic': '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/>',
+    'mic-off': '<path d="M15 10V6a3 3 0 0 0-5.7-1.3"/><path d="M9 9v2a3 3 0 0 0 4.6 2.5"/><path d="M5 11a7 7 0 0 0 11.3 5.5M19 11a7 7 0 0 1-.6 2.8"/><path d="M12 18v3"/><path d="M3 3l18 18"/>',
+    'copy': '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>',
+    'share': '<circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/>',
+    'crown': '<path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5L3 8Z"/>',
+    'lightbulb': '<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3Z"/>',
+    'clock': '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    'check-circle': '<circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/>',
+    'alert': '<path d="M12 3l9.5 17h-19L12 3Z"/><path d="M12 10v4M12 17h.01"/>',
+    'sort': '<path d="M7 4v16M4 17l3 3 3-3"/><path d="M17 20V4M14 7l3-3 3 3"/>',
+    'tv': '<rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4"/>',
+    'palette': '<path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.7-.8 1.7-1.7 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.8-1.7 1.7-1.7H16a5 5 0 0 0 5-5C21 6.4 17 3 12 3Z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="7" r="1"/><circle cx="15" cy="7" r="1"/>',
+    'text-size': '<path d="M4 18L8.5 6 13 18M5.5 14h6"/><path d="M15 18l3-8 3 8M16 15.5h4"/>',
+    'shield': '<path d="M12 3l8 3v6c0 4.5-3.4 8.2-8 9-4.6-.8-8-4.5-8-9V6l8-3Z"/><path d="M9 12l2 2 4-4"/>',
+    'wifi': '<path d="M2 9a15 15 0 0 1 20 0"/><path d="M5.5 12.5a10 10 0 0 1 13 0"/><path d="M9 16a5 5 0 0 1 6 0"/><path d="M12 19.5h.01"/>',
+    'dice': '<rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9" r="1"/><circle cx="15" cy="15" r="1"/><circle cx="15" cy="9" r="1"/><circle cx="9" cy="15" r="1"/><circle cx="12" cy="12" r="1"/>',
+    'heart-fill': '<path d="M12 20C7 16 3 12.5 3 8.5A4.5 4.5 0 0 1 7.5 4c1.7 0 3.2.9 4.5 2.5C13.3 4.9 14.8 4 16.5 4A4.5 4.5 0 0 1 21 8.5C21 12.5 17 16 12 20Z" fill="currentColor"/>',
+    'star-fill': '<path d="M12 3l2.6 5.3 5.9.9-4.3 4.2 1 5.9-5.2-2.7-5.2 2.7 1-5.9L3.5 9.2l5.9-.9L12 3Z" fill="currentColor"/>',
+    'flame': '<path d="M12 3c1 3-2 4-2 7a4 4 0 0 0 8 0c0-1-.3-2-.8-3C18.5 8.5 20 11 20 14a8 8 0 1 1-16 0c0-4 3-7 6-9 0 2 1 3 2 3Z"/>'
+  };
+  Object.keys(extra).forEach(function (k) {
+    if (FF.Icons.custom[k] == null) FF.Icons.custom[k] = ico(extra[k]);
+  });
+
+  // Category and game icons that the generated Phosphor maps lack.
+  FF.Icons.category.bible = 'book-open';
+  FF.Icons.game.bibleQuiz = 'book-open';
+  FF.Icons.game.bibleWhoAmI = 'detective';
+  FF.Icons.game.bibleVerseRush = 'scroll';
+  FF.Icons.game.bibleBooks = 'list-numbers';
+  FF.Icons.game.brainBattle = FF.Icons.game.brainBattle || 'lightning';
+
   /* ---------- Icon style (custom vs. bundled Phosphor) ---------- */
   FF.Icons.getStyle = function () { return FF.Storage.get('iconStyle', 'custom'); };
   FF.Icons.setStyle = function (s) { if (s !== 'phosphor') s = 'custom'; FF.Storage.set('iconStyle', s); };

@@ -1,20 +1,27 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light" data-accent="purple" data-mix-accents="0">
+<html lang="en" data-theme="light" data-accent="purple" data-mix-accents="1" data-input="pointer">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#8b5cf6">
-  <meta name="description" content="Family Fun — an offline family game hub. Games for everyone. Play together. Laugh together.">
+  <meta name="theme-color" content="#fbf7f0">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="Family Fun: 45 family games for every age. Quizzes, word games, party games and more. Play on one screen, the TV, or everyone's phones. No accounts, no ads.">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <title>Family Fun — Games for Everyone</title>
+  <title>Family Fun — Games for everyone</title>
   <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
   <link rel="apple-touch-icon" href="assets/icons/app-icon.svg">
-  <link rel="stylesheet" href="css/styles.css">
+  <link rel="preload" href="assets/fonts/fredoka.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/nunito.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="css/fonts.css">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/games.css">
+  <link rel="stylesheet" href="css/room.css">
 </head>
 <body>
   <!-- Core engine -->
   <script src="js/core.js"></script>
+  <script src="js/ui-kit.js"></script>
   <script src="js/storage.js"></script>
   <script src="js/i18n.js"></script>
   <script src="js/theme.js"></script>
@@ -24,12 +31,14 @@
   <script src="js/confetti.js"></script>
   <script src="js/scoring.js"></script>
   <script src="js/players.js"></script>
+  <script src="js/data/assetManifest.js"></script>
   <script src="js/assets.js"></script>
   <script src="js/flagrenderer.js"></script>
   <script src="js/icons.js"></script>
   <script src="js/icons-custom.js"></script>
   <script src="js/registry.js"></script>
   <script src="js/navigation.js"></script>
+  <script src="js/gameUI.js"></script>
 
   <!-- Online play (optional; inert unless firebase-config.js is filled in) -->
   <script src="js/vendor/qrcode.js"></script>

@@ -71,7 +71,7 @@ window.FF = window.FF || {};
     button: function (label, opts) {
       opts = opts || {};
       var cls = String(opts.class || '').replace(/\s+/g, ' ').trim();
-      var special = /(?:^|\s)(nav-link|seg__btn|tool-btn|shell-btn|icon-btn|switch|hero-btn|filter-chip|mini-btn|link-btn|fav-btn|host-btn|avatar-btn|rail__btn|color-btn|accent-swatch|font-option|player-row)/.test(cls);
+      var special = /(?:^|\s)(nav-link|seg__btn|tool-btn|shell-btn|icon-btn|switch|hero-btn|filter-chip|mini-btn|link-btn|fav-btn|host-btn|avatar-btn|rail__btn|color-btn|accent-swatch|font-option|player-row|chip|tabbar__item|topnav__link|fav-toggle|gcard__link|cat-tile|gm-[a-z-]+|swatch|sheet-close)/.test(cls);
       if (!special && !/(?:^|\s)btn(?:\s|$)/.test(cls)) cls = ('btn ' + cls).trim();
       if (opts.primary && cls.indexOf('btn-primary') === -1) cls += ' btn-primary';
       if (opts.icon && cls.indexOf('btn-icon') === -1) cls += ' btn-icon';
@@ -160,7 +160,12 @@ window.FF = window.FF || {};
       return (m < 10 ? '0' + m : m) + ':' + (r < 10 ? '0' + r : r);
     },
 
-    formatNumber: function (n) { return (n == null ? 0 : n).toLocaleString('en-US'); },
+    // Grouped for the current language (1,234 / 1.234 / 1 234).
+    formatNumber: function (n) {
+      n = n == null ? 0 : n;
+      var lang = (FF.i18n && FF.i18n.getLang) ? FF.i18n.getLang() : 'en';
+      try { return new Intl.NumberFormat(lang).format(n); } catch (e) { return String(n); }
+    },
 
     escapeHtml: function (s) {
       return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {

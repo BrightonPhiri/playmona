@@ -10,6 +10,7 @@ window.FF = window.FF || {};
   FF.Players = {
     AVATARS: ['😀', '😎', '🤓', '🥳', '🦊', '🐼', '🦁', '🐸', '🦄', '🐯', '🐨', '🦉', '🐙', '🦖', '🐳', '🐵', '🤠', '👽', '🤖', '👸', '🧙', '🐶'],
     COLORS: ['#8b5cf6', '#3b82f6', '#10b981', '#f97316', '#ec4899', '#eab308', '#ef4444', '#22d3ee'],
+    COLOR_NAMES: ['Purple', 'Blue', 'Green', 'Orange', 'Pink', 'Yellow', 'Red', 'Sky blue'],
     MIN: 1,
     MAX: 8,
 
@@ -120,7 +121,7 @@ window.FF = window.FF || {};
       reader.readAsDataURL(file);
     },
 
-    // Avatar / photo picker. opts: { kind: 'player'|'team', onDone() }
+    // Avatar / photo picker sheet. opts: { kind: 'player'|'team', onDone() }
     pickLook: function (id, opts) {
       opts = opts || {};
       const isTeam = opts.kind === 'team';
@@ -129,86 +130,111 @@ window.FF = window.FF || {};
         : this.byId(id);
       if (!entity) return;
 
-      const overlay = FF.ui.div('modal');
-      const box = FF.ui.div('modal__box');
-      box.appendChild(FF.ui.el('h2', {}, isTeam ? 'Team picture' : 'Choose a look'));
+      function live() {
+        return isTeam
+          ? (FF.Teams.get().teams.find(function (t) { return t.id === id; }) || entity)
+          : (FF.Players.byId(id) || entity);
+      }
 
+      const body = FF.ui.div('');
       const preview = FF.ui.div('look-preview');
       function refreshPreview() {
         FF.ui.clear(preview);
-        const live = isTeam
-          ? (FF.Teams.get().teams.find(function (t) { return t.id === id; }) || entity)
-          : (FF.Players.byId(id) || entity);
-        preview.appendChild(FF.Players.avatarEl(live, 'look-preview__face'));
-        preview.appendChild(FF.ui.div('look-preview__name', live.name || ''));
+        const cur = live();
+        preview.appendChild(FF.Players.avatarEl(cur, 'look-preview__face'));
+        preview.appendChild(FF.ui.div('look-preview__name', cur.name || ''));
       }
       refreshPreview();
-      box.appendChild(preview);
+      body.appendChild(preview);
 
-      box.appendChild(FF.ui.el('p', { class: 'hint' }, 'Pick an emoji, or upload a photo (optional).'));
-
-      const file = FF.ui.el('input', { type: 'file', accept: 'image/*', class: 'hidden-file', style: { display: 'none' } });
+      const file = FF.ui.el('input', { type: 'file', accept: 'image/*', hidden: true, 'aria-hidden': 'true', tabindex: -1 });
       file.addEventListener('change', function () {
         const chosen = file.files && file.files[0];
         file.value = '';
         if (!chosen) return;
         FF.Players.readPhotoFile(chosen, function (data) {
-          if (!data) return;
+          if (!data) { if (FF.UI) FF.UI.toast(FF.t('photoFailed', 'That picture could not be used.'), { type: 'error' }); return; }
           if (isTeam) FF.Teams.setPhoto(id, data);
           else FF.Players.setPhoto(id, data);
+          FF.ui.$$('.avatar-btn', grid).forEach(function (b) { b.classList.remove('active'); b.setAttribute('aria-pressed', 'false'); });
           refreshPreview();
         });
       });
-      box.appendChild(file);
+      body.appendChild(file);
 
       const photoRow = FF.ui.div('look-photo-row');
-      photoRow.appendChild(FF.ui.button('📷 Upload photo', {
-        class: 'btn',
-        onClick: function () { file.click(); }
-      }));
-      photoRow.appendChild(FF.ui.button('Remove photo', {
-        class: 'btn',
+      photoRow.appendChild(FF.UI.button(FF.t('uploadPhoto', 'Upload photo'), { icon: 'image', onClick: function () { file.click(); } }));
+      photoRow.appendChild(FF.UI.button(FF.t('removePhoto', 'Remove photo'), {
+        icon: 'trash',
+        class: 'btn-ghost',
         onClick: function () {
           if (isTeam) FF.Teams.setPhoto(id, null);
           else FF.Players.setPhoto(id, null);
           refreshPreview();
         }
       }));
-      box.appendChild(photoRow);
+      body.appendChild(photoRow);
+      body.appendChild(FF.ui.el('p', { class: 'details__note' }, FF.t('photoPrivacy', 'Photos stay on this device. They are never uploaded or shared.')));
 
-      const grid = FF.ui.div('avatar-grid');
+      const grid = FF.ui.el('div', { class: 'avatar-grid', role: 'group', 'aria-label': FF.t('emojiAvatars', 'Emoji pictures') });
       const current = entity.avatar;
       FF.Players.AVATARS.forEach(function (a) {
-        grid.appendChild(FF.ui.button(a, {
-          class: 'avatar-btn' + (a === current && !entity.photo ? ' active' : ''),
-          onClick: function () {
-            if (isTeam) FF.Teams.setAvatar(id, a);
-            else FF.Players.setAvatar(id, a);
-            FF.ui.$$('.avatar-btn', grid).forEach(function (b) { b.classList.remove('active'); });
-            this.classList.add('active');
-            refreshPreview();
-          }
-        }));
+        const on = a === current && !entity.photo;
+        const b = FF.ui.el('button', {
+          type: 'button',
+          class: 'avatar-btn' + (on ? ' active' : ''),
+          'aria-pressed': on ? 'true' : 'false',
+          'aria-label': a
+        }, a);
+        b.addEventListener('click', function () {
+          if (isTeam) FF.Teams.setAvatar(id, a);
+          else FF.Players.setAvatar(id, a);
+          FF.ui.$$('.avatar-btn', grid).forEach(function (x) { x.classList.remove('active'); x.setAttribute('aria-pressed', 'false'); });
+          b.classList.add('active');
+          b.setAttribute('aria-pressed', 'true');
+          refreshPreview();
+        });
+        grid.appendChild(b);
       });
-      box.appendChild(grid);
+      body.appendChild(grid);
 
-      box.appendChild(FF.ui.button('Done', {
-        primary: true,
-        class: 'btn-lg',
-        onClick: function () {
-          if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
-          if (opts.onDone) opts.onDone();
-        }
-      }));
-      overlay.appendChild(box);
-      overlay.addEventListener('click', function (e) {
-        if (e.target === overlay) {
-          overlay.parentNode.removeChild(overlay);
-          if (opts.onDone) opts.onDone();
-        }
+      FF.UI.sheet({
+        title: isTeam ? FF.t('teamPicture', 'Team picture') : FF.t('chooseLook', 'Choose a picture'),
+        body: body,
+        actions: [{ label: FF.t('done', 'Done'), primary: true }],
+        onClose: function () { if (opts.onDone) opts.onDone(); }
       });
-      document.body.appendChild(overlay);
-      if (FF.Nav && FF.Nav.focusFirst) FF.Nav.focusFirst(box);
+    },
+
+    // Colour picker sheet with named swatches and a visible selected state.
+    pickColor: function (id, onDone) {
+      const p = this.byId(id);
+      if (!p) return;
+      const grid = FF.ui.el('div', { class: 'avatar-grid', role: 'group', 'aria-label': FF.t('playerColour', 'Player colour') });
+      let sheet = null;
+      FF.Players.COLORS.forEach(function (c, i) {
+        const on = (p.color || '').toLowerCase() === c.toLowerCase();
+        const name = FF.Players.COLOR_NAMES[i] || c;
+        const b = FF.ui.el('button', {
+          type: 'button',
+          class: 'avatar-btn color-btn' + (on ? ' active' : ''),
+          style: { background: c },
+          'aria-pressed': on ? 'true' : 'false',
+          'aria-label': name,
+          title: name
+        });
+        if (on) b.appendChild(FF.Icons.icon('check', '✓'));
+        b.addEventListener('click', function () {
+          FF.Players.setColor(id, c);
+          if (sheet) sheet.close();
+        });
+        grid.appendChild(b);
+      });
+      sheet = FF.UI.sheet({
+        title: FF.t('chooseColour', 'Choose a colour'),
+        body: grid,
+        onClose: function () { if (onDone) onDone(); }
+      });
     },
 
     reorder: function (orderedIds) {

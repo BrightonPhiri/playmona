@@ -1,0 +1,115 @@
+/* ============================================================
+   FAMILY FUN — room.css
+   Online rooms (js/net/roomUI.js) and the race screens that
+   every online game shares (js/net/raceUI.js). Built on tokens.
+   ============================================================ */
+
+.rm-wrap { max-width: 720px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: var(--sp-4); }
+.rm-wrap > .panel { margin-bottom: 0; }
+.rm-hero { text-align: center; display: flex; flex-direction: column; align-items: center; gap: var(--sp-2); }
+.rm-hero__icon {
+  width: 64px; height: 64px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--accent-soft); color: var(--accent); font-size: 2rem;
+}
+.rm-code {
+  font-family: var(--font-mono); font-size: clamp(1.8rem, 9vw, 2.6rem); font-weight: 800;
+  letter-spacing: 0.3em; text-align: center;
+  padding: var(--sp-4) var(--sp-2) var(--sp-4) calc(var(--sp-2) + 0.3em);
+  background: var(--accent-soft); color: var(--text);
+  border: 2px dashed var(--accent);
+  border-radius: var(--r-lg);
+  overflow-wrap: anywhere;
+}
+.rm-share { display: flex; gap: var(--sp-2); flex-wrap: wrap; justify-content: center; }
+.rm-qr { display: flex; justify-content: center; padding: var(--sp-2); }
+/* QR codes need a light quiet zone to scan, even in dark mode. */
+.rm-qr canvas, .rm-qr img, .rm-qr svg { background: #fff; padding: 10px; border-radius: var(--r-sm); max-width: min(240px, 70vw); height: auto; }
+.rm-players { display: flex; flex-wrap: wrap; gap: var(--sp-2); justify-content: center; }
+.rm-player {
+  display: flex; align-items: center; gap: var(--sp-2);
+  min-height: 40px; padding: 4px 14px 4px 6px; border-radius: var(--r-pill);
+  background: var(--surface); border: 1.5px solid var(--border); font-weight: 700;
+}
+.rm-player--off { opacity: 0.5; }
+.rm-player__ava { font-size: 1.3rem; width: 30px; height: 30px; border-radius: 50%; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; background: var(--surface-2); }
+.rm-player__ava img { width: 100%; height: 100%; object-fit: cover; }
+.rm-player--speaking { border-color: var(--success); box-shadow: 0 0 0 3px var(--success-soft); }
+.rm-player__ava--speaking { box-shadow: 0 0 0 2px var(--success); }
+.rm-input {
+  width: 100%; min-height: 60px;
+  font-family: var(--font-mono); font-size: clamp(1.5rem, 7vw, 1.9rem); font-weight: 800;
+  text-align: center; letter-spacing: 0.3em; text-transform: uppercase;
+  padding: var(--sp-3); border-radius: var(--r-md);
+  border: 2px solid var(--border-strong); background: var(--surface); color: var(--text);
+}
+.rm-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); outline: none; }
+.rm-input--text { font-family: var(--font-body); font-size: var(--fs-lg); letter-spacing: 0; text-transform: none; min-height: 52px; }
+.rm-error { color: var(--danger); font-weight: 700; text-align: center; min-height: 1.3em; }
+.rm-hint { color: var(--muted); text-align: center; }
+.rm-row { display: flex; gap: var(--sp-2); align-items: center; justify-content: center; flex-wrap: wrap; }
+.rm-row > .btn { flex: 1 1 200px; }
+.rm-subtitle { font-family: var(--font-display); font-size: var(--fs-lg); font-weight: 600; text-align: center; margin: var(--sp-2) 0 0; color: var(--text); }
+.rm-chosen { min-height: 1.3em; color: var(--muted); font-weight: 700; text-align: center; }
+.rm-games { display: grid; gap: var(--sp-2); grid-template-columns: repeat(auto-fill, minmax(min(100%, 108px), 1fr)); }
+.rm-game {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  min-height: 104px; padding: var(--sp-3) var(--sp-2);
+  border-radius: var(--r-md); text-align: center;
+  background: var(--surface); border: 2px solid var(--border);
+  color: var(--text);
+  transition: transform var(--dur-fast) var(--ease), border-color var(--dur) var(--ease);
+}
+.rm-game:hover { transform: translateY(-2px); border-color: var(--rm-game-color, var(--accent)); }
+.rm-game--on { border-color: var(--rm-game-color, var(--accent)); box-shadow: 0 0 0 3px var(--accent-soft); background: var(--accent-soft); }
+.rm-game__icon { font-size: 1.7rem; line-height: 1; color: var(--rm-game-color, var(--accent)); }
+.rm-game__name { font-weight: 800; font-size: var(--fs-sm); line-height: 1.2; }
+.rm-game__cat { font-size: var(--fs-xs); font-weight: 700; color: var(--muted); }
+.rm-count { align-items: center; text-align: center; gap: var(--sp-2); }
+.rm-count__game { font-family: var(--font-display); font-size: var(--fs-2xl); font-weight: 600; }
+.rm-count__num { font-family: var(--font-display); font-size: clamp(4rem, 20vw, 6rem); font-weight: 600; line-height: 1; color: var(--accent); }
+.rm-count__num--pop { animation: ff-bounce-in 450ms var(--ease); }
+.rm-load { display: flex; flex-direction: column; align-items: center; gap: var(--sp-4); padding: var(--sp-6) 0; }
+.rm-load__stage { position: relative; width: 132px; height: 132px; }
+.rm-load__ring { position: absolute; inset: 0; border-radius: 50%; border: 5px solid var(--accent-soft); border-top-color: var(--accent); animation: rm-spin 1.1s linear infinite; }
+.rm-load__ring--slow { inset: 14px; border-width: 4px; opacity: 0.6; border-top-color: transparent; border-right-color: var(--accent); animation: rm-spin 1.8s linear infinite reverse; }
+.rm-load__emoji { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 3.1rem; animation: rm-bob 1.5s ease-in-out infinite; }
+.rm-load__status { font-weight: 800; font-size: var(--fs-lg); text-align: center; min-height: 1.4em; }
+.rm-load__dots { display: flex; gap: 9px; }
+.rm-load__dot { width: 11px; height: 11px; border-radius: 50%; background: var(--accent); animation: rm-bounce 1s ease-in-out infinite; }
+.rm-load__dot:nth-child(2) { animation-delay: 0.15s; }
+.rm-load__dot:nth-child(3) { animation-delay: 0.3s; }
+.rm-load__dot:nth-child(4) { animation-delay: 0.45s; }
+@keyframes rm-spin { to { transform: rotate(360deg); } }
+@keyframes rm-bob { 0%, 100% { transform: translateY(-5px) scale(1); } 50% { transform: translateY(5px) scale(1.08); } }
+@keyframes rm-bounce { 0%, 100% { transform: translateY(0); opacity: 0.45; } 50% { transform: translateY(-11px); opacity: 1; } }
+
+.rm-voice {
+  display: flex; flex-direction: column; gap: var(--sp-2);
+  background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--r-lg);
+  padding: var(--sp-4); box-shadow: var(--shadow-1);
+}
+
+/* ---------- Race screens (shared by every online game) ---------- */
+.ffr-out { font-weight: 800; text-align: center; margin-top: var(--sp-3); color: var(--danger); }
+.ffr-result { display: flex; flex-direction: column; align-items: center; gap: var(--sp-3); max-width: 620px; margin: 0 auto; text-align: center; }
+.ffr-verdict { font-family: var(--font-display); font-size: var(--fs-2xl); font-weight: 600; display: inline-flex; align-items: center; gap: var(--sp-2); }
+.ffr-win { color: var(--success); }
+.ffr-lose { color: var(--danger); }
+.ffr-points { color: var(--accent); font-weight: 800; font-size: var(--fs-lg); }
+.ffr-answer { font-weight: 700; }
+.ffr-board { display: flex; flex-wrap: wrap; gap: var(--sp-2); justify-content: center; margin-top: 6px; }
+.ffr-chip { display: flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: var(--r-pill); background: var(--surface); border: 1px solid var(--border); font-weight: 700; }
+.ffr-chip--off { opacity: 0.5; }
+.ffr-gate {
+  position: fixed; inset: 0; z-index: var(--z-overlay);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--sp-2);
+  background: rgba(12, 10, 22, 0.78);
+}
+.ffr-gate__label { font-family: var(--font-display); font-size: var(--fs-xl); font-weight: 600; color: #fff; }
+.ffr-gate__num { font-family: var(--font-display); font-size: clamp(4rem, 20vw, 6rem); font-weight: 600; color: #fff; line-height: 1; animation: ff-bounce-in 400ms var(--ease); }
+
+:root[data-reduce="1"] .rm-load__ring, :root[data-reduce="1"] .rm-load__ring--slow,
+:root[data-reduce="1"] .rm-load__emoji, :root[data-reduce="1"] .rm-load__dot { animation: none; }
+.is-locked { opacity: 0.45; cursor: default; }
+ol.results__leaderboard, ul.player-list, ul.achievement-grid, ul.team-col__members, ul.setup-roster { list-style: none; padding: 0; }
