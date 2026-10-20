@@ -1,4 +1,4 @@
-/* Family Fun — headless load check.
+/* PlayMora — headless load check.
    Loads every JS file in a Node vm with a minimal browser-like global,
    verifying: no load-time errors, all games register, data shapes valid.
    Run:  node tools/load-check.js
@@ -19,6 +19,8 @@ const ORDER = [
   'js/timer.js',
   'js/confetti.js',
   'js/scoring.js',
+  'js/data/avatars.js',
+  'js/avatars.js',
   'js/players.js',
   'js/data/assetManifest.js',
   'js/assets.js',
@@ -28,6 +30,9 @@ const ORDER = [
   'js/registry.js',
   'js/navigation.js',
   'js/gameUI.js',
+  'js/auth.js',
+  'js/sync.js',
+  'js/authUI.js',
   'js/data/quiz.js',
   'js/data/words.js',
   'js/data/wordlist.js',

@@ -1,5 +1,5 @@
 /* ============================================================
-   FAMILY FUN — party.js
+   PLAYMORA — party.js
    Party-game content: charades, Don't Say It, drawing,
    would-you-rather, this-or-that and more.
    Classic script (no ES modules) so the app runs from file://
@@ -781,7 +781,7 @@ window.FF = window.FF || {};
       "Keep every birthday card forever?",
       "Forget to charge their phone?",
       "Have a thousand unread messages?",
-      "Be the best cook in the family?",
+      "Be the best cook in the group?",
       "Burn toast?",
       "Lose the TV remote?",
       "Sit in the front seat first?",
@@ -795,7 +795,7 @@ window.FF = window.FF || {};
       "Get caught sneaking a cookie?",
       "Be the last one dancing at a party?",
       "Make everyone laugh when they are sad?",
-      "Be the family's best storyteller?",
+      "Be the group's best storyteller?",
       "Forget to tie their shoelaces?",
       "Wear a costume for no reason?",
       "Collect the most random things?",
@@ -806,7 +806,7 @@ window.FF = window.FF || {};
       "Get the giggles in a quiet room?",
       "Be the first to spot a rainbow?",
       "Save the day in an emergency?",
-      "Be the family comedian?",
+      "Be the group's comedian?",
       "Surprise everyone with a hidden talent?"
     ],
 
@@ -814,7 +814,7 @@ window.FF = window.FF || {};
     finishSentence: [
       "The best thing about weekends is...",
       "If I had a pet dinosaur I would...",
-      "My favorite family tradition is...",
+      "My favorite tradition is...",
       "The funniest thing that ever happened to me was...",
       "If I could fly anywhere tomorrow I would go to...",
       "My dream superpower would be...",
@@ -825,7 +825,7 @@ window.FF = window.FF || {};
       "If I were the boss of the house I would...",
       "The best holiday of the year is...",
       "If I could talk to animals I would ask...",
-      "My favorite memory with my family is...",
+      "My favorite memory with friends or family is...",
       "If I won a million dollars I would...",
       "The best thing about school is...",
       "If I could build my dream house it would have...",
@@ -841,7 +841,7 @@ window.FF = window.FF || {};
       "If I had my own TV show it would be about...",
       "The best surprise I ever got was...",
       "If I could be an animal for a day I would be...",
-      "The thing I love most about my family is...",
+      "The thing I love most about the people in this room is...",
       "If I could invent anything I would invent...",
       "The best way to spend a rainy day is...",
       "If I could have any job in the world it would be...",
@@ -885,7 +885,7 @@ window.FF = window.FF || {};
       "If I could have a mascot it would be...",
       "The best thing to do on a sunny day is...",
       "If I could open a shop it would sell...",
-      "The thing that makes our family special is...",
+      "The thing that makes our group special is...",
       "If I could create a new holiday it would celebrate..."
     ],
 

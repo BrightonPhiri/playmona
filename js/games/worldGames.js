@@ -1,11 +1,11 @@
 /* ============================================================
-   FAMILY FUN — worldGames.js
+   PLAYMORA — worldGames.js
    World category games (read FF.data.countries):
      · Where in the World?   (flag / landmark / food / capital clues)
      · Map Challenge          (continent / borders / capital)
      · Capital Challenge      (country -> capital)
      · Guess the Flag         (fast flag identification)
-   Classic script (no ES modules). Offline, family-friendly.
+   Classic script (no ES modules). Offline, suitable for all ages.
    ============================================================ */
 window.FF = window.FF || {};
 
@@ -365,7 +365,7 @@ window.FF = window.FF || {};
   function startWorldGame(api, opts) {
     if (!hasData()) { showMissingData(api); return; }
     FF.safe(function () { runTrivia(api, opts); }, function () {
-      showFriendlyMessage(api, '😅 Oops!', 'Something went wrong starting this game. Please try again.');
+      showFriendlyMessage(api, FF.t('oops', 'Something went wrong'), 'Something went wrong starting this game. Please try again.');
     });
   }
 

@@ -1,5 +1,5 @@
 /* ============================================================
-   FAMILY FUN — net/firebaseTransport.js
+   PLAYMORA — net/firebaseTransport.js
    Firebase Realtime Database transport. Implements exactly the
    interface in net/transport.js. The SDK is loaded lazily from
    the CDN the first time online play is opened, so the offline
@@ -43,6 +43,14 @@ window.FF = window.FF || {};
     return sdkPromise;
   }
 
+  // Load the SDK and create the app once; shared by accounts and rooms.
+  function ensureFirebase() {
+    return loadSdk().then(function (firebase) {
+      if (!app) app = firebase.initializeApp(FF.FirebaseConfig);
+      return firebase;
+    });
+  }
+
   /* Local development only: with this flag set, online play runs on the
      BroadcastChannel transport across tabs of this browser, with no
      Firebase account and no internet. Turn it on from the console with
@@ -68,9 +76,11 @@ window.FF = window.FF || {};
       return Promise.reject(new Error('Online play is not configured on this copy of the app.'));
     }
 
-    return loadSdk().then(function (firebase) {
-      if (!app) app = firebase.initializeApp(FF.FirebaseConfig);
-      return firebase.auth().signInAnonymously().then(function (cred) {
+    return ensureFirebase().then(function (firebase) {
+      // Signed-in players use their account; otherwise an anonymous session.
+      var current = firebase.auth().currentUser;
+      var signIn = current ? Promise.resolve({ user: current }) : firebase.auth().signInAnonymously();
+      return signIn.then(function (cred) {
         var db = firebase.database();
         var uid = cred.user.uid;
 
@@ -135,5 +145,10 @@ window.FF = window.FF || {};
   FF.Net.configured = configured;
   FF.Net.devMode = devMode;
   FF.Net.firebase = firebaseTransport;
+  FF.Net.ensureFirebase = ensureFirebase;
+  FF.Net.sdkConfigured = function () {
+    var c = FF.FirebaseConfig;
+    return !!(c && c.apiKey && c.databaseURL && String(c.apiKey).indexOf('AIza') === 0);
+  };
   FF.Net.SDK_VERSION = SDK_VERSION;
 })();

@@ -1,5 +1,5 @@
 /* ============================================================
-   FAMILY FUN — net/roomUI.js
+   PLAYMORA — net/roomUI.js
    Screens for online play: create, join, lobby, results.
    ============================================================ */
 window.FF = window.FF || {};
@@ -53,7 +53,7 @@ window.FF = window.FF || {};
       var isSpk = FF.Voice && FF.Voice.isSpeaking(p.uid);
       // Rooms only ever show emoji avatars: photos stay on their own device.
       var chip = FF.ui.div('rm-player' + (p.online ? '' : ' rm-player--off') + (isSpk ? ' rm-player--speaking' : ''), [
-        FF.ui.span('rm-player__ava' + (isSpk ? ' rm-player__ava--speaking' : ''), p.avatar || '😀'),
+        FF.Players.avatarEl(p, 'rm-player__ava' + (isSpk ? ' rm-player__ava--speaking' : '')),
         p.name + (p.uid === myUid ? ' ' + FF.t('youTag', '(you)') : '') + (p.online ? '' : ' · ' + FF.t('offline', 'offline'))
       ]);
       chip.dataset.uid = p.uid;
@@ -119,7 +119,8 @@ window.FF = window.FF || {};
     return vWrap;
   }
 
-  var LOAD_EMOJI = ['🎮', '🎲', '🧩', '🎯', '🌍', '🎪', '🔠', '🥇'];
+  // Characters that take turns waving while a room connects.
+  var LOAD_CAST = ['fox', 'nia', 'bolt', 'kenji', 'unicorn', 'amara', 'panda', 'astronaut'];
 
   FF.RoomUI = {
     ONLINE_GAMES: ONLINE_GAMES,
@@ -132,7 +133,9 @@ window.FF = window.FF || {};
       FF.ui.clear(main);
 
       var stage = FF.ui.div('rm-load__stage');
-      var emoji = FF.ui.div('rm-load__emoji', LOAD_EMOJI[0]);
+      var emoji = FF.ui.div('rm-load__emoji');
+      var castImg = FF.Avatars.img(LOAD_CAST[0], 'rm-load__ava');
+      emoji.appendChild(castImg);
       stage.appendChild(FF.ui.div('rm-load__ring'));
       stage.appendChild(FF.ui.div('rm-load__ring rm-load__ring--slow'));
       stage.appendChild(emoji);
@@ -153,8 +156,8 @@ window.FF = window.FF || {};
       // frozen - people read a static 'Connecting...' as a hang.
       var i = 0;
       var faceTimer = setInterval(function () {
-        i = (i + 1) % LOAD_EMOJI.length;
-        emoji.textContent = LOAD_EMOJI[i];
+        i = (i + 1) % LOAD_CAST.length;
+        castImg.src = FF.Avatars.url(LOAD_CAST[i]);
       }, 620);
 
       var msgTimer = null;
@@ -550,7 +553,7 @@ window.FF = window.FF || {};
         ranked.forEach(function (r, i) {
           var row = FF.ui.el('li', { class: 'results__row' + (i === 0 && r.points > 0 ? ' results__row--winner' : '') });
           row.appendChild(FF.ui.el('span', { class: 'results__rank' }, ['🥇', '🥈', '🥉'][i] || String(i + 1)));
-          row.appendChild(FF.ui.el('span', { class: 'results__avatar' }, r.avatar || '😀'));
+          row.appendChild(FF.Players.avatarEl(r, 'results__avatar'));
           row.appendChild(FF.ui.el('span', { class: 'results__name' }, r.name + (r.uid === state.uid ? ' ' + FF.t('youTag', '(you)') : '')));
           row.appendChild(FF.ui.el('span', { class: 'results__pts' }, FF.util.formatNumber(r.points)));
           list.appendChild(row);

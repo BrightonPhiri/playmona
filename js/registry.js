@@ -1,5 +1,5 @@
 /* ============================================================
-   FAMILY FUN — registry.js
+   PLAYMORA — registry.js
    Game registry, universal settings, game shell (intro / how to
    play / settings / pause / results), and Game Night tournament.
    ============================================================ */
@@ -325,6 +325,20 @@ window.FF = window.FF || {};
     return shellObj;
   }
 
+  // Big round icon at the top of result screens. tone: gold | blue | purple | orange
+  function resultBadge(iconKey, tone, cls) {
+    const b = FF.ui.el('div', { class: (cls || 'results__crown') + ' result-badge result-badge--' + (tone || 'gold'), 'aria-hidden': 'true' });
+    b.appendChild(FF.Icons.icon(iconKey));
+    return b;
+  }
+  // Gold, silver, bronze medal for the top three places.
+  function rankMedal(i) {
+    if (i > 2) return String(i + 1);
+    const m = FF.ui.span('rank-medal rank-medal--' + (i + 1));
+    m.appendChild(FF.Icons.icon('medal'));
+    return m;
+  }
+
   /* ================= Game flow ================= */
   FF.GameFlow = {
     current: null,
@@ -444,35 +458,6 @@ window.FF = window.FF || {};
         return c;
       }
 
-      function playerRow(p, canRemove) {
-        const rowEl = FF.ui.el('li', { class: 'setup-player', style: { '--p-color': p.color } });
-        const avaBtn = FF.ui.el('button', {
-          type: 'button', class: 'setup-player__photo',
-          'aria-label': t('changePictureFor', 'Change picture for {name}', { name: p.name }),
-          onclick: function () { FF.Players.pickLook(p.id, { onDone: render }); }
-        });
-        avaBtn.appendChild(FF.Players.avatarEl(p, 'setup-player__face'));
-        rowEl.appendChild(avaBtn);
-        const name = FF.ui.el('input', {
-          type: 'text', class: 'setup-name', value: p.name, maxlength: 24,
-          placeholder: t('playerName', 'Player name'), 'aria-label': t('playerName', 'Player name'), autocomplete: 'off'
-        });
-        name.addEventListener('input', function () {
-          const next = name.value.trim();
-          if (next) { FF.Players.rename(p.id, next); renderSummary(); }
-        });
-        name.addEventListener('blur', function () { if (!name.value.trim()) name.value = p.name; });
-        rowEl.appendChild(name);
-        if (canRemove) {
-          rowEl.appendChild(FF.UI.iconButton('trash', t('removePlayer', 'Remove {name}', { name: p.name }), function () {
-            FF.Players.remove(p.id);
-            syncModeFromRoster();
-            render();
-          }, 'icon-btn--danger'));
-        }
-        return rowEl;
-      }
-
       function teamRow(tm) {
         const rowEl = FF.ui.el('li', { class: 'setup-player', style: { '--p-color': tm.color } });
         const avaBtn = FF.ui.el('button', {
@@ -480,7 +465,7 @@ window.FF = window.FF || {};
           'aria-label': t('changePictureFor', 'Change picture for {name}', { name: tm.name }),
           onclick: function () { FF.Players.pickLook(tm.id, { kind: 'team', onDone: render }); }
         });
-        avaBtn.appendChild(FF.Players.avatarEl({ name: tm.name, avatar: tm.avatar || '👥', photo: tm.photo }, 'setup-player__face'));
+        avaBtn.appendChild(FF.Players.avatarEl({ name: tm.name, avatar: tm.avatar, photo: tm.photo, isTeam: !tm.avatar, color: tm.color }, 'setup-player__face'));
         rowEl.appendChild(avaBtn);
         const name = FF.ui.el('input', { type: 'text', class: 'setup-name', value: tm.name, maxlength: 24, 'aria-label': t('teamName', 'Team name'), autocomplete: 'off' });
         name.addEventListener('input', function () {
@@ -608,24 +593,12 @@ window.FF = window.FF || {};
         renderSummary();
 
         if (ui.editing && config.variation !== 'display') {
-          const editor = FF.ui.div('');
-          editor.style.marginTop = 'var(--sp-3)';
-          const countOpts = [];
-          const startCount = soloOk ? Math.min(minP, 1) : minP;
-          for (let n = startCount; n <= Math.min(maxP, FF.Players.MAX); n++) {
-            if (n === 1 && !soloOk) continue;
-            countOpts.push({ label: String(n), value: n });
+          const editor = FF.ui.div('details__editor');
+          if (!soloOk || players.length < minP) {
+            editor.appendChild(FF.ui.el('p', { class: 'details__note' }, t('needsN', 'This game needs at least {n} players.', { n: minP })));
           }
-          editor.appendChild(FF.UI.settingRow(t('howManyPlayers', 'How many players?'), FF.UI.segmented({
-            label: t('howManyPlayers', 'How many players?'), value: players.length, options: countOpts, compact: true,
-            onChange: function (n) { FF.Players.ensureCount(n); syncModeFromRoster(); render(); }
-          }), soloOk ? null : t('needsN', 'This game needs at least {n} players.', { n: minP })));
-          const roster = FF.ui.el('ul', { class: 'setup-roster', style: { listStyle: 'none' } });
-          players.forEach(function (p) { roster.appendChild(playerRow(p, players.length > Math.max(minP, 1))); });
-          editor.appendChild(roster);
-          if (players.length < maxP && players.length < FF.Players.MAX) {
-            editor.appendChild(FF.UI.button(t('addPlayer', 'Add player'), { class: 'btn-sm', icon: 'plus', onClick: function () { FF.Players.add(); syncModeFromRoster(); render(); } }));
-          }
+          // Saved players: tap to bring someone in or let them sit out.
+          editor.appendChild(FF.App.crewCard({ embedded: true, onChange: function () { syncModeFromRoster(); render(); } }));
           if (teamOk && players.length >= 2) {
             editor.appendChild(FF.UI.settingRow(t('playAs', 'Play as'), FF.UI.segmented({
               label: t('playAs', 'Play as'), value: config.mode === 'team' ? 'team' : 'players',
@@ -637,7 +610,7 @@ window.FF = window.FF || {};
               }
             })));
             if (config.mode === 'team') {
-              const teamRoster = FF.ui.el('ul', { class: 'setup-roster', style: { listStyle: 'none' } });
+              const teamRoster = FF.ui.el('ul', { class: 'setup-roster' });
               teams.teams.forEach(function (tm) { teamRoster.appendChild(teamRow(tm)); });
               editor.appendChild(teamRoster);
             }
@@ -870,7 +843,7 @@ window.FF = window.FF || {};
       if (!cur) return;
       results = results || {};
       if (cur.config.variation === 'display') {
-        FF.Stats.recordGamePlayed(cur.def.id, cur.def.name);
+        FF.Stats.recordGamePlayed(cur.def.id, cur.def.name, cur.def.category);
         FF.Recents.add(cur.def.id, cur.def.name);
         if (typeof FF.App !== 'undefined' && FF.App.onGameEnded) FF.App.onGameEnded({ results: [] });
         this.showDisplayResults(results);
@@ -881,7 +854,7 @@ window.FF = window.FF || {};
       if (cur.config.room && FF.Room && FF.Room.current()) {
         if (cur.roomEnding) return;
         cur.roomEnding = true;
-        FF.Stats.recordGamePlayed(cur.def.id, cur.def.name);
+        FF.Stats.recordGamePlayed(cur.def.id, cur.def.name, cur.def.category);
         FF.Recents.add(cur.def.id, cur.def.name);
         const flow = this;
         this._completeRoomResults(cur).then(function (snapshot) {
@@ -891,6 +864,8 @@ window.FF = window.FF || {};
           }
           if (flow.current !== cur) return;
           const ranked = snapshot.ranked || [];
+          const myUid = FF.Room.current() && FF.Room.current().uid;
+          FF.Stats.recordResult({ results: ranked, meId: myUid });
           if (typeof FF.App !== 'undefined' && FF.App.onGameEnded) FF.App.onGameEnded({ results: ranked });
           flow.showResults({ results: ranked, room: true, title: FF.t('gameComplete', 'Game complete!') });
         }).catch(function (err) {
@@ -911,7 +886,7 @@ window.FF = window.FF || {};
       const winner = results.results[0] || null;
 
       // persist stats
-      FF.Stats.recordGamePlayed(cur.def.id, cur.def.name);
+      FF.Stats.recordGamePlayed(cur.def.id, cur.def.name, cur.def.category);
       FF.Recents.add(cur.def.id, cur.def.name);
       if (winner) {
         FF.Stats.recordResult({
@@ -920,7 +895,8 @@ window.FF = window.FF || {};
           fastest: results.fastest,
           mostWords: results.mostWords,
           quizCorrect: results.quizCorrect,
-          quizAnswered: results.quizAnswered
+          quizAnswered: results.quizAnswered,
+          results: results.results
         });
       }
       if (results.achievements) results.achievements.forEach(function (a) { FF.Stats.unlock(a); });
@@ -948,14 +924,14 @@ window.FF = window.FF || {};
       const solo = ranked.length === 1;
 
       const wrap = FF.ui.el('main', { class: 'results', 'aria-labelledby': 'results-title' });
-      wrap.appendChild(FF.ui.el('div', { class: 'results__crown', 'aria-hidden': 'true' }, isTie ? '🤝' : '🏆'));
+      wrap.appendChild(resultBadge(isTie ? 'users' : 'trophy', 'gold'));
       const title = results.title || (isTie ? t('itsATie', 'It’s a tie!') : (solo ? t('wellPlayed', 'Well played!') : t('gameComplete', 'Game complete!')));
       wrap.appendChild(FF.ui.el('h1', { class: 'results__title', id: 'results-title' }, title));
 
       if (winner && (top > 0 || solo)) {
         const card = FF.ui.div('results__winner-card');
         const ava = FF.ui.div('results__winner-avatar');
-        if (isTie) ava.textContent = '🏆';
+        if (isTie) ava.appendChild(FF.Icons.icon('trophy'));
         else ava.appendChild(FF.Players.avatarEl(winner, 'results__winner-face'));
         card.appendChild(ava);
         const names = (isTie ? tied : [winner]).map(function (x) { return x.name; }).join(' & ');
@@ -970,7 +946,7 @@ window.FF = window.FF || {};
         const lb = FF.ui.el('ol', { class: 'results__leaderboard', 'aria-label': t('leaderboard', 'Leaderboard'), style: { listStyle: 'none' } });
         ranked.forEach(function (r, i) {
           const row = FF.ui.el('li', { class: 'results__row' + (i === 0 && top > 0 ? ' results__row--winner' : '') });
-          row.appendChild(FF.ui.el('span', { class: 'results__rank', 'aria-label': t('place', 'Place {n}', { n: i + 1 }) }, ['🥇', '🥈', '🥉'][i] || String(i + 1)));
+          row.appendChild(FF.ui.el('span', { class: 'results__rank', 'aria-label': t('place', 'Place {n}', { n: i + 1 }) }, rankMedal(i)));
           row.appendChild(FF.Players.avatarEl(r, 'results__avatar'));
           row.appendChild(FF.ui.el('span', { class: 'results__name' }, r.name));
           row.appendChild(FF.ui.el('span', { class: 'results__pts' }, FF.util.formatNumber(r.points)));
@@ -1039,7 +1015,7 @@ window.FF = window.FF || {};
       const t = FF.t;
 
       const wrap = FF.ui.el('main', { class: 'results' });
-      wrap.appendChild(FF.ui.el('div', { class: 'results__banner', 'aria-hidden': 'true' }, '⏰'));
+      wrap.appendChild(resultBadge('clock', 'blue', 'results__banner'));
       wrap.appendChild(FF.ui.el('h1', { class: 'results__title' }, results.title && !/^[A-Z' !]+$/.test(results.title) ? results.title : t('timesUp', 'Time’s up!')));
       wrap.appendChild(FF.ui.el('p', { class: 'results__sub' }, t('displayNoScore', 'No points were tracked on the TV. Add up everyone’s score out loud.')));
       if (results.note) wrap.appendChild(FF.ui.el('p', { class: 'results__sub' }, results.note));
@@ -1380,7 +1356,7 @@ window.FF = window.FF || {};
 
       screen.className = 'game-screen';
       const wrap = FF.ui.el('main', { class: 'results' });
-      wrap.appendChild(FF.ui.el('div', { class: 'results__banner', 'aria-hidden': 'true' }, '🎮'));
+      wrap.appendChild(resultBadge('game-controller', 'purple', 'results__banner'));
       wrap.appendChild(FF.ui.el('h1', { class: 'results__title' }, FF.t('roundComplete', 'Round {n} of {total} done', { n: s.index, total: s.schedule.length })));
       wrap.appendChild(FF.ui.el('p', { class: 'results__sub' }, FF.t('standings', 'Standings so far')));
 
@@ -1438,7 +1414,7 @@ window.FF = window.FF || {};
       FF.ui.clear(screen);
       screen.className = 'game-screen';
       const wrap = FF.ui.el('main', { class: 'results' });
-      wrap.appendChild(FF.ui.el('div', { class: 'results__banner', 'aria-hidden': 'true' }, '⚡'));
+      wrap.appendChild(resultBadge('lightning', 'orange', 'results__banner'));
       wrap.appendChild(FF.ui.el('h1', { class: 'results__title' }, FF.t('tieBreaker', 'Tie breaker!')));
       wrap.appendChild(FF.ui.el('p', { class: 'results__sub' }, FF.t('versus', '{a} vs {b}', { a: a.name, b: b.name })));
       wrap.appendChild(FF.ui.el('p', { class: 'results__sub' }, FF.t('tieBreakRule', 'Quick Tap: the fastest reaction wins the crown.')));

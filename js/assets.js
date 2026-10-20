@@ -1,5 +1,5 @@
 /* ============================================================
-   FAMILY FUN — assets.js
+   PLAYMORA — assets.js
    Asset manager: local file images with SVG/data fallback,
    inline SVG illustrations, and light preloading.
    ============================================================ */

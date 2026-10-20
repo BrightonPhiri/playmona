@@ -1,5 +1,5 @@
 /* ============================================================
-   FAMILY FUN — creativeGames.js
+   PLAYMORA — creativeGames.js
    Five creative/party games:
    - charades           (act out a word)
    - visualCharades     (act out an illustrated scene)
@@ -23,7 +23,7 @@ window.FF = window.FF || {};
 
   function scorers(api) {
     var s = (api.config && api.config.scorers && api.config.scorers.length) ? api.config.scorers : null;
-    if (!s || !s.length) s = [{ id: 'p1', name: 'Player 1', avatar: '😀', color: '#8b5cf6' }];
+    if (!s || !s.length) s = [{ id: 'p1', name: 'Player 1', avatar: null, color: '#8b5cf6' }];
     return s;
   }
 
@@ -37,7 +37,7 @@ window.FF = window.FF || {};
     var root = api.shell.root;
     FF.ui.clear(root);
     var box = FF.ui.div('panel panel--center', [
-      FF.ui.el('h2', {}, '😅 ' + (msg || 'Missing data')),
+      FF.ui.el('h2', {}, '' + (msg || 'Missing data')),
       FF.ui.el('p', {}, 'This game needs a little more content. Please try another game.'),
       FF.UI.button('Back to home', { icon: 'house',  class: 'btn btn-primary', onClick: function () { FF.GameFlow.exitToHome(); } })
     ]);
@@ -83,7 +83,7 @@ window.FF = window.FF || {};
       var item = bag.next();
       api.shell.updateScores(scorer.id);
 
-      wrap.appendChild(FF.ui.div('rv-who', list.length > 1 ? ('📱 Pass the device to ' + scorer.name) : ('Your turn, ' + scorer.name)));
+      wrap.appendChild(FF.ui.div('rv-who', list.length > 1 ? ('Pass the device to ' + scorer.name) : ('Your turn, ' + scorer.name)));
       wrap.appendChild(FF.UI.button('Reveal', { icon: 'eye',
         class: 'btn btn-primary btn-lg',
         onClick: function () { reveal(item, scorer); }
@@ -114,11 +114,11 @@ window.FF = window.FF || {};
       var timer = null;
       var secs = api.config.timer || 60;
       var remaining = secs;
-      var timerEl = FF.ui.div('rv-cat', '⏱ ' + remaining + 's');
+      var timerEl = FF.ui.div('rv-cat', '' + remaining + 's');
       wrap.appendChild(timerEl);
       timer = setInterval(function () {
         remaining--;
-        timerEl.textContent = '⏱ ' + remaining + 's';
+        timerEl.textContent = '' + remaining + 's';
         if (remaining <= 5 && remaining > 0) api.audio.play('warning');
         if (remaining <= 0) {
           clearInterval(timer);
@@ -415,9 +415,9 @@ window.FF = window.FF || {};
         },
         forbidden: function (item) { return item.forbidden || []; },
         buttons: [
-          { label: '✅ Correct', points: 100, sound: 'correct' },
-          { label: '⏭ Pass', points: 0, sound: 'click' },
-          { label: '🚫 Forbidden said', points: 0, sound: 'wrong' }
+          { label: 'Correct', points: 100, sound: 'correct' },
+          { label: 'Pass', points: 0, sound: 'click' },
+          { label: 'Forbidden said', points: 0, sound: 'wrong' }
         ]
       });
     }
@@ -477,7 +477,7 @@ window.FF = window.FF || {};
         FF.ui.clear(root);
         api.shell.updateScores(drawer.id);
         var wrap = FF.ui.div('rv-wrap');
-        wrap.appendChild(FF.ui.div('rv-who', '🎨 ' + drawer.name + ' — draw: ' + prompt));
+        wrap.appendChild(FF.ui.div('rv-who', '' + drawer.name + ' — draw: ' + prompt));
         var board = makeCanvas(root, api);
         var doneBtn = FF.UI.button('Done', { icon: 'check',  class: 'btn btn-primary btn-lg', onClick: function () { votePhase(drawer, board); } });
         wrap.appendChild(doneBtn);
@@ -491,12 +491,12 @@ window.FF = window.FF || {};
         FF.ui.clear(root);
         api.shell.updateScores(drawer.id);
         var wrap = FF.ui.div('rv-wrap');
-        wrap.appendChild(FF.ui.div('rv-who', '👍 Vote on ' + drawer.name + "'s drawing!"));
+        wrap.appendChild(FF.ui.div('rv-who', 'Vote on ' + drawer.name + "'s drawing!"));
         wrap.appendChild(board.wrap);
         wrap.appendChild(FF.ui.div('rv-cat', 'What do you think?'));
         var voted = false;
         var actions = FF.ui.div('vote-actions');
-        [['👍 Great', 120, 'correct'], ['🙂 Good', 80, 'click'], ['😂 Funny', 60, 'streak']].forEach(function (opt) {
+        [['Great', 120, 'correct'], ['Good', 80, 'click'], ['Funny', 60, 'streak']].forEach(function (opt) {
           actions.appendChild(FF.ui.button(opt[0], { class: 'vote-btn', onClick: function () {
             if (voted) return;
             voted = true;
@@ -518,11 +518,11 @@ window.FF = window.FF || {};
   });
 
   /* ============================================================
-     5. FAMILY PICTIONARY
+     5. PICTIONARY
      ============================================================ */
   FF.registerGame({
     id: 'pictionary',
-    name: 'Family Pictionary',
+    name: 'Pictionary',
     description: 'Draw the word and let your team guess it before time runs out.',
     category: 'creative',
     icon: '🎨',
@@ -563,7 +563,7 @@ window.FF = window.FF || {};
 
         var wrap = FF.ui.div('rv-wrap');
         var promptBox = FF.ui.div('rv-prompt');
-        promptBox.appendChild(FF.ui.div('rv-cat', '🎨 ' + drawer.name + ' draws… (keep it secret!)'));
+        promptBox.appendChild(FF.ui.div('rv-cat', '' + drawer.name + ' draws… (keep it secret!)'));
         promptBox.appendChild(FF.ui.div('rv-word', item.word));
         if (item.hint) promptBox.appendChild(FF.ui.div('rv-cat', 'Hint: ' + item.hint));
         wrap.appendChild(promptBox);
@@ -588,7 +588,7 @@ window.FF = window.FF || {};
             api.scoring.add(drawer.id, roundPoints(100, api.config.difficulty), { correct: true });
             var guesser = list[(turnIdx + 1) % list.length];
             if (guesser.id !== drawer.id) api.scoring.add(guesser.id, roundPoints(100, api.config.difficulty), { correct: true });
-            msg.textContent = '🎉 Correct! It was ' + item.word + '.';
+            msg.textContent = 'Correct! It was ' + item.word + '.';
             api.shell.updateScores();
             setTimeout(nextRound, 1600);
           } else {
@@ -611,7 +611,7 @@ window.FF = window.FF || {};
 
         api.shell.setTimer(api.config.timer || 90, function () {
           if (!solved) {
-            msg.textContent = "⏱ Time! The word was " + item.word + '.';
+            msg.textContent = "Time! The word was " + item.word + '.';
             api.audio.play('roundEnd');
             setTimeout(nextRound, 1500);
           }

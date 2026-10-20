@@ -1,5 +1,5 @@
 /* ============================================================
-   FAMILY FUN — quizGames.js
+   PLAYMORA — quizGames.js
    Five quiz / visual games:
      familyQuiz, trueOrFalse, brainBattle, guessWho, pictureQuiz
    Classic script (no ES modules) so the app runs from file://
@@ -228,18 +228,18 @@ window.FF = window.FF || {};
   }
 
   /* ============================================================
-     1. FAMILY QUIZ — 10 turn-based multiple-choice rounds
+     1. QUIZ MIX — 10 turn-based multiple-choice rounds
      ============================================================ */
   FF.registerGame({
     id: 'familyQuiz',
     featured: true,
-    name: 'Family Quiz',
+    name: 'Quiz Mix',
     icon: '🧠',
     category: 'quiz',
     players: [1, 8],
     difficulty: 'Easy',
     duration: 6,
-    tags: ['quick', 'family'],
+    tags: ['quick', 'everyone'],
     modes: ['solo', 'turn', 'team'],
     defaultMode: 'turn',
     description: 'Answer 10 fun multiple-choice questions. Be quick and build a streak!',
@@ -611,7 +611,7 @@ window.FF = window.FF || {};
         const wrap = cardWrap();
         wrap.classList.add('gm-stage--center');
         wrap.appendChild(turnChip(current, FF.t('runOf', 'Run {n} of {total}', { n: runIdx + 1, total: all.length })));
-        wrap.appendChild(FF.ui.div('gm-emoji', current.avatar));
+        wrap.appendChild(FF.Players.avatarEl(current, 'gm-hero-avatar'));
         wrap.appendChild(FF.GameUI.prompt(FF.t('yourRun', '{name}, you’re up!', { name: current.name }), 'xl'));
         wrap.appendChild(FF.GameUI.sub(FF.t('brainRunRules', 'Answer as many questions as you can. One wrong answer, or running out of time, ends your run.')));
         wrap.appendChild(FF.GameUI.action(FF.t('startRun', 'Start my run'), function () { FF.Audio.play('roundStart'); runQuestion(); }, { icon: 'play' }));

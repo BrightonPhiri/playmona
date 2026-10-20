@@ -1,5 +1,5 @@
 /* ============================================================
-   FAMILY FUN — timer.js
+   PLAYMORA — timer.js
    Reusable countdown timers with pause/resume/warning/finish.
    ============================================================ */
 window.FF = window.FF || {};

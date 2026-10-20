@@ -21,7 +21,7 @@ for (let i = 0; i < uniq.length; i += 12) {
 
 const out = [
   '/* ============================================================',
-  '   FAMILY FUN — wordlist.js',
+  '   PLAYMORA — wordlist.js',
   '   Common English words (3–16 letters) used to accept real words',
   '   in Letter Rush, Word Builder and Word Chain.',
   '   Source: google-10000-english-usa-no-swears (MIT, first20hours).',

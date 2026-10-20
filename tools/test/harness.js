@@ -1,4 +1,4 @@
-/* Minimal test harness for Family Fun.
+/* Minimal test harness for PlayMora.
    Node built-ins only. Loads classic `window.FF` scripts via vm. */
 'use strict';
 

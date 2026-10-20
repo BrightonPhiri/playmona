@@ -1,42 +1,39 @@
 /* ============================================================
-   FAMILY FUN — app.js
-   Application shell and screens: home, games library, online,
-   family (players, teams, stats), settings, game night, credits,
-   about. Components come from FF.UI (js/ui-kit.js); styling
-   from css/tokens.css + css/styles.css.
+   PLAYMORA — app.js
+   Application shell and screens: home (dashboard), games library,
+   online, profile (you, players, teams), settings (tabbed), game
+   night, credits, about. The app starts after sign-in (js/auth.js,
+   js/authUI.js). Components come from FF.UI (js/ui-kit.js).
    ============================================================ */
 window.FF = window.FF || {};
 
 (function () {
   'use strict';
 
-  var VERSION = '2.0.0';
+  var VERSION = '3.0.0';
 
   /* ================= Brand ================= */
   FF.Brand = {
-    name: 'Family Fun',
+    name: 'PlayMora',
     version: VERSION,
-    tagline: 'Games for everyone. Play together. Laugh together.',
-    logoSvg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Family Fun logo">' +
-      '<defs><linearGradient id="fflg" x1="0" y1="0" x2="1" y2="1">' +
-      '<stop offset="0" stop-color="#8b5cf6"/><stop offset="1" stop-color="#ec4899"/></linearGradient></defs>' +
-      '<rect x="2" y="2" width="60" height="60" rx="16" fill="url(#fflg)"/>' +
-      '<rect x="8" y="20" width="48" height="26" rx="13" fill="#ffffff" opacity="0.95"/>' +
-      '<g fill="#8b5cf6"><path d="M16 26h6v6h4v6h-4v6h-6v-6h-4v-6h4z"/></g>' +
-      '<g fill="#ec4899"><circle cx="40" cy="31" r="3.2"/><circle cx="47" cy="38" r="3.2"/></g>' +
-      '<path d="M40 46c3 0 5-2 5-4" stroke="#22d3ee" stroke-width="2.4" fill="none" stroke-linecap="round"/>' +
-      '<path d="M52 10l1.2 2.8 3 1.2-3 1.2-1.2 3-1.2-3-3-1.2 3-1.2z" fill="#eab308"/>' +
-      '</svg>',
-    logoImg: 'assets/images/logo.webp',
+    tagline: 'Games for everyone. Everywhere.',
+    site: 'https://playmora.com',
+    markImg: 'assets/brand/mark-256.webp',
 
-    // Render the logo as an <img> (file first, inline SVG fallback).
+    // The logo mark (the gradient "P").
     logo: function (cls, decorative) {
-      return FF.Assets.img({
-        cls: cls || 'brand-logo',
-        alt: decorative ? '' : FF.Brand.name,
-        src: FF.Brand.logoImg,
-        svg: FF.Brand.logoSvg
+      return FF.ui.el('img', {
+        class: cls || 'brand-logo', src: FF.Brand.markImg,
+        alt: decorative ? '' : 'PlayMora', width: 64, height: 64, decoding: 'async'
       });
+    },
+
+    // Mark + "PlayMora" wordmark, as used in the top bar.
+    lockup: function (size) {
+      var wrap = FF.ui.span('brand-lockup' + (size ? ' brand-lockup--' + size : ''));
+      wrap.appendChild(FF.Brand.logo('brand-logo', true));
+      wrap.appendChild(FF.AuthUI ? FF.AuthUI.wordmark() : FF.ui.span('', 'PlayMora'));
+      return wrap;
     }
   };
 
@@ -71,42 +68,122 @@ window.FF = window.FF || {};
 
   // View aliases kept so older links and code paths still land somewhere sensible.
   var ALIASES = {
-    players: { view: 'family', params: { tab: 'players' } },
-    scores: { view: 'family', params: { tab: 'stats' } },
+    family: { view: 'profile', params: {} },
+    players: { view: 'profile', params: { tab: 'players' } },
+    scores: { view: 'profile', params: { tab: 'overview' } },
     favorites: { view: 'games', params: { favorites: true } }
   };
   // Which main destination a view belongs to (for nav highlighting).
-  var NAV_OF = { home: 'home', gamenight: 'home', games: 'games', online: 'online', family: 'family', settings: 'settings', credits: 'settings', about: 'settings' };
+  var NAV_OF = { home: 'home', gamenight: 'home', games: 'games', online: 'online', profile: 'profile', settings: 'settings', credits: 'settings', about: 'settings' };
 
   FF.App = {
     session: { games: 0, wins: {}, totalPoints: 0, players: {} },
     _currentView: 'home',
     _currentParams: {},
     _lib: null,
+    _started: false,
+    _navReady: false,
 
+    /* Boot: device settings first, then the account decides what shows. */
     init: function () {
       FF.Storage.init();
       if (FF.i18n) FF.i18n.init();
       FF.Theme.init();
       FF.Audio.init();
       this.resetLibrary();
-      this.buildShell();
-      FF.Nav.init();
       var self = this;
       if (FF.i18n) {
         FF.i18n.onChange(function () {
-          self.buildShell();
-          self.render(self._currentView || 'home', self._currentParams || {});
+          if (self._started) {
+            self.buildShell();
+            self.render(self._currentView || 'home', self._currentParams || {});
+          } else if (FF.AuthUI && FF.AuthUI.isOpen()) {
+            FF.AuthUI.show('signin');
+          }
         });
       }
+      FF.Auth.onChange(function (s) { self._route(s); });
+      this._splash();
+      FF.Auth.init().then(function (s) { self._route(s); });
+    },
+
+    // A brief branded screen while the account loads.
+    _splash: function () {
+      FF.ui.clear(document.body);
+      var s = FF.ui.el('div', { class: 'splash', id: 'splash', role: 'status', 'aria-label': t('loading', 'Loading') });
+      s.appendChild(FF.Brand.logo('splash__mark', true));
+      document.body.appendChild(s);
+    },
+
+    // Show sign-in, the "make it yours" step, or the app.
+    _route: function (s) {
+      var splash = document.getElementById('splash');
+      if (!s) {
+        if (splash) splash.parentNode.removeChild(splash);
+        this.stop();
+        // The landing page links to play.html?view=signup for new players.
+        var wantsSignup = /[?&]view=signup\b/.test(window.location.search);
+        var cur = FF.AuthUI.current();
+        if (cur === 'personalize') cur = null;
+        FF.AuthUI.show(wantsSignup && !cur ? 'signup' : (cur || 'signin'));
+        return;
+      }
+      if (s.needsProfile || FF.AuthUI._justJoined) {
+        if (splash) splash.parentNode.removeChild(splash);
+        if (FF.AuthUI.current() === 'personalize') return;   // already showing
+        this.stop();
+        FF.AuthUI.show('personalize');
+        return;
+      }
+      if (splash) splash.parentNode.removeChild(splash);
+      FF.AuthUI.hide();
+      if (!this._started) this.start();
+      else this._refreshAccount();
+    },
+
+    start: function () {
+      if (this._started) return;
+      this._started = true;
+      FF.AuthUI.hide();
+      // Drop ?view=signup so signing out later shows the sign-in screen.
+      if (window.location.search && window.history && history.replaceState) {
+        try { history.replaceState(null, '', window.location.pathname + window.location.hash); } catch (e) {}
+      }
+      FF.Players.clearTemporary();
+      this.resetLibrary();
+      this.buildShell();
+      if (!this._navReady) { FF.Nav.init(); this._navReady = true; }
       this.render('home');
 
-      // A shared link like .../familygame/#room=ABC123 goes straight to join.
+      // A shared link like .../play.html#room=ABC123 goes straight to join.
       var joinCode = (FF.Room && FF.Room.codeFromUrl) ? FF.Room.codeFromUrl() : null;
       if (joinCode && onlineEnabled()) {
         FF.Nav.go('online');
         FF.RoomUI.showJoin(this.root(), joinCode);
       }
+    },
+
+    // Signed out: take the app off screen (a running game is closed).
+    stop: function () {
+      if (!this._started) return;
+      this._started = false;
+      if (FF.GameFlow && FF.GameFlow.current) FF.GameFlow.close('home');
+      if (FF.Room && FF.Room.current && FF.Room.current()) { try { FF.Room.leave(); } catch (e) {} }
+      var app = document.getElementById('app');
+      if (app) app.parentNode.removeChild(app);
+      FF.ui.$$('.ff-dialog').forEach(function (d) { d.parentNode.removeChild(d); });
+    },
+
+    _refreshAccount: function () {
+      var chip = document.getElementById('topbar-account');
+      if (chip) chip.parentNode.replaceChild(this.accountButton(), chip);
+      if (this._currentView === 'home' || this._currentView === 'profile') this.render(this._currentView, this._currentParams);
+    },
+
+    // Another device's changes arrived: redraw what is on screen.
+    onSynced: function () {
+      if (!this._started || (FF.GameFlow && FF.GameFlow.current)) return;
+      this.render(this._currentView || 'home', this._currentParams || {});
     },
 
     root: function () { return FF.ui.$('#app-main'); },
@@ -126,8 +203,20 @@ window.FF = window.FF || {};
     },
 
     onGameExit: function () {
-      // Re-render so "Play again" and favourites are fresh.
+      // Re-render so the dashboard, "Play again" and favourites are fresh.
       this.render(this._currentView || 'home', this._currentParams || {});
+    },
+
+    // The signed-in player's avatar in the top bar (opens Profile).
+    accountButton: function () {
+      var p = FF.Auth.profile();
+      var b = FF.ui.el('button', {
+        type: 'button', class: 'account-chip', id: 'topbar-account',
+        'aria-label': t('yourProfile', 'Your profile: {name}', { name: p ? p.displayName : '' }),
+        onclick: function () { FF.App._navTo('profile'); }
+      });
+      if (p) b.appendChild(FF.Avatars.img(p.avatar, 'account-chip__ava'));
+      return b;
     },
 
     /* ================= Shell ================= */
@@ -137,7 +226,7 @@ window.FF = window.FF || {};
         { view: 'games', icon: 'game-controller', label: t('navGames', 'Games') }
       ];
       if (onlineEnabled()) items.push({ view: 'online', icon: 'wifi', label: t('navOnline', 'Online') });
-      items.push({ view: 'family', icon: 'users', label: t('navFamily', 'Family') });
+      items.push({ view: 'profile', icon: 'user', label: t('navProfile', 'Profile') });
       items.push({ view: 'settings', icon: 'sliders', label: t('navSettings', 'Settings') });
       return items;
     },
@@ -168,11 +257,10 @@ window.FF = window.FF || {};
       // Top bar
       var header = FF.ui.el('header', { class: 'topbar' });
       var brand = FF.ui.el('button', {
-        type: 'button', class: 'topbar__brand', 'aria-label': t('homeLabel', 'Family Fun, home'),
+        type: 'button', class: 'topbar__brand', 'aria-label': t('homeLabel', 'PlayMora, home'),
         onclick: function () { self._navTo('home'); }
       });
-      brand.appendChild(FF.Brand.logo('brand-logo', true));
-      brand.appendChild(FF.ui.span('topbar__name', FF.Brand.name));
+      brand.appendChild(FF.Brand.lockup());
       header.appendChild(brand);
 
       var topnav = FF.ui.el('nav', { class: 'topnav', 'aria-label': t('mainNav', 'Main') });
@@ -197,8 +285,9 @@ window.FF = window.FF || {};
         FF.App._navTo('games', { focusSearch: true });
       }));
       if (document.fullscreenEnabled && document.documentElement.requestFullscreen) {
-        tools.appendChild(FF.UI.iconButton('arrows-out', t('fullscreen', 'Full screen'), function () { self.toggleFullscreen(); }));
+        tools.appendChild(FF.UI.iconButton('arrows-out', t('fullscreen', 'Full screen'), function () { self.toggleFullscreen(); }, 'topbar__fs'));
       }
+      tools.appendChild(this.accountButton());
       header.appendChild(tools);
       app.appendChild(header);
 
@@ -208,10 +297,11 @@ window.FF = window.FF || {};
       var footer = FF.ui.el('footer', { class: 'app-footer' });
       var privacy = FF.ui.span('app-footer__privacy');
       privacy.appendChild(icon('shield'));
-      privacy.appendChild(document.createTextNode(t('privacyLine', 'Private by design: no accounts, no ads, and everything stays on this device.')));
+      privacy.appendChild(document.createTextNode(t('privacyLine2', 'No ads, no tracking. Your data stays yours.')));
       footer.appendChild(privacy);
       footer.appendChild(FF.ui.el('button', { type: 'button', class: 'link-btn', onclick: function () { FF.Nav.go('credits'); } }, t('credits', 'Credits')));
       footer.appendChild(FF.ui.el('button', { type: 'button', class: 'link-btn', onclick: function () { FF.Nav.go('about'); } }, t('about', 'About')));
+      footer.appendChild(FF.ui.el('a', { class: 'link-btn', href: 'privacy.html', target: '_blank', rel: 'noopener' }, t('privacy', 'Privacy')));
       footer.appendChild(FF.ui.span('app-footer__ver', 'v' + VERSION));
       app.appendChild(footer);
       app.appendChild(tabbar);
@@ -601,35 +691,36 @@ window.FF = window.FF || {};
       },
 
       home: function (main) {
-        var players = FF.Players.get();
+        var me = FF.Auth.profile() || {};
         var hour = new Date().getHours();
         var greet = hour < 12 ? t('goodMorning', 'Good morning') : (hour < 18 ? t('goodAfternoon', 'Good afternoon') : t('goodEvening', 'Good evening'));
 
+        if (FF.Players.isTemporary()) main.appendChild(FF.App.demoBanner());
+
+        var top = FF.ui.div('home-top');
         var hero = FF.ui.el('section', { class: 'home-hero on-art', 'aria-labelledby': 'home-title' });
-        hero.style.setProperty('--art', FF.Assets.artUrl('ui', 'hero-home'));
+        hero.style.setProperty('--art', FF.Assets.cssUrl(window.innerWidth < 700 ? 'assets/images/ui/hero-cosmic-sm.webp' : 'assets/images/ui/hero-cosmic.webp'));
         var body = FF.ui.div('home-hero__body');
-        body.appendChild(FF.ui.el('p', { class: 'home-hero__eyebrow' }, greet));
+        body.appendChild(FF.ui.el('p', { class: 'home-hero__eyebrow' }, greet + (me.displayName ? ', ' + me.displayName : '')));
         body.appendChild(FF.ui.el('h1', { class: 'home-hero__title', id: 'home-title' }, t('homeTitle', 'What are we playing today?')));
-        var roster = FF.ui.div('home-hero__roster');
-        roster.appendChild(FF.App.avatarStack(players));
-        roster.appendChild(FF.ui.span('home-hero__sub', players.length <= 1
-          ? t('playingSolo', 'Playing solo')
-          : t('playersReady', '{n} players ready', { n: players.length })));
-        var edit = FF.ui.el('button', { type: 'button', class: 'link-btn', style: { color: '#fcd34d' }, onclick: function () { FF.Nav.go('family'); } }, t('editPlayers', 'Edit players'));
-        roster.appendChild(edit);
-        body.appendChild(roster);
+        body.appendChild(FF.ui.el('p', { class: 'home-hero__sub' }, t('homeSub', '{n} games for every age, solo or together.', { n: FF.Games.all().length })));
         hero.appendChild(body);
 
         var actions = FF.ui.div('home-hero__actions');
         actions.appendChild(FF.UI.button(t('quickPlay', 'Quick play'), { class: 'btn-lg btn-primary', icon: 'play', onClick: function () { FF.App.quickPlay(); } }));
-        actions.appendChild(FF.UI.button(t('gameNight', 'Game night'), { class: 'btn-glass', icon: 'moon', onClick: function () { FF.Nav.go('gamenight'); } }));
+        actions.appendChild(FF.UI.button(t('gameNight', 'Game night'), { class: 'btn-glass', icon: 'trophy', onClick: function () { FF.Nav.go('gamenight'); } }));
         if (onlineEnabled()) {
           actions.appendChild(FF.UI.button(t('playTogether', 'Play together'), { class: 'btn-glass', icon: 'wifi', onClick: function () { FF.Nav.go('online'); } }));
         } else {
           actions.appendChild(FF.UI.button(t('quickRound', 'Quick round'), { class: 'btn-glass', icon: 'lightning', onClick: function () { FF.App.quickRound(); } }));
         }
         hero.appendChild(actions);
-        main.appendChild(hero);
+        top.appendChild(hero);
+        top.appendChild(FF.App.crewCard());
+        main.appendChild(top);
+
+        // Stats dashboard, before the game rails.
+        main.appendChild(FF.App.dashboard({ compact: true }));
 
         var allLink = FF.ui.el('button', { type: 'button', class: 'link-btn', onclick: function () { FF.App.resetLibrary(); FF.Nav.go('games'); } }, t('seeAll', 'See all'));
 
@@ -674,7 +765,7 @@ window.FF = window.FF || {};
 
         var gn = FF.ui.el('button', {
           type: 'button', class: 'gamenight-promo',
-          style: { '--art': FF.Assets.artUrl('ui', 'gamenight') },
+          style: { '--art': FF.Assets.cssUrl('assets/images/ui/bg-islands.webp') },
           onclick: function () { FF.Nav.go('gamenight'); }
         });
         var gnIcon = FF.ui.div('gamenight-promo__icon');
@@ -682,7 +773,7 @@ window.FF = window.FF || {};
         gn.appendChild(gnIcon);
         gn.appendChild(FF.ui.div('gamenight-promo__text', [
           FF.ui.el('strong', {}, t('gameNight', 'Game night')),
-          FF.ui.el('span', {}, t('gameNightPromo', 'A tournament of 3 to 10 random games. Crown the family champion.'))
+          FF.ui.el('span', {}, t('gameNightPromo', 'A tournament of 3 to 10 random games. Crown the champion.'))
         ]));
         var cta = FF.ui.span('gamenight-promo__cta', t('start', 'Start'));
         cta.appendChild(icon('arrow-right'));
@@ -816,24 +907,24 @@ window.FF = window.FF || {};
         if (params.focusSearch) setTimeout(function () { input.focus(); }, 30);
       },
 
-      family: function (main, params) {
-        var tab = params.tab || 'players';
-        main.appendChild(FF.App.pageHead(t('navFamily', 'Family'), t('familySub', 'Who is playing, teams, and the medals you have won together.')));
-        var tabs = FF.UI.segmented({
-          label: t('familySections', 'Family sections'),
+      profile: function (main, params) {
+        var tab = params.tab || 'overview';
+        main.appendChild(FF.App.profileHeader());
+        main.appendChild(FF.App.tabs({
+          label: t('profileSections', 'Profile sections'),
           value: tab,
-          options: [
-            { label: t('navPlayers', 'Players'), value: 'players', icon: 'user' },
-            { label: t('teams', 'Teams'), value: 'teams', icon: 'users' },
-            { label: t('stats', 'Stats'), value: 'stats', icon: 'trophy' }
+          tabs: [
+            { id: 'overview', label: t('overview', 'Overview'), icon: 'trophy' },
+            { id: 'players', label: t('navPlayers', 'Players'), icon: 'users' },
+            { id: 'teams', label: t('teams', 'Teams'), icon: 'shield' }
           ],
-          onChange: function (v) { FF.Nav.replace('family', { tab: v }); }
-        });
-        tabs.style.marginBottom = 'var(--sp-4)';
-        main.appendChild(tabs);
-        if (tab === 'teams') FF.App.renderTeams(main);
-        else if (tab === 'stats') FF.App.renderStats(main);
-        else FF.App.renderPlayers(main);
+          onChange: function (v) { FF.Nav.replace('profile', { tab: v }); }
+        }));
+        var panel = FF.ui.el('div', { class: 'tabpanel', role: 'tabpanel', id: 'tabpanel-' + tab, 'aria-labelledby': 'tab-' + tab });
+        main.appendChild(panel);
+        if (tab === 'teams') FF.App.renderTeams(panel);
+        else if (tab === 'players') FF.App.renderPlayers(panel);
+        else FF.App.renderOverview(panel);
       },
 
       gamenight: function (main) {
@@ -859,7 +950,7 @@ window.FF = window.FF || {};
         who.appendChild(FF.App.avatarStack(players, 8));
         var whoText = FF.ui.span('details__note');
         who.appendChild(whoText);
-        who.appendChild(FF.ui.el('button', { type: 'button', class: 'link-btn', onclick: function () { FF.Nav.go('family'); } }, t('editPlayers', 'Edit players')));
+        who.appendChild(FF.ui.el('button', { type: 'button', class: 'link-btn', onclick: function () { FF.Nav.go('profile', { tab: 'players' }); } }, t('editPlayers', 'Edit players')));
         main.appendChild(who);
         function summary() {
           whoText.textContent = t('gnSummary', '{p} will play {r} random games.', { p: players.length === 1 ? t('onePlayer', '1 player') : t('playersCount', '{n} players', { n: players.length }), r: cfg.rounds });
@@ -871,18 +962,96 @@ window.FF = window.FF || {};
         main.appendChild(start);
       },
 
-      settings: function (main) {
+      settings: function (main, params) {
+        var tab = params.tab || FF.Storage.get('lastTab', 'account') || 'account';
         main.appendChild(FF.App.pageHead(t('navSettings', 'Settings')));
+        main.appendChild(FF.App.tabs({
+          label: t('settingsSections', 'Settings sections'),
+          value: tab,
+          scroll: true,
+          tabs: [
+            { id: 'account', label: t('account', 'Account'), icon: 'user' },
+            { id: 'appearance', label: t('appearance', 'Appearance'), icon: 'palette' },
+            { id: 'sound', label: t('sound', 'Sound'), icon: 'speaker' },
+            { id: 'gameplay', label: t('gameplay', 'Gameplay'), icon: 'game-controller' },
+            { id: 'privacy', label: t('privacyData', 'Privacy and data'), icon: 'shield' },
+            { id: 'about', label: t('about', 'About'), icon: 'info' }
+          ],
+          onChange: function (v) { FF.Storage.set('lastTab', v); FF.Nav.replace('settings', { tab: v }); }
+        }));
+        var panel = FF.ui.el('div', { class: 'tabpanel', role: 'tabpanel', id: 'tabpanel-' + tab, 'aria-labelledby': 'tab-' + tab });
+        main.appendChild(panel);
+        var builder = FF.App.settingsTabs[tab] || FF.App.settingsTabs.account;
+        builder(panel);
+      },
 
-        function section(iconKey, title, children, cls) {
-          main.appendChild(FF.App.iconHeading(iconKey, title));
-          var s = FF.ui.el('section', { class: 'settings-section' + (cls ? ' ' + cls : '') });
-          children.forEach(function (c) { if (c) s.appendChild(c); });
-          main.appendChild(s);
-          return s;
+      credits: function (main) {
+        main.appendChild(FF.App.pageHead(t('credits', 'Credits'), t('creditsSub', 'Everything bundled with PlayMora and where it comes from.')));
+        var box = FF.ui.div('panel');
+        [
+          ['Brand and characters', 'The PlayMora logo, character avatars and background artwork were made for PlayMora.'],
+          ['Original assets', 'Illustrations, flag artwork, sound effects and music are original creations made for this project.'],
+          ['Fonts', 'Nunito, Fredoka, Baloo 2, Quicksand and Atkinson Hyperlegible are bundled in assets/fonts/ under the SIL Open Font License.'],
+          ['Icons', 'Interface icons are hand-drawn for PlayMora. The optional Bold style uses Phosphor Icons (MIT license), bundled in assets/icons/phosphor/.'],
+          ['Word list', 'Word games use a bundled list of common English words (google-10000-english-usa-no-swears, MIT license) plus everyday words.'],
+          ['Photographs', 'Real-world photos for the Guess games can be added to assets/images/. See the README "Image Download List" for public-domain sources and attribution.']
+        ].forEach(function (row) {
+          box.appendChild(FF.ui.el('h2', { class: 'panel__heading' }, row[0]));
+          box.appendChild(FF.ui.el('p', {}, row[1]));
+        });
+        main.appendChild(box);
+      },
+
+      about: function (main) {
+        main.appendChild(FF.App.pageHead(t('about', 'About')));
+        main.appendChild(FF.App.aboutCard());
+      }
+    },
+
+    /* ================= Settings tabs ================= */
+    settingsTabs: {
+      account: function (panel) {
+        var p = FF.Auth.profile() || {};
+        var card = FF.ui.el('section', { class: 'settings-section account-card' });
+        var head = FF.ui.div('account-card__head');
+        head.appendChild(FF.Avatars.img(p.avatar, 'account-card__ava'));
+        var who = FF.ui.div('account-card__who');
+        who.appendChild(FF.ui.el('strong', { class: 'account-card__name' }, p.displayName || ''));
+        who.appendChild(FF.ui.span('account-card__user', '@' + (p.username || '')));
+        if (p.email) who.appendChild(FF.ui.span('account-card__email', p.email));
+        head.appendChild(who);
+        card.appendChild(head);
+        var acts = FF.ui.div('btn-stack');
+        acts.appendChild(FF.UI.button(t('editProfile', 'Edit profile'), { icon: 'pencil', onClick: function () { FF.App.editProfile(); } }));
+        if (!FF.Auth.isLocal() && p.provider === 'password') {
+          acts.appendChild(FF.UI.button(t('changePassword', 'Change password'), { icon: 'shield', onClick: function () {
+            FF.Auth.resetPassword(p.email).then(function () {
+              FF.UI.toast(t('passwordEmailSent', 'We emailed you a link to choose a new password.'), { type: 'success' });
+            }).catch(function (e) { FF.UI.toast(e.message, { type: 'error' }); });
+          } }));
         }
+        acts.appendChild(FF.UI.button(t('signOut', 'Sign out'), { class: 'btn-ghost', icon: 'arrow-right', onClick: function () { FF.App.confirmSignOut(); } }));
+        card.appendChild(acts);
+        panel.appendChild(card);
 
-        // Appearance
+        var sync = FF.ui.div('about-privacy');
+        sync.appendChild(icon(FF.Auth.isLocal() ? 'monitor' : 'wifi'));
+        sync.appendChild(FF.ui.el('div', {}, [
+          FF.ui.el('strong', {}, FF.Auth.isLocal() ? t('onThisDevice', 'Saved on this device') : t('syncedTitle', 'Synced to your account')),
+          FF.ui.el('p', { class: 'setting__desc' }, FF.Auth.isLocal()
+            ? t('localDesc', 'This account lives on this device only. Your players and stats do not move to other devices.')
+            : t('syncedDesc', 'Your players, stats, favourites and game settings follow you to any device you sign in on. Photos stay on the device that took them.'))
+        ]));
+        panel.appendChild(sync);
+
+        FF.App.settingsSection(panel, 'alert', t('dangerZone', 'Danger zone'), [
+          FF.UI.settingRow(t('deleteAccount', 'Delete account'),
+            FF.UI.button(t('deleteAccountBtn', 'Delete my account'), { class: 'btn-danger', icon: 'trash', onClick: function () { FF.App.confirmDeleteAccount(); } }),
+            t('deleteAccountDesc', 'Permanently removes your account, profile, players and stats. This cannot be undone.'))
+        ], 'settings-section--danger');
+      },
+
+      appearance: function (panel) {
         var accent = FF.ui.el('div', { class: 'accent-picker', role: 'radiogroup', 'aria-label': t('accentColour', 'Accent colour') });
         FF.Theme.accents.forEach(function (a) {
           var on = FF.Theme.getAccent() === a.id;
@@ -890,12 +1059,12 @@ window.FF = window.FF || {};
             type: 'button', class: 'accent-swatch' + (on ? ' active' : ''), role: 'radio',
             'aria-checked': on ? 'true' : 'false', 'aria-label': a.name, title: a.name,
             style: { background: a.color },
-            onclick: function () { FF.Theme.setAccent(a.id); FF.Nav.replace('settings'); }
+            onclick: function () { FF.Theme.setAccent(a.id); FF.Nav.replace('settings', { tab: 'appearance' }); }
           });
           if (on) b.appendChild(icon('check'));
           accent.appendChild(b);
         });
-        section('palette', t('appearance', 'Appearance'), [
+        FF.App.settingsSection(panel, 'palette', t('lookAndFeel', 'Look and feel'), [
           FF.UI.settingRow(t('theme', 'Theme'), FF.UI.segmented({
             label: t('theme', 'Theme'), value: FF.Theme.getTheme(),
             options: [
@@ -911,7 +1080,9 @@ window.FF = window.FF || {};
             description: t('categoryColoursDesc', 'Each kind of game keeps its own colour, which helps younger players find them.'),
             checked: FF.Theme.getMixAccents(),
             onChange: function (on) { FF.Theme.setMixAccents(on); }
-          }),
+          })
+        ]);
+        FF.App.settingsSection(panel, 'text-size', t('reading', 'Reading and motion'), [
           FF.UI.settingRow(t('textSize', 'Text size'), FF.UI.segmented({
             label: t('textSize', 'Text size'), value: FF.Theme.getTextSize(),
             options: FF.Theme.textSizes.map(function (s) { return { label: t('textSize_' + s.id, s.name), value: s.id }; }),
@@ -934,22 +1105,29 @@ window.FF = window.FF || {};
             onChange: function (on) { FF.Settings.set('animations', on); }
           })
         ]);
+        var langNote = FF.ui.el('p', { class: 'setting__desc settings-note' }, t('langBetaNote', 'Menus are translated. Game questions and words are in English for now.'));
+        FF.App.settingsSection(panel, 'globe', t('language', 'Language'), [FF.App.languageControl(), langNote]);
+        FF.App.settingsSection(panel, 'sliders', t('icons', 'Icons'), [
+          FF.UI.settingRow(t('iconStyle', 'Icon style'), FF.UI.segmented({
+            label: t('iconStyle', 'Icon style'), value: FF.Icons.getStyle(),
+            options: [{ label: t('iconsHand', 'Hand-drawn'), value: 'custom' }, { label: t('iconsBold', 'Bold'), value: 'phosphor' }],
+            onChange: function (v) { FF.Icons.setStyle(v); FF.App.buildShell(); FF.Nav.replace('settings', { tab: 'appearance' }); }
+          }))
+        ]);
+      },
 
-        // Language
-        var langNote = FF.ui.el('p', { class: 'setting__desc', style: { padding: '0 0 var(--sp-3)' } }, t('langBetaNote', 'Menus are translated. Game questions and words are in English for now.'));
-        section('globe', t('language', 'Language'), [FF.App.languageControl(), langNote]);
-
-        // Sound
+      sound: function (panel) {
         var vol = FF.ui.el('input', { type: 'range', min: 0, max: 100, value: Math.round(FF.Audio.volume * 100), 'aria-label': t('volume', 'Volume'),
           oninput: function (e) { FF.Audio.setVolume(e.target.value / 100); FF.Settings.set('volume', FF.Audio.volume); } });
-        section('speaker', t('sound', 'Sound'), [
+        FF.App.settingsSection(panel, 'speaker', t('sound', 'Sound'), [
           FF.UI.switchRow({ label: t('soundEffects', 'Sound effects'), checked: !!FF.Settings.get('sound'), onChange: function (on) { FF.Audio.setEffects(on); FF.Settings.set('sound', on); } }),
           FF.UI.switchRow({ label: t('music', 'Music'), checked: !!FF.Settings.get('music'), onChange: function (on) { FF.Audio.setMusic(on); FF.Settings.set('music', on); } }),
           FF.UI.settingRow(t('volume', 'Volume'), vol)
         ]);
+      },
 
-        // Gameplay
-        section('game-controller', t('gameplay', 'Gameplay'), [
+      gameplay: function (panel) {
+        FF.App.settingsSection(panel, 'game-controller', t('gameplay', 'Gameplay'), [
           FF.UI.settingRow(t('defaultDifficulty', 'Default difficulty'), FF.UI.segmented({
             label: t('defaultDifficulty', 'Default difficulty'), value: FF.Settings.get('difficulty'),
             options: [{ label: t('easy', 'Easy'), value: 'easy' }, { label: t('normal', 'Normal'), value: 'normal' }, { label: t('hard', 'Hard'), value: 'hard' }],
@@ -960,126 +1138,540 @@ window.FF = window.FF || {};
           FF.UI.switchRow({ label: t('randomOrder', 'Random player order'), checked: !!FF.Settings.get('randomOrder'), onChange: function (on) { FF.Settings.set('randomOrder', on); } }),
           FF.UI.switchRow({ label: t('randomQuestions', 'Shuffle questions'), checked: !!FF.Settings.get('randomQuestions'), onChange: function (on) { FF.Settings.set('randomQuestions', on); } })
         ]);
+        FF.App.settingsSection(panel, 'dice', t('tryItOut', 'Try it out'), [
+          FF.UI.settingRow(t('demoMode', 'Sample players'),
+            FF.UI.button(FF.Players.isTemporary() ? t('endDemo', 'End sample players') : t('runDemo', 'Play with 4 sample players'), {
+              icon: 'dice',
+              onClick: function () { if (FF.Players.isTemporary()) FF.App.endDemo(); else FF.App.demo(); }
+            }),
+            t('demoDesc', 'Try a game with four sample players. Your saved players are not changed.'))
+        ]);
+      },
 
-        // Privacy & data
+      privacy: function (panel) {
         var privacy = FF.ui.div('about-privacy');
         privacy.appendChild(icon('shield'));
         privacy.appendChild(FF.ui.el('div', {}, [
-          FF.ui.el('strong', {}, t('privacyTitle', 'Private by design')),
-          FF.ui.el('p', { class: 'setting__desc' }, t('privacyBody', 'No accounts, no ads, no tracking. Names, photos, scores and settings stay on this device. Online rooms share only names and emoji pictures, and only while you are in a room.'))
+          FF.ui.el('strong', {}, t('privacyTitle', 'Your data, kept simple')),
+          FF.ui.el('p', { class: 'setting__desc' }, FF.Auth.isLocal()
+            ? t('privacyBodyLocal', 'No ads and no tracking. Everything is saved on this device. Online rooms share only your display name and character, and only while you are in a room.')
+            : t('privacyBodyCloud', 'No ads and no tracking. Your account keeps your profile, players, stats and settings so they follow you between devices. Photos never leave the device that took them. Online rooms share only your display name and character.'))
         ]));
-        var dataBtns = FF.ui.div('btn-stack');
-        dataBtns.appendChild(FF.UI.button(t('clearFavorites', 'Clear favourites'), { icon: 'star', onClick: function () { FF.Favorites.clear(); FF.UI.toast(t('favoritesCleared', 'Favourites cleared')); } }));
-        dataBtns.appendChild(FF.UI.button(t('clearRecents', 'Clear recently played'), { icon: 'clock', onClick: function () { FF.Recents.clear(); FF.UI.toast(t('recentsCleared', 'Recently played cleared')); } }));
-        section('shield', t('privacyData', 'Privacy and data'), [privacy, dataBtns]);
-
-        // Advanced
-        section('sliders', t('advanced', 'Advanced'), [
-          FF.UI.settingRow(t('iconStyle', 'Icon style'), FF.UI.segmented({
-            label: t('iconStyle', 'Icon style'), value: FF.Icons.getStyle(),
-            options: [{ label: t('iconsHand', 'Hand-drawn'), value: 'custom' }, { label: t('iconsBold', 'Bold'), value: 'phosphor' }],
-            onChange: function (v) { FF.Icons.setStyle(v); FF.App.buildShell(); FF.Nav.replace('settings'); }
-          })),
-          FF.UI.settingRow(t('demoMode', 'Demo mode'), FF.UI.button(t('runDemo', 'Add 4 sample players and play'), { icon: 'dice', onClick: function () { FF.App.demo(); } }), t('demoDesc', 'Handy for trying games quickly.'))
+        panel.appendChild(privacy);
+        var link = FF.ui.el('a', { class: 'link-btn', href: 'privacy.html', target: '_blank', rel: 'noopener' }, t('readPrivacy', 'Read the privacy notice'));
+        panel.appendChild(link);
+        FF.App.settingsSection(panel, 'stack', t('yourData', 'Your data'), [
+          FF.UI.settingRow(t('clearFavorites', 'Clear favourites'), FF.UI.button(t('clear', 'Clear'), { icon: 'star', onClick: function () { FF.Favorites.clear(); FF.UI.toast(t('favoritesCleared', 'Favourites cleared')); } })),
+          FF.UI.settingRow(t('clearRecents', 'Clear recently played'), FF.UI.button(t('clear', 'Clear'), { icon: 'clock', onClick: function () { FF.Recents.clear(); FF.UI.toast(t('recentsCleared', 'Recently played cleared')); } })),
+          FF.UI.settingRow(t('resetAll', 'Reset stats and players'),
+            FF.UI.button(t('resetAllBtn', 'Reset'), { class: 'btn-danger', icon: 'trash', onClick: function () { FF.App.confirmReset(); } }),
+            t('resetDesc', 'Clears your saved players, teams, favourites and stats. Your account stays.'))
         ]);
+      },
 
-        // Danger zone
-        section('alert', t('resetTitle', 'Start over'), [
-          FF.UI.settingRow(t('resetAll', 'Reset everything'),
-            FF.UI.button(t('resetAllBtn', 'Reset all data'), { class: 'btn-danger', icon: 'trash', onClick: function () { FF.App.confirmReset(); } }),
-            t('resetDesc', 'Removes players, teams, favourites, stats and settings from this device.'))
-        ], 'settings-section--danger');
-
+      about: function (panel) {
+        panel.appendChild(FF.App.aboutCard());
         var info = FF.ui.div('btn-stack');
         info.appendChild(FF.UI.button(t('credits', 'Credits'), { class: 'btn-ghost', icon: 'info', onClick: function () { FF.Nav.go('credits'); } }));
-        info.appendChild(FF.UI.button(t('aboutFF', 'About Family Fun'), { class: 'btn-ghost', icon: 'heart', onClick: function () { FF.Nav.go('about'); } }));
-        main.appendChild(info);
-      },
-
-      credits: function (main) {
-        main.appendChild(FF.App.pageHead(t('credits', 'Credits'), t('creditsSub', 'Everything bundled with Family Fun and where it comes from.')));
-        var box = FF.ui.div('panel');
-        [
-          ['Original assets', 'Logo, app icon, favicon, illustrations, flag artwork, sound effects and music are original creations made for this project.'],
-          ['Fonts', 'Nunito, Fredoka, Baloo 2, Quicksand and Atkinson Hyperlegible are bundled in assets/fonts/ under the SIL Open Font License.'],
-          ['Icons', 'Interface icons are hand-drawn for Family Fun. The optional Bold style uses Phosphor Icons (MIT license), bundled in assets/icons/phosphor/.'],
-          ['Word list', 'Word games use a bundled list of common English words (google-10000-english-usa-no-swears, MIT license) plus everyday family words.'],
-          ['Photographs', 'Real-world photos for the Guess games can be added to assets/images/. See the README "Image Download List" for public-domain sources and attribution.'],
-          ['Attribution', 'Keep attribution for any third-party images you add next to the files, for example a credits.txt in the same folder.']
-        ].forEach(function (row) {
-          box.appendChild(FF.ui.el('h2', { style: { fontSize: 'var(--fs-lg)', marginTop: 'var(--sp-4)' } }, row[0]));
-          box.appendChild(FF.ui.el('p', {}, row[1]));
-        });
-        main.appendChild(box);
-      },
-
-      about: function (main) {
-        main.appendChild(FF.App.pageHead(t('about', 'About')));
-        var box = FF.ui.div('panel panel--center');
-        box.appendChild(FF.Brand.logo('brand-logo brand-logo--hero', true));
-        box.appendChild(FF.ui.el('h2', { style: { fontSize: 'var(--fs-2xl)' } }, FF.Brand.name));
-        box.appendChild(FF.ui.el('p', {}, FF.Brand.tagline));
-        box.appendChild(FF.ui.el('p', {}, t('aboutBody', 'A family game hub: quizzes, word games, party games and more, for one player or a whole room. Play on one screen, on the TV, or on everyone’s phones.')));
-        var privacy = FF.ui.div('about-privacy');
-        privacy.appendChild(icon('shield'));
-        privacy.appendChild(FF.ui.el('div', {}, [
-          FF.ui.el('strong', {}, t('privacyTitle', 'Private by design')),
-          FF.ui.el('p', { class: 'setting__desc' }, t('privacyAbout', 'Family Fun needs no account and works offline. Your settings and scores stay on this device.'))
-        ]));
-        box.appendChild(privacy);
-        box.appendChild(FF.ui.el('p', { class: 'about-ver' }, t('version', 'Version {v}', { v: VERSION })));
-        main.appendChild(box);
+        info.appendChild(FF.ui.el('a', { class: 'btn btn-ghost', href: 'privacy.html', target: '_blank', rel: 'noopener' }, t('privacyNotice', 'Privacy notice')));
+        panel.appendChild(info);
       }
     },
 
-    /* ================= Family sub-views ================= */
-    renderPlayers: function (main) {
-      var players = FF.Players.get();
-      var addBtn = FF.UI.button(t('addPlayer', 'Add player'), { class: 'btn-primary', icon: 'plus', onClick: function () { FF.App.addPlayer(); } });
-      if (players.length >= FF.Players.MAX) addBtn.disabled = true;
-      main.appendChild(FF.App.sectionHead(t('playersOf', 'Players ({n} of {max})', { n: players.length, max: FF.Players.MAX }), addBtn));
+    settingsSection: function (panel, iconKey, title, children, cls) {
+      panel.appendChild(FF.App.iconHeading(iconKey, title));
+      var s = FF.ui.el('section', { class: 'settings-section' + (cls ? ' ' + cls : '') });
+      children.forEach(function (c) { if (c) s.appendChild(c); });
+      panel.appendChild(s);
+      return s;
+    },
 
-      var list = FF.ui.el('ul', { class: 'player-list', role: 'list', style: { listStyle: 'none' } });
-      players.forEach(function (p, i) {
-        var row = FF.ui.el('li', { class: 'player-row', style: { '--p-color': p.color } });
-        var avaBtn = FF.ui.el('button', { type: 'button', class: 'player-row__avatar', onclick: function () { FF.App.pickAvatar(p.id); }, 'aria-label': t('changePictureFor', 'Change picture for {name}', { name: p.name }) });
+    aboutCard: function () {
+      var box = FF.ui.div('panel panel--center about-card');
+      box.appendChild(FF.Brand.logo('brand-logo brand-logo--hero', true));
+      box.appendChild(FF.AuthUI.wordmark('wordmark--lg'));
+      box.appendChild(FF.ui.el('p', { class: 'about-card__tag' }, t('tagline', FF.Brand.tagline)));
+      box.appendChild(FF.ui.el('p', {}, t('aboutBody', 'Quizzes, word games, party games and more for one player or a whole room. Play on one screen, on the TV, or on everyone’s phones, online or offline.')));
+      box.appendChild(FF.ui.el('p', { class: 'about-ver' }, t('version', 'Version {v}', { v: VERSION }) + ' · playmora.com'));
+      return box;
+    },
+
+    // Accessible tab bar (role=tablist, arrow keys). opts: { label, value, tabs:[{id,label,icon}], onChange, scroll }
+    tabs: function (opts) {
+      var bar = FF.ui.el('div', { class: 'tabs' + (opts.scroll ? ' tabs--scroll' : ''), role: 'tablist', 'aria-label': opts.label });
+      var buttons = [];
+      opts.tabs.forEach(function (tb) {
+        var on = tb.id === opts.value;
+        var b = FF.ui.el('button', {
+          type: 'button', class: 'tabs__tab' + (on ? ' active' : ''), role: 'tab', id: 'tab-' + tb.id,
+          'aria-selected': on ? 'true' : 'false', 'aria-controls': 'tabpanel-' + tb.id, tabindex: on ? 0 : -1
+        });
+        if (tb.icon) b.appendChild(icon(tb.icon));
+        b.appendChild(FF.ui.span('', tb.label));
+        b.addEventListener('click', function () { if (!on) opts.onChange(tb.id); });
+        buttons.push(b);
+        bar.appendChild(b);
+      });
+      bar.addEventListener('keydown', function (e) {
+        var i = buttons.indexOf(document.activeElement);
+        if (i === -1) return;
+        var n = null;
+        if (e.key === 'ArrowRight') n = (i + 1) % buttons.length;
+        else if (e.key === 'ArrowLeft') n = (i - 1 + buttons.length) % buttons.length;
+        else if (e.key === 'Home') n = 0;
+        else if (e.key === 'End') n = buttons.length - 1;
+        if (n == null) return;
+        e.preventDefault();
+        opts.onChange(opts.tabs[n].id);
+        setTimeout(function () { var el = document.getElementById('tab-' + opts.tabs[n].id); if (el) el.focus(); }, 0);
+      });
+      // Keep the chosen tab in view on narrow screens.
+      setTimeout(function () {
+        var act = bar.querySelector('.active');
+        if (act && act.scrollIntoView && opts.scroll) { try { act.scrollIntoView({ inline: 'center', block: 'nearest' }); } catch (e) {} }
+      }, 0);
+      return bar;
+    },
+
+    /* ================= Who's playing ================= */
+    /* The saved roster as tappable avatars: tap to bring someone in or
+       let them sit out. Nobody is deleted to play solo. */
+    crewCard: function (opts) {
+      opts = opts || {};
+      var changed = function () { if (opts.onChange) opts.onChange(); else FF.App.refreshCrew(); };
+      var all = FF.Players.all();
+      var temp = FF.Players.isTemporary();
+      var playing = FF.Players.get();
+      var card = FF.ui.el('section', { class: 'crew' + (opts.embedded ? ' crew--embedded' : ''), 'aria-labelledby': 'crew-title' });
+      var head = FF.ui.div('crew__head');
+      head.appendChild(FF.ui.el('h2', { class: 'crew__title', id: 'crew-title' }, t('whosPlaying', 'Who’s playing')));
+      head.appendChild(FF.ui.span('crew__count', playing.length === 1
+        ? t('soloNow', 'Solo')
+        : t('nPlaying', '{n} playing', { n: playing.length })));
+      card.appendChild(head);
+
+      var list = FF.ui.el('div', { class: 'crew__list', role: 'group', 'aria-label': t('tapToToggle', 'Tap someone to bring them in or let them sit out') });
+      (temp ? playing : all).forEach(function (p) {
+        var inGame = temp || p.active;
+        var b = FF.ui.el('button', {
+          type: 'button', class: 'crew__member' + (inGame ? ' is-in' : ''),
+          'aria-pressed': inGame ? 'true' : 'false',
+          'aria-label': p.name + (p.isMe ? ' (' + t('you', 'You') + ')' : '') + ', ' + (inGame ? t('isPlaying', 'playing') : t('sittingOut', 'sitting out')),
+          disabled: temp
+        });
+        var ava = FF.ui.span('crew__ava');
+        ava.appendChild(FF.Players.avatarEl(p, 'crew__img'));
+        var badge = FF.ui.span('crew__badge');
+        badge.appendChild(icon(inGame ? 'check' : 'plus'));
+        ava.appendChild(badge);
+        b.appendChild(ava);
+        b.appendChild(FF.ui.span('crew__name', p.isMe ? t('you', 'You') : p.name));
+        b.addEventListener('click', function () {
+          var before = FF.Players.get().length;
+          FF.Players.setActive(p.id, !p.active);
+          if (p.active && before <= 1) FF.UI.toast(t('keepOneIn', 'At least one player stays in the game.'));
+          FF.Audio.play('click');
+          changed();
+        });
+        list.appendChild(b);
+      });
+      if (!temp && all.length < FF.Players.MAX_SAVED) {
+        var add = FF.ui.el('button', { type: 'button', class: 'crew__member crew__add', 'aria-label': t('addPlayer', 'Add player') });
+        var addAva = FF.ui.span('crew__ava crew__ava--add');
+        addAva.appendChild(icon('plus'));
+        add.appendChild(addAva);
+        add.appendChild(FF.ui.span('crew__name', t('add', 'Add')));
+        add.addEventListener('click', function () { FF.App.quickAddPlayer(opts.onChange); });
+        list.appendChild(add);
+      }
+      card.appendChild(list);
+
+      var acts = FF.ui.div('crew__actions');
+      if (!temp) {
+        var me = FF.Players.me();
+        if (me && !(playing.length === 1 && playing[0].isMe)) {
+          acts.appendChild(FF.UI.button(t('justMe', 'Just me'), { class: 'btn-sm', icon: 'user', onClick: function () { FF.Players.only(me.id); changed(); } }));
+        }
+        if (!opts.embedded) acts.appendChild(FF.UI.button(t('managePlayers', 'Manage players'), { class: 'btn-sm btn-ghost', icon: 'sliders', onClick: function () { FF.Nav.go('profile', { tab: 'players' }); } }));
+      }
+      card.appendChild(acts);
+      return card;
+    },
+
+    refreshCrew: function () {
+      var old = document.querySelector('.crew');
+      if (old) {
+        var fresh = FF.App.crewCard();
+        old.parentNode.replaceChild(fresh, old);
+        var region = document.getElementById('ff-live');
+        if (region) FF.UI.announce(FF.Players.get().map(function (p) { return p.isMe ? t('you', 'You') : p.name; }).join(', '));
+      }
+    },
+
+    // Add a player from the home screen: name + character in one sheet.
+    quickAddPlayer: function (onDone) {
+      var body = FF.ui.div('');
+      var nameId = FF.UI.uid('name');
+      body.appendChild(FF.ui.el('label', { class: 'field__label', for: nameId }, t('playerName', 'Player name')));
+      var input = FF.ui.el('input', { id: nameId, type: 'text', class: 'input', maxlength: 24, autocomplete: 'off', placeholder: t('namePlaceholder', 'Name') });
+      body.appendChild(input);
+      var chosen = FF.Avatars.random(FF.Players.all().map(function (p) { return p.avatar; }));
+      var grid = FF.ui.el('div', { class: 'avatar-grid avatar-grid--compact', role: 'radiogroup', 'aria-label': t('characters', 'Characters') });
+      FF.Avatars.all().forEach(function (a) {
+        var on = a.id === chosen;
+        var b = FF.ui.el('button', { type: 'button', class: 'avatar-btn' + (on ? ' active' : ''), role: 'radio', 'aria-checked': on ? 'true' : 'false', 'aria-label': a.name, dataset: { avatar: a.id } });
+        b.appendChild(FF.Avatars.img(a.id, 'avatar-btn__img'));
+        b.addEventListener('click', function () {
+          chosen = a.id;
+          FF.ui.$$('.avatar-btn', grid).forEach(function (x) { var s = x.dataset.avatar === a.id; x.classList.toggle('active', s); x.setAttribute('aria-checked', s ? 'true' : 'false'); });
+        });
+        grid.appendChild(b);
+      });
+      body.appendChild(grid);
+      var sheet = FF.UI.sheet({
+        title: t('addPlayer', 'Add player'),
+        body: body,
+        wide: true,
+        actions: [
+          { label: t('cancel', 'Cancel') },
+          { label: t('addAndPlay', 'Add to the game'), primary: true, icon: 'plus', onClick: function () {
+            FF.Players.add(input.value, chosen);
+            FF.Audio.play('select');
+            if (onDone) onDone(); else FF.App.refreshCrew();
+          } }
+        ]
+      });
+      setTimeout(function () { try { input.focus(); } catch (e) {} }, 60);
+      return sheet;
+    },
+
+    demoBanner: function () {
+      var b = FF.ui.el('div', { class: 'notice', role: 'status' });
+      b.appendChild(icon('dice'));
+      b.appendChild(FF.ui.span('notice__text', t('demoOn', 'Sample players are on. Your saved players are safe.')));
+      b.appendChild(FF.UI.button(t('endDemo', 'End sample players'), { class: 'btn-sm', onClick: function () { FF.App.endDemo(); } }));
+      return b;
+    },
+
+    /* ================= Dashboard ================= */
+    dashboard: function (opts) {
+      opts = opts || {};
+      var s = FF.Stats.get();
+      var me = FF.Auth.profile() || {};
+      var lvl = FF.Stats.level(s.xp);
+      var section = FF.ui.el('section', { class: 'dash', 'aria-labelledby': 'dash-title' });
+      var head = FF.ui.div('section-head');
+      head.appendChild(FF.ui.el('h2', { class: 'section-title', id: 'dash-title' }, t('yourStats', 'Your stats')));
+      if (opts.compact) head.appendChild(FF.ui.el('button', { type: 'button', class: 'link-btn', onclick: function () { FF.Nav.go('profile'); } }, t('viewProfile', 'View profile')));
+      section.appendChild(head);
+      var grid = FF.ui.div('dash__grid');
+
+      // Level card: avatar inside an XP ring.
+      var level = FF.ui.el('article', { class: 'dash-card dash-level' });
+      var ring = FF.ui.div('xp-ring');
+      ring.style.setProperty('--p', Math.round(lvl.progress * 100));
+      ring.setAttribute('role', 'img');
+      ring.setAttribute('aria-label', t('levelProgress', 'Level {l}: {x} of {n} XP to the next level', { l: lvl.level, x: lvl.into, n: lvl.need }));
+      ring.appendChild(FF.Avatars.img(me.avatar, 'xp-ring__ava'));
+      ring.appendChild(FF.ui.span('xp-ring__level', String(lvl.level)));
+      level.appendChild(ring);
+      var lvlText = FF.ui.div('dash-level__text');
+      lvlText.appendChild(FF.ui.el('span', { class: 'dash-card__label' }, t('level', 'Level')));
+      lvlText.appendChild(FF.ui.el('strong', { class: 'dash-level__num' }, t('levelN', 'Level {n}', { n: lvl.level })));
+      var bar = FF.ui.div('xp-bar');
+      var fill = FF.ui.div('xp-bar__fill');
+      fill.style.width = Math.round(lvl.progress * 100) + '%';
+      bar.appendChild(fill);
+      lvlText.appendChild(bar);
+      lvlText.appendChild(FF.ui.el('span', { class: 'dash-card__note' }, t('xpToNext', '{x} / {n} XP to level {l}', { x: FF.util.formatNumber(lvl.into), n: FF.util.formatNumber(lvl.need), l: lvl.level + 1 })));
+      var streak = FF.Stats.dayStreak();
+      var chip = FF.ui.span('dash-streak' + (streak ? ' is-on' : ''));
+      chip.appendChild(icon('flame'));
+      chip.appendChild(document.createTextNode(streak === 1 ? t('dayStreak1', '1 day streak') : t('dayStreakN', '{n} day streak', { n: streak })));
+      lvlText.appendChild(chip);
+      level.appendChild(lvlText);
+      grid.appendChild(level);
+
+      // Four headline numbers.
+      var acc = s.quizAnswered ? Math.round(s.quizCorrect / s.quizAnswered * 100) : null;
+      [
+        { key: 'played', iconKey: 'game-controller', value: FF.util.formatNumber(s.gamesPlayed), label: t('statAllTime', 'Games played'), tone: 'blue' },
+        { key: 'wins', iconKey: 'trophy', value: FF.util.formatNumber(s.myWins || 0), label: t('statWins', 'Wins'), tone: 'yellow' },
+        { key: 'streak', iconKey: 'flame', value: FF.util.formatNumber(s.bestStreak || 0), label: t('statStreak', 'Best answer streak'), tone: 'orange' },
+        { key: 'acc', iconKey: 'target', value: acc == null ? '—' : acc + '%', label: t('statAccuracy', 'Quiz accuracy'), tone: 'green', ring: acc }
+      ].forEach(function (k) {
+        var c = FF.ui.el('article', { class: 'dash-card dash-kpi dash-kpi--' + k.tone });
+        var ic = FF.ui.span('dash-kpi__icon');
+        ic.appendChild(icon(k.iconKey));
+        c.appendChild(ic);
+        c.appendChild(FF.ui.el('strong', { class: 'dash-kpi__value' }, k.value));
+        c.appendChild(FF.ui.el('span', { class: 'dash-card__label' }, k.label));
+        grid.appendChild(c);
+      });
+
+      // This week: games per day (single series, one hue).
+      var days = FF.Stats.lastDays(7);
+      var weekTotal = days.reduce(function (a, d) { return a + d.count; }, 0);
+      var max = Math.max(1, days.reduce(function (a, d) { return Math.max(a, d.count); }, 0));
+      var week = FF.ui.el('article', { class: 'dash-card dash-week' });
+      var wh = FF.ui.div('dash-card__head');
+      wh.appendChild(FF.ui.el('h3', { class: 'dash-card__title' }, t('thisWeek', 'This week')));
+      wh.appendChild(FF.ui.span('dash-card__note', weekTotal === 1 ? t('oneGame', '1 game') : t('gamesCount', '{n} games', { n: weekTotal })));
+      week.appendChild(wh);
+      var lang = FF.i18n ? FF.i18n.getLang() : 'en';
+      var chart = FF.ui.el('div', { class: 'bars', 'aria-hidden': 'true' });
+      var table = FF.ui.el('table', { class: 'sr-only' });
+      table.appendChild(FF.ui.el('caption', {}, t('gamesPerDay', 'Games played per day this week')));
+      days.forEach(function (d, i) {
+        var dayName;
+        try { dayName = d.date.toLocaleDateString(lang, { weekday: 'short' }); } catch (e) { dayName = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.date.getDay()]; }
+        var col = FF.ui.div('bars__col' + (i === days.length - 1 ? ' is-today' : ''));
+        col.title = dayName + ': ' + d.count;
+        var track = FF.ui.div('bars__track');
+        var b = FF.ui.div('bars__bar' + (d.count ? '' : ' is-zero'));
+        b.style.height = (d.count ? Math.max(8, Math.round(d.count / max * 100)) : 0) + '%';
+        track.appendChild(b);
+        if (d.count) col.appendChild(FF.ui.span('bars__val', String(d.count)));
+        col.appendChild(track);
+        col.appendChild(FF.ui.span('bars__day', dayName));
+        chart.appendChild(col);
+        var tr = FF.ui.el('tr', {});
+        tr.appendChild(FF.ui.el('th', { scope: 'row' }, dayName));
+        tr.appendChild(FF.ui.el('td', {}, String(d.count)));
+        table.appendChild(tr);
+      });
+      week.appendChild(chart);
+      week.appendChild(table);
+      if (!weekTotal) week.appendChild(FF.ui.el('p', { class: 'dash-card__note dash-week__empty' }, t('weekEmpty', 'Play a game to start this week’s chart.')));
+      grid.appendChild(week);
+
+      // Favourite kinds of game.
+      var cats = Object.keys(s.byCategory || {}).map(function (id) { return { id: id, n: s.byCategory[id] }; })
+        .sort(function (a, b) { return b.n - a.n; }).slice(0, 4);
+      var catCard = FF.ui.el('article', { class: 'dash-card dash-cats' });
+      catCard.appendChild(FF.ui.el('h3', { class: 'dash-card__title' }, t('topCategories', 'Favourite kinds')));
+      if (cats.length) {
+        var topN = cats[0].n;
+        var ul = FF.ui.el('ul', { class: 'hbars' });
+        cats.forEach(function (c) {
+          var m = FF.Categories.meta(c.id);
+          var li = FF.ui.el('li', { class: 'hbars__row', dataset: { cat: c.id } });
+          var lab = FF.ui.span('hbars__label');
+          lab.appendChild(icon(m.iconKey));
+          lab.appendChild(document.createTextNode(m.name));
+          li.appendChild(lab);
+          var track = FF.ui.span('hbars__track');
+          var fillEl = FF.ui.span('hbars__fill');
+          fillEl.style.width = Math.max(6, Math.round(c.n / topN * 100)) + '%';
+          track.appendChild(fillEl);
+          li.appendChild(track);
+          li.appendChild(FF.ui.span('hbars__val', String(c.n)));
+          ul.appendChild(li);
+        });
+        catCard.appendChild(ul);
+      } else {
+        catCard.appendChild(FF.ui.el('p', { class: 'dash-card__note' }, t('catsEmpty', 'Your most-played kinds of game will show here.')));
+      }
+      grid.appendChild(catCard);
+
+      // Medals.
+      var unlocked = FF.Stats.ACHIEVEMENTS.filter(function (a) { return FF.Stats.isUnlocked(a.id); });
+      var medals = FF.ui.el('article', { class: 'dash-card dash-medals' });
+      var mh = FF.ui.div('dash-card__head');
+      mh.appendChild(FF.ui.el('h3', { class: 'dash-card__title' }, t('medals', 'Medals')));
+      mh.appendChild(FF.ui.span('dash-card__note', t('nOfMax', '{n} of {max}', { n: unlocked.length, max: FF.Stats.ACHIEVEMENTS.length })));
+      medals.appendChild(mh);
+      var row = FF.ui.el('ul', { class: 'medal-row' });
+      FF.Stats.ACHIEVEMENTS.forEach(function (a) {
+        var on = FF.Stats.isUnlocked(a.id);
+        var li = FF.ui.el('li', { class: 'medal' + (on ? ' is-on' : ''), style: { '--medal': a.color }, title: a.name + (on ? '' : ' · ' + t('locked', 'Not yet')) });
+        li.appendChild(icon(a.iconKey));
+        li.appendChild(FF.ui.span('sr-only', a.name + ', ' + (on ? t('unlocked', 'Unlocked') : t('locked', 'Not yet'))));
+        row.appendChild(li);
+      });
+      medals.appendChild(row);
+      grid.appendChild(medals);
+
+      section.appendChild(grid);
+      return section;
+    },
+
+    /* ================= Profile ================= */
+    profileHeader: function () {
+      var p = FF.Auth.profile() || {};
+      var lvl = FF.Stats.level(FF.Stats.get().xp);
+      var head = FF.ui.el('section', { class: 'profile-head on-art' });
+      head.style.setProperty('--art', FF.Assets.cssUrl('assets/images/ui/bg-islands.webp'));
+      var ava = FF.ui.div('profile-head__ava');
+      ava.appendChild(FF.Avatars.img(p.avatar, 'profile-head__img'));
+      head.appendChild(ava);
+      var info = FF.ui.div('profile-head__info');
+      info.appendChild(FF.ui.el('h1', { class: 'profile-head__name' }, p.displayName || ''));
+      info.appendChild(FF.ui.el('p', { class: 'profile-head__user' }, '@' + (p.username || '')));
+      var chips = FF.ui.div('profile-head__chips');
+      var lv = FF.ui.span('badge badge--level');
+      lv.appendChild(icon('star-fill'));
+      lv.appendChild(document.createTextNode(t('levelN', 'Level {n}', { n: lvl.level })));
+      chips.appendChild(lv);
+      info.appendChild(chips);
+      head.appendChild(info);
+      head.appendChild(FF.UI.button(t('editProfile', 'Edit profile'), { class: 'btn-glass profile-head__edit', icon: 'pencil', onClick: function () { FF.App.editProfile(); } }));
+      return head;
+    },
+
+    renderOverview: function (panel) {
+      panel.appendChild(FF.App.dashboard());
+      var session = FF.App.session;
+      var names = Object.keys(session.wins);
+      if (names.length) {
+        panel.appendChild(FF.App.sectionHead(t('sessionWinners', 'Winners today')));
+        var lb = FF.ui.el('ol', { class: 'results__leaderboard' });
+        names.sort(function (a, b) { return session.wins[b] - session.wins[a]; }).forEach(function (name, i) {
+          var row = FF.ui.el('li', { class: 'results__row' });
+          row.appendChild(FF.ui.el('span', { class: 'results__rank' }, String(i + 1)));
+          row.appendChild(FF.ui.el('span', { class: 'results__name' }, name));
+          var w = session.wins[name];
+          row.appendChild(FF.ui.el('span', { class: 'results__pts' }, w === 1 ? t('oneWin', '1 win') : t('nWins', '{n} wins', { n: w })));
+          lb.appendChild(row);
+        });
+        panel.appendChild(lb);
+      }
+      var unlocked = FF.Stats.ACHIEVEMENTS.filter(function (a) { return FF.Stats.isUnlocked(a.id); }).length;
+      panel.appendChild(FF.App.sectionHead(t('medalsOf', 'Medals ({n} of {max})', { n: unlocked, max: FF.Stats.ACHIEVEMENTS.length })));
+      var grid = FF.ui.el('ul', { class: 'achievement-grid' });
+      FF.Stats.ACHIEVEMENTS.forEach(function (a) {
+        var on = FF.Stats.isUnlocked(a.id);
+        var c = FF.ui.el('li', { class: 'achievement' + (on ? ' unlocked' : ' locked'), style: { '--medal': a.color } });
+        var ic = FF.ui.span('achievement__icon');
+        ic.appendChild(icon(a.iconKey));
+        c.appendChild(ic);
+        c.appendChild(FF.ui.el('div', {}, [
+          FF.ui.div('achievement__name', a.name),
+          FF.ui.div('achievement__desc', a.desc),
+          FF.ui.div('achievement__state', on ? t('unlocked', 'Unlocked') : t('locked', 'Not yet'))
+        ]));
+        grid.appendChild(c);
+      });
+      panel.appendChild(grid);
+    },
+
+    // Edit name, username and character.
+    editProfile: function () {
+      var p = FF.Auth.profile() || {};
+      var chosen = p.avatar;
+      var body = FF.ui.div('edit-profile');
+      var pick = FF.ui.el('button', { type: 'button', class: 'edit-profile__ava', 'aria-label': t('changeCharacter', 'Change character') });
+      var img = FF.Avatars.img(chosen, 'edit-profile__img');
+      pick.appendChild(img);
+      var badge = FF.ui.span('edit-profile__badge');
+      badge.appendChild(icon('pencil'));
+      pick.appendChild(badge);
+      body.appendChild(pick);
+      function field(label, value, max, hint) {
+        var id = FF.UI.uid('f');
+        var wrap = FF.ui.div('field');
+        wrap.appendChild(FF.ui.el('label', { class: 'field__label', for: id }, label));
+        var input = FF.ui.el('input', { id: id, type: 'text', class: 'input field__input', value: value || '', maxlength: max, autocomplete: 'off', spellcheck: 'false' });
+        wrap.appendChild(input);
+        if (hint) wrap.appendChild(FF.ui.el('p', { class: 'field__hint' }, hint));
+        var err = FF.ui.el('p', { class: 'field__error', 'aria-live': 'polite' });
+        wrap.appendChild(err);
+        body.appendChild(wrap);
+        return { input: input, error: function (m) { err.textContent = m || ''; input.setAttribute('aria-invalid', m ? 'true' : 'false'); } };
+      }
+      var name = field(t('displayName', 'Display name'), p.displayName, 24);
+      var user = field(t('username', 'Username'), p.username, 20, t('usernameHint', '3 to 20 letters, numbers, dots or underscores. Shown to other players.'));
+      pick.addEventListener('click', function () {
+        FF.Players.pickLook(null, { kind: 'profile', current: chosen, name: name.input.value, onDone: function (aid) {
+          if (aid) { chosen = aid; img.src = FF.Avatars.url(aid); }
+        } });
+      });
+      FF.UI.sheet({
+        title: t('editProfile', 'Edit profile'),
+        body: body,
+        actions: [
+          { label: t('cancel', 'Cancel') },
+          { label: t('save', 'Save'), primary: true, keepOpen: true, onClick: function (api) {
+            name.error(''); user.error('');
+            if (!name.input.value.trim()) { name.error(t('enterName', 'Enter a name.')); return; }
+            var problem = FF.Auth.usernameError(user.input.value);
+            if (problem) { user.error(problem); return; }
+            FF.Auth.usernameAvailable(user.input.value).then(function (ok) {
+              if (!ok) { user.error(t('usernameTaken', 'That username is taken. Try another.')); return; }
+              return FF.Auth.updateProfile({ displayName: name.input.value, username: user.input.value, avatar: chosen }).then(function () {
+                api.close();
+                FF.UI.toast(t('profileSaved', 'Profile saved'), { type: 'success' });
+                FF.App.buildShell();
+                FF.App.render(FF.App._currentView, FF.App._currentParams);
+              });
+            }).catch(function (e) { FF.UI.toast(e.message, { type: 'error' }); });
+          } }
+        ]
+      });
+    },
+
+    // Saved players: who's in the next game, names, characters, order.
+    renderPlayers: function (main) {
+      var all = FF.Players.all();
+      var playing = all.filter(function (p) { return p.active; }).length;
+      var addBtn = FF.UI.button(t('addPlayer', 'Add player'), { class: 'btn-primary', icon: 'plus', onClick: function () {
+        FF.App.quickAddPlayer(function () { FF.Nav.replace('profile', { tab: 'players' }); });
+      } });
+      if (all.length >= FF.Players.MAX_SAVED) addBtn.disabled = true;
+      main.appendChild(FF.App.sectionHead(t('savedPlayers', 'Saved players'), addBtn));
+      main.appendChild(FF.ui.el('p', { class: 'page-sub' }, t('savedPlayersSub', 'Switch people in or out of the next game. They stay saved for next time. {n} playing.', { n: playing })));
+
+      var list = FF.ui.el('ul', { class: 'player-list' });
+      all.forEach(function (p, i) {
+        var row = FF.ui.el('li', { class: 'player-row' + (p.active ? '' : ' is-out'), style: { '--p-color': p.color } });
+        var avaBtn = FF.ui.el('button', { type: 'button', class: 'player-row__avatar', 'aria-label': t('changePictureFor', 'Change picture for {name}', { name: p.name }),
+          onclick: function () {
+            if (p.isMe) { FF.App.editProfile(); return; }
+            FF.Players.pickLook(p.id, { onDone: function () { FF.Nav.replace('profile', { tab: 'players' }); } });
+          } });
         avaBtn.appendChild(FF.Players.avatarEl(p, 'player-row__face'));
         row.appendChild(avaBtn);
-        var name = FF.ui.el('input', {
-          type: 'text', class: 'player-row__name-input', value: p.name, maxlength: 24,
-          placeholder: t('playerName', 'Player name'), 'aria-label': t('nameOfPlayer', 'Name of player {n}', { n: i + 1 }), autocomplete: 'off'
+        var nameWrap = FF.ui.div('player-row__name');
+        if (p.isMe) {
+          nameWrap.appendChild(FF.ui.el('strong', {}, p.name));
+          nameWrap.appendChild(FF.ui.span('badge', t('you', 'You')));
+        } else {
+          var name = FF.ui.el('input', {
+            type: 'text', class: 'player-row__name-input', value: p.name, maxlength: 24,
+            placeholder: t('playerName', 'Player name'), 'aria-label': t('nameOfPlayer', 'Name of player {n}', { n: i + 1 }), autocomplete: 'off'
+          });
+          name.addEventListener('input', function () { var next = name.value.trim(); if (next) FF.Players.rename(p.id, next); });
+          name.addEventListener('blur', function () { if (!name.value.trim()) name.value = p.name; });
+          nameWrap.appendChild(name);
+        }
+        row.appendChild(nameWrap);
+        var sw = FF.ui.el('button', {
+          type: 'button', class: 'switch' + (p.active ? ' on' : ''), role: 'switch',
+          'aria-checked': p.active ? 'true' : 'false', 'aria-label': t('playingNext', '{name} plays in the next game', { name: p.name })
         });
-        name.addEventListener('input', function () {
-          var next = name.value.trim();
-          if (next) FF.Players.rename(p.id, next);
+        sw.appendChild(FF.ui.div('switch__knob', ''));
+        sw.addEventListener('click', function () {
+          FF.Players.setActive(p.id, !p.active);
+          if (p.active && FF.Players.get().length === 1 && FF.Players.isActive(p.id)) FF.UI.toast(t('keepOneIn', 'At least one player stays in the game.'));
+          FF.Nav.replace('profile', { tab: 'players' });
         });
-        name.addEventListener('blur', function () { if (!name.value.trim()) name.value = p.name; });
-        row.appendChild(name);
-        row.appendChild(FF.ui.el('button', {
+        var swWrap = FF.ui.el('label', { class: 'player-row__playing' });
+        swWrap.appendChild(FF.ui.span('player-row__playing-label', p.active ? t('isPlayingCap', 'Playing') : t('sittingOutCap', 'Sitting out')));
+        swWrap.appendChild(sw);
+        row.appendChild(swWrap);
+        var controls = FF.ui.div('player-row__controls');
+        controls.appendChild(FF.ui.el('button', {
           type: 'button', class: 'player-row__color', style: { background: p.color },
           'aria-label': t('changeColourFor', 'Change colour for {name}', { name: p.name }),
-          onclick: function () { FF.App.pickColor(p.id); }
+          onclick: function () { FF.Players.pickColor(p.id, function () { FF.Nav.replace('profile', { tab: 'players' }); }); }
         }));
-        var controls = FF.ui.div('player-row__controls');
-        if (i > 0) controls.appendChild(FF.UI.iconButton('arrow-up', t('moveUp', 'Move {name} up', { name: p.name }), function () { FF.App.movePlayer(i, -1); }));
-        if (i < players.length - 1) controls.appendChild(FF.UI.iconButton('arrow-down', t('moveDown', 'Move {name} down', { name: p.name }), function () { FF.App.movePlayer(i, 1); }));
-        if (players.length > FF.Players.MIN) controls.appendChild(FF.UI.iconButton('trash', t('removePlayer', 'Remove {name}', { name: p.name }), function () { FF.App.removePlayer(p.id); }, 'icon-btn--danger'));
+        if (i > 0) controls.appendChild(FF.UI.iconButton('arrow-up', t('moveUp', 'Move {name} up', { name: p.name }), function () { FF.Players.move(p.id, -1); FF.Nav.replace('profile', { tab: 'players' }); }));
+        if (i < all.length - 1) controls.appendChild(FF.UI.iconButton('arrow-down', t('moveDown', 'Move {name} down', { name: p.name }), function () { FF.Players.move(p.id, 1); FF.Nav.replace('profile', { tab: 'players' }); }));
+        if (!p.isMe) controls.appendChild(FF.UI.iconButton('trash', t('removePlayer', 'Remove {name}', { name: p.name }), function () { FF.App.removePlayer(p.id); }, 'icon-btn--danger'));
         row.appendChild(controls);
         list.appendChild(row);
       });
       main.appendChild(list);
-
-      main.appendChild(FF.ui.div('hint', players.length < 2
-        ? t('soloHint', 'One player is enough for most games. Add another name when you want a match.')
-        : t('rosterHint', 'Tap a picture to choose an emoji or a photo. Names save as you type.')));
-      main.appendChild(FF.UI.button(t('resetPlayers', 'Reset players'), { class: 'btn-ghost', icon: 'restart', onClick: function () {
-        FF.UI.confirm({
-          title: t('resetPlayersQ', 'Reset players?'),
-          body: t('resetPlayersBody', 'This goes back to a single "Player 1".'),
-          confirmLabel: t('resetPlayers', 'Reset players'), danger: true,
-          onConfirm: function () { FF.Players.reset(); FF.Nav.replace('family', { tab: 'players' }); }
-        });
-      } }));
     },
 
     renderTeams: function (main) {
@@ -1088,15 +1680,15 @@ window.FF = window.FF || {};
       var box = FF.ui.el('section', { class: 'settings-section' });
       box.appendChild(FF.UI.switchRow({
         label: t('teamPlay', 'Team play'),
-        description: t('teamPlayDesc', 'Split into teams for games that support it.'),
+        description: t('teamPlayDesc', 'Split the players in the next game into teams, for games that support it.'),
         checked: teams.enabled,
-        onChange: function (on) { FF.Teams.setEnabled(on); FF.Nav.replace('family', { tab: 'teams' }); }
+        onChange: function (on) { FF.Teams.setEnabled(on); FF.Nav.replace('profile', { tab: 'teams' }); }
       }));
       if (teams.enabled) {
         box.appendChild(FF.UI.settingRow(t('numTeams', 'Number of teams'), FF.UI.segmented({
           label: t('numTeams', 'Number of teams'), value: teams.count,
           options: [{ label: '2', value: 2 }, { label: '3', value: 3 }, { label: '4', value: 4 }],
-          onChange: function (n) { FF.Teams.setCount(n); FF.Nav.replace('family', { tab: 'teams' }); }
+          onChange: function (n) { FF.Teams.setCount(n); FF.Nav.replace('profile', { tab: 'teams' }); }
         })));
       }
       main.appendChild(box);
@@ -1111,25 +1703,25 @@ window.FF = window.FF || {};
         var head = FF.ui.div('team-col__head');
         var ava = FF.ui.el('button', {
           type: 'button', class: 'team-col__photo', 'aria-label': t('changePictureFor', 'Change picture for {name}', { name: tm.name }),
-          onclick: function () { FF.Players.pickLook(tm.id, { kind: 'team', onDone: function () { FF.Nav.replace('family', { tab: 'teams' }); } }); }
+          onclick: function () { FF.Players.pickLook(tm.id, { kind: 'team', onDone: function () { FF.Nav.replace('profile', { tab: 'teams' }); } }); }
         });
-        ava.appendChild(FF.Players.avatarEl({ name: tm.name, avatar: tm.avatar || '👥', photo: tm.photo }, 'team-col__face'));
+        ava.appendChild(FF.Players.avatarEl({ name: tm.name, avatar: tm.avatar, photo: tm.photo, isTeam: !tm.avatar, color: tm.color }, 'team-col__face'));
         head.appendChild(ava);
         var nm = FF.ui.el('input', { type: 'text', class: 'team-col__name-input', value: tm.name, maxlength: 24, 'aria-label': t('teamName', 'Team name'), autocomplete: 'off' });
         nm.addEventListener('input', function () { var n = nm.value.trim(); if (n) FF.Teams.rename(tm.id, n); });
         head.appendChild(nm);
         col.appendChild(head);
 
-        var members = FF.ui.el('ul', { class: 'team-col__members', style: { listStyle: 'none' } });
+        var members = FF.ui.el('ul', { class: 'team-col__members' });
         tm.playerIds.forEach(function (pid) {
           var p = FF.Players.byId(pid);
-          if (!p) return;
+          if (!p || !p.active) return;
           var m = FF.ui.el('li', { class: 'team-member' });
           m.appendChild(FF.Players.avatarEl(p, 'team-member__face'));
           m.appendChild(FF.ui.span('', p.name));
           members.appendChild(m);
         });
-        if (!tm.playerIds.length) members.appendChild(FF.ui.el('li', { class: 'details__note' }, t('noMembers', 'No one yet')));
+        if (!members.childNodes.length) members.appendChild(FF.ui.el('li', { class: 'details__note' }, t('noMembers', 'No one yet')));
         col.appendChild(members);
 
         var others = players.filter(function (p) { return tm.playerIds.indexOf(p.id) === -1; });
@@ -1137,7 +1729,7 @@ window.FF = window.FF || {};
           var add = FF.ui.div('team-col__add');
           others.forEach(function (p) {
             var b = FF.ui.el('button', { type: 'button', class: 'mini-btn', 'aria-label': t('moveToTeam', 'Move {name} to {team}', { name: p.name, team: tm.name }),
-              onclick: function () { FF.Teams.assign(tm.id, p.id); FF.Nav.replace('family', { tab: 'teams' }); } });
+              onclick: function () { FF.Teams.assign(tm.id, p.id); FF.Nav.replace('profile', { tab: 'teams' }); } });
             b.appendChild(icon('plus'));
             b.appendChild(document.createTextNode(p.name));
             add.appendChild(b);
@@ -1148,61 +1740,8 @@ window.FF = window.FF || {};
       });
       main.appendChild(grid);
       main.appendChild(FF.UI.button(t('autoAssign', 'Shuffle into even teams'), { icon: 'shuffle', onClick: function () {
-        var tt = FF.Teams.get(); FF.Teams.autoAssign(tt); FF.Teams.save(tt); FF.Nav.replace('family', { tab: 'teams' });
+        var tt = FF.Teams.get(); FF.Teams.autoAssign(tt); FF.Teams.save(tt); FF.Nav.replace('profile', { tab: 'teams' });
       } }));
-    },
-
-    renderStats: function (main) {
-      var session = FF.App.session;
-      var stats = FF.Stats.get();
-      var cards = FF.ui.div('stat-grid');
-      function statCard(iconKey, label, value) {
-        var c = FF.ui.div('stat-card');
-        var ic = FF.ui.div('stat-card__icon');
-        ic.appendChild(icon(iconKey));
-        c.appendChild(ic);
-        c.appendChild(FF.ui.div('stat-card__value', String(value)));
-        c.appendChild(FF.ui.div('stat-card__label', label));
-        cards.appendChild(c);
-      }
-      statCard('game-controller', t('statSession', 'Games today'), FF.util.formatNumber(session.games));
-      statCard('trophy', t('statAllTime', 'Games played'), FF.util.formatNumber(stats.gamesPlayed));
-      statCard('flame', t('statStreak', 'Best streak'), FF.util.formatNumber(stats.bestStreak || 0));
-      statCard('lightning', t('statFastest', 'Fastest answer'), stats.fastest != null ? stats.fastest.toFixed(2) + ' s' : '—');
-      statCard('text-aa', t('statWords', 'Most words'), FF.util.formatNumber(stats.mostWords || 0));
-      statCard('brain', t('statAccuracy', 'Quiz accuracy'), stats.quizAnswered ? Math.round(stats.quizCorrect / stats.quizAnswered * 100) + '%' : '—');
-      main.appendChild(cards);
-
-      var names = Object.keys(session.wins);
-      if (names.length) {
-        main.appendChild(FF.App.sectionHead(t('sessionWinners', 'Winners today')));
-        var lb = FF.ui.el('ol', { class: 'results__leaderboard', style: { listStyle: 'none', margin: '0' } });
-        names.sort(function (a, b) { return session.wins[b] - session.wins[a]; }).forEach(function (name, i) {
-          var row = FF.ui.el('li', { class: 'results__row' });
-          row.appendChild(FF.ui.el('span', { class: 'results__rank' }, String(i + 1)));
-          row.appendChild(FF.ui.el('span', { class: 'results__name' }, name));
-          var w = session.wins[name];
-          row.appendChild(FF.ui.el('span', { class: 'results__pts' }, w === 1 ? t('oneWin', '1 win') : t('nWins', '{n} wins', { n: w })));
-          lb.appendChild(row);
-        });
-        main.appendChild(lb);
-      }
-
-      var unlocked = FF.Stats.ACHIEVEMENTS.filter(function (a) { return FF.Stats.isUnlocked(a.id); }).length;
-      main.appendChild(FF.App.sectionHead(t('medalsOf', 'Medals ({n} of {max})', { n: unlocked, max: FF.Stats.ACHIEVEMENTS.length })));
-      var grid = FF.ui.el('ul', { class: 'achievement-grid', style: { listStyle: 'none' } });
-      FF.Stats.ACHIEVEMENTS.forEach(function (a) {
-        var on = FF.Stats.isUnlocked(a.id);
-        var c = FF.ui.el('li', { class: 'achievement' + (on ? ' unlocked' : ' locked') });
-        c.appendChild(FF.ui.el('span', { class: 'achievement__icon', 'aria-hidden': 'true' }, a.icon));
-        c.appendChild(FF.ui.el('div', {}, [
-          FF.ui.div('achievement__name', a.name),
-          FF.ui.div('achievement__desc', a.desc),
-          FF.ui.div('achievement__state', on ? t('unlocked', 'Unlocked') : t('locked', 'Not yet'))
-        ]));
-        grid.appendChild(c);
-      });
-      main.appendChild(grid);
     },
 
     languageControl: function (onPicked) {
@@ -1230,47 +1769,21 @@ window.FF = window.FF || {};
     },
     toast: function (msg, type) { return FF.UI.toast(msg, { type: type }); },
 
-    /* ================= Player/team editing ================= */
-    addPlayer: function () {
-      var used = FF.Players.get().map(function (p) { return p.name; });
-      var pool = ['Alex', 'Sam', 'Jo', 'Max', 'Mia', 'Leo', 'Zoe', 'Kai', 'Ava', 'Ben'].filter(function (n) { return used.indexOf(n) === -1; });
-      FF.Players.add(pool.length ? FF.util.pick(pool) : null);
-      FF.Audio.play('select');
-      FF.Nav.replace('family', { tab: 'players' });
-      setTimeout(function () {
-        var inputs = FF.ui.$$('.player-row__name-input');
-        var last = inputs[inputs.length - 1];
-        if (last && FF.Nav.modality === 'keyboard') { last.focus(); last.select(); }
-      }, 30);
-    },
-
+    /* ================= Player editing ================= */
     removePlayer: function (id) {
       var p = FF.Players.byId(id);
-      if (FF.Players.get().length <= FF.Players.MIN) {
-        FF.UI.toast(t('keepOne', 'Keep at least one player.'));
-        return;
-      }
-      FF.Players.remove(id);
-      FF.Audio.play('click');
-      FF.Nav.replace('family', { tab: 'players' });
-      if (p) FF.UI.announce(t('playerRemoved', '{name} removed', { name: p.name }));
-    },
-
-    pickAvatar: function (id) {
-      FF.Players.pickLook(id, { onDone: function () { FF.Nav.replace('family', { tab: 'players' }); } });
-    },
-
-    pickColor: function (id) {
-      FF.Players.pickColor(id, function () { FF.Nav.replace('family', { tab: 'players' }); });
-    },
-
-    movePlayer: function (index, delta) {
-      var list = FF.Players.get();
-      var j = index + delta;
-      if (j < 0 || j >= list.length) return;
-      var tmp = list[index]; list[index] = list[j]; list[j] = tmp;
-      FF.Players.save(list);
-      FF.Nav.replace('family', { tab: 'players' });
+      if (!p || p.isMe) return;
+      FF.UI.confirm({
+        title: t('removePlayerQ', 'Remove {name}?', { name: p.name }),
+        body: t('removePlayerBody', 'They will be removed from your saved players. To skip them for one game, switch them to "Sitting out" instead.'),
+        confirmLabel: t('remove', 'Remove'), danger: true, icon: 'trash',
+        onConfirm: function () {
+          FF.Players.remove(id);
+          FF.Audio.play('click');
+          FF.Nav.replace('profile', { tab: 'players' });
+          FF.UI.announce(t('playerRemoved', '{name} removed', { name: p.name }));
+        }
+      });
     },
 
     /* ================= Quick play / demo ================= */
@@ -1288,30 +1801,82 @@ window.FF = window.FF || {};
       FF.GameFlow.launch(def.id, { skipIntro: true, length: 'quick', timer: 20 });
     },
 
+    // Four sample players for this visit only. Saved players are untouched.
     demo: function () {
       var samples = [
-        ['Sarah', '🥳', '#ec4899'], ['Daniel', '😎', '#3b82f6'],
-        ['Emma', '🦊', '#10b981'], ['James', '🤓', '#f97316']
+        ['Sarah', 'nia', '#ec4899'], ['Daniel', 'kenji', '#3b82f6'],
+        ['Emma', 'fox', '#10b981'], ['James', 'bolt', '#f97316']
       ];
-      FF.Storage.set('players', samples.map(function (s, i) {
-        return { id: 'demo' + i, name: s[0], avatar: s[1], color: s[2] };
+      FF.Players.useTemporary(samples.map(function (s, i) {
+        return { id: 'demo' + i, name: s[0], avatar: s[1], color: s[2], active: true };
       }));
-      FF.Teams.setEnabled(false);
-      FF.UI.toast(t('demoStarted', 'Sample players added. Starting a game…'));
-      setTimeout(function () { FF.App.quickPlay(); }, 700);
+      FF.UI.toast(t('demoStarted', 'Sample players are on. Starting a game…'));
+      clearTimeout(this._demoTimer);
+      this._demoTimer = setTimeout(function () { if (FF.Players.isTemporary()) FF.App.quickPlay(); }, 700);
+    },
+
+    endDemo: function () {
+      clearTimeout(this._demoTimer);
+      FF.Players.clearTemporary();
+      FF.UI.toast(t('demoEnded', 'Back to your saved players'));
+      this.render(this._currentView || 'home', this._currentParams || {});
+    },
+
+    confirmSignOut: function () {
+      FF.UI.confirm({
+        title: t('signOutQ', 'Sign out of PlayMora?'),
+        body: FF.Auth.isLocal()
+          ? t('signOutLocal', 'Your players and stats stay saved on this device for when you sign back in.')
+          : t('signOutBody', 'Your players and stats are saved to your account. Sign in again on any device to pick up where you left off.'),
+        confirmLabel: t('signOut', 'Sign out'),
+        onConfirm: function () { FF.Auth.signOut(); }
+      });
+    },
+
+    confirmDeleteAccount: function () {
+      var p = FF.Auth.profile() || {};
+      var body = FF.ui.div('');
+      body.appendChild(FF.ui.el('p', {}, t('deleteBody', 'This permanently deletes your account, profile, saved players, stats and favourites. It cannot be undone.')));
+      var id = FF.UI.uid('confirm');
+      body.appendChild(FF.ui.el('label', { class: 'field__label', for: id }, t('typeUsername', 'Type your username ({u}) to confirm', { u: p.username })));
+      var input = FF.ui.el('input', { id: id, type: 'text', class: 'input', autocomplete: 'off', spellcheck: 'false', autocapitalize: 'off' });
+      body.appendChild(input);
+      FF.UI.dialog({
+        title: t('deleteAccountQ', 'Delete your account?'),
+        body: body,
+        role: 'alertdialog',
+        actions: [
+          { label: t('cancel', 'Cancel') },
+          { label: t('deleteAccountBtn', 'Delete my account'), danger: true, icon: 'trash', keepOpen: true, onClick: function (api) {
+            if (FF.Auth.normalizeUsername(input.value) !== p.username) {
+              FF.UI.toast(t('usernameMismatch', 'That does not match your username.'), { type: 'error' });
+              return;
+            }
+            FF.Auth.deleteAccount().then(function () {
+              api.close();
+              FF.UI.toast(t('accountDeleted', 'Your account has been deleted.'));
+            }).catch(function (e) {
+              FF.UI.toast(e.message || t('authFailed', 'Something went wrong. Please try again.'), { type: 'error' });
+            });
+          } }
+        ]
+      });
     },
 
     confirmReset: function () {
       FF.UI.confirm({
-        title: t('resetQ', 'Reset all data?'),
-        body: t('resetBody', 'This removes your players, teams, favourites, stats and settings from this device. It cannot be undone.'),
-        confirmLabel: t('resetAllBtn', 'Reset all data'),
+        title: t('resetQ', 'Reset stats and players?'),
+        body: t('resetBody', 'This clears your saved players, teams, favourites, recently played and stats on every device. Your account and settings stay. It cannot be undone.'),
+        confirmLabel: t('resetAllBtn', 'Reset'),
         danger: true,
         icon: 'trash',
         onConfirm: function () {
-          FF.Storage.clear();
+          ['teams', 'favorites', 'recents'].forEach(function (k) { FF.Storage.set(k, k === 'teams' ? { enabled: false, count: 2, teams: FF.Teams.build(2) } : []); });
+          FF.Storage.set('stats', FF.Stats.defaultStats());
+          FF.Players.reset();
           FF.App.session = { games: 0, wins: {}, totalPoints: 0, players: {} };
-          location.reload();
+          FF.UI.toast(t('resetDone', 'Stats and players reset'));
+          FF.App.render('home');
         }
       });
     }

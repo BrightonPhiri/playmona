@@ -1,5 +1,5 @@
 /* ============================================================
-   FAMILY FUN — core.js
+   PLAYMORA — core.js
    Global namespace, DOM helpers, and utilities.
    Classic script (no ES modules) so the app runs from file://
    ============================================================ */

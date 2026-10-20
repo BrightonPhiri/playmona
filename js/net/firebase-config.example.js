@@ -1,5 +1,5 @@
 /* ============================================================
-   FAMILY FUN — net/firebase-config.js
+   PLAYMORA — net/firebase-config.js
    Paste your Firebase web config here to enable online play.
    See FIREBASE_SETUP.md for step-by-step instructions.
 

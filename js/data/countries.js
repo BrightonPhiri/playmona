@@ -1,5 +1,5 @@
 /* ============================================================
-   FAMILY FUN — countries.js
+   PLAYMORA — countries.js
    Country data: vector flags (specs or inline SVG), capitals,
    continents, regions, facts, neighbours, landmarks and foods.
    Flags render via js/flagrenderer.js (spec → SVG at runtime).

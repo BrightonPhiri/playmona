@@ -1,5 +1,5 @@
 /* ============================================================
-   FAMILY FUN — memoryGames.js
+   PLAYMORA — memoryGames.js
    Four memory-category games:
    - memoryMatch        (emoji card pairs)
    - pictureMemory      (SVG illustration pairs)
@@ -44,7 +44,7 @@ window.FF = window.FF || {};
       ? api.config.scorers
       : null;
     if (!s || !s.length) {
-      s = [{ id: 'p1', name: 'Player 1', avatar: '😀', color: '#8b5cf6' }];
+      s = [{ id: 'p1', name: 'Player 1', avatar: null, color: '#8b5cf6' }];
     }
     return s;
   }
@@ -101,7 +101,7 @@ window.FF = window.FF || {};
     function currentScorer() { return scorers[turnIdx % scorers.length]; }
 
     function renderTurn() {
-      turnLabel.textContent = '👉 ' + currentScorer().name + "'s turn";
+      turnLabel.textContent = '' + currentScorer().name + "'s turn";
       api.shell.updateScores(currentScorer().id);
     }
 
@@ -160,7 +160,7 @@ window.FF = window.FF || {};
 
     deck.forEach(function (item, i) {
       var inner = api.ui.div('match-card__inner');
-      inner.appendChild(api.ui.div('match-card__face match-card__back', '❓'));
+      inner.appendChild(api.ui.div('match-card__face match-card__back', FF.ui.el('img', { class: 'match-card__mark', src: 'assets/brand/mark-256.webp', alt: '' })));
       var front = api.ui.div('match-card__face match-card__front');
       front.appendChild(opts.buildFront(item));
       inner.appendChild(front);
@@ -457,7 +457,7 @@ window.FF = window.FF || {};
           var row2 = api.ui.div('wm-row');
           shown.forEach(function (em, i) {
             if (i === missingIdx) {
-              row2.appendChild(api.ui.div('wm-tile wm-missing', '❓'));
+              row2.appendChild(api.ui.div('wm-tile wm-missing', '?'));
             } else {
               row2.appendChild(api.ui.div('wm-tile', em));
             }
@@ -492,12 +492,12 @@ window.FF = window.FF || {};
                   api.audio.play('correct');
                   var pts = roundPoints(100, api.config.difficulty);
                   api.scoring.add(currentScorer().id, pts, { correct: true, fastest: Math.round(elapsed) });
-                  status.textContent = '✅ Correct, ' + currentScorer().name + '! +' + pts;
+                  status.textContent = 'Correct, ' + currentScorer().name + '! +' + pts;
                 } else {
                   b.classList.add('wrong');
                   api.audio.play('wrong');
                   api.scoring.markAnswer(currentScorer().id, false, Math.round(elapsed));
-                  status.textContent = '❌ Not quite — it was ' + missing;
+                  status.textContent = 'Not quite — it was ' + missing;
                   Array.prototype.forEach.call(opts.childNodes, function (ob) {
                     if (ob.dataset && ob.dataset.emoji === missing) ob.classList.add('correct');
                   });
@@ -667,7 +667,7 @@ window.FF = window.FF || {};
           locked = true;
           api.audio.play('wrong');
           api.scoring.markAnswer(currentScorer().id, false);
-          msg.textContent = '❌ ' + currentScorer().name + ' — the sequence was ' + seqNames() + '.';
+          msg.textContent = '' + currentScorer().name + ' — the sequence was ' + seqNames() + '.';
           donePlayers[currentScorer().id] = true;
           turnIdx++;
           setTimeout(beginTurn, 1600);
@@ -680,10 +680,10 @@ window.FF = window.FF || {};
           api.audio.play('correct');
           var pts = roundPoints(100, api.config.difficulty);
           api.scoring.add(currentScorer().id, pts, { correct: true });
-          msg.textContent = '✅ Correct! +' + pts;
+          msg.textContent = 'Correct! +' + pts;
           api.shell.updateScores(currentScorer().id);
           if (seq.length >= MAX_LEN) {
-            msg.textContent = '🌟 Amazing memory, ' + currentScorer().name + '!';
+            msg.textContent = 'Amazing memory, ' + currentScorer().name + '!';
             donePlayers[currentScorer().id] = true;
             turnIdx++;
             setTimeout(beginTurn, 1400);

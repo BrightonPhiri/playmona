@@ -1,5 +1,5 @@
 /* ============================================================
-   FAMILY FUN — net/raceUI.js
+   PLAYMORA — net/raceUI.js
    The two screens every racing game shares: the lockout note
    after a wrong answer, and the settled-round result. Written
    once so the engines stay thin.
@@ -21,8 +21,8 @@ window.FF = window.FF || {};
       .sort(function (a, b) { return (scores[b.uid] || 0) - (scores[a.uid] || 0); })
       .forEach(function (p) {
         wrap.appendChild(FF.ui.div('ffr-chip' + (p.online ? '' : ' ffr-chip--off'), [
-          FF.ui.span('', p.avatar || '😀'),
-          (p.uid === me ? 'You' : p.name) + '  ' + (scores[p.uid] || 0)
+          FF.Players.avatarEl(p, 'ffr-chip__ava'),
+          (p.uid === me ? FF.t('you', 'You') : p.name) + '  ' + (scores[p.uid] || 0)
         ]));
       });
     return wrap;

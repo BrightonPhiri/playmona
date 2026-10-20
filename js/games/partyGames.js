@@ -1,5 +1,5 @@
 /* ============================================================
-   FAMILY FUN — partyGames.js
+   PLAYMORA — partyGames.js
    Party voting games: Would You Rather?, This or That, and
    Who Is Most Likely. Classic script (no ES modules).
    ============================================================ */
@@ -46,7 +46,7 @@ window.FF = window.FF || {};
   function friendlyExit(api, title, body) {
     api.ui.clear(api.shell.root);
     var wrap = api.ui.el('div', { class: 'pg-exit' });
-    wrap.appendChild(api.ui.el('div', { class: 'pg-exit__emoji' }, '😅'));
+    wrap.appendChild(api.ui.el('div', { class: 'pg-exit__emoji' }, FF.Icons.icon('alert')));
     wrap.appendChild(api.ui.el('h2', { class: 'pg-exit__title' }, title));
     wrap.appendChild(api.ui.el('p', { class: 'pg-exit__body' }, body));
     wrap.appendChild(FF.UI.button('Back to home', { icon: 'house',
@@ -64,13 +64,13 @@ window.FF = window.FF || {};
     voters.forEach(function (p, i) {
       var cls = 'pg-chip';
       var marker;
-      if (votes[p.id]) { cls += ' pg-chip--done'; marker = '✓'; }
-      else if (i === currentIndex) { cls += ' pg-chip--current'; marker = '🗳️'; }
-      else { marker = '⏳'; }
+      if (votes[p.id]) { cls += ' pg-chip--done'; marker = 'check-circle'; }
+      else if (i === currentIndex) { cls += ' pg-chip--current'; marker = 'pencil'; }
+      else { marker = 'clock'; }
       wrap.appendChild(api.ui.el('span', { class: cls }, [
-        api.ui.el('span', {}, marker + ' '),
-        api.ui.el('span', {}, p.avatar || '😀'),
-        ' ' + p.name
+        FF.Icons.icon(marker),
+        FF.Players.avatarEl(p, 'pg-chip__ava'),
+        p.name
       ]));
     });
     return wrap;
@@ -99,7 +99,7 @@ window.FF = window.FF || {};
       var row = api.ui.el('div', { class: 'pg-row' + (r.win ? ' pg-row--win' : '') });
       var top = api.ui.el('div', { class: 'pg-row__top' });
       top.appendChild(api.ui.el('span', { class: 'pg-row__label' }, [
-        api.ui.el('span', { class: 'pg-row__emoji' }, r.icon || ''),
+        r.player ? FF.Players.avatarEl(r.player, 'pg-row__ava') : api.ui.el('span', { class: 'pg-row__emoji' }, r.icon || ''),
         r.label
       ]));
       top.appendChild(api.ui.el('span', { class: 'pg-row__count' }, r.count + ' · ' + pct + '%'));
@@ -163,8 +163,8 @@ window.FF = window.FF || {};
         root.appendChild(choices);
 
         root.appendChild(api.ui.el('div', { class: 'pg-voter' }, [
-          api.ui.el('span', { class: 'pg-voter__avatar' }, current.avatar || '😀'),
-          current.name + ', pick your choice!'
+          FF.Players.avatarEl(current, 'pg-voter__avatar'),
+          FF.t('pickYourChoice', '{name}, pick your choice!', { name: current.name })
         ]));
 
         root.appendChild(chipRow(api, voters, votes, voterIndex));
@@ -226,7 +226,7 @@ window.FF = window.FF || {};
         root.appendChild(api.ui.el('div', { class: 'pg-note' }, note));
 
         var actions = api.ui.div('pg-actions');
-        actions.appendChild(api.ui.button(index + 1 >= rounds.length ? '🏁 See Final Results' : '▶ Next Round', {
+        actions.appendChild(api.ui.button(index + 1 >= rounds.length ? FF.t('seeResults', 'See results') : FF.t('nextRound', 'Next round'), {
           primary: true,
           class: 'btn-lg',
           onClick: function () { api.audio.play('click'); playRound(index + 1); }
@@ -290,8 +290,8 @@ window.FF = window.FF || {};
         root.appendChild(api.ui.el('div', { class: 'pg-question' }, prompt));
 
         root.appendChild(api.ui.el('div', { class: 'pg-voter' }, [
-          api.ui.el('span', { class: 'pg-voter__avatar' }, current.avatar || '😀'),
-          current.name + ', cast your vote!'
+          FF.Players.avatarEl(current, 'pg-voter__avatar'),
+          FF.t('castYourVote', '{name}, cast your vote!', { name: current.name })
         ]));
 
         var cands = api.ui.div('pg-cands');
@@ -303,7 +303,7 @@ window.FF = window.FF || {};
             onclick: function () { vote(cand.id); },
             'aria-label': 'Vote for ' + cand.name
           }, [
-            api.ui.el('span', { class: 'pg-cand__avatar' }, cand.avatar || '😀'),
+            FF.Players.avatarEl(cand, 'pg-cand__avatar'),
             api.ui.el('span', { class: 'pg-cand__name' }, cand.name)
           ]));
         });
@@ -353,7 +353,7 @@ window.FF = window.FF || {};
 
         var rows = players.slice().sort(function (a, c) { return (counts[c.id] || 0) - (counts[a.id] || 0); }).map(function (p) {
           return {
-            icon: p.avatar || '😀',
+            player: p,
             label: p.name,
             count: counts[p.id] || 0,
             color: p.color || '#8b5cf6',
@@ -364,15 +364,15 @@ window.FF = window.FF || {};
 
         var headline;
         if (winners.length === 1) {
-          headline = '🏆 ' + winners[0].name + ' is most likely! (+' + Math.round(100 * b) + ' per vote)';
+          headline = '' + winners[0].name + ' is most likely! (+' + Math.round(100 * b) + ' per vote)';
         } else {
-          headline = "🤝 It's a tie! " + winners.map(function (w) { return w.name; }).join(' & ') + ' share the crown.';
+          headline = "It's a tie! " + winners.map(function (w) { return w.name; }).join(' & ') + ' share the crown.';
         }
         root.appendChild(api.ui.el('div', { class: 'pg-note' }, headline));
         root.appendChild(api.ui.el('div', { class: 'pg-note' }, 'Every voter earns ' + Math.round(30 * b) + ' points.'));
 
         var actions = api.ui.div('pg-actions');
-        actions.appendChild(api.ui.button(index + 1 >= rounds.length ? '🏁 See Final Results' : '▶ Next Round', {
+        actions.appendChild(api.ui.button(index + 1 >= rounds.length ? FF.t('seeResults', 'See results') : FF.t('nextRound', 'Next round'), {
           primary: true,
           class: 'btn-lg',
           onClick: function () { api.audio.play('click'); playRound(index + 1); }

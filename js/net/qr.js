@@ -1,5 +1,5 @@
 /* ============================================================
-   FAMILY FUN — net/qr.js
+   PLAYMORA — net/qr.js
    Renders a join link as a scannable SVG QR code, using the
    vendored MIT encoder in js/vendor/qrcode.js. Entirely local:
    no CDN, so it also works on a LAN with no internet.

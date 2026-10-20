@@ -1,5 +1,5 @@
 /* ============================================================
-   FAMILY FUN — scoring.js
+   PLAYMORA — scoring.js
    Reusable scoring engine (players or teams), streaks,
    leaderboard, final results, session stats and achievements.
    ============================================================ */
@@ -20,7 +20,7 @@ window.FF = window.FF || {};
       const self = this;
       this._entities.forEach(function (e) {
         self._records[e.id] = {
-          id: e.id, name: e.name, avatar: e.avatar || '😀', photo: e.photo || null, color: e.color || '#8b5cf6',
+          id: e.id, name: e.name, avatar: e.avatar || null, photo: e.photo || null, isTeam: !!e.isTeam, color: e.color || '#8b5cf6',
           points: 0, correct: 0, wrong: 0, answers: 0,
           streak: 0, bestStreak: 0, fastest: null, roundPoints: 0, events: []
         };
@@ -125,17 +125,18 @@ window.FF = window.FF || {};
   /* ---------- Session / lifetime stats + achievements ---------- */
   FF.Stats = {
     ACHIEVEMENTS: [
-      { id: 'firstWin', icon: '🏆', name: 'First Win', desc: 'Win your first game.' },
-      { id: 'streak5', icon: '🔥', name: '5 Answer Streak', desc: 'Get 5 correct answers in a row.' },
-      { id: 'streak10', icon: '🔥', name: '10 Answer Streak', desc: 'Get 10 correct answers in a row.' },
-      { id: 'fastest', icon: '⚡', name: 'Fastest Finger', desc: 'Answer in under 1 second.' },
-      { id: 'wordMaster', icon: '🔤', name: 'Word Master', desc: 'Find 15 words in a word game.' },
-      { id: 'brainBox', icon: '🧠', name: 'Brain Box', desc: 'Get 10 quiz answers right in one game.' },
-      { id: 'explorer', icon: '🌍', name: 'World Explorer', desc: 'Identify 10 countries, flags or landmarks.' },
-      { id: 'creative', icon: '🎨', name: 'Creative Genius', desc: 'Complete a drawing challenge.' },
-      { id: 'perfect', icon: '🎯', name: 'Perfect Round', desc: 'Finish a round with zero mistakes.' },
-      { id: 'champion', icon: '👑', name: 'Game Night Champion', desc: 'Win a full Game Night.' },
-      { id: 'tenGames', icon: '🎮', name: 'Game Collector', desc: 'Play 10 games.' }
+      // iconKey: an FF.Icons name; color: the medal colour.
+      { id: 'firstWin', iconKey: 'trophy', color: '#f59e0b', name: 'First Win', desc: 'Win your first game.' },
+      { id: 'streak5', iconKey: 'flame', color: '#f97316', name: '5 Answer Streak', desc: 'Get 5 correct answers in a row.' },
+      { id: 'streak10', iconKey: 'flame', color: '#ef4444', name: '10 Answer Streak', desc: 'Get 10 correct answers in a row.' },
+      { id: 'fastest', iconKey: 'lightning', color: '#eab308', name: 'Fastest Finger', desc: 'Answer in under 1 second.' },
+      { id: 'wordMaster', iconKey: 'text-aa', color: '#8b5cf6', name: 'Word Master', desc: 'Find 15 words in a word game.' },
+      { id: 'brainBox', iconKey: 'brain', color: '#3b82f6', name: 'Brain Box', desc: 'Get 10 quiz answers right in one game.' },
+      { id: 'explorer', iconKey: 'globe-hemisphere-west', color: '#14b8a6', name: 'World Explorer', desc: 'Identify 10 countries, flags or landmarks.' },
+      { id: 'creative', iconKey: 'paint-brush', color: '#ec4899', name: 'Creative Genius', desc: 'Complete a drawing challenge.' },
+      { id: 'perfect', iconKey: 'target', color: '#10b981', name: 'Perfect Round', desc: 'Finish a round with zero mistakes.' },
+      { id: 'champion', iconKey: 'crown', color: '#f59e0b', name: 'Game Night Champion', desc: 'Win a full Game Night.' },
+      { id: 'tenGames', iconKey: 'game-controller', color: '#1e7bff', name: 'Game Collector', desc: 'Play 10 games.' }
     ],
 
     defaultStats: function () {
@@ -148,13 +149,60 @@ window.FF = window.FF || {};
         mostWords: 0,
         quizCorrect: 0,
         quizAnswered: 0,
-        achievements: []
+        achievements: [],
+        daily: {},          // 'YYYY-MM-DD' -> games played that day
+        byCategory: {},     // category id -> games played
+        myWins: 0,          // games the account owner won against others
+        xp: 0
       };
+    },
+
+    dayKey: function (d) {
+      d = d || new Date();
+      return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+    },
+
+    // Games played on each of the last n days, oldest first.
+    lastDays: function (n) {
+      var s = this.get();
+      var out = [];
+      for (var i = n - 1; i >= 0; i--) {
+        var d = new Date();
+        d.setHours(12, 0, 0, 0);
+        d.setDate(d.getDate() - i);
+        out.push({ date: d, key: this.dayKey(d), count: (s.daily && s.daily[this.dayKey(d)]) || 0 });
+      }
+      return out;
+    },
+
+    // Consecutive days with at least one game, ending today (or yesterday).
+    dayStreak: function () {
+      var s = this.get();
+      var daily = s.daily || {};
+      var streak = 0;
+      var d = new Date();
+      if (!daily[this.dayKey(d)]) d.setDate(d.getDate() - 1);
+      while (daily[this.dayKey(d)]) { streak++; d.setDate(d.getDate() - 1); }
+      return streak;
+    },
+
+    // Level from XP: each level needs 50 XP more than the one before.
+    level: function (xp) {
+      xp = Math.max(0, xp || 0);
+      var level = 1;
+      var need = 100;
+      while (xp >= need) { xp -= need; level++; need = 100 + 50 * (level - 1); }
+      return { level: level, into: xp, need: need, progress: need ? xp / need : 0 };
     },
 
     get: function () {
       const s = FF.Storage.get('stats', null);
-      if (s && typeof s === 'object' && s.gamesPlayed != null) return s;
+      if (s && typeof s === 'object' && s.gamesPlayed != null) {
+        // Fill in fields added after this player's stats were first saved.
+        const d = this.defaultStats();
+        Object.keys(d).forEach(function (k) { if (s[k] == null) s[k] = d[k]; });
+        return s;
+      }
       return this.defaultStats();
     },
 
@@ -172,9 +220,16 @@ window.FF = window.FF || {};
 
     isUnlocked: function (id) { return this.get().achievements.indexOf(id) !== -1; },
 
-    recordGamePlayed: function (gameId, gameName) {
+    recordGamePlayed: function (gameId, gameName, category) {
       const s = this.get();
       s.gamesPlayed++;
+      const today = this.dayKey();
+      s.daily[today] = (s.daily[today] || 0) + 1;
+      // Keep about two months of daily history.
+      const keys = Object.keys(s.daily).sort();
+      while (keys.length > 62) delete s.daily[keys.shift()];
+      if (category) s.byCategory[category] = (s.byCategory[category] || 0) + 1;
+      s.xp = (s.xp || 0) + 10;
       if (s.gamesPlayed >= 10) this.unlock('tenGames');
       if (gameName) {
         s.recent = s.recent || [];
@@ -196,6 +251,19 @@ window.FF = window.FF || {};
       if (data.mostWords) s.mostWords = Math.max(s.mostWords, data.mostWords);
       if (data.quizCorrect != null) s.quizCorrect += data.quizCorrect;
       if (data.quizAnswered != null) s.quizAnswered += data.quizAnswered;
+      // The account owner's own result: wins against others and XP.
+      const ranked = data.results || [];
+      const meId = data.meId || 'me';
+      const me = ranked.filter(function (r) { return r && r.id === meId; })[0];
+      if (me) {
+        s.xp = (s.xp || 0) + Math.min(100, Math.floor((me.points || 0) / 50));
+        const top = ranked[0];
+        const tie = ranked.length > 1 && ranked[1].points === top.points;
+        if (ranked.length > 1 && top.id === meId && top.points > 0 && !tie) {
+          s.myWins = (s.myWins || 0) + 1;
+          s.xp += 25;
+        }
+      }
       this.save(s);
     }
   };

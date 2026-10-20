@@ -1,5 +1,5 @@
 /* ============================================================
-   FAMILY FUN — puzzleGames.js
+   PLAYMORA — puzzleGames.js
    Visual puzzle games: Picture Puzzle, Spot the Difference,
    Hidden Object, and Visual Riddle.
    Classic script (no ES modules) so the app runs from file://
@@ -537,7 +537,7 @@ window.FF = window.FF || {};
       function playRound() {
         if (index >= rounds) { finish(api); return; }
         var scorer = list[index];
-        var label = (list.length > 1) ? (scorer.avatar || '😀') + ' ' + scorer.name + "'s turn" : 'Spot the differences';
+        var label = (list.length > 1) ? FF.t('turnOf', '{name}\u2019s turn', { name: scorer.name }) : FF.t('spotTheDifferences', 'Spot the differences');
         index++;
         renderSpotRound(api, scorer, label, playRound);
       }

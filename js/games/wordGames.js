@@ -1,5 +1,5 @@
 /* ============================================================
-   FAMILY FUN — wordGames.js
+   PLAYMORA — wordGames.js
    Word games: Letter Rush, Word Scramble, Word Builder,
    Word Chain, and Mini Crossword.
    Classic script (no modules), offline, ES2017-or-older.
@@ -46,10 +46,10 @@ window.FF = window.FF || {};
     FF.ui.clear(root);
     api.shell.hideTimer();
     var box = FF.ui.div('panel panel--center wg-wrap');
-    box.appendChild(FF.ui.div('game-intro__icon', api.def.icon || '🔤'));
+    box.appendChild(FF.ui.div('game-intro__icon', FF.Icons.icon(FF.Icons.game[api.def.id] || 'text-aa')));
     box.appendChild(FF.ui.el('h2', {}, gameName));
     box.appendChild(FF.ui.el('p', {}, detail || 'This game needs the word list to play.'));
-    box.appendChild(FF.ui.div('empty', '😕 The word list could not be found. Please make sure the word data is installed, then try again.'));
+    box.appendChild(FF.ui.div('empty', 'The word list could not be found. Please make sure the word data is installed, then try again.'));
     box.appendChild(FF.UI.button('Exit', { icon: 'house',  primary: true, class: 'btn btn-lg', onClick: function () {
       FF.Audio.play('click');
       FF.GameFlow.exitToHome();
@@ -64,7 +64,7 @@ window.FF = window.FF || {};
   }
 
   function entityLabel(e) {
-    return (e && e.avatar ? e.avatar : '😀') + ' ' + (e && e.name ? e.name : 'Player');
+    return (e && e.name ? e.name : FF.t('playerLabel', 'Player'));
   }
 
   function bonusMult(api) {
@@ -241,7 +241,7 @@ window.FF = window.FF || {};
     }
     var sc = api.config.scorers || [];
     for (var j = 0; j < sc.length; j++) if (sc[j].id === playerId) return sc[j];
-    return { id: playerId, name: 'Player', avatar: '😀', color: '#8b5cf6' };
+    return { id: playerId, name: 'Player', avatar: null, color: '#8b5cf6' };
   }
 
   function playEnd(api) {
@@ -340,7 +340,7 @@ window.FF = window.FF || {};
         var wrap = FF.ui.div('wg-wrap');
         // In a room nobody takes turns - everyone races the same letters.
         if (racing) {
-          wrap.appendChild(FF.ui.el('h2', { class: 'wg-center' }, '🏁 Everyone plays at once'));
+          wrap.appendChild(FF.ui.el('h2', { class: 'wg-center' }, FF.t('everyoneAtOnce', 'Everyone plays at once')));
           wrap.appendChild(FF.ui.el('p', { class: 'hint wg-center' }, 'Same letters for everyone — find as many words as you can. 1 point per letter.'));
         } else {
           wrap.appendChild(FF.ui.el('h2', { class: 'wg-center' }, entityLabel(entity) + '’s turn'));
@@ -449,7 +449,7 @@ window.FF = window.FF || {};
         FF.ui.clear(root);
         api.shell.hideTimer();
         var wrap = FF.ui.div('panel panel--center wg-wrap');
-        wrap.appendChild(FF.ui.el('h2', {}, '⏳ Time! You scored ' + myScore));
+        wrap.appendChild(FF.ui.el('h2', {}, 'Time! You scored ' + myScore));
         wrap.appendChild(FF.ui.el('p', {}, 'You found ' + FF.util.plural(turnWords.length, 'word') + '.'));
         if (turnWords.length) {
           var list = FF.ui.div('wg-word-list');
@@ -474,7 +474,7 @@ window.FF = window.FF || {};
           turnWords.forEach(function (w) { list.appendChild(FF.ui.el('span', { class: 'wg-chip' }, w.toUpperCase())); });
           wrap.appendChild(list);
         }
-        wrap.appendChild(FF.ui.button(isLast ? '🏁 See Final Results' : '▶ Next Player', { primary: true, class: 'btn btn-lg', onClick: function () {
+        wrap.appendChild(FF.ui.button(isLast ? FF.t('seeResults', 'See results') : FF.t('nextPlayer', 'Next player'), { primary: true, class: 'btn btn-lg', onClick: function () {
           api.audio.play('click');
           if (isLast) { renderEnd(); return; }
           state.idx++;
@@ -492,7 +492,7 @@ window.FF = window.FF || {};
         var root = api.shell.root;
         FF.ui.clear(root);
         var wrap = FF.ui.div('panel wg-wrap');
-        wrap.appendChild(FF.ui.el('h2', { class: 'wg-center' }, '🎉 All Words'));
+        wrap.appendChild(FF.ui.el('h2', { class: 'wg-center' }, FF.t('allWords', 'All words')));
         var total = 0;
         var mostWords = 0;
         state.order.forEach(function (e) {
@@ -581,7 +581,7 @@ window.FF = window.FF || {};
 
       function renderWord() {
         wordEl.textContent = scrambled.toUpperCase();
-        clueEl.textContent = '💡 ' + (item.clue || 'Unscramble the letters');
+        clueEl.textContent = '' + (item.clue || 'Unscramble the letters');
         answerEl.textContent = '';
         revealed = false;
       }
@@ -590,7 +590,7 @@ window.FF = window.FF || {};
       actions.appendChild(FF.UI.button('Reveal answer', { icon: 'eye',  class: 'btn btn-lg', onClick: function () {
         if (revealed) return;
         revealed = true;
-        answerEl.textContent = '✅ ' + word.toUpperCase();
+        answerEl.textContent = '' + word.toUpperCase();
         api.audio.play('correct');
       } }));
       actions.appendChild(FF.UI.button('Next word', { icon: 'play',  class: 'btn btn-lg', onClick: function () {
@@ -660,7 +660,7 @@ window.FF = window.FF || {};
         var wrap = FF.ui.div('panel panel--center wg-wrap');
         wrap.appendChild(FF.ui.el('h2', {}, entityLabel(entity) + ' — Round ' + (state.round + 1) + ' of ' + state.total));
         wrap.appendChild(FF.ui.div('wg-scramble', scrambled.toUpperCase()));
-        wrap.appendChild(FF.ui.el('p', { class: 'hint' }, '💡 Clue: ' + item.clue));
+        wrap.appendChild(FF.ui.el('p', { class: 'hint' }, 'Clue: ' + item.clue));
 
         var form = FF.ui.div('wg-word-form');
         var input = FF.ui.el('input', {
@@ -711,15 +711,15 @@ window.FF = window.FF || {};
             api.scoring.add(entity.id, pts, { correct: true });
             api.shell.updateScores(entity.id);
             api.audio.play('correct');
-            box.appendChild(FF.ui.el('h2', {}, '✅ Correct! +' + pts));
+            box.appendChild(FF.ui.el('h2', {}, 'Correct! +' + pts));
             box.appendChild(FF.ui.div('wg-scramble', word.toUpperCase()));
           } else {
             api.scoring.markAnswer(entity.id, false);
             api.audio.play('wrong');
-            var msg = kind === 'skip' ? '⏭ Skipped' : (kind === 'timeout' ? '⏰ Time is up!' : '❌ Not quite');
+            var msg = kind === 'skip' ? 'Skipped' : (kind === 'timeout' ? 'Time is up!' : 'Not quite');
             box.appendChild(FF.ui.el('h2', {}, msg));
             box.appendChild(FF.ui.el('p', {}, 'The word was: ' + word.toUpperCase()));
-            box.appendChild(FF.ui.el('p', { class: 'wg-sub' }, '💡 ' + item.clue));
+            box.appendChild(FF.ui.el('p', { class: 'wg-sub' }, '' + item.clue));
           }
           box.appendChild(FF.UI.button('Next', { icon: 'play',  primary: true, class: 'btn btn-lg', onClick: next }));
           root2.appendChild(box);
@@ -806,7 +806,7 @@ window.FF = window.FF || {};
         api.shell.setTitle(api.def.name);
 
         var wrap = FF.ui.div('wg-wrap');
-        wrap.appendChild(FF.ui.el('h2', { class: 'wg-center' }, '🧱 Shared Letters'));
+        wrap.appendChild(FF.ui.el('h2', { class: 'wg-center' }, FF.t('sharedLetters', 'Shared letters')));
 
         var letterRow = FF.ui.div('wg-letters');
         state.letters.forEach(function (ch) { letterRow.appendChild(FF.ui.el('span', { class: 'wg-letter' }, ch.toUpperCase())); });
@@ -814,7 +814,7 @@ window.FF = window.FF || {};
 
         var claimRow = FF.ui.div('wg-claim-row');
         players.forEach(function (p) {
-          var b = FF.ui.button(p.avatar + ' ' + p.name, {
+          var b = FF.ui.button([FF.Players.avatarEl(p, 'who-ava'), p.name], {
             class: 'wg-claim-btn' + (p.id === state.activeId ? ' active' : ''),
             onClick: function () {
               state.activeId = p.id;
@@ -847,11 +847,11 @@ window.FF = window.FF || {};
 
         function renderLists() {
           FF.ui.clear(listBox);
-          listBox.appendChild(FF.ui.el('h3', { class: 'wg-center' }, '📋 Words Found'));
+          listBox.appendChild(FF.ui.el('h3', { class: 'wg-center' }, FF.t('wordsFound', 'Words found')));
           players.forEach(function (p) {
             var ws = state.words[p.id] || [];
             var row = FF.ui.div('wg-word-row');
-            row.appendChild(FF.ui.el('span', { class: 'wg-word-row__name' }, p.avatar + ' ' + p.name + ' (' + ws.length + ')'));
+            row.appendChild(FF.ui.el('span', { class: 'wg-word-row__name' }, [FF.Players.avatarEl(p, 'who-ava'), p.name + ' (' + ws.length + ')']));
             row.appendChild(FF.ui.el('span', { class: 'wg-word-row__words' }, ws.length ? ws.map(function (w) { return w.toUpperCase(); }).join(', ') : '—'));
             listBox.appendChild(row);
           });
@@ -896,13 +896,13 @@ window.FF = window.FF || {};
         var root = api.shell.root;
         FF.ui.clear(root);
         var wrap = FF.ui.div('panel wg-wrap');
-        wrap.appendChild(FF.ui.el('h2', { class: 'wg-center' }, '⏰ Time Up!'));
+        wrap.appendChild(FF.ui.el('h2', { class: 'wg-center' }, FF.t('timesUp', 'Time\u2019s up!')));
         var mostWords = 0;
         players.forEach(function (p) {
           var ws = state.words[p.id] || [];
           if (ws.length > mostWords) mostWords = ws.length;
           var row = FF.ui.div('wg-word-row');
-          row.appendChild(FF.ui.el('span', { class: 'wg-word-row__name' }, p.avatar + ' ' + p.name + ' (' + ws.length + ')'));
+          row.appendChild(FF.ui.el('span', { class: 'wg-word-row__name' }, [FF.Players.avatarEl(p, 'who-ava'), p.name + ' (' + ws.length + ')']));
           row.appendChild(FF.ui.el('span', { class: 'wg-word-row__words' }, ws.length ? ws.map(function (w) { return w.toUpperCase(); }).join(', ') : '—'));
           wrap.appendChild(row);
         });
@@ -984,10 +984,16 @@ window.FF = window.FF || {};
         return n;
       }
 
+      // Three heart icons; lost lives are dimmed. Read out as a number.
       function hearts(n) {
-        var s = '';
-        for (var i = 0; i < 3; i++) s += i < n ? '❤️' : '🖤';
-        return s;
+        var out = [];
+        for (var i = 0; i < 3; i++) {
+          var h = FF.Icons.icon('heart-fill');
+          if (i >= n) h.classList.add('is-lost');
+          out.push(h);
+        }
+        out.push(FF.ui.span('sr-only', FF.t('livesLeft', '{n} lives left', { n: n })));
+        return out;
       }
 
       function render() {
@@ -1074,7 +1080,7 @@ window.FF = window.FF || {};
           var root2 = api.shell.root;
           FF.ui.clear(root2);
           var box = FF.ui.div('panel panel--center wg-wrap wg-result');
-          var msg = kind === 'skip' ? '⏭ Skipped — lose a life' : (kind === 'timeout' ? '⏰ Time is up — lose a life' : '❌ Wrong word — lose a life');
+          var msg = kind === 'skip' ? 'Skipped — lose a life' : (kind === 'timeout' ? 'Time is up — lose a life' : 'Wrong word — lose a life');
           box.appendChild(FF.ui.el('h2', {}, msg));
           box.appendChild(FF.ui.div('wg-lives', hearts(state.lives[e.id])));
           box.appendChild(FF.ui.el('p', { class: 'wg-sub' }, 'The chain stays on "' + state.chain[state.chain.length - 1].toUpperCase() + '".'));
@@ -1143,7 +1149,7 @@ window.FF = window.FF || {};
 
       var puzzle = pickPuzzle();
       var scorers = scorerEntities(api);
-      if (!scorers.length) scorers = [{ id: 'p1', name: 'Player 1', avatar: '😀', color: '#8b5cf6' }];
+      if (!scorers.length) scorers = [{ id: 'p1', name: 'Player 1', avatar: null, color: '#8b5cf6' }];
 
       var state = {
         puzzle: puzzle,
@@ -1451,7 +1457,7 @@ window.FF = window.FF || {};
         if (state.scorers.length > 1) {
           var sel = FF.ui.div('wg-cw-players');
           state.scorers.forEach(function (e) {
-            sel.appendChild(FF.ui.button(e.avatar + ' ' + e.name, {
+            sel.appendChild(FF.ui.button([FF.Players.avatarEl(e, 'who-ava'), e.name], {
               class: 'wg-player-btn' + (e.id === state.activeId ? ' active' : ''),
               dataset: { pid: e.id },
               onClick: function () { state.activeId = e.id; updateHighlight(); api.audio.play('tap'); }

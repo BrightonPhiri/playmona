@@ -1,5 +1,5 @@
 /* ============================================================
-   FAMILY FUN — net/voice.js
+   PLAYMORA — net/voice.js
    Optional real-time audio conversation (WebRTC voice chat).
    Zero external server costs: P2P audio mesh with Firebase /
    BroadcastChannel signaling, Voice Activity Detection (VAD),

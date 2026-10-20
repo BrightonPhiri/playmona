@@ -1,14 +1,15 @@
-# Family Fun — Development Contract (READ ME FIRST)
+# PlayMora — Development Contract (READ ME FIRST)
 
-You are implementing part of **Family Fun**, an offline-first family game hub. The app
-already has a complete engine (shell, scoring, timers, audio, themes, TV navigation).
+You are implementing part of **PlayMora**, a game hub for everyone. The app already has a
+complete engine (shell, scoring, timers, audio, themes, TV navigation, accounts).
 Your job is to add content data and/or games that plug into that engine.
 
 ## Hard constraints (violating these breaks the app)
 
 1. **Classic scripts only.** No `import`, no `export`, no ES modules, no `require`.
-2. **No network.** No `fetch`, no `XMLHttpRequest`, no `<link>`/`<img>` to remote URLs.
-   Everything must work from `file://` (double-click `index.html`).
+2. **No network in games.** No `fetch`, no `XMLHttpRequest`, no `<link>`/`<img>` to remote URLs.
+   Games must work offline and from `file://` (`play.html`). Only `js/net/`, `auth.js` and
+   `sync.js` talk to Firebase.
 3. **Global namespace `window.FF`.** Everything you define lives under `FF.data` (data)
    or registers via `FF.registerGame(...)` (games).
 4. **ES2017 or older.** No optional chaining `?.`, no nullish coalescing `??`, no
@@ -57,7 +58,7 @@ window.FF = window.FF || {};
     name: 'Letter Rush',         // display name
     description: 'Make as many words as you can before time runs out.',
     category: 'words',           // words | quiz | bible | visual | memory | reaction | creative | numbers | party | world
-    icon: '🔤',                  // single emoji
+    icon: '🔤',                  // legacy fallback only; the UI uses FF.Icons.game[id]
     players: [1, 8],             // [min, max] players
     difficulty: 'Easy',          // Easy | Normal | Hard (label shown on cards)
     duration: 5,                 // approximate minutes (number)
@@ -264,7 +265,7 @@ FF.data.visual = {
   visualCharades: [ { name, svg } ]             // 40+
 };
 ```
-SVG illustrations: viewBox `"0 0 200 200"`, flat vector style, family-friendly, high contrast,
+SVG illustrations: viewBox `"0 0 200 200"`, flat vector style, suitable for all ages, high contrast,
 recognisable silhouette, 2-6 colours, NO text, NO watermark. Keep each SVG under ~2KB. A
 simple-but-clear illustration is better than an elaborate broken one. Example skeleton:
 `'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect width="200" height="200" fill="#e0f2fe"/>...shapes...</svg>'`.
@@ -285,3 +286,12 @@ Prefer a light rounded background so illustrations look good in dark mode.
 - [ ] Works at 360 px wide with no horizontal scrolling, and every control is at least 44 px.
 
 Write the file now. Be complete and generous with content — quality and quantity both matter.
+
+## Players, avatars and accounts (for game code)
+
+- Read players with `api.config.players` (the people **in** this game, as `FF.Players.get()`). Never
+  call `FF.Players.save()` with that list: it is a subset of the saved roster.
+- Show a player's picture with `FF.Players.avatarEl(player, 'your-class')`, and give that
+  class a size in CSS. Never print `player.avatar` as text: it is a character id like `fox`.
+- No emoji in UI text (status lines, buttons, banners). Use `FF.Icons.icon(name)`.
+- Account data is per user: `FF.Storage.get/set` is already scoped to the signed-in account.

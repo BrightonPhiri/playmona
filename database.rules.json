@@ -1,0 +1,64 @@
+{
+  "rules": {
+    "users": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid && auth.token.firebase.sign_in_provider !== 'anonymous'",
+        "profile": {
+          ".validate": "newData.hasChildren(['username', 'displayName']) && newData.child('displayName').isString() && newData.child('displayName').val().length <= 40"
+        },
+        "data": {
+          "$key": {
+            ".validate": "newData.hasChildren(['v', 't']) && newData.child('v').isString() && newData.child('v').val().length < 200000 && newData.child('t').isNumber()"
+          }
+        }
+      }
+    },
+
+    "usernames": {
+      "$name": {
+        ".read": true,
+        ".write": "auth != null && auth.token.firebase.sign_in_provider !== 'anonymous' && (!data.exists() || data.child('uid').val() === auth.uid) && (!newData.exists() || newData.child('uid').val() === auth.uid)",
+        ".validate": "$name.matches(/^[a-z0-9_.]{3,20}$/) && newData.hasChildren(['uid']) && (!newData.hasChild('email') || newData.child('email').val() === auth.token.email)"
+      }
+    },
+
+    "rooms": {
+      "$code": {
+        ".read": "auth != null",
+
+        "meta": {
+          ".write": "auth != null && (!data.exists() || data.child('hostUid').val() === auth.uid || root.child('rooms').child($code).child('players').child(data.child('hostUid').val()).child('online').val() !== true)",
+          ".validate": "newData.hasChildren(['seed', 'status', 'appVersion'])"
+        },
+
+        "players": {
+          "$uid": {
+            ".write": "auth != null && $uid === auth.uid",
+            ".validate": "newData.hasChildren(['name'])"
+          }
+        },
+
+        "rounds": {
+          ".write": "auth != null && !newData.exists() && root.child('rooms').child($code).child('meta').child('hostUid').val() === auth.uid",
+
+          "$index": {
+            "startedAt": {
+              ".write": "auth != null && !data.exists()"
+            },
+            "winner": {
+              ".write": "auth != null && !data.exists()",
+              ".validate": "newData.isString()"
+            },
+            "answers": {
+              "$uid": {
+                ".write": "auth != null && $uid === auth.uid && !data.exists()",
+                ".validate": "newData.hasChildren(['correct'])"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

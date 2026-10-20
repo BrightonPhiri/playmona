@@ -1,5 +1,5 @@
 /* ============================================================
-   FAMILY FUN — flagrenderer.js
+   PLAYMORA — flagrenderer.js
    Renders country flags from SVG strings or compact specs.
    Flags are local, sharp (vector) and scale to any resolution.
    ============================================================ */

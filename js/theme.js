@@ -1,5 +1,5 @@
 /* ============================================================
-   FAMILY FUN — theme.js
+   PLAYMORA — theme.js
    Light / Dark / System theme + accent colours.
    ============================================================ */
 window.FF = window.FF || {};
@@ -57,9 +57,9 @@ window.FF = window.FF || {};
       return t;
     },
 
-    getAccent: function () { return FF.Storage.get('accent', 'purple'); },
+    getAccent: function () { return FF.Storage.get('accent', 'blue'); },
     setAccent: function (a) {
-      if (!this.accents.some(function (x) { return x.id === a; })) a = 'purple';
+      if (!this.accents.some(function (x) { return x.id === a; })) a = 'blue';
       FF.Storage.set('accent', a);
       this.apply();
     },
@@ -110,7 +110,7 @@ window.FF = window.FF || {};
       }
       if (document.body) document.body.setAttribute('data-theme', resolved);
       const meta = document.querySelector('meta[name="theme-color"]');
-      if (meta) meta.setAttribute('content', resolved === 'dark' ? '#14111f' : '#fbf7f0');
+      if (meta) meta.setAttribute('content', resolved === 'dark' ? '#080c26' : '#f5f7ff');
       this._notify();
     },
 

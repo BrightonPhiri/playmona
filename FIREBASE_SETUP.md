@@ -1,17 +1,24 @@
-# Enabling Online Play (Firebase)
+# Firebase setup (accounts and online play)
 
-Family Fun works fully offline with no setup at all. Follow this only to enable
-**PLAY TOGETHER**, which lets people on different devices play the same game at
-the same time.
+PlayMora uses one Firebase project for two things:
 
-The free **Spark** plan is enough for family use. No credit card is required.
+- **Accounts**: email or username + password, and Google sign-in. Profiles,
+  saved players, stats and settings sync to `/users/{uid}`.
+- **Online rooms**: people on different devices play the same game at once.
+
+Without a config (`FF.FirebaseConfig = null`) the app falls back to
+**device-only accounts**: sign-up still works, but the account lives in that
+browser only and online rooms are hidden. That mode is for development; the
+live site needs Firebase.
+
+The free **Spark** plan is enough. No credit card is required.
 
 ---
 
 ## 1. Create the project
 
 1. Go to <https://console.firebase.google.com> and sign in with a Google account.
-2. Click **Add project**, name it (e.g. `family-fun`), and continue.
+2. Click **Add project**, name it (e.g. `playmora`), and continue.
 3. Google Analytics is not needed — turn it off.
 
 ## 2. Enable the Realtime Database
@@ -24,26 +31,50 @@ The free **Spark** plan is enough for family use. No credit card is required.
 > Make sure you pick **Realtime Database**, not Firestore. They are different
 > products and this app uses Realtime Database.
 
-## 3. Enable anonymous sign-in
+## 3. Enable sign-in methods
 
 1. **Build → Authentication → Get started**.
-2. On the **Sign-in method** tab, enable **Anonymous** and save.
-
-Nobody creates an account or types a password. This just gives each device a
-stable identity so the security rules can stop one player overwriting another
-player's answer.
+2. On the **Sign-in method** tab, enable:
+   - **Email/Password** (leave "Email link" off).
+   - **Google**. Set the public-facing name to `PlayMora` and pick a support email.
+   - **Anonymous**. Kept as a fallback so an old cached copy of the app can
+     still join rooms. The rules below stop anonymous users touching accounts.
+3. **Authentication → Templates**: set the sender name of the password-reset
+   email to `PlayMora`, and (optional) the action URL to `https://playmora.com/play.html`.
+4. **Authentication → Settings → User actions**: turn on
+   **Email enumeration protection**. The app already gives the same reply for
+   known and unknown emails on "Forgot password".
 
 ## 4. Authorise your domain
 
 1. **Authentication → Settings → Authorised domains**.
-2. Click **Add domain** and enter `demo.brightappsoft.com`.
+2. Click **Add domain** and enter `playmora.com`, then add `www.playmora.com`.
+   (`localhost` is there by default for testing.)
 
 Without this, sign-in fails on the live site with an `auth/unauthorized-domain`
 error.
 
 ## 5. Paste the security rules
 
-Open **Realtime Database → Rules**, replace everything, and click **Publish**:
+Open **Realtime Database → Rules**, replace everything with the contents of
+[`database.rules.json`](database.rules.json), and click **Publish**.
+
+On top of the room rules explained below, that file adds:
+
+- `/users/{uid}`: only that signed-in (non-anonymous) user can read or write
+  it. Synced values are capped at about 200 KB each.
+- `/usernames/{name}`: anyone can look up one name (sign-in by username needs
+  it), but nobody can list them all. A name can only be claimed when free, or
+  changed or released by its owner; the format must be 3–20 of `a-z 0-9 _ .`,
+  and the stored email must be the claimer's own.
+
+> **Privacy tradeoff.** Signing in with a username means the app must find
+> the email behind it before the user is signed in, so `/usernames/{name}`
+> stores the email and is readable by anyone who knows the username. If that
+> is not acceptable, drop username sign-in (email only) and stop storing
+> `email` there, or move the lookup into a Cloud Function (Blaze plan).
+
+The room part of the rules, for reference:
 
 ```json
 {
@@ -147,17 +178,18 @@ source. A template is committed as `js/net/firebase-config.example.js`.
 **Upload `firebase-config.js` to the server by hand** alongside the rest of the
 app, or your deployed copy will silently have online play disabled.
 
-## Turning online play off
+## Turning Firebase off
 
-Set `FF.FirebaseConfig = null;` again. The button disappears and the app makes
-no network requests at all — back to the fully offline game.
+Set `FF.FirebaseConfig = null;` again. Online rooms disappear and accounts
+become device-only. To test device-only accounts with a config present, run
+`FF.Storage.set('devAuth', true)` in the console and reload.
 
 ## Costs
 
 Each round sends a few hundred bytes. No questions, flags or images ever cross
 the network: every device generates the same questions locally from a shared
 random seed, so only the answers travel. The Spark free tier's limits are far
-beyond family use. Rooms expire after 6 hours.
+beyond casual use. Rooms expire after 6 hours.
 
 ## Troubleshooting
 
@@ -165,8 +197,10 @@ beyond family use. Rooms expire after 6 hours.
 |---|---|
 | No PLAY TOGETHER button | Config still `null`, or the `apiKey` is malformed. Run `FF.Net.configured()` in the console. |
 | "Could not reach Firebase" | No internet, or the CDN is blocked. |
-| `auth/unauthorized-domain` | `demo.brightappsoft.com` is not in Authorised domains (step 4). |
-| "Permission denied" in the console | Rules were not published, or Anonymous sign-in is still off. |
+| `auth/unauthorized-domain` | `playmora.com` is not in Authorised domains (step 4). |
+| Google sign-in popup closes and nothing happens | Popups blocked: the app falls back to a full-page redirect. If that fails too, check the Google provider is enabled (step 3). |
+| "That username is taken" for a brand-new name | The `/usernames` rules were not published. |
+| "Permission denied" in the console | Rules were not published, or a sign-in method in step 3 is off. |
 | Players see different questions | A device is running a cached old version. Hard-refresh it; the version guard should catch this and prompt. |
 | Everything works locally but not deployed | You forgot to upload `firebase-config.js` — it is git-ignored. |
 | Players can somehow overwrite each other | Your rules have a `.write` at the `$code` level. Remove it — see the note in step 5. |

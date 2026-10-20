@@ -1,5 +1,5 @@
 /* ============================================================
-   FAMILY FUN — numberGames.js
+   PLAYMORA — numberGames.js
    Number Challenge (mental maths) & Higher or Lower
    Classic script, global FF namespace, no ES modules / network.
    ============================================================ */
@@ -157,7 +157,7 @@ window.FF = window.FF || {};
 
   // Friendly guard when there are no scorers (should not normally happen).
   function renderNoPlayers(api) {
-    FF.GameUI.exitCard(api, FF.t('noPlayers', 'No players yet'), FF.t('noPlayersText', 'Add players on the Family screen to play this game.'));
+    FF.GameUI.exitCard(api, FF.t('noPlayers', 'No players yet'), FF.t('noPlayersText', 'Add players on your Profile to play this game.'));
   }
 
   // Round, whose turn and streak, above every question.

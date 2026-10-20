@@ -1,5 +1,5 @@
 /* ============================================================
-   FAMILY FUN — i18n.js
+   PLAYMORA — i18n.js
    Lightweight internationalization (i18n) system.
    Supports English (en), Spanish (es), French (fr),
    Swahili (sw), Shona (sn), Portuguese (pt), German (de).
@@ -22,8 +22,12 @@ window.FF = window.FF || {};
 
   var TRANSLATIONS = {
     en: {
-      appName: 'Family Fun',
-      tagline: 'Games for everyone. Play together. Laugh together.',
+      appName: 'PlayMora',
+      tagline: 'Games for everyone. Everywhere.',
+      navProfile: 'Profile',
+      signIn: 'Sign in',
+      createAccount: 'Create account',
+      signOut: 'Sign out',
       navHome: 'Home',
       navGames: 'Games',
       navPlayers: 'Players',
@@ -118,8 +122,12 @@ window.FF = window.FF || {};
       catBibleShort: 'Bible'
     },
     es: {
-      appName: 'FAMILY FUN',
-      tagline: 'Juegos para todos. Jueguen juntos. Rían juntos.',
+      appName: 'PlayMora',
+      tagline: 'Juegos para todos. En todas partes.',
+      navProfile: 'Perfil',
+      signIn: 'Iniciar sesión',
+      createAccount: 'Crear cuenta',
+      signOut: 'Cerrar sesión',
       navHome: 'Inicio',
       navGames: 'Juegos',
       navPlayers: 'Jugadores',
@@ -213,8 +221,12 @@ window.FF = window.FF || {};
       catBible: 'Juegos Bíblicos'
     },
     fr: {
-      appName: 'FAMILY FUN',
-      tagline: 'Des jeux pour tous. Jouez ensemble. Riez ensemble.',
+      appName: 'PlayMora',
+      tagline: 'Des jeux pour tous. Partout.',
+      navProfile: 'Profil',
+      signIn: 'Se connecter',
+      createAccount: 'Créer un compte',
+      signOut: 'Se déconnecter',
       navHome: 'Accueil',
       navGames: 'Jeux',
       navPlayers: 'Joueurs',
@@ -308,8 +320,12 @@ window.FF = window.FF || {};
       catBible: 'Jeux Bibliques'
     },
     sw: {
-      appName: 'FAMILY FUN',
-      tagline: 'Michezo ya wote. Chezeni pamoja. Furahini pamoja.',
+      appName: 'PlayMora',
+      tagline: 'Michezo kwa kila mtu. Kila mahali.',
+      navProfile: 'Wasifu',
+      signIn: 'Ingia',
+      createAccount: 'Fungua akaunti',
+      signOut: 'Toka',
       navHome: 'Mwanzo',
       navGames: 'Michezo',
       navPlayers: 'Wachezaji',
@@ -403,8 +419,12 @@ window.FF = window.FF || {};
       catBible: 'Michezo ya Biblia'
     },
     sn: {
-      appName: 'FAMILY FUN',
-      tagline: 'Mitambo yevose. Tambai pamwe. Sekai pamwe.',
+      appName: 'PlayMora',
+      tagline: 'Mitambo yevanhu vese. Kwese kwese.',
+      navProfile: 'Purofiri',
+      signIn: 'Pinda',
+      createAccount: 'Gadzira akaundi',
+      signOut: 'Buda',
       navHome: 'Kumba',
       navGames: 'Mitambo',
       navPlayers: 'Vatambi',
@@ -498,8 +518,12 @@ window.FF = window.FF || {};
       catBible: 'Mitambo yeBhaibheri'
     },
     pt: {
-      appName: 'FAMILY FUN',
-      tagline: 'Jogos para todos. Joguem juntos. Riam juntos.',
+      appName: 'PlayMora',
+      tagline: 'Jogos para todos. Em todo lugar.',
+      navProfile: 'Perfil',
+      signIn: 'Entrar',
+      createAccount: 'Criar conta',
+      signOut: 'Sair',
       navHome: 'Início',
       navGames: 'Jogos',
       navPlayers: 'Jogadores',
@@ -593,8 +617,12 @@ window.FF = window.FF || {};
       catBible: 'Jogos Bíblicos'
     },
     de: {
-      appName: 'FAMILY FUN',
-      tagline: 'Spiele für alle. Gemeinsam spielen. Gemeinsam lachen.',
+      appName: 'PlayMora',
+      tagline: 'Spiele für alle. Überall.',
+      navProfile: 'Profil',
+      signIn: 'Anmelden',
+      createAccount: 'Konto erstellen',
+      signOut: 'Abmelden',
       navHome: 'Start',
       navGames: 'Spiele',
       navPlayers: 'Spieler',

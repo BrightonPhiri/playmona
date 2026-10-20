@@ -1,5 +1,5 @@
 /* ============================================================
-   FAMILY FUN — words.js
+   PLAYMORA — words.js
    Word dictionary + scramble words + categories + missing
    letters + mini crosswords. Classic script, global window.FF.
    ============================================================ */

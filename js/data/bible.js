@@ -1,5 +1,5 @@
 /* ============================================================
-   FAMILY FUN — data/bible.js
+   PLAYMORA — data/bible.js
    Content library for Bible games:
      - questions: Trivia spanning Old & New Testaments, Miracles,
                   Parables, Heroes of Faith, and Kids Bible.

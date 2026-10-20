@@ -1,4 +1,4 @@
-# Family Fun — build verification script (run from project root)
+# PlayMora — build verification script (run from project root)
 # Usage:  pwsh -File tools/verify.ps1
 $ErrorActionPreference = 'Continue'
 $root = Split-Path -Parent $PSScriptRoot
@@ -12,8 +12,8 @@ foreach ($f in $js) {
 }
 if ($bad -eq 0) { Write-Host "OK: $($js.Count) JS files parse." -ForegroundColor Green } else { Write-Host "$bad files failed" -ForegroundColor Red }
 
-Write-Host "`n=== 2. index.html references vs files on disk ===" -ForegroundColor Cyan
-$html = Get-Content (Join-Path $root 'index.html') -Raw
+Write-Host "`n=== 2. play.html references vs files on disk ===" -ForegroundColor Cyan
+$html = Get-Content (Join-Path $root 'play.html') -Raw
 $refs = [regex]::Matches($html, 'src="([^"]+)"') | ForEach-Object { $_.Groups[1].Value }
 $refs += [regex]::Matches($html, 'href="([^"]+\.(?:css|svg))"') | ForEach-Object { $_.Groups[1].Value }
 $missing = @()
@@ -25,7 +25,7 @@ foreach ($r in $refs) {
 $disk = Get-ChildItem -Recurse -Include *.js,*.css,*.svg -Path (Join-Path $root 'js'),(Join-Path $root 'css'),(Join-Path $root 'assets') | ForEach-Object { $_.FullName.Substring($root.Length+1) -replace '\\','/' }
 $unref = $disk | Where-Object { $refs -notcontains $_ }
 if ($missing.Count) { Write-Host "MISSING (referenced but not on disk):" -ForegroundColor Red; $missing | ForEach-Object { Write-Host "  $_" } } else { Write-Host "OK: all referenced files exist." -ForegroundColor Green }
-if ($unref) { Write-Host "UNREFERENCED (on disk but not in index.html):" -ForegroundColor Yellow; $unref | ForEach-Object { Write-Host "  $_" } }
+if ($unref) { Write-Host "UNREFERENCED (on disk but not in play.html):" -ForegroundColor Yellow; $unref | ForEach-Object { Write-Host "  $_" } }
 
 Write-Host "`n=== 3. Game registry ===" -ForegroundColor Cyan
 $gameIds = @('letterRush','wordScramble','wordBuilder','wordChain','miniCrossword','familyQuiz','trueOrFalse','brainBattle','guessWho','pictureQuiz','memoryMatch','pictureMemory','whatsMissing','rememberSequence','quickTap','colorReaction','numberChallenge','higherOrLower','charades','visualCharades','dontSayIt','drawingChallenge','pictionary','wouldYouRather','thisOrThat','whoIsMostLikely','guessCountry','guessLandmark','guessAnimal','guessFood','guessObject','guessSport','guessVehicle','spotDifference','picturePuzzle','hiddenObject','visualRiddle','whereInWorld','mapChallenge','capitalChallenge','guessFlag')

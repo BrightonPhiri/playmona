@@ -1,5 +1,5 @@
 /* ============================================================
-   FAMILY FUN — net/race.js
+   PLAYMORA — net/race.js
    The only multiplayer surface a game touches. When no room is
    active every call is inert and games fall through to their
    normal single-device behaviour.

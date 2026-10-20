@@ -1,5 +1,5 @@
 /* ============================================================
-   FAMILY FUN — visualGames.js
+   PLAYMORA — visualGames.js
    Seven turn-based visual "guess the picture" games.
    Classic script (no ES modules) so the app runs from file://.
    ============================================================ */
@@ -393,11 +393,11 @@ window.FF = window.FF || {};
         rounds: ROUNDS,
         build: function (item) {
           var factLines = [
-            '🏛️ ' + (item.name || ''),
-            '🌍 Country: ' + (item.country || '—'),
-            '🏙️ City: ' + (item.city || '—')
+            '' + (item.name || ''),
+            'Country: ' + (item.country || '—'),
+            'City: ' + (item.city || '—')
           ];
-          if (item.fact) factLines.push('💡 ' + item.fact);
+          if (item.fact) factLines.push('' + item.fact);
           return {
             imageDOM: illustrationImage(api, item.svg, FF.t('pictureToGuess', 'Picture to guess')),
             promptText: FF.t('whereIsThis', 'Where is this?'),
@@ -439,8 +439,8 @@ window.FF = window.FF || {};
         rounds: ROUNDS,
         build: function (item) {
           var factLines = [];
-          if (item.category) factLines.push('🐾 ' + item.category);
-          if (item.fact) factLines.push('💡 ' + item.fact);
+          if (item.category) factLines.push('' + item.category);
+          if (item.fact) factLines.push('' + item.fact);
           return {
             imageDOM: illustrationImage(api, item.svg, FF.t('pictureToGuess', 'Picture to guess')),
             promptText: FF.t('whatAnimal', 'What animal is this?'),
@@ -482,8 +482,8 @@ window.FF = window.FF || {};
         rounds: ROUNDS,
         build: function (item) {
           var factLines = [];
-          if (item.origin) factLines.push('📍 Origin: ' + item.origin);
-          if (item.fact) factLines.push('💡 ' + item.fact);
+          if (item.origin) factLines.push('Origin: ' + item.origin);
+          if (item.fact) factLines.push('' + item.fact);
           return {
             imageDOM: illustrationImage(api, item.svg, FF.t('pictureToGuess', 'Picture to guess')),
             promptText: FF.t('whatFood', 'What food is this?'),
@@ -525,7 +525,7 @@ window.FF = window.FF || {};
         rounds: ROUNDS,
         build: function (item, difficulty) {
           var factLines = [];
-          if (item.fact) factLines.push('💡 ' + item.fact);
+          if (item.fact) factLines.push('' + item.fact);
           return {
             imageDOM: objectImage(api, item, difficulty),
             promptText: FF.t('whatIsThis', 'What is this?'),
@@ -571,7 +571,7 @@ window.FF = window.FF || {};
             promptText: FF.t('whichSport', 'Which sport is this?'),
             correctName: item.name,
             options: makeOptions(item.name, names),
-            factLines: ['🏅 ' + item.name]
+            factLines: ['' + item.name]
           };
         }
       });
@@ -611,7 +611,7 @@ window.FF = window.FF || {};
             promptText: FF.t('whatVehicle', 'What vehicle is this?'),
             correctName: item.name,
             options: makeOptions(item.name, names),
-            factLines: ['🚗 ' + item.name]
+            factLines: ['' + item.name]
           };
         }
       });

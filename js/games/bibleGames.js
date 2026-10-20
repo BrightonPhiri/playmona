@@ -1,6 +1,6 @@
 /* ============================================================
-   FAMILY FUN — games/bibleGames.js
-   Four complete, family-friendly Bible games:
+   PLAYMORA — games/bibleGames.js
+   Four complete Bible games for all ages:
      1. bibleQuiz      — Bible Trivia (solo, turn, team, room race)
      2. bibleWhoAmI    — Who Am I? (Progressive clue riddles)
      3. bibleVerseRush — Verse Rush (Scramble & memory assembly)
@@ -14,7 +14,7 @@ window.FF = window.FF || {};
   function scorerList(config) {
     if (config && config.scorers && config.scorers.length) return config.scorers;
     if (config && config.players && config.players.length) return config.players;
-    return [{ id: 'p1', name: 'Player 1', avatar: '😀', color: '#8b5cf6' }];
+    return [{ id: 'p1', name: 'Player 1', avatar: null, color: '#8b5cf6' }];
   }
 
   function getBibleData() {
@@ -34,7 +34,7 @@ window.FF = window.FF || {};
     players: [1, 8],
     difficulty: 'Normal',
     duration: 4,
-    tags: ['quiz', 'faith', 'trivia', 'family'],
+    tags: ['quiz', 'faith', 'trivia', 'everyone'],
     modes: ['solo', 'turn', 'team', 'everyone', 'host'],
     defaultMode: 'turn',
     howToPlay: [

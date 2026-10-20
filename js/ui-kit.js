@@ -1,5 +1,5 @@
 /* ============================================================
-   FAMILY FUN — ui-kit.js
+   PLAYMORA — ui-kit.js
    Shared, accessible UI components built on FF.ui:
    dialog / sheet, toast + screen-reader announcer, switch,
    segmented control, chip, icon button, empty state.

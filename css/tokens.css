@@ -1,5 +1,5 @@
 /* ============================================================
-   FAMILY FUN — tokens.css
+   PLAYMORA — tokens.css
    Design tokens: the single source of truth for colour, type,
    spacing, shape, depth and motion. Every other stylesheet and
    every game reads these variables — never hardcode a colour.
@@ -58,9 +58,21 @@
 
   /* ---------- Fixed palette (theme independent) ---------- */
   --on-art: #ffffff;              /* text on photos under a scrim */
-  --on-art-muted: rgba(255, 255, 255, 0.84);
-  --scrim: rgba(12, 10, 22, 0.62);
-  --art-ink: #121022;             /* base colour under artwork */
+  --on-art-muted: rgba(255, 255, 255, 0.86);
+  --scrim: rgba(8, 12, 40, 0.62);
+  --art-ink: #0b1030;             /* base colour under artwork */
+
+  /* PlayMora brand: navy ink and the seven dots of the logo. */
+  --brand-navy: #0b1030;
+  --brand-blue: #1e7bff;
+  --brand-cyan: #19c3f0;
+  --brand-green: #2ec84b;
+  --brand-yellow: #ffc83d;
+  --brand-orange: #ff8a1f;
+  --brand-pink: #ff2f8f;
+  --brand-purple: #8b3cf7;
+  --brand-gradient: linear-gradient(90deg, #ffb21f 0%, #ff6a1f 22%, #ff2f8f 45%, #8b3cf7 68%, #1e7bff 84%, #2ec84b 100%);
+  --brand-gradient-mark: linear-gradient(135deg, #19c3f0 0%, #1e7bff 35%, #8b3cf7 62%, #ff2f8f 80%, #ff8a1f 100%);
 
   /* Category colours: vivid (decoration) + text-safe ink per theme. */
   --cat-words: #8b5cf6;   --cat-quiz: #3b82f6;  --cat-bible: #9333ea;
@@ -76,56 +88,56 @@
 :root,
 :root[data-theme="light"] {
   color-scheme: light;
-  --bg: #fbf7f0;
-  --bg-2: #f4efe6;
+  --bg: #f5f7ff;
+  --bg-2: #eceffb;
   --surface: #ffffff;
-  --surface-2: #f4efe6;
-  --surface-3: #e9e2d5;
-  --text: #1d1b2e;
-  --muted: #5f5a74;
-  --border: #e4ddd0;
-  --border-strong: #cbc1b0;
+  --surface-2: #eef1fb;
+  --surface-3: #e0e5f6;
+  --text: #0b1030;
+  --muted: #4f587e;
+  --border: #dde2f2;
+  --border-strong: #b9c1de;
 
   --success: #15803d; --success-soft: rgba(21, 128, 61, 0.12);
   --danger: #b91c1c;  --danger-soft: rgba(185, 28, 28, 0.10);
   --warn: #b45309;    --warn-soft: rgba(180, 83, 9, 0.12);
   --on-status: #ffffff;
 
-  --shadow-1: 0 1px 2px rgba(29, 27, 46, 0.06), 0 2px 8px rgba(29, 27, 46, 0.06);
-  --shadow-2: 0 4px 12px rgba(29, 27, 46, 0.08), 0 12px 32px rgba(29, 27, 46, 0.08);
-  --shadow-3: 0 18px 48px rgba(29, 27, 46, 0.18);
-  --press-edge: rgba(29, 27, 46, 0.14);
+  --shadow-1: 0 1px 2px rgba(11, 16, 48, 0.06), 0 2px 8px rgba(11, 16, 48, 0.06);
+  --shadow-2: 0 4px 12px rgba(11, 16, 48, 0.08), 0 12px 32px rgba(11, 16, 48, 0.08);
+  --shadow-3: 0 18px 48px rgba(11, 16, 48, 0.18);
+  --press-edge: rgba(11, 16, 48, 0.14);
 
-  --header-bg: rgba(251, 247, 240, 0.9);
-  --overlay: rgba(20, 17, 31, 0.55);
+  --header-bg: rgba(245, 247, 255, 0.9);
+  --overlay: rgba(8, 12, 40, 0.55);
   --focus-ring: #1d4ed8;
 }
 
 /* ============ Dark theme ============ */
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #14111f;
-  --bg-2: #1a1628;
-  --surface: #1f1a30;
-  --surface-2: #29233d;
-  --surface-3: #352e4f;
-  --text: #f5f1ea;
-  --muted: #b4adc8;
-  --border: #352e4f;
-  --border-strong: #4c4370;
+  --bg: #080c26;
+  --bg-2: #0c1233;
+  --surface: #121940;
+  --surface-2: #1a2250;
+  --surface-3: #252e63;
+  --text: #f3f5ff;
+  --muted: #aab3dc;
+  --border: #242d62;
+  --border-strong: #38428a;
 
   --success: #4ade80; --success-soft: rgba(74, 222, 128, 0.14);
   --danger: #fca5a5;  --danger-soft: rgba(252, 165, 165, 0.14);
   --warn: #fbbf24;    --warn-soft: rgba(251, 191, 36, 0.14);
-  --on-status: #14111f;
+  --on-status: #080c26;
 
   --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.25);
   --shadow-2: 0 6px 16px rgba(0, 0, 0, 0.35), 0 14px 36px rgba(0, 0, 0, 0.3);
   --shadow-3: 0 22px 56px rgba(0, 0, 0, 0.55);
   --press-edge: rgba(0, 0, 0, 0.45);
 
-  --header-bg: rgba(20, 17, 31, 0.9);
-  --overlay: rgba(6, 5, 12, 0.7);
+  --header-bg: rgba(8, 12, 38, 0.88);
+  --overlay: rgba(3, 5, 18, 0.72);
   --focus-ring: #93b4fd;
 }
 
@@ -134,21 +146,21 @@
    --accent-vivid  decoration
    --accent-soft   tinted background
    --accent-edge   darker bottom edge for "toy" buttons */
-:root[data-accent="purple"], :root:not([data-accent]) { --accent: #6d28d9; --accent-vivid: #8b5cf6; --accent-soft: rgba(139, 92, 246, 0.14); --accent-edge: #4c1d95; --accent-text: #ffffff; }
-:root[data-accent="blue"]   { --accent: #1d4ed8; --accent-vivid: #3b82f6; --accent-soft: rgba(59, 130, 246, 0.14); --accent-edge: #1e3a8a; --accent-text: #ffffff; }
+:root[data-accent="purple"] { --accent: #6d28d9; --accent-vivid: #8b5cf6; --accent-soft: rgba(139, 92, 246, 0.14); --accent-edge: #4c1d95; --accent-text: #ffffff; }
+:root[data-accent="blue"], :root:not([data-accent]) { --accent: #1d4ed8; --accent-vivid: #3b82f6; --accent-soft: rgba(59, 130, 246, 0.14); --accent-edge: #1e3a8a; --accent-text: #ffffff; }
 :root[data-accent="green"]  { --accent: #047857; --accent-vivid: #10b981; --accent-soft: rgba(16, 185, 129, 0.15); --accent-edge: #064e3b; --accent-text: #ffffff; }
 :root[data-accent="orange"] { --accent: #c2410c; --accent-vivid: #f97316; --accent-soft: rgba(249, 115, 22, 0.15); --accent-edge: #7c2d12; --accent-text: #ffffff; }
 :root[data-accent="red"]    { --accent: #b91c1c; --accent-vivid: #ef4444; --accent-soft: rgba(239, 68, 68, 0.13); --accent-edge: #7f1d1d; --accent-text: #ffffff; }
 :root[data-accent="pink"]   { --accent: #be185d; --accent-vivid: #ec4899; --accent-soft: rgba(236, 72, 153, 0.13); --accent-edge: #831843; --accent-text: #ffffff; }
 :root[data-accent="gold"]   { --accent: #8d5a00; --accent-vivid: #eab308; --accent-soft: rgba(234, 179, 8, 0.18); --accent-edge: #5c3a00; --accent-text: #ffffff; }
 
-:root[data-theme="dark"][data-accent="purple"], :root[data-theme="dark"]:not([data-accent]) { --accent: #b9a2fb; --accent-soft: rgba(139, 92, 246, 0.24); --accent-edge: #7c5ce0; --accent-text: #1a1625; }
-:root[data-theme="dark"][data-accent="blue"]   { --accent: #93b4fd; --accent-soft: rgba(59, 130, 246, 0.24); --accent-edge: #5b85e6; --accent-text: #1a1625; }
-:root[data-theme="dark"][data-accent="green"]  { --accent: #5fdcb0; --accent-soft: rgba(16, 185, 129, 0.22); --accent-edge: #2ea882; --accent-text: #1a1625; }
-:root[data-theme="dark"][data-accent="orange"] { --accent: #fdac74; --accent-soft: rgba(249, 115, 22, 0.22); --accent-edge: #d77b3c; --accent-text: #1a1625; }
-:root[data-theme="dark"][data-accent="red"]    { --accent: #fca5a5; --accent-soft: rgba(239, 68, 68, 0.22); --accent-edge: #d66b6b; --accent-text: #1a1625; }
-:root[data-theme="dark"][data-accent="pink"]   { --accent: #f9a8d4; --accent-soft: rgba(236, 72, 153, 0.22); --accent-edge: #d06aa3; --accent-text: #1a1625; }
-:root[data-theme="dark"][data-accent="gold"]   { --accent: #fcd34d; --accent-soft: rgba(234, 179, 8, 0.22); --accent-edge: #c99a12; --accent-text: #1a1625; }
+:root[data-theme="dark"][data-accent="purple"] { --accent: #b9a2fb; --accent-soft: rgba(139, 92, 246, 0.24); --accent-edge: #7c5ce0; --accent-text: #080c26; }
+:root[data-theme="dark"][data-accent="blue"], :root[data-theme="dark"]:not([data-accent]) { --accent: #93b4fd; --accent-soft: rgba(59, 130, 246, 0.24); --accent-edge: #5b85e6; --accent-text: #080c26; }
+:root[data-theme="dark"][data-accent="green"]  { --accent: #5fdcb0; --accent-soft: rgba(16, 185, 129, 0.22); --accent-edge: #2ea882; --accent-text: #080c26; }
+:root[data-theme="dark"][data-accent="orange"] { --accent: #fdac74; --accent-soft: rgba(249, 115, 22, 0.22); --accent-edge: #d77b3c; --accent-text: #080c26; }
+:root[data-theme="dark"][data-accent="red"]    { --accent: #fca5a5; --accent-soft: rgba(239, 68, 68, 0.22); --accent-edge: #d66b6b; --accent-text: #080c26; }
+:root[data-theme="dark"][data-accent="pink"]   { --accent: #f9a8d4; --accent-soft: rgba(236, 72, 153, 0.22); --accent-edge: #d06aa3; --accent-text: #080c26; }
+:root[data-theme="dark"][data-accent="gold"]   { --accent: #fcd34d; --accent-soft: rgba(234, 179, 8, 0.22); --accent-edge: #c99a12; --accent-text: #080c26; }
 
 /* ============ Text size (Settings → Appearance) ============ */
 :root[data-text-size="large"] { --text-scale: 1.125; }

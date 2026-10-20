@@ -1,5 +1,5 @@
 /* ============================================================
-   FAMILY FUN — visual2.js
+   PLAYMORA — visual2.js
    More illustrations: sports, vehicles, visual charades and
    visual riddles. Attaches to FF.data.visual.
    Classic script, global window.FF, no modules/network.

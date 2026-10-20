@@ -1,83 +1,236 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light" data-accent="purple" data-mix-accents="1" data-input="pointer">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#fbf7f0">
-  <meta name="color-scheme" content="light dark">
-  <meta name="description" content="Family Fun: 45 family games for every age. Quizzes, word games, party games and more. Play on one screen, the TV, or everyone's phones. No accounts, no ads.">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <title>Family Fun — Games for everyone</title>
-  <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
-  <link rel="apple-touch-icon" href="assets/icons/app-icon.svg">
+  <meta name="theme-color" content="#0b1030">
+  <title>PlayMora — Games for everyone. Everywhere.</title>
+  <meta name="description" content="45 free games for everyone: quizzes, word games, party games, puzzles and more. Play solo, pass one screen around, or play online on everyone's phones.">
+  <link rel="canonical" href="https://playmora.com/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="PlayMora">
+  <meta property="og:title" content="PlayMora — Games for everyone. Everywhere.">
+  <meta property="og:description" content="45 free games for everyone. Play solo, on one screen together, or online on everyone's phones.">
+  <meta property="og:url" content="https://playmora.com/">
+  <meta property="og:image" content="https://playmora.com/assets/brand/og-image.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/brand/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="48x48" href="assets/brand/favicon-48.png">
+  <link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png">
+  <link rel="manifest" href="manifest.webmanifest">
   <link rel="preload" href="assets/fonts/fredoka.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" href="assets/fonts/nunito.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" as="image" href="assets/images/ui/hero-cosmic-sm.webp" media="(max-width: 820px)">
+  <link rel="preload" as="image" href="assets/images/ui/hero-cosmic.webp" media="(min-width: 821px)">
   <link rel="stylesheet" href="css/fonts.css">
-  <link rel="stylesheet" href="css/tokens.css">
-  <link rel="stylesheet" href="css/styles.css">
-  <link rel="stylesheet" href="css/games.css">
-  <link rel="stylesheet" href="css/room.css">
+  <link rel="stylesheet" href="css/landing.css">
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"WebApplication","name":"PlayMora","url":"https://playmora.com/",
+   "applicationCategory":"GameApplication","operatingSystem":"Any (web browser)",
+   "description":"45 games for everyone: quizzes, word games, party games and puzzles.",
+   "offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+  </script>
+  <script>
+    // An old shared room link (index.html#room=ABC123) opens the game app.
+    if (/^#room=/.test(location.hash)) location.replace('play.html' + location.hash);
+  </script>
 </head>
 <body>
-  <!-- Core engine -->
-  <script src="js/core.js"></script>
-  <script src="js/ui-kit.js"></script>
-  <script src="js/storage.js"></script>
-  <script src="js/i18n.js"></script>
-  <script src="js/theme.js"></script>
-  <script src="js/audio.js"></script>
-  <script src="js/timer.js"></script>
-  <script src="js/advance.js"></script>
-  <script src="js/confetti.js"></script>
-  <script src="js/scoring.js"></script>
-  <script src="js/players.js"></script>
-  <script src="js/data/assetManifest.js"></script>
-  <script src="js/assets.js"></script>
-  <script src="js/flagrenderer.js"></script>
-  <script src="js/icons.js"></script>
-  <script src="js/icons-custom.js"></script>
-  <script src="js/registry.js"></script>
-  <script src="js/navigation.js"></script>
-  <script src="js/gameUI.js"></script>
+  <a class="skip" href="#main">Skip to content</a>
 
-  <!-- Online play (optional; inert unless firebase-config.js is filled in) -->
-  <script src="js/vendor/qrcode.js"></script>
-  <script src="js/net/firebase-config.js"></script>
-  <script src="js/net/qr.js"></script>
-  <script src="js/net/raceRules.js"></script>
-  <script src="js/net/transport.js"></script>
-  <script src="js/net/firebaseTransport.js"></script>
-  <script src="js/net/room.js"></script>
-  <script src="js/net/voice.js"></script>
-  <script src="js/net/race.js"></script>
-  <script src="js/net/raceUI.js"></script>
-  <script src="js/net/roomUI.js"></script>
+  <header class="site-head" id="top">
+    <div class="wrap site-head__inner">
+      <a class="lockup" href="./" aria-label="PlayMora home">
+        <img src="assets/brand/mark-256.webp" alt="" width="40" height="40">
+        <span class="wordmark"><span class="wordmark__play">Play</span><span class="wordmark__mora">Mora</span></span>
+      </a>
+      <nav class="site-nav" aria-label="Sections">
+        <a href="#games">Games</a>
+        <a href="#ways">Ways to play</a>
+        <a href="#faq">Questions</a>
+      </nav>
+      <div class="site-head__cta">
+        <a class="btn btn--quiet js-signed-out" href="play.html">Sign in</a>
+        <a class="btn btn--blue js-cta" href="play.html?view=signup">Play now</a>
+      </div>
+    </div>
+  </header>
 
-  <!-- Content data -->
-  <script src="js/data/quiz.js"></script>
-  <script src="js/data/words.js"></script>
-  <script src="js/data/wordlist.js"></script>
-  <script src="js/data/countries.js"></script>
-  <script src="js/data/flagcodes.js"></script>
-  <script src="js/data/party.js"></script>
-  <script src="js/data/visual.js"></script>
-  <script src="js/data/visual2.js"></script>
-  <script src="js/data/bible.js"></script>
+  <main id="main">
+    <!-- Hero -->
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="wrap hero__inner">
+        <div class="hero__copy">
+          <p class="eyebrow">45 games · free · no ads</p>
+          <h1 id="hero-title" class="hero__title">Games for<br><span class="hl-yellow">Everyone.</span><br>Everywhere.</h1>
+          <p class="hero__lead">Quizzes, word games, party games and puzzles in one place. Play on your own, pass one screen around the room, or join a game online from any phone.</p>
+          <div class="hero__actions">
+            <a class="btn btn--yellow btn--lg js-cta" href="play.html?view=signup">Start playing <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+            <a class="btn btn--glass btn--lg js-signed-out" href="play.html">I have an account</a>
+          </div>
+          <ul class="hero__facts" aria-label="At a glance">
+            <li><strong>45</strong><span>games</span></li>
+            <li><strong>1–8</strong><span>players</span></li>
+            <li><strong>10</strong><span>categories</span></li>
+            <li><strong>Offline</strong><span>ready</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
 
-  <!-- Games -->
-  <script src="js/games/wordGames.js"></script>
-  <script src="js/games/quizGames.js"></script>
-  <script src="js/games/memoryGames.js"></script>
-  <script src="js/games/reactionGames.js"></script>
-  <script src="js/games/numberGames.js"></script>
-  <script src="js/games/creativeGames.js"></script>
-  <script src="js/games/partyGames.js"></script>
-  <script src="js/games/visualGames.js"></script>
-  <script src="js/games/puzzleGames.js"></script>
-  <script src="js/games/worldGames.js"></script>
-  <script src="js/games/bibleGames.js"></script>
+    <!-- Categories -->
+    <section class="section" id="games" aria-labelledby="games-title">
+      <div class="wrap">
+        <div class="section__head">
+          <p class="eyebrow eyebrow--dark">Something for every mood</p>
+          <h2 id="games-title">Pick a world and play</h2>
+          <p class="section__lead">Short rounds, clear rules and a score at the end. Every game works on a phone, a tablet, a laptop or the big TV.</p>
+        </div>
+        <ul class="cats">
+          <li class="cat" style="--c:#1e7bff"><img src="assets/images/categories/cat-quiz.webp" alt="" loading="lazy" width="160" height="160"><div><h3>Quiz</h3><p>Trivia, true or false, brain battles</p></div></li>
+          <li class="cat" style="--c:#8b3cf7"><img src="assets/images/categories/cat-words.webp" alt="" loading="lazy" width="160" height="160"><div><h3>Words</h3><p>Scrambles, chains, crosswords</p></div></li>
+          <li class="cat" style="--c:#ff2f8f"><img src="assets/images/categories/cat-party.webp" alt="" loading="lazy" width="160" height="160"><div><h3>Party</h3><p>Charades, voting, hot seat</p></div></li>
+          <li class="cat" style="--c:#2ec84b"><img src="assets/images/categories/cat-world.webp" alt="" loading="lazy" width="160" height="160"><div><h3>World</h3><p>Flags, capitals, maps</p></div></li>
+          <li class="cat" style="--c:#ff8a1f"><img src="assets/images/categories/cat-reaction.webp" alt="" loading="lazy" width="160" height="160"><div><h3>Reaction</h3><p>Fast taps and quick eyes</p></div></li>
+          <li class="cat" style="--c:#19c3f0"><img src="assets/images/categories/cat-memory.webp" alt="" loading="lazy" width="160" height="160"><div><h3>Memory</h3><p>Match, recall, repeat</p></div></li>
+          <li class="cat" style="--c:#ffb21f"><img src="assets/images/categories/cat-numbers.webp" alt="" loading="lazy" width="160" height="160"><div><h3>Numbers</h3><p>Quick maths and number puzzles</p></div></li>
+          <li class="cat" style="--c:#e0457b"><img src="assets/images/categories/cat-creative.webp" alt="" loading="lazy" width="160" height="160"><div><h3>Creative</h3><p>Draw, describe, imagine</p></div></li>
+          <li class="cat" style="--c:#6d5cff"><img src="assets/images/categories/cat-visual.webp" alt="" loading="lazy" width="160" height="160"><div><h3>Visual</h3><p>Spot it, riddles, picture puzzles</p></div></li>
+          <li class="cat" style="--c:#c98a10"><img class="cat__mark" src="assets/brand/mark-256.webp" alt="" loading="lazy" width="160" height="160"><div><h3>Bible</h3><p>Stories, verses and characters</p></div></li>
+        </ul>
+      </div>
+    </section>
 
-  <!-- App shell (boots last) -->
-  <script src="js/app.js"></script>
+    <!-- Ways to play -->
+    <section class="section section--tint" id="ways" aria-labelledby="ways-title">
+      <div class="wrap">
+        <div class="section__head">
+          <p class="eyebrow eyebrow--dark">Ways to play</p>
+          <h2 id="ways-title">One app. Every kind of game night.</h2>
+        </div>
+        <div class="ways">
+          <article class="way">
+            <span class="way__icon way__icon--blue" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg></span>
+            <h3>On your own</h3>
+            <p>Beat your best score, keep a daily streak and level up your profile.</p>
+          </article>
+          <article class="way">
+            <span class="way__icon way__icon--yellow" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></span>
+            <h3>One screen, together</h3>
+            <p>Save your regular players once, then tap who is in tonight. Take turns or play as teams.</p>
+          </article>
+          <article class="way">
+            <span class="way__icon way__icon--pink" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></svg></span>
+            <h3>Online, on every phone</h3>
+            <p>Start a room, share the code or QR, and everyone answers on their own phone.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Avatars -->
+    <section class="section section--navy" aria-labelledby="cast-title">
+      <div class="wrap cast">
+        <div class="cast__copy">
+          <p class="eyebrow">Your profile</p>
+          <h2 id="cast-title">Pick your character</h2>
+          <p class="section__lead">48 characters to choose from. Your profile keeps your level, wins, streak and medals, and it follows you to any device you sign in on.</p>
+          <a class="btn btn--yellow js-cta" href="play.html?view=signup">Create your profile</a>
+        </div>
+        <ul class="cast__grid" aria-label="Some of the characters">
+          <li><img src="assets/avatars/nia.webp" alt="" loading="lazy" width="96" height="96"></li>
+          <li><img src="assets/avatars/fox.webp" alt="" loading="lazy" width="96" height="96"></li>
+          <li><img src="assets/avatars/kenji.webp" alt="" loading="lazy" width="96" height="96"></li>
+          <li><img src="assets/avatars/unicorn.webp" alt="" loading="lazy" width="96" height="96"></li>
+          <li><img src="assets/avatars/amara.webp" alt="" loading="lazy" width="96" height="96"></li>
+          <li><img src="assets/avatars/bolt.webp" alt="" loading="lazy" width="96" height="96"></li>
+          <li><img src="assets/avatars/panda.webp" alt="" loading="lazy" width="96" height="96"></li>
+          <li><img src="assets/avatars/astronaut.webp" alt="" loading="lazy" width="96" height="96"></li>
+          <li><img src="assets/avatars/ravi.webp" alt="" loading="lazy" width="96" height="96"></li>
+          <li><img src="assets/avatars/dragon.webp" alt="" loading="lazy" width="96" height="96"></li>
+          <li><img src="assets/avatars/zuri.webp" alt="" loading="lazy" width="96" height="96"></li>
+          <li><img src="assets/avatars/penguin.webp" alt="" loading="lazy" width="96" height="96"></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Learn -->
+    <section class="learn" aria-labelledby="learn-title">
+      <div class="wrap learn__inner">
+        <div class="learn__card">
+          <p class="eyebrow eyebrow--dark">Play more. Discover more.</p>
+          <h2 id="learn-title">Fun that teaches something</h2>
+          <ul class="ticks">
+            <li>Flags and capitals of every country</li>
+            <li>Spelling and vocabulary from a 9,000-word list</li>
+            <li>Quick maths at easy, normal or hard levels</li>
+            <li>Bible stories and verses for those who want them</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Questions -->
+    <section class="section" id="faq" aria-labelledby="faq-title">
+      <div class="wrap faq">
+        <h2 id="faq-title">Questions</h2>
+        <details>
+          <summary>Is it free?</summary>
+          <p>Yes. Every game is free, with no ads.</p>
+        </details>
+        <details>
+          <summary>Why do I need an account?</summary>
+          <p>Your account holds your profile, saved players, stats and settings, so they are there on any device you use. It also gives you a name in online rooms.</p>
+        </details>
+        <details>
+          <summary>Does it work without internet?</summary>
+          <p>Yes, once you have signed in on a device. Games that run on one screen keep working offline, and your progress syncs when you are back online. Online rooms need a connection.</p>
+        </details>
+        <details>
+          <summary>What do I need to play?</summary>
+          <p>A web browser on a phone, tablet, laptop or smart TV. Nothing to install, though you can add PlayMora to your home screen.</p>
+        </details>
+      </div>
+    </section>
+
+    <!-- Final call -->
+    <section class="finale" aria-labelledby="finale-title">
+      <div class="wrap finale__inner">
+        <img class="finale__mark" src="assets/brand/mark-256.webp" alt="" width="120" height="120" loading="lazy">
+        <h2 id="finale-title" class="finale__title"><span class="wordmark wordmark--xl"><span class="wordmark__play">Play</span><span class="wordmark__mora">Mora</span></span></h2>
+        <p class="finale__tag">Games for everyone. Everywhere.</p>
+        <a class="btn btn--blue btn--lg js-cta" href="play.html?view=signup">Get started</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-foot">
+    <div class="wrap site-foot__inner">
+      <span>© <span id="year">2026</span> PlayMora</span>
+      <nav aria-label="Footer">
+        <a href="privacy.html">Privacy</a>
+        <a href="play.html">Sign in</a>
+        <a href="#top">Back to top</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      document.getElementById('year').textContent = new Date().getFullYear();
+      // Already signed in on this device? Go straight to the games.
+      var signedIn = false;
+      try { signedIn = !!JSON.parse(localStorage.getItem('playmora:session') || 'null'); } catch (e) {}
+      if (!signedIn) return;
+      document.documentElement.classList.add('is-signed-in');
+      Array.prototype.forEach.call(document.querySelectorAll('.js-cta'), function (a) {
+        a.href = 'play.html';
+        if (a.textContent.trim() === 'Play now' || a.textContent.trim() === 'Get started') a.textContent = 'Open PlayMora';
+        else if (/Start playing/.test(a.textContent)) a.firstChild.textContent = 'Continue playing ';
+        else a.textContent = 'Go to my profile';
+      });
+    })();
+  </script>
 </body>
 </html>

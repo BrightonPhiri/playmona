@@ -1,5 +1,5 @@
 /* ============================================================
-   FAMILY FUN — audio.js
+   PLAYMORA — audio.js
    Web Audio API sound effects + light procedural music.
    No external audio files required. Works silently if unavailable.
    ============================================================ */

@@ -1,5 +1,5 @@
 /* ============================================================
-   FAMILY FUN — reactionGames.js
+   PLAYMORA — reactionGames.js
    Reaction games: Quick Tap (reflex test) and Color Reaction
    (Stroop-style ink-colour challenge).
    Classic script (no ES modules) so the app runs from file://
@@ -30,7 +30,7 @@ window.FF = window.FF || {};
     var root = api.shell.root;
     api.ui.clear(root);
     var wrap = api.ui.div('rt-empty');
-    wrap.appendChild(api.ui.div('rt-empty__icon', '😅'));
+    wrap.appendChild(api.ui.div('rt-empty__icon', FF.Icons.icon('alert')));
     wrap.appendChild(api.ui.el('p', { class: 'rt-empty__msg' }, msg));
     wrap.appendChild(FF.UI.button('Exit', { icon: 'house',  primary: true, class: 'btn-lg', onClick: function () {
       FF.GameFlow.exitToHome();
@@ -136,7 +136,7 @@ window.FF = window.FF || {};
       var root = api.shell.root;
       api.ui.clear(root);
       var wrap = api.ui.div('rt-wrap');
-      wrap.appendChild(api.ui.div('rt-avatar', player.avatar));
+      wrap.appendChild(FF.Players.avatarEl(player, 'rt-avatar'));
       wrap.appendChild(api.ui.el('h2', { class: 'rt-name' }, player.name));
       wrap.appendChild(api.ui.div('rt-hint', players.length > 1 ? 'Pass the device to ' + player.name + '.' : 'Ready when you are.'));
       wrap.appendChild(api.ui.div('rt-hint', roundsPerPlayer + ' tries — tap only when you see TAP!'));
@@ -164,7 +164,7 @@ window.FF = window.FF || {};
       var state = { phase: 'waiting', timer: null, startTime: 0, done: false };
 
       var wrap = api.ui.div('rt-wrap');
-      var who = api.ui.div('qt-who', player.avatar + ' ' + player.name);
+      var who = api.ui.div('qt-who', [FF.Players.avatarEl(player, 'who-ava'), player.name]);
       var roundLabel = api.ui.div('qt-round', 'Round ' + (roundNumber + 1) + ' of ' + roundsPerPlayer);
       var prompt = api.ui.div('qt-prompt', 'GET READY...');
       var pad = api.ui.button('Wait', { class: 'qt-pad', ariaLabel: 'Tap button', onClick: onTap });
@@ -253,7 +253,8 @@ window.FF = window.FF || {};
       var root = api.shell.root;
       api.ui.clear(root);
       var wrap = api.ui.div('rt-wrap');
-      wrap.appendChild(api.ui.el('h2', { class: 'rt-name' }, player.avatar + ' ' + player.name));
+      wrap.appendChild(FF.Players.avatarEl(player, 'rt-avatar'));
+      wrap.appendChild(api.ui.el('h2', { class: 'rt-name' }, player.name));
 
       var list = api.ui.div('qt-times');
       times.forEach(function (t, i) {
@@ -401,7 +402,7 @@ window.FF = window.FF || {};
       var root = api.shell.root;
       api.ui.clear(root);
       var wrap = api.ui.div('rt-wrap');
-      wrap.appendChild(api.ui.div('rt-avatar', player.avatar));
+      wrap.appendChild(FF.Players.avatarEl(player, 'rt-avatar'));
       wrap.appendChild(api.ui.el('h2', { class: 'rt-name' }, player.name));
       wrap.appendChild(api.ui.div('rt-hint', players.length > 1 ? 'Pass the device to ' + player.name + '.' : 'Ready when you are.'));
       wrap.appendChild(api.ui.div('rt-hint', roundsPerPlayer + ' rounds — answer the colour of the INK, not the word.'));
@@ -443,7 +444,7 @@ window.FF = window.FF || {};
       api.ui.clear(root);
 
       var wrap = api.ui.div('rt-wrap');
-      var who = api.ui.div('cr-who', player.avatar + ' ' + player.name + ' — Round ' + (roundNumber + 1) + '/' + roundsPerPlayer);
+      var who = api.ui.div('cr-who', [FF.Players.avatarEl(player, 'who-ava'), player.name + ' · ' + FF.t('roundOf', 'Round {n} of {total}', { n: roundNumber + 1, total: roundsPerPlayer })]);
       var word = api.ui.div('cr-word', round.word.name);
       word.style.color = round.ink.css;
       var question = api.ui.div('cr-question', 'What colour is the text?');
@@ -556,7 +557,8 @@ window.FF = window.FF || {};
       var root = api.shell.root;
       api.ui.clear(root);
       var wrap = api.ui.div('rt-wrap');
-      wrap.appendChild(api.ui.el('h2', { class: 'rt-name' }, player.avatar + ' ' + player.name));
+      wrap.appendChild(FF.Players.avatarEl(player, 'rt-avatar'));
+      wrap.appendChild(api.ui.el('h2', { class: 'rt-name' }, player.name));
 
       var list = api.ui.div('rt-stats');
       list.appendChild(statRow('Correct', s.correct + ' / ' + roundsPerPlayer));

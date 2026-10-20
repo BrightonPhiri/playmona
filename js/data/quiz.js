@@ -1,5 +1,5 @@
 /* ============================================================
-   FAMILY FUN — quiz.js
+   PLAYMORA — quiz.js
    Quiz question data: multiple choice, true/false, guess-who,
    and picture quiz. Attaches to FF.data.quiz.
    Classic script (no ES modules) so the app runs from file://
@@ -781,7 +781,7 @@ window.FF = window.FF || {};
       { answer: 'SCHOOL', clues: ['I am a place', 'Children come here every day', 'You learn and study here'], category: 'Places', difficulty: 'easy' },
       { answer: 'LIBRARY', clues: ['I am a place', 'I am full of books', 'You can borrow books here'], category: 'Places', difficulty: 'easy' },
       { answer: 'AIRPORT', clues: ['I am a place', 'I am very busy', 'Aeroplanes take off and land here'], category: 'Places', difficulty: 'normal' },
-      { answer: 'ZOO', clues: ['I am a place', 'Families love to visit me', 'You see many wild animals here'], category: 'Places', difficulty: 'easy' },
+      { answer: 'ZOO', clues: ['I am a place', 'People love to visit me', 'You see many wild animals here'], category: 'Places', difficulty: 'easy' },
       { answer: 'MARKET', clues: ['I am a place', 'People buy and sell here', 'You can buy fruit and vegetables here'], category: 'Places', difficulty: 'easy' },
       { answer: 'MUSEUM', clues: ['I am a building', 'I hold very old things', 'You can see art and history here'], category: 'Places', difficulty: 'normal' },
       { answer: 'MOUNTAIN', clues: ['I am a place', 'I am very tall', 'People climb all the way to my top'], category: 'Places', difficulty: 'easy' },

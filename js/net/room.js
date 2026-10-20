@@ -1,5 +1,5 @@
 /* ============================================================
-   FAMILY FUN — net/room.js
+   PLAYMORA — net/room.js
    Room lifecycle: create, join, watch, leave. Talks to a
    transport; knows nothing about games or the DOM.
    ============================================================ */
@@ -12,7 +12,7 @@ window.FF = window.FF || {};
   var CODE_LENGTH = 6;
   var MAX_PLAYERS = 12;
   var TTL_MS = 6 * 60 * 60 * 1000;                     // 6 hours
-  var APP_VERSION = '1.1.0';
+  var APP_VERSION = '2.0.0';
   // How long everyone gets to look up from their phone before round one.
   var COUNTDOWN_MS = 10000;
   var HEARTBEAT_MS = 10000;
@@ -69,13 +69,18 @@ window.FF = window.FF || {};
   /* A stable per-device identity, reused across rooms and rejoins. */
   function identity() {
     var saved = readIdentity();
-    if (saved && saved.uid) return saved;
+    // Signed-in players appear in rooms with their profile name and character.
+    var profile = FF.Auth && FF.Auth.profile ? FF.Auth.profile() : null;
+    if (saved && saved.uid) {
+      if (profile && !usingDevIdentity()) { saved.name = profile.displayName; saved.avatar = profile.avatar; }
+      return saved;
+    }
     var players = FF.Players.get();
     var first = players && players.length ? players[0] : null;
     var fresh = {
       uid: 'd-' + FF.util.uid() + FF.util.uid(),
-      name: first ? first.name : 'Player',
-      avatar: first ? first.avatar : FF.util.pick(FF.Players.AVATARS),
+      name: profile ? profile.displayName : (first ? first.name : 'Player'),
+      avatar: profile ? profile.avatar : (first ? first.avatar : (FF.Avatars ? FF.Avatars.random() : '')),
       color: first ? first.color : FF.Players.COLORS[0]
     };
     writeIdentity(fresh);
@@ -326,7 +331,7 @@ window.FF = window.FF || {};
           uid: uid,
           online: playerIsOnline(p, now),
           name: p.name || 'Player',
-          avatar: p.avatar || '😀',
+          avatar: p.avatar || null,
           color: p.color || '#8b5cf6',
           teamId: p.teamId || null,
           joinedAt: p.joinedAt || 0,
