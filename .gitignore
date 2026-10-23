@@ -2,3 +2,11 @@ node_modules/
 js/net/firebase-config.js
 Thumbs.db
 .DS_Store
+
+# Secret keys: never commit
+FIREBASE_SERVICE_ACCOUNT*.json
+*firebase-adminsdk*.json
+*service-account*.json
+*.pem
+*.key
+.env

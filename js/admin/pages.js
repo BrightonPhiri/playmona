@@ -182,7 +182,9 @@ window.FF = window.FF || {};
         Promise.all([
           D().daysFrom(prevKeys[0]),
           D().get('stats/totals'),
-          D().get('stats/players')
+          // Accounts that finished sign-up (each has a username). Not the public counter,
+          // which only goes up, so deleted accounts would stay in it.
+          D().accounts().then(function (a) { return a.length; })
         ]).then(function (res) {
           var days = res[0] || {}, totals = res[1] || {}, players = res[2] || 0;
           var now = summarise(days, keys), prev = summarise(days, prevKeys);
@@ -204,7 +206,7 @@ window.FF = window.FF || {};
           allRow.appendChild(tile('Online games', totals.onlinePlays || 0));
           allRow.appendChild(tile('App installs', totals.installs || 0));
           all.appendChild(allRow);
-          all.appendChild(el('p', { class: 'admin-card__sub' }, 'Counting started on 23 Oct 2026 (visitors later that day); the registered players count is older.'));
+          all.appendChild(el('p', { class: 'admin-card__sub' }, 'Counting started on 23 Oct 2026 (visitors later that day); registered players are accounts that finished sign-up.'));
 
           var points = function (fn) { return keys.map(function (k) { return { key: k, label: shortDate(k), value: fn(k) }; }); };
           var visitCard = card('Visitors per day', 'Each device counts once a day, whether or not it played.');

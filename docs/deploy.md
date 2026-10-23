@@ -139,7 +139,7 @@ Rules → Publish whenever it changes.
 
 To automate it: Firebase console → ⚙ Project settings → **Service accounts** →
 **Generate new private key**. Save the whole JSON file as the `FIREBASE_SERVICE_ACCOUNT`
-secret. The workflow then publishes the rules on every deploy (project `family-fun-game`,
+secret. The workflow then publishes the rules on every deploy (project `play-mona`,
 set in `.firebaserc`).
 
 ---
