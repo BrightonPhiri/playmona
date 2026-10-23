@@ -17,7 +17,13 @@ window.FF = window.FF || {};
 
   function day(d) { return (d || new Date()).toISOString().slice(0, 10); }
   function plusOne(n) { return (typeof n === 'number' ? n : 0) + 1; }
-  function bump(w, path) { return w.transaction(path, plusOne); }
+  // +1 on the server: players cannot read the stats, so a read-then-write would be refused.
+  function bump(w, path) { return w.increment(path); }
+  // +1 on the player's own entry, only once that entry exists (see seen()).
+  function bumpOwn(w, path) { return w.transaction(path, function (n) { return n == null ? undefined : plusOne(n); }); }
+
+  // "Guest001": the name a guest has until they choose one.
+  function guestName(n) { return 'Guest' + (n < 1000 ? ('00' + n).slice(-3) : String(n)); }
 
   function standalone() {
     return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
@@ -55,16 +61,26 @@ window.FF = window.FF || {};
           counterPaths(name).forEach(function (p) { jobs.push(bump(w, p)); });
         });
         if (online) jobs.push(bump(w, d + '/onlineGames/' + gameId));
-        if (uid && !guest) jobs.push(w.transaction('userIndex/' + uid + '/plays', function (n) {
-          // Only once the person's index entry exists (see seen()).
-          return n == null ? undefined : plusOne(n);
-        }));
+        if (uid) jobs.push(bumpOwn(w, (guest ? 'guestIndex/' : 'userIndex/') + uid + '/plays'));
         return Promise.all(jobs);
       });
     },
 
-    /* Mark this account (or guest) active today and refresh its index
-       entry for the admin portal. At most once per day per device. */
+    guestName: guestName,
+
+    /* A guest's number (Guest001, Guest002, …), given once per device. */
+    guestNumber: function (w) {
+      var n = FF.Storage.get('guestNumber', null);
+      if (typeof n === 'number') return Promise.resolve(n);
+      return w.transaction('stats/guestSeq', plusOne).then(function (r) {
+        if (!r || !r.committed || typeof r.value !== 'number') return null;
+        FF.Storage.set('guestNumber', r.value);
+        return r.value;
+      });
+    },
+
+    /* Mark this account (or guest) active today and refresh its entry in the
+       admin portal's player list. At most once per day per device. */
     seen: function () {
       var s = FF.Auth && FF.Auth.user && FF.Auth.user();
       if (!s || s.needsProfile || !FF.Cloud || !FF.Cloud.track) return Promise.resolve(false);
@@ -75,7 +91,22 @@ window.FF = window.FF || {};
       return FF.Cloud.track(function (w, uid) {
         if (!uid) return null;
         var jobs = [w.set('stats/days/' + today + '/active/' + uid, guest ? 'g' : 'u')];
-        if (!guest) {
+        if (guest) {
+          jobs.push(Promise.all([FF.Track.guestNumber(w), w.get('guestIndex/' + uid)]).then(function (res) {
+            var num = res[0], old = res[1] || {};
+            var chosen = s.displayName && !/^Guest\d*$/.test(s.displayName) ? String(s.displayName).slice(0, 40) : '';
+            var entry = {
+              name: chosen || (num ? guestName(num) : 'Guest'),
+              firstSeen: typeof old.firstSeen === 'number' ? old.firstSeen : Date.now(),
+              lastSeen: Date.now(),
+              plays: typeof old.plays === 'number' ? old.plays : 0,
+              installed: standalone() || !!FF.Storage.get('installTracked', false)
+            };
+            if (num) entry.number = num;
+            if (s.avatar) entry.avatar = String(s.avatar).slice(0, 60);
+            return w.set('guestIndex/' + uid, entry);
+          }));
+        } else {
           jobs.push(w.get('userIndex/' + uid + '/plays').then(function (plays) {
             var entry = {
               displayName: String(s.displayName || '').slice(0, 40),

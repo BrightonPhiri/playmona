@@ -99,20 +99,23 @@ window.FF = window.FF || {};
   /* ---------- Sums over a set of days ---------- */
   var COUNTERS = ['plays', 'onlinePlays', 'guestPlays', 'signups', 'installs', 'rooms'];
   function summarise(days, keys) {
-    var sum = { accounts: {}, guests: {}, games: {} };
+    var sum = { accounts: {}, guests: {}, games: {}, visitors: {}, landingOnly: 0 };
     COUNTERS.forEach(function (c) { sum[c] = 0; });
     keys.forEach(function (k) {
       var d = days[k] || {};
       COUNTERS.forEach(function (c) { sum[c] += typeof d[c] === 'number' ? d[c] : 0; });
       Object.keys(d.active || {}).forEach(function (u) { (d.active[u] === 'g' ? sum.guests : sum.accounts)[u] = true; });
       Object.keys(d.games || {}).forEach(function (g) { sum.games[g] = (sum.games[g] || 0) + (d.games[g] || 0); });
+      Object.keys(d.visitors || {}).forEach(function (v) { sum.visitors[v] = true; });
     });
+    sum.visitorCount = Object.keys(sum.visitors).length;
     sum.activeAccounts = Object.keys(sum.accounts).length;
     sum.activeGuests = Object.keys(sum.guests).length;
     sum.active = sum.activeAccounts + sum.activeGuests;
     return sum;
   }
   function activeOn(days, k) { return Object.keys((days[k] || {}).active || {}).length; }
+  function visitorsOn(days, k) { return Object.keys((days[k] || {}).visitors || {}).length; }
 
   function tile(label, value, prev, note) {
     var t = el('div', { class: 'kpi-tile' });
@@ -138,12 +141,13 @@ window.FF = window.FF || {};
     det.appendChild(el('summary', {}, 'Show the numbers by day'));
     var wrap = el('div', { class: 'admin-table-wrap' });
     var tbl = el('table', { class: 'admin-table admin-table--num' });
-    tbl.appendChild(el('thead', {}, [el('tr', {}, ['Day', 'Active', 'Games played', 'Online', 'Guest plays', 'Sign-ups', 'Installs', 'Rooms'].map(function (h) { return el('th', { scope: 'col' }, h); }))]));
+    tbl.appendChild(el('thead', {}, [el('tr', {}, ['Day', 'Visitors', 'Active', 'Games played', 'Online', 'Guest plays', 'Sign-ups', 'Installs', 'Rooms'].map(function (h) { return el('th', { scope: 'col' }, h); }))]));
     var body = el('tbody');
     keys.slice().reverse().forEach(function (k) {
       var d = days[k] || {};
       body.appendChild(el('tr', {}, [
         el('th', { scope: 'row' }, shortDate(k)),
+        el('td', {}, num(visitorsOn(days, k))),
         el('td', {}, num(activeOn(days, k))),
         el('td', {}, num(d.plays)), el('td', {}, num(d.onlinePlays)), el('td', {}, num(d.guestPlays)),
         el('td', {}, num(d.signups)), el('td', {}, num(d.installs)), el('td', {}, num(d.rooms))
@@ -155,7 +159,7 @@ window.FF = window.FF || {};
     return det;
   }
 
-  var state = { range: 7, userSort: 'lastSeen' };
+  var state = { range: 7, userSort: 'lastSeen', userKind: 'accounts' };
 
   FF.AdminPages = {
     /* ================= Overview ================= */
@@ -185,6 +189,7 @@ window.FF = window.FF || {};
           FF.ui.clear(body);
 
           var tiles = el('div', { class: 'kpi-grid' });
+          tiles.appendChild(tile('Visitors', now.visitorCount, prev.visitorCount, 'Devices that opened PlayMona, played or not'));
           tiles.appendChild(tile('Active players', now.active, prev.active, num(now.activeAccounts) + ' with accounts, ' + num(now.activeGuests) + ' guests'));
           tiles.appendChild(tile('Games played', now.plays, prev.plays, num(now.onlinePlays) + ' online, ' + num(now.guestPlays) + ' by guests'));
           tiles.appendChild(tile('New sign-ups', now.signups, prev.signups));
@@ -199,18 +204,20 @@ window.FF = window.FF || {};
           allRow.appendChild(tile('Online games', totals.onlinePlays || 0));
           allRow.appendChild(tile('App installs', totals.installs || 0));
           all.appendChild(allRow);
-          all.appendChild(el('p', { class: 'admin-card__sub' }, 'Counting started with this version of PlayMona; the registered players count is older.'));
+          all.appendChild(el('p', { class: 'admin-card__sub' }, 'Counting started on 23 Oct 2026 (visitors later that day); the registered players count is older.'));
 
           var points = function (fn) { return keys.map(function (k) { return { key: k, label: shortDate(k), value: fn(k) }; }); };
+          var visitCard = card('Visitors per day', 'Each device counts once a day, whether or not it played.');
+          var c0 = el('div', { class: 'chart-box' });
+          visitCard.appendChild(c0);
+          var activeCard = card('Active players per day', 'Opened the app signed in or as a guest. Each person counts once a day.');
+          var c2 = el('div', { class: 'chart-box' });
+          activeCard.appendChild(c2);
+          body.appendChild(el('div', { class: 'admin-grid-2' }, [visitCard, activeCard]));
           var playsCard = card('Games played per day');
           var c1 = el('div', { class: 'chart-box' });
           playsCard.appendChild(c1);
-          var activeCard = card('Active players per day', 'Each person counts once a day: accounts and guests.');
-          var c2 = el('div', { class: 'chart-box' });
-          activeCard.appendChild(c2);
-          var charts = el('div', { class: 'admin-grid-2' }, [playsCard, activeCard]);
-          body.appendChild(charts);
-          C().columns(c1, points(function (k) { return (days[k] || {}).plays || 0; }), { label: 'Games played per day' });
+          C().line(c0, points(function (k) { return visitorsOn(days, k); }), { label: 'Visitors per day' });
           C().line(c2, points(function (k) { return activeOn(days, k); }), { label: 'Active players per day' });
 
           var top = card('Most played games', 'In the last ' + n + ' days.');
@@ -221,7 +228,9 @@ window.FF = window.FF || {};
           if (rows.length) { var c3 = el('div'); top.appendChild(c3); C().bars(c3, rows, { unit: 'plays' }); }
           else top.appendChild(el('p', { class: 'admin-empty' }, 'No games played in this period yet.'));
 
-          body.appendChild(el('div', { class: 'admin-grid-2' }, [top, all]));
+          body.appendChild(el('div', { class: 'admin-grid-2' }, [playsCard, top]));
+          C().columns(c1, points(function (k) { return (days[k] || {}).plays || 0; }), { label: 'Games played per day' });
+          body.appendChild(all);
           body.appendChild(dailyTable(keys, days));
         }).catch(function (e) { failed(body, e); });
       }
@@ -304,78 +313,132 @@ window.FF = window.FF || {};
       }).catch(function (e) { failed(box, e); });
     },
 
-    /* ================= Users ================= */
+    /* ================= Players: accounts and guests ================= */
     users: function (main) {
-      main.appendChild(head('Players', 'People with accounts. The list started on 23 Oct 2026: each person appears the next time they open PlayMona, so older accounts fill in as they come back.'));
+      main.appendChild(head('Players', 'Everyone with an account, and guests who play without one.'));
+      var kindSwitch = FF.UI.segmented({
+        label: 'Show', value: state.userKind,
+        options: [{ label: 'Accounts', value: 'accounts', icon: 'user' }, { label: 'Guests', value: 'guests', icon: 'users' }],
+        onChange: function (v) { state.userKind = v; state.userSort = 'lastSeen'; FF.AdminPages.users(FF.ui.clear(main)); }
+      });
+      main.appendChild(el('div', { class: 'admin-tools' }, [kindSwitch]));
+      var guests = state.userKind === 'guests';
+      var root = guests ? 'guestIndex' : 'userIndex';
+
       var summary = el('div', { class: 'kpi-grid kpi-grid--quiet' });
       main.appendChild(summary);
       var tools = el('div', { class: 'admin-tools' });
-      var search = el('input', { class: 'input', type: 'search', placeholder: 'Search by username', 'aria-label': 'Search by username' });
+      var search = el('input', { class: 'input', type: 'search', placeholder: guests ? 'Search guests, e.g. Guest012' : 'Search by username', 'aria-label': guests ? 'Search guests' : 'Search by username' });
       tools.appendChild(search);
       tools.appendChild(FF.UI.segmented({
         label: 'Sort players', value: state.userSort, compact: true,
-        options: [{ label: 'Recently active', value: 'lastSeen' }, { label: 'Newest', value: 'createdAt' }, { label: 'Most games', value: 'plays' }],
+        options: [
+          { label: 'Recently active', value: 'lastSeen' },
+          { label: guests ? 'Newest' : 'Newest', value: guests ? 'firstSeen' : 'createdAt' },
+          { label: 'Most games', value: 'plays' }
+        ],
         onChange: function (v) { state.userSort = v; search.value = ''; list(); }
       }));
       main.appendChild(tools);
       var box = el('div', { class: 'admin-table-wrap' });
       main.appendChild(box);
       var bans = {};
+      var todayKey = lastDays(1)[0];
 
-      Promise.all([D().get('stats/players'), D().daysFrom(lastDays(1)[0])]).then(function (res) {
-        var today = res[1] && res[1][lastDays(1)[0]];
-        var active = Object.keys((today && today.active) || {}).length;
-        summary.appendChild(tile('Registered players', res[0] || 0, null, 'All accounts, including ones not in the list yet'));
-        summary.appendChild(tile('Active today', active));
+      function activeToday(days, kind) {
+        var a = ((days || {})[todayKey] || {}).active || {};
+        return Object.keys(a).filter(function (u) { return a[u] === kind; }).length;
+      }
+
+      // Accounts from before the list existed are added first, so the list matches the total.
+      var ready = guests ? Promise.resolve(null) : D().fillPlayerList().catch(function () { return null; });
+
+      ready.then(function (accountCount) {
+        return Promise.all([
+          guests ? D().get('stats/guestSeq') : Promise.resolve(accountCount),
+          D().daysFrom(todayKey)
+        ]);
+      }).then(function (res) {
+        if (guests) {
+          summary.appendChild(tile('Guests so far', res[0] || 0, null, 'Each device that played as a guest'));
+          summary.appendChild(tile('Guests active today', activeToday(res[1], 'g')));
+        } else {
+          summary.appendChild(tile('Registered players', res[0] || 0));
+          summary.appendChild(tile('Active today', activeToday(res[1], 'u')));
+        }
       }).catch(function () {});
+
+      function seen(ts) { return ts ? ago(ts) : 'Before 23 Oct'; }
+
+      function suspendButton(r, label, rows) {
+        var banned = !!bans[r.key];
+        return FF.UI.button(banned ? 'Restore' : 'Suspend', { class: 'btn-sm ' + (banned ? '' : 'btn-ghost'), onClick: function () {
+          if (banned) {
+            D().unban(r.key).then(function () { delete bans[r.key]; saved(); render(rows); }, function () { saved(false); });
+            return;
+          }
+          FF.UI.confirm({
+            title: 'Suspend ' + label + '?',
+            body: 'They can still open PlayMona, but cannot save progress, join rooms or post scores until you restore them.',
+            confirmLabel: 'Suspend', danger: true,
+            onConfirm: function () {
+              D().ban(r.key, 'Suspended from the admin portal').then(function () { bans[r.key] = { t: Date.now() }; saved(); render(rows); }, function () { saved(false); });
+            }
+          });
+        } });
+      }
 
       function render(rows) {
         FF.ui.clear(box);
-        if (!rows.length) { box.appendChild(el('p', { class: 'admin-empty' }, search.value ? 'Nobody matches that username.' : 'Nobody has opened PlayMona since the list started. Players appear here the next time they open the app.')); return; }
+        if (!rows.length) {
+          box.appendChild(el('p', { class: 'admin-empty' }, search.value ? 'Nobody matches that.' :
+            (guests ? 'No guests yet. Guests appear here the first time they play without an account.' : 'No accounts yet.')));
+          return;
+        }
         var tbl = el('table', { class: 'admin-table' });
-        tbl.appendChild(el('thead', {}, [el('tr', {}, ['Player', 'Joined', 'Last seen', 'Games', 'App', 'Status', ''].map(function (h) { return el('th', { scope: 'col' }, h); }))]));
+        var cols = guests ? ['Guest', 'First seen', 'Last seen', 'Games', 'App', 'Status', ''] : ['Player', 'Joined', 'Last seen', 'Games', 'App', 'Status', ''];
+        tbl.appendChild(el('thead', {}, [el('tr', {}, cols.map(function (h) { return el('th', { scope: 'col' }, h); }))]));
         var tbody = el('tbody');
         rows.forEach(function (r) {
           var banned = !!bans[r.key];
           var who = el('th', { scope: 'row', class: 'admin-user' });
           if (r.avatar && FF.Avatars) who.appendChild(FF.Avatars.img(r.avatar, 'admin-user__ava'));
           var names = el('span', { class: 'admin-user__names' });
-          names.appendChild(el('span', { class: 'admin-user__name' }, r.displayName || 'Player'));
-          names.appendChild(el('span', { class: 'admin-user__handle' }, r.username ? '@' + r.username : (r.provider || '')));
+          var label;
+          if (guests) {
+            label = r.name || 'Guest';
+            names.appendChild(el('span', { class: 'admin-user__name' }, label));
+            var numberName = r.number ? FF.Track.guestName(r.number) : '';
+            names.appendChild(el('span', { class: 'admin-user__handle' }, numberName && numberName !== label ? numberName : 'Guest'));
+          } else {
+            label = r.displayName || 'Player';
+            names.appendChild(el('span', { class: 'admin-user__name' }, label));
+            names.appendChild(el('span', { class: 'admin-user__handle' }, r.username ? '@' + r.username : (r.provider || '')));
+          }
           who.appendChild(names);
-          var status = el('td', {}, banned ? [el('span', { class: 'badge badge--danger' }, 'Suspended')] : '—');
-          var act = FF.UI.button(banned ? 'Restore' : 'Suspend', { class: 'btn-sm ' + (banned ? '' : 'btn-ghost'), onClick: function () {
-            if (banned) {
-              D().unban(r.key).then(function () { delete bans[r.key]; saved(); render(rows); }, function () { saved(false); });
-              return;
-            }
-            FF.UI.confirm({
-              title: 'Suspend ' + (r.displayName || 'this player') + '?',
-              body: 'They can still open PlayMona, but cannot save progress, join rooms or post scores until you restore them.',
-              confirmLabel: 'Suspend', danger: true,
-              onConfirm: function () {
-                D().ban(r.key, 'Suspended from the admin portal').then(function () { bans[r.key] = { t: Date.now() }; saved(); render(rows); }, function () { saved(false); });
-              }
-            });
-          } });
           tbody.appendChild(el('tr', {}, [who,
-            el('td', {}, longDate(r.createdAt)),
-            el('td', {}, ago(r.lastSeen)),
+            el('td', {}, guests ? longDate(r.firstSeen) : (r.createdAt ? longDate(r.createdAt) : '—')),
+            el('td', {}, seen(r.lastSeen)),
             el('td', { class: 'num' }, num(r.plays)),
             el('td', {}, r.installed ? 'Installed' : '—'),
-            status,
-            el('td', {}, [act])
+            el('td', {}, banned ? [el('span', { class: 'badge badge--danger' }, 'Suspended')] : '—'),
+            el('td', {}, [suspendButton(r, label, rows)])
           ]));
         });
         tbl.appendChild(tbody);
         box.appendChild(tbl);
+        if (rows.length >= 50 && !search.value) box.appendChild(el('p', { class: 'admin-card__sub admin-table-note' }, 'Showing 50. Search to find someone else.'));
       }
 
       function list() {
         FF.ui.clear(box);
         loading(box);
         var q = search.value.trim();
-        Promise.all([q ? D().searchUsers(q) : D().usersBy(state.userSort, 50), D().bans()]).then(function (res) {
+        // After the fill-in, so accounts from before the list existed are included.
+        ready.then(function () {
+          var rows = q ? (guests ? D().searchGuests(q) : D().searchUsers(q)) : D().usersBy(state.userSort, 50, root);
+          return Promise.all([rows, D().bans()]);
+        }).then(function (res) {
           bans = res[1] || {};
           render(res[0] || []);
         }).catch(function (e) { failed(box, e); });

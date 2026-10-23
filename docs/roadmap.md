@@ -40,6 +40,10 @@ Agreed on 2026-10-23. We work in phases; each phase ships on its own.
 - Active-player lists are kept per day. At tens of thousands of players a day, the Overview
   should read pre-added totals from a nightly job instead (phase 2 server).
 - Maintenance mode also hides the app from admins (the portal itself keeps working).
+- Visitors are counted without sign-in, so someone could add fake visitor ids. The phase 2
+  server can rate-limit this if it is ever abused.
+- The player list shows accounts made before 23 Oct as "Before 23 Oct" until they come back.
+  The phase 2 server can fill in exact sign-in dates from Firebase Authentication.
 
 ---
 
@@ -74,6 +78,10 @@ pictures; players can report one.
 - Premium (Plus or pay once): new trending games (Imposter first), Game Night tournaments.
 - Plus perks: rooms up to 12, video chat, watch links for more than 2 viewers, extra avatars and
   themes, full stats history, leagues and tournaments.
+
+**Admin grants premium**: on the Players page, admins can give any account (or guest) Plus for a
+set time, or unlock a game for them: for prizes, testers, partners and support cases. Written by
+the server to `/entitlements/<uid>` with a note of which admin granted it and why.
 
 Also before taking money: Terms of Service, refund policy, privacy notice update.
 

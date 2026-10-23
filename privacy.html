@@ -56,7 +56,10 @@
     <p>When you join an online room, the other players in that room see your display name and character, and the room holds your answers and score while the game runs. Voice chat, if you switch it on, connects you straight to the other players' devices. Voice is not recorded or stored.</p>
 
     <h2>Who handles the data</h2>
-    <p>Accounts and saved data are held by Google Firebase (Authentication and Realtime Database). There are no ads, no advertising trackers and no analytics in PlayMona.</p>
+    <p>Accounts and saved data are held by Google Firebase (Authentication and Realtime Database). There are no ads and no advertising trackers.</p>
+
+    <h2>Usage counts</h2>
+    <p>To see how PlayMona is used, we count visits, games played, sign-ups and app installs per day. Each device gets a random id for this, so a person counts once a day; it holds no name, email or location, and only PlayMona staff can see the totals. Guests get a number (for example Guest001) so staff can see how many people play as guests. Nothing is sold or shared.</p>
 
     <h2>Children</h2>
     <p>PlayMona is made for all ages. Younger players should play on a parent or guardian's account, adding themselves as saved players, rather than creating their own account.</p>
@@ -78,6 +81,8 @@
       <nav aria-label="Footer"><a href="./">Home</a><a href="play">Play</a></nav>
     </div>
   </footer>
+  <script src="js/net/firebase-config.js"></script>
+  <script src="js/visit.js"></script>
   <script>
     // Opened from disk (file://): clean links like "play" need the .html file name.
     if (location.protocol === 'file:') document.querySelectorAll('a[href]').forEach(function (a) {

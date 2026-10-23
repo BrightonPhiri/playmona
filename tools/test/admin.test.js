@@ -149,3 +149,55 @@ test('rules: only admins write config and bans; everyone reads config', function
   assert(/admins/.test(RULES.userIndex['.read']), 'the player list is admin-only');
   assert(!RULES.admins.$uid['.write'], 'nobody can make themselves an admin');
 });
+
+/* ---------- Guests, the full player list, visitors (added 2026-10-23) ---------- */
+test('track: guests get a number (Guest001) once per device and a guest list entry', async function () {
+  const FF = boot();
+  await FF.Auth.init();
+  await FF.Auth.playAsGuest();
+  const uid = FF.Auth.user().uid;
+  await FF.Track.seen();
+  await FF.Track.play('familyQuiz', false);
+  assertEqual(FF.Storage.get('guestNumber', null), 1);
+  const entry = tree(FF).guestIndex[uid];
+  assertEqual(entry.name, 'Guest001');
+  assertEqual(entry.number, 1);
+  assertEqual(entry.plays, 1);
+  assertEqual(FF.Track.guestName(42), 'Guest042');
+  assertEqual(FF.Track.guestName(1234), 'Guest1234');
+});
+
+test('auth: an unnamed guest is shown as their guest number', async function () {
+  const FF = boot();
+  FF.Storage.set('guestNumber', 7);
+  await FF.Auth.init();
+  await FF.Auth.playAsGuest();
+  assertEqual(FF.Auth.user().displayName, 'Guest007');
+});
+
+test('admin: the player list fills in accounts made before it existed', async function () {
+  const FF = loadFF(FILES.concat(['js/admin/data.js']));
+  FF.__sandbox.crypto = require('crypto').webcrypto;
+  FF.__sandbox.TextEncoder = TextEncoder;
+  FF.Storage.init();
+  FF.Storage.set('devAuth', true);
+  await FF.Auth.init();
+  await FF.Auth.signUp({ email: 'd@example.com', username: 'dee', password: 'password1', displayName: 'Dee', avatar: 'nia' });
+  await FF.Auth.signOut();
+  await FF.Auth.signUp({ email: 'e@example.com', username: 'eli', password: 'password1', displayName: 'Eli', avatar: 'fox' });
+  assertEqual(await FF.AdminData.connect(), 'ok');
+  assertEqual(await FF.AdminData.fillPlayerList(), 2);
+  const rows = await FF.AdminData.usersBy('lastSeen', 50);
+  assertEqual(rows.map(function (r) { return r.username; }).sort(), ['dee', 'eli']);
+  assert(rows.every(function (r) { return r.lastSeen === 0 && !r.hash; }), 'not seen since; no password data copied');
+});
+
+test('rules: visitors can be added once without signing in; guests and usernames lists are admin-only', function () {
+  const v = RULES.stats.days.$day.visitors.$vid;
+  assertEqual(v['.write'], '!data.exists()');
+  assert(/a-f0-9/.test(v['.validate']), 'visitor ids are random hex');
+  assert(/admins/.test(RULES.guestIndex['.read']), 'guest list is admin-only');
+  assert(/admins/.test(RULES.usernames['.read']), 'only admins can list usernames');
+  assertEqual(RULES.usernames.$name['.read'], true, 'one name can still be looked up for sign-in');
+  assert(/auth.uid === \$uid/.test(RULES.userIndex.$uid['.read']), 'a player can read their own entry');
+});

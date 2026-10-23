@@ -27,7 +27,7 @@ window.FF = window.FF || {};
     'reduceMotion', 'iconStyle', 'devRooms', 'devAuth', 'devAccounts',
     'roomIdentity', 'migratedFromFamilyFun', 'migratedFromPlayMora', 'legacyClaimedBy', 'lastTab',
     'guestId', 'guestProfile', 'guestUpgrade', 'playerCount', 'installDismissed', 'devCloud',
-    'gameConfig', 'installTracked', 'installPending', 'trackSeen'
+    'gameConfig', 'installTracked', 'installPending', 'trackSeen', 'guestNumber', 'visitorId', 'visitDay'
   ];
 
   FF.Storage = {

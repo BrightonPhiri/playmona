@@ -96,8 +96,15 @@ window.FF = window.FF || {};
     return {
       uid: 'guest-' + id, guest: true, mode: 'guest', provider: 'guest',
       username: null, email: null,
-      displayName: saved.displayName || t('guest', 'Guest'), avatar: avatar, createdAt: Date.now()
+      displayName: saved.displayName || defaultGuestName(), avatar: avatar, createdAt: Date.now()
     };
+  }
+
+  // Guest001, Guest002, …: numbered once per device by track.js; plain "Guest" until then.
+  function defaultGuestName() {
+    var n = FF.Storage.get('guestNumber', null);
+    if (typeof n === 'number' && FF.Track && FF.Track.guestName) return FF.Track.guestName(n);
+    return t('guest', 'Guest');
   }
 
   // A new account takes over what the person did as a guest on this device.

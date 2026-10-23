@@ -61,6 +61,9 @@ window.FF = window.FF || {};
       this._write(tree);
       return Promise.resolve();
     },
+    increment: function (path) {
+      return this.transaction(path, function (n) { return (typeof n === 'number' ? n : 0) + 1; });
+    },
     update: function (path, val) {
       var self = this;
       return Object.keys(val || {}).reduce(function (p, k) {
@@ -194,7 +197,13 @@ window.FF = window.FF || {};
             get: function (path) { return db.ref(path).once('value').then(function (s) { return s.val(); }); },
             set: function (path, val) { return db.ref(path).set(val); },
             update: function (path, val) { return db.ref(path).update(val); },
-            transaction: function (path, fn) { return db.ref(path).transaction(fn); }
+            // Adds 1 on the server, so it needs no read access (the rules keep stats private).
+            increment: function (path) { return db.ref(path).set(firebase.database.ServerValue.increment(1)); },
+            transaction: function (path, fn) {
+              return db.ref(path).transaction(fn).then(function (r) {
+                return { committed: r.committed, value: r.snapshot && r.snapshot.val() };
+              });
+            }
           };
         });
       });
