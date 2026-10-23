@@ -1,5 +1,5 @@
 /* ============================================================
-   PLAYMORA — i18n.js
+   PLAYMONA — i18n.js
    Lightweight internationalization (i18n) system.
    Supports English (en), Spanish (es), French (fr),
    Swahili (sw), Shona (sn), Portuguese (pt), German (de).
@@ -22,7 +22,7 @@ window.FF = window.FF || {};
 
   var TRANSLATIONS = {
     en: {
-      appName: 'PlayMora',
+      appName: 'PlayMona',
       tagline: 'Games for everyone. Everywhere.',
       navProfile: 'Profile',
       signIn: 'Sign in',
@@ -122,7 +122,7 @@ window.FF = window.FF || {};
       catBibleShort: 'Bible'
     },
     es: {
-      appName: 'PlayMora',
+      appName: 'PlayMona',
       tagline: 'Juegos para todos. En todas partes.',
       navProfile: 'Perfil',
       signIn: 'Iniciar sesión',
@@ -221,7 +221,7 @@ window.FF = window.FF || {};
       catBible: 'Juegos Bíblicos'
     },
     fr: {
-      appName: 'PlayMora',
+      appName: 'PlayMona',
       tagline: 'Des jeux pour tous. Partout.',
       navProfile: 'Profil',
       signIn: 'Se connecter',
@@ -320,7 +320,7 @@ window.FF = window.FF || {};
       catBible: 'Jeux Bibliques'
     },
     sw: {
-      appName: 'PlayMora',
+      appName: 'PlayMona',
       tagline: 'Michezo kwa kila mtu. Kila mahali.',
       navProfile: 'Wasifu',
       signIn: 'Ingia',
@@ -419,7 +419,7 @@ window.FF = window.FF || {};
       catBible: 'Michezo ya Biblia'
     },
     sn: {
-      appName: 'PlayMora',
+      appName: 'PlayMona',
       tagline: 'Mitambo yevanhu vese. Kwese kwese.',
       navProfile: 'Purofiri',
       signIn: 'Pinda',
@@ -518,7 +518,7 @@ window.FF = window.FF || {};
       catBible: 'Mitambo yeBhaibheri'
     },
     pt: {
-      appName: 'PlayMora',
+      appName: 'PlayMona',
       tagline: 'Jogos para todos. Em todo lugar.',
       navProfile: 'Perfil',
       signIn: 'Entrar',
@@ -617,7 +617,7 @@ window.FF = window.FF || {};
       catBible: 'Jogos Bíblicos'
     },
     de: {
-      appName: 'PlayMora',
+      appName: 'PlayMona',
       tagline: 'Spiele für alle. Überall.',
       navProfile: 'Profil',
       signIn: 'Anmelden',

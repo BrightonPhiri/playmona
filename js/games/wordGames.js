@@ -1,5 +1,5 @@
 /* ============================================================
-   PLAYMORA — wordGames.js
+   PLAYMONA — wordGames.js
    Word games: Letter Rush, Word Scramble, Word Builder,
    Word Chain, and Mini Crossword.
    Classic script (no modules), offline, ES2017-or-older.

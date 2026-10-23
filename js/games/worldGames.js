@@ -1,5 +1,5 @@
 /* ============================================================
-   PLAYMORA — worldGames.js
+   PLAYMONA — worldGames.js
    World category games (read FF.data.countries):
      · Where in the World?   (flag / landmark / food / capital clues)
      · Map Challenge          (continent / borders / capital)

@@ -1,5 +1,5 @@
 /* ============================================================
-   PLAYMORA — games/bibleGames.js
+   PLAYMONA — games/bibleGames.js
    Four complete Bible games for all ages:
      1. bibleQuiz      — Bible Trivia (solo, turn, team, room race)
      2. bibleWhoAmI    — Who Am I? (Progressive clue riddles)

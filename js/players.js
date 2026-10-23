@@ -1,5 +1,5 @@
 /* ============================================================
-   PLAYMORA — players.js
+   PLAYMONA — players.js
    Saved players and teams.
 
    The roster is saved once and kept: each player has an `active`

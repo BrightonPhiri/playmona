@@ -1,5 +1,5 @@
 /* ============================================================
-   PLAYMORA — creativeGames.js
+   PLAYMONA — creativeGames.js
    Five creative/party games:
    - charades           (act out a word)
    - visualCharades     (act out an illustrated scene)

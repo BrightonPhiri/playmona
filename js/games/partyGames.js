@@ -1,5 +1,5 @@
 /* ============================================================
-   PLAYMORA — partyGames.js
+   PLAYMONA — partyGames.js
    Party voting games: Would You Rather?, This or That, and
    Who Is Most Likely. Classic script (no ES modules).
    ============================================================ */

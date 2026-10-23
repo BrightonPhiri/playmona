@@ -1,6 +1,6 @@
 /* ============================================================
-   PLAYMORA — landing.css
-   The public playmora.com page. Standalone: it needs only
+   PLAYMONA — landing.css
+   The public playmona.com page. Standalone: it needs only
    css/fonts.css, no app scripts.
    ============================================================ */
 :root {
@@ -31,7 +31,7 @@ a { color: inherit; }
 /* Wordmark */
 .wordmark { display: inline-flex; font-family: "Fredoka", var(--display); font-weight: 700; font-size: 1.45rem; line-height: 1; letter-spacing: -0.01em; }
 .wordmark__play { color: #fff; }
-.wordmark__mora { background: linear-gradient(90deg, #ffb21f 0%, #ff6a1f 30%, #ff2f8f 55%, #8b3cf7 80%, #2ec84b 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.wordmark__mona { background: linear-gradient(90deg, #ffb21f 0%, #ff6a1f 30%, #ff2f8f 55%, #8b3cf7 80%, #2ec84b 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .wordmark--xl { font-size: clamp(3rem, 9vw, 5.2rem); }
 .finale .wordmark__play { color: var(--ink); }
 

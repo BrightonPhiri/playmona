@@ -1,5 +1,5 @@
 /* ============================================================
-   PLAYMORA — social.js
+   PLAYMONA — social.js
    Ways to play with other people that do not need everyone online
    at the same time:
 
@@ -60,7 +60,7 @@ window.FF = window.FF || {};
   function siteUrl() {
     var loc = window.location;
     if (loc.protocol === 'http:' || loc.protocol === 'https:') return loc.origin + loc.pathname.replace(/[^/]*$/, '');
-    return 'https://playmora.com/';
+    return 'https://playmona.com/';
   }
 
   // Ranked list of rows: [{ name, avatar, score, correct, ms, key }]
@@ -182,7 +182,7 @@ window.FF = window.FF || {};
     },
 
     shareText: function (d) {
-      return t('dailyShare', 'PlayMora daily challenge {date}: {n}/10, {pts} points. Can you beat me?', { date: this.key(), n: d.correct, pts: fmt(d.score) });
+      return t('dailyShare', 'PlayMona daily challenge {date}: {n}/10, {pts} points. Can you beat me?', { date: this.key(), n: d.correct, pts: fmt(d.score) });
     }
   };
 
@@ -213,7 +213,7 @@ window.FF = window.FF || {};
     link: function (rec) {
       var code = b64encode({ v: 1, i: rec.id, s: rec.seed, k: rec.topic, n: rec.from ? rec.from.name : me().name,
         a: rec.from ? rec.from.avatar : me().avatar, sc: rec.from ? rec.from.score : rec.me.score, c: rec.from ? rec.from.correct : rec.me.correct });
-      var base = window.location.protocol === 'file:' ? 'https://playmora.com/play.html' : window.location.origin + window.location.pathname;
+      var base = window.location.protocol === 'file:' ? 'https://playmona.com/play.html' : window.location.origin + window.location.pathname;
       return base + '#challenge=' + code;
     },
 
@@ -372,7 +372,7 @@ window.FF = window.FF || {};
         done.appendChild(FF.ui.el('p', { class: 'social-done' }, t('dailyDone', 'You have played today’s challenge. Come back in {time} for new questions.', { time: untilText(D.msLeft()) })));
         var acts = FF.ui.div('social-actions');
         acts.appendChild(FF.UI.button(t('shareResult', 'Share result'), { class: 'btn-primary', icon: 'share', onClick: function () {
-          shareOrCopy('PlayMora', D.shareText(d), siteUrl());
+          shareOrCopy('PlayMona', D.shareText(d), siteUrl());
         } }));
         acts.appendChild(FF.UI.button(t('challengeFriend', 'Challenge a friend'), { icon: 'swords', onClick: function () { FF.Nav.go('challenges'); } }));
         done.appendChild(acts);
@@ -504,7 +504,7 @@ window.FF = window.FF || {};
         var acts = FF.ui.div('social-actions');
         acts.appendChild(FF.UI.button(t('challengeBack', 'Challenge them back'), { class: 'btn-primary', icon: 'swords', onClick: function () { C.create(rec.topic); } }));
         acts.appendChild(FF.UI.button(t('shareResult', 'Share result'), { icon: 'share', onClick: function () {
-          shareOrCopy('PlayMora', t('vsShare', 'I scored {a} vs {name}’s {b} on PlayMora ({topic}).', { a: fmt(rec.me.score), name: rec.from.name, b: fmt(rec.from.score), topic: topicName2 }), siteUrl());
+          shareOrCopy('PlayMona', t('vsShare', 'I scored {a} vs {name}’s {b} on PlayMona ({topic}).', { a: fmt(rec.me.score), name: rec.from.name, b: fmt(rec.from.score), topic: topicName2 }), siteUrl());
         } }));
         vs.appendChild(acts);
         main.appendChild(vs);
@@ -514,7 +514,7 @@ window.FF = window.FF || {};
         sent.appendChild(FF.ui.el('p', { class: 'vs-card__big' }, fmt(rec.me.score)));
         sent.appendChild(FF.ui.el('p', { class: 'vs-card__sub' }, topicName2 + ' · ' + t('nOfTenCorrect', '{n}/10 correct', { n: rec.me.correct })));
         sent.appendChild(FF.ui.el('p', { class: 'vs-card__lead' }, t('sendLinkLead', 'Send this link. Your friends get the same 10 questions and try to beat {pts}.', { pts: fmt(rec.me.score) })));
-        var text = t('challengeShareText', 'I scored {pts} on PlayMora. Can you beat me?', { pts: fmt(rec.me.score) });
+        var text = t('challengeShareText', 'I scored {pts} on PlayMona. Can you beat me?', { pts: fmt(rec.me.score) });
         var acts2 = FF.ui.div('social-actions');
         acts2.appendChild(FF.UI.button(t('sendChallenge', 'Send challenge'), { class: 'btn-primary', icon: 'share', onClick: function () { shareOrCopy(t('challengeFriend', 'Challenge a friend'), text, link); } }));
         var wa = FF.ui.el('a', { class: 'btn btn-wa', href: whatsappUrl(text, link), target: '_blank', rel: 'noopener' });

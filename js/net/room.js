@@ -1,5 +1,5 @@
 /* ============================================================
-   PLAYMORA — net/room.js
+   PLAYMONA — net/room.js
    Room lifecycle: create, join, watch, leave. Talks to a
    transport; knows nothing about games or the DOM.
    ============================================================ */

@@ -1,5 +1,5 @@
 /* ============================================================
-   PLAYMORA — net/raceRules.js
+   PLAYMONA — net/raceRules.js
    Pure race logic: when is a round over, who won it, and what
    is everyone's score. No DOM, no network, no clock of its own
    — every input is passed in, so this is fully testable and

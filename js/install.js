@@ -1,5 +1,5 @@
 /* ============================================================
-   PLAYMORA — install.js
+   PLAYMONA — install.js
    "Install the app" support, shared by the landing page and the
    app. Self-contained: needs nothing else from FF.
 
@@ -7,7 +7,7 @@
      beforeinstallprompt; we keep it and show our own button.
    - iPhone and iPad Safari have no prompt, so we explain
      Share > Add to Home Screen instead.
-   - Nothing shows once PlayMora runs as an installed app.
+   - Nothing shows once PlayMona runs as an installed app.
    ============================================================ */
 window.FF = window.FF || {};
 
@@ -71,10 +71,10 @@ window.FF = window.FF || {};
 
     // The "dismissed" note lasts two weeks, then the banner may come back.
     dismissed: function () {
-      try { return Number(localStorage.getItem('playmora:installDismissed') || 0) > Date.now() - 14 * 864e5; } catch (e) { return false; }
+      try { return Number(localStorage.getItem('playmona:installDismissed') || 0) > Date.now() - 14 * 864e5; } catch (e) { return false; }
     },
     dismiss: function () {
-      try { localStorage.setItem('playmora:installDismissed', String(Date.now())); } catch (e) {}
+      try { localStorage.setItem('playmona:installDismissed', String(Date.now())); } catch (e) {}
     }
   };
 

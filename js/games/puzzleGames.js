@@ -1,5 +1,5 @@
 /* ============================================================
-   PLAYMORA — puzzleGames.js
+   PLAYMONA — puzzleGames.js
    Visual puzzle games: Picture Puzzle, Spot the Difference,
    Hidden Object, and Visual Riddle.
    Classic script (no ES modules) so the app runs from file://

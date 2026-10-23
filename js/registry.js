@@ -1,5 +1,5 @@
 /* ============================================================
-   PLAYMORA — registry.js
+   PLAYMONA — registry.js
    Game registry, universal settings, game shell (intro / how to
    play / settings / pause / results), and Game Night tournament.
    ============================================================ */

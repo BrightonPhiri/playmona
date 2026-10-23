@@ -1,10 +1,10 @@
 /* ============================================================
-   PLAYMORA — sw.js
+   PLAYMONA — sw.js
    Offline support. Network first, so a new deploy shows up on
    the next load; the cache is the fallback when offline.
    On install it caches play.html and every file it links to.
    ============================================================ */
-var CACHE = 'playmora-v4';
+var CACHE = 'playmona-v5';
 var SDK_HOST = 'https://www.gstatic.com/firebasejs/';
 
 self.addEventListener('install', function (event) {

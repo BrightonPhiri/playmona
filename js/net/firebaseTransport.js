@@ -1,5 +1,5 @@
 /* ============================================================
-   PLAYMORA — net/firebaseTransport.js
+   PLAYMONA — net/firebaseTransport.js
    Firebase Realtime Database transport. Implements exactly the
    interface in net/transport.js. The SDK is loaded lazily from
    the CDN the first time online play is opened, so the offline

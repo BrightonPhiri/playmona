@@ -40,10 +40,20 @@ test('storage: the first account to sign in adopts pre-account data, once', func
   assertEqual(FF.Storage.get('stats', null), null);
 });
 
-test('storage: Family Fun data is copied to the PlayMora prefix', function () {
+test('storage: Family Fun data is copied to the PlayMona prefix', function () {
   const FF = loadFF(BASE);
   FF.__sandbox.localStorage.setItem('familyfun:favorites', JSON.stringify(['guessFlag']));
   FF.Storage.init();
+  assertEqual(FF.Storage.get('favorites', []), ['guessFlag']);
+});
+
+test('storage: PlayMora data, including account data, is copied to the PlayMona prefix', function () {
+  const FF = loadFF(BASE);
+  FF.__sandbox.localStorage.setItem('playmora:theme', JSON.stringify('dark'));
+  FF.__sandbox.localStorage.setItem('playmora:u:alice:favorites', JSON.stringify(['guessFlag']));
+  FF.Storage.init();
+  assertEqual(FF.Storage.get('theme', null), 'dark');
+  FF.Storage.setScope('alice');
   assertEqual(FF.Storage.get('favorites', []), ['guessFlag']);
 });
 

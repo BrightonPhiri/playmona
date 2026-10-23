@@ -1,5 +1,5 @@
 /* ============================================================
-   PLAYMORA — advance.js
+   PLAYMONA — advance.js
    Auto-advance: a countdown that moves the game to the next
    round without a manual tap, with a visible progress bar and
    tap-to-skip. Split into a DOM-free controller (unit tested)

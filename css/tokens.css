@@ -1,5 +1,5 @@
 /* ============================================================
-   PLAYMORA — tokens.css
+   PLAYMONA — tokens.css
    Design tokens: the single source of truth for colour, type,
    spacing, shape, depth and motion. Every other stylesheet and
    every game reads these variables — never hardcode a colour.
@@ -62,7 +62,7 @@
   --scrim: rgba(8, 12, 40, 0.62);
   --art-ink: #0b1030;             /* base colour under artwork */
 
-  /* PlayMora brand: navy ink and the seven dots of the logo. */
+  /* PlayMona brand: navy ink and the seven dots of the logo. */
   --brand-navy: #0b1030;
   --brand-blue: #1e7bff;
   --brand-cyan: #19c3f0;

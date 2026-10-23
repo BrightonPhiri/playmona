@@ -1,5 +1,5 @@
 /* ============================================================
-   PLAYMORA — visualGames.js
+   PLAYMONA — visualGames.js
    Seven turn-based visual "guess the picture" games.
    Classic script (no ES modules) so the app runs from file://.
    ============================================================ */

@@ -1,5 +1,5 @@
 /* ============================================================
-   PLAYMORA — navigation.js
+   PLAYMONA — navigation.js
    Simple view router + spatial (D-pad / arrow-key) focus manager
    for TV remotes and desktop keyboards.
    ============================================================ */

@@ -1,5 +1,5 @@
 /* ============================================================
-   PLAYMORA — wordlist.js
+   PLAYMONA — wordlist.js
    Common English words (3–16 letters) used to accept real words
    in Letter Rush, Word Builder and Word Chain.
    Source: google-10000-english-usa-no-swears (MIT, first20hours).

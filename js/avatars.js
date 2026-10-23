@@ -1,5 +1,5 @@
 /* ============================================================
-   PLAYMORA — avatars.js
+   PLAYMONA — avatars.js
    The character avatar set (assets/avatars/*.webp, listed in
    js/data/avatars.js by tools/gen-brand-assets.py).
 

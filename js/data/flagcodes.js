@@ -1,5 +1,5 @@
 /* ============================================================
-   PLAYMORA — flagcodes.js
+   PLAYMONA — flagcodes.js
    Maps each country id (slug in js/data/countries.js) to its
    ISO 3166-1 alpha-2 code so the game can load the real,
    file-based SVG flags from assets/flags/<code>.svg.

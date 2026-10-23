@@ -1,4 +1,4 @@
-"""PlayMora brand asset generator.
+"""PlayMona brand asset generator.
 
 Turns the source artwork (logo, avatar sheets, background paintings) into the
 web-ready files the app uses:
@@ -133,9 +133,6 @@ def logo():
     mark_sq = square(mark, 512, pad=0.04)
     mark_sq.save(out('assets', 'brand', 'mark.png'))
     square(mark, 256, pad=0.04).save(out('assets', 'brand', 'mark-256.webp'), 'WEBP', quality=90, method=6)
-    lockup = cut.crop(cut.getbbox())
-    lockup.thumbnail((900, 900), Image.LANCZOS)
-    lockup.save(out('assets', 'brand', 'lockup-on-light.png'))
 
     # App icons: navy tile, mark inside the maskable safe zone.
     for size, name, scale in [(512, 'icon-512.png', 0.66), (192, 'icon-192.png', 0.66),
@@ -150,6 +147,17 @@ def logo():
             tile.putalpha(r)
         tile.save(out('assets', 'brand', name))
     return mark_sq
+
+
+def lockup():
+    """Mark + PlayMona wordmark, cut from the brand showcase in this repo
+    (the older source logo still says PlayMora)."""
+    sheet = Image.open(os.path.join(ROOT, 'assets', 'images', 'PlayMona Brand Identity Showcase.png')).convert('RGB')
+    # The main lockup, top left, without the tagline under it.
+    src = sheet.crop((40, 30, 630, 422))
+    cut = cut_out(src, edge_background(src))
+    cut = cut.crop(cut.getbbox())
+    cut.save(out('assets', 'brand', 'lockup-on-light.png'))
 
 
 def backgrounds():
@@ -177,7 +185,7 @@ def social(mark):
     font_paths = ['C:/Windows/Fonts/seguibl.ttf', 'C:/Windows/Fonts/arialbd.ttf']
     font = next((ImageFont.truetype(p, 104) for p in font_paths if os.path.exists(p)), ImageFont.load_default())
     small = next((ImageFont.truetype(p, 34) for p in font_paths if os.path.exists(p)), ImageFont.load_default())
-    d.text((70, 370), 'PlayMora', font=font, fill=(255, 255, 255))
+    d.text((70, 370), 'PlayMona', font=font, fill=(255, 255, 255))
     d.text((74, 500), 'GAMES FOR EVERYONE. EVERYWHERE.', font=small, fill=(255, 214, 92))
     canvas.convert('RGB').save(out('assets', 'brand', 'og-image.jpg'), 'JPEG', quality=84)
 
@@ -197,6 +205,7 @@ def write_manifest(items):
 if __name__ == '__main__':
     items = avatars()
     mark = logo()
+    lockup()
     backgrounds()
     social(mark)
     write_manifest(items)

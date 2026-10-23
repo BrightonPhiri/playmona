@@ -1,6 +1,6 @@
 # Firebase setup (accounts and online play)
 
-PlayMora uses one Firebase project for two things:
+PlayMona uses one Firebase project for two things:
 
 - **Accounts**: email or username + password, and Google sign-in. Profiles,
   saved players, stats and settings sync to `/users/{uid}`.
@@ -18,7 +18,7 @@ The free **Spark** plan is enough. No credit card is required.
 ## 1. Create the project
 
 1. Go to <https://console.firebase.google.com> and sign in with a Google account.
-2. Click **Add project**, name it (e.g. `playmora`), and continue.
+2. Click **Add project**, name it (e.g. `playmona`), and continue.
 3. Google Analytics is not needed — turn it off.
 
 ## 2. Enable the Realtime Database
@@ -36,11 +36,11 @@ The free **Spark** plan is enough. No credit card is required.
 1. **Build → Authentication → Get started**.
 2. On the **Sign-in method** tab, enable:
    - **Email/Password** (leave "Email link" off).
-   - **Google**. Set the public-facing name to `PlayMora` and pick a support email.
+   - **Google**. Set the public-facing name to `PlayMona` and pick a support email.
    - **Anonymous**. Kept as a fallback so an old cached copy of the app can
      still join rooms. The rules below stop anonymous users touching accounts.
 3. **Authentication → Templates**: set the sender name of the password-reset
-   email to `PlayMora`, and (optional) the action URL to `https://playmora.com/play.html`.
+   email to `PlayMona`, and (optional) the action URL to `https://playmona.com/play.html`.
 4. **Authentication → Settings → User actions**: turn on
    **Email enumeration protection**. The app already gives the same reply for
    known and unknown emails on "Forgot password".
@@ -48,7 +48,7 @@ The free **Spark** plan is enough. No credit card is required.
 ## 4. Authorise your domain
 
 1. **Authentication → Settings → Authorised domains**.
-2. Click **Add domain** and enter `playmora.com`, then add `www.playmora.com`.
+2. Click **Add domain** and enter `playmona.com`, then add `www.playmona.com`.
    (`localhost` is there by default for testing.)
 
 Without this, sign-in fails on the live site with an `auth/unauthorized-domain`
@@ -207,7 +207,7 @@ beyond casual use. Rooms expire after 6 hours.
 |---|---|
 | No PLAY TOGETHER button | Config still `null`, or the `apiKey` is malformed. Run `FF.Net.configured()` in the console. |
 | "Could not reach Firebase" | No internet, or the CDN is blocked. |
-| `auth/unauthorized-domain` | `playmora.com` is not in Authorised domains (step 4). |
+| `auth/unauthorized-domain` | `playmona.com` is not in Authorised domains (step 4). |
 | Google sign-in popup closes and nothing happens | Popups blocked: the app falls back to a full-page redirect. If that fails too, check the Google provider is enabled (step 3). |
 | "That username is taken" for a brand-new name | The `/usernames` rules were not published. |
 | "Permission denied" in the console | Rules were not published, or a sign-in method in step 3 is off. |

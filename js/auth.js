@@ -1,5 +1,5 @@
 /* ============================================================
-   PLAYMORA — auth.js
+   PLAYMONA — auth.js
    Player accounts.
 
    Two back ends, one API:
@@ -213,9 +213,9 @@ window.FF = window.FF || {};
       'auth/network-request-failed': t('noNetwork', 'No internet connection. Check your connection and try again.'),
       'auth/popup-closed-by-user': t('googleCancelled', 'Google sign-in was closed before it finished.'),
       'auth/cancelled-popup-request': t('googleCancelled', 'Google sign-in was closed before it finished.'),
-      'auth/operation-not-allowed': t('providerOff', 'This sign-in method is not switched on for PlayMora yet.'),
+      'auth/operation-not-allowed': t('providerOff', 'This sign-in method is not switched on for PlayMona yet.'),
       'auth/unauthorized-domain': t('domainOff', 'Google sign-in is not allowed on this web address yet.'),
-      'auth/operation-not-supported-in-this-environment': t('googleNeedsWeb', 'Google sign-in only works when PlayMora is opened from a website.'),
+      'auth/operation-not-supported-in-this-environment': t('googleNeedsWeb', 'Google sign-in only works when PlayMona is opened from a website.'),
       'auth/requires-recent-login': t('recentLogin', 'For your security, sign out and sign in again, then try once more.')
     };
     if (map[code]) return err(code, map[code]);
@@ -445,7 +445,7 @@ window.FF = window.FF || {};
     },
 
     signInWithGoogle: function () {
-      if (mode !== 'firebase') return Promise.reject(err('auth/operation-not-allowed', t('providerOff', 'This sign-in method is not switched on for PlayMora yet.')));
+      if (mode !== 'firebase') return Promise.reject(err('auth/operation-not-allowed', t('providerOff', 'This sign-in method is not switched on for PlayMona yet.')));
       if (!this.googleAvailable()) return Promise.reject(fbMessage({ code: 'auth/operation-not-supported-in-this-environment' }));
       return fb().then(function (firebase) {
         var provider = new firebase.auth.GoogleAuthProvider();

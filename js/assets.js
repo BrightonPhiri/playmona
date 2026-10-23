@@ -1,5 +1,5 @@
 /* ============================================================
-   PLAYMORA — assets.js
+   PLAYMONA — assets.js
    Asset manager: local file images with SVG/data fallback,
    inline SVG illustrations, and light preloading.
    ============================================================ */

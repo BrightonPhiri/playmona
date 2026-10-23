@@ -1,5 +1,5 @@
 /* ============================================================
-   PLAYMORA — net/roomUI.js
+   PLAYMONA — net/roomUI.js
    Screens for online play: create, join, lobby, results.
    ============================================================ */
 window.FF = window.FF || {};
@@ -252,7 +252,7 @@ window.FF = window.FF || {};
       card({
         id: 'mode-tours', tone: 'orange', icon: 'trophy', soon: true,
         title: t('tournaments', 'Tournaments'),
-        desc: t('tournamentsDesc', 'Register for tournaments hosted by PlayMora. Play the rounds and climb the leaderboard.'),
+        desc: t('tournamentsDesc', 'Register for tournaments hosted by PlayMona. Play the rounds and climb the leaderboard.'),
         onClick: function () { self.showTournaments(main); }
       });
       main.appendChild(grid);
@@ -307,7 +307,7 @@ window.FF = window.FF || {};
       this.showComingSoon(main, {
         icon: 'trophy', tone: 'orange',
         title: FF.t('tournaments', 'Tournaments'),
-        lead: FF.t('tournamentsLead', 'Game tournaments hosted by PlayMora, open to everyone who registers.'),
+        lead: FF.t('tournamentsLead', 'Game tournaments hosted by PlayMona, open to everyone who registers.'),
         planned: [
           FF.t('tourPlan1', 'Browse upcoming tournaments and register to join.'),
           FF.t('compPlan2', 'Play the rounds at set times, on your own or in a team.'),

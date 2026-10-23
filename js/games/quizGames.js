@@ -1,5 +1,5 @@
 /* ============================================================
-   PLAYMORA — quizGames.js
+   PLAYMONA — quizGames.js
    Five quiz / visual games:
      familyQuiz, trueOrFalse, brainBattle, guessWho, pictureQuiz
    Classic script (no ES modules) so the app runs from file://

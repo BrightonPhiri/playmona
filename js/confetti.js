@@ -1,5 +1,5 @@
 /* ============================================================
-   PLAYMORA — confetti.js
+   PLAYMONA — confetti.js
    Lightweight canvas confetti. No external library.
    ============================================================ */
 window.FF = window.FF || {};

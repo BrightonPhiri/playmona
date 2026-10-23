@@ -1,5 +1,5 @@
 /* ============================================================
-   PLAYMORA — reactionGames.js
+   PLAYMONA — reactionGames.js
    Reaction games: Quick Tap (reflex test) and Color Reaction
    (Stroop-style ink-colour challenge).
    Classic script (no ES modules) so the app runs from file://

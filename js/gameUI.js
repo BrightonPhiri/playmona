@@ -1,5 +1,5 @@
 /* ============================================================
-   PLAYMORA — gameUI.js
+   PLAYMONA — gameUI.js
    Shared in-game building blocks (styles in css/games.css).
    Games build their screens from these instead of inline styles,
    so every game looks consistent, follows the theme, and gives

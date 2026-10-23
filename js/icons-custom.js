@@ -1,5 +1,5 @@
 /* ============================================================
-   PLAYMORA — icons-custom.js
+   PLAYMONA — icons-custom.js
    Hand-drawn, on-brand SVG icon set (the DEFAULT icon style).
 
    Every icon is a 24×24 monochrome line glyph that uses

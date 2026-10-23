@@ -1,5 +1,5 @@
 /* ============================================================
-   PLAYMORA — timer.js
+   PLAYMONA — timer.js
    Reusable countdown timers with pause/resume/warning/finish.
    ============================================================ */
 window.FF = window.FF || {};

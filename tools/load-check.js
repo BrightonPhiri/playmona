@@ -1,4 +1,4 @@
-/* PlayMora — headless load check.
+/* PlayMona — headless load check.
    Loads every JS file in a Node vm with a minimal browser-like global,
    verifying: no load-time errors, all games register, data shapes valid.
    Run:  node tools/load-check.js

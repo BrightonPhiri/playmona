@@ -1,4 +1,4 @@
-# PlayMora — build verification script (run from project root)
+# PlayMona — build verification script (run from project root)
 # Usage:  pwsh -File tools/verify.ps1
 $ErrorActionPreference = 'Continue'
 $root = Split-Path -Parent $PSScriptRoot

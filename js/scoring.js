@@ -1,5 +1,5 @@
 /* ============================================================
-   PLAYMORA — scoring.js
+   PLAYMONA — scoring.js
    Reusable scoring engine (players or teams), streaks,
    leaderboard, final results, session stats and achievements.
    ============================================================ */

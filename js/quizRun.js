@@ -1,5 +1,5 @@
 /* ============================================================
-   PLAYMORA — quizRun.js
+   PLAYMONA — quizRun.js
    One 10-question run, built from a seed so everyone who uses the
    same seed gets exactly the same questions in the same order.
    Used by the Daily challenge and Challenge a friend.

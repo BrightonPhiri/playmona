@@ -1,5 +1,5 @@
 /* ============================================================
-   PLAYMORA — app.js
+   PLAYMONA — app.js
    Application shell and screens: home (dashboard), games library,
    online, profile (you, players, teams), settings (tabbed), game
    night, credits, about. The app starts after sign-in (js/auth.js,
@@ -14,25 +14,25 @@ window.FF = window.FF || {};
 
   /* ================= Brand ================= */
   FF.Brand = {
-    name: 'PlayMora',
+    name: 'PlayMona',
     version: VERSION,
     tagline: 'Games for everyone. Everywhere.',
-    site: 'https://playmora.com',
+    site: 'https://playmona.com',
     markImg: 'assets/brand/mark-256.webp',
 
     // The logo mark (the gradient "P").
     logo: function (cls, decorative) {
       return FF.ui.el('img', {
         class: cls || 'brand-logo', src: FF.Brand.markImg,
-        alt: decorative ? '' : 'PlayMora', width: 64, height: 64, decoding: 'async'
+        alt: decorative ? '' : 'PlayMona', width: 64, height: 64, decoding: 'async'
       });
     },
 
-    // Mark + "PlayMora" wordmark, as used in the top bar.
+    // Mark + "PlayMona" wordmark, as used in the top bar.
     lockup: function (size) {
       var wrap = FF.ui.span('brand-lockup' + (size ? ' brand-lockup--' + size : ''));
       wrap.appendChild(FF.Brand.logo('brand-logo', true));
-      wrap.appendChild(FF.AuthUI ? FF.AuthUI.wordmark() : FF.ui.span('', 'PlayMora'));
+      wrap.appendChild(FF.AuthUI ? FF.AuthUI.wordmark() : FF.ui.span('', 'PlayMona'));
       return wrap;
     }
   };
@@ -413,7 +413,7 @@ window.FF = window.FF || {};
       // Top bar
       var header = FF.ui.el('header', { class: 'topbar' });
       var brand = FF.ui.el('button', {
-        type: 'button', class: 'topbar__brand', 'aria-label': t('homeLabel', 'PlayMora, home'),
+        type: 'button', class: 'topbar__brand', 'aria-label': t('homeLabel', 'PlayMona, home'),
         onclick: function () { self._navTo('home'); }
       });
       brand.appendChild(FF.Brand.lockup());
@@ -1148,13 +1148,13 @@ window.FF = window.FF || {};
       },
 
       credits: function (main) {
-        main.appendChild(FF.App.pageHead(t('credits', 'Credits'), t('creditsSub', 'Everything bundled with PlayMora and where it comes from.')));
+        main.appendChild(FF.App.pageHead(t('credits', 'Credits'), t('creditsSub', 'Everything bundled with PlayMona and where it comes from.')));
         var box = FF.ui.div('panel');
         [
-          ['Brand and characters', 'The PlayMora logo, character avatars and background artwork were made for PlayMora.'],
+          ['Brand and characters', 'The PlayMona logo, character avatars and background artwork were made for PlayMona.'],
           ['Original assets', 'Illustrations, flag artwork, sound effects and music are original creations made for this project.'],
           ['Fonts', 'Nunito, Fredoka, Baloo 2, Quicksand and Atkinson Hyperlegible are bundled in assets/fonts/ under the SIL Open Font License.'],
-          ['Icons', 'Interface icons are hand-drawn for PlayMora. The optional Bold style uses Phosphor Icons (MIT license), bundled in assets/icons/phosphor/.'],
+          ['Icons', 'Interface icons are hand-drawn for PlayMona. The optional Bold style uses Phosphor Icons (MIT license), bundled in assets/icons/phosphor/.'],
           ['Word list', 'Word games use a bundled list of common English words (google-10000-english-usa-no-swears, MIT license) plus everyday words.'],
           ['Photographs', 'Real-world photos for the Guess games can be added to assets/images/. See the README "Image Download List" for public-domain sources and attribution.']
         ].forEach(function (row) {
@@ -1336,7 +1336,7 @@ window.FF = window.FF || {};
         panel.appendChild(FF.App.aboutCard());
         if (FF.Install && FF.Install.available()) {
           FF.App.settingsSection(panel, 'download', t('installApp', 'Install the app'), [
-            FF.UI.settingRow(t('installPlayMora', 'Install PlayMora'),
+            FF.UI.settingRow(t('installPlayMona', 'Install PlayMona'),
               FF.UI.button(t('install', 'Install'), { class: 'btn-primary', icon: 'download', onClick: function () { FF.App.install(); } }),
               t('installDesc', 'Opens full screen from your home screen and works offline.'))
           ]);
@@ -1362,7 +1362,7 @@ window.FF = window.FF || {};
       box.appendChild(FF.AuthUI.wordmark('wordmark--lg'));
       box.appendChild(FF.ui.el('p', { class: 'about-card__tag' }, t('tagline', FF.Brand.tagline)));
       box.appendChild(FF.ui.el('p', {}, t('aboutBody', 'Quizzes, word games, party games and more for one player or a whole room. Play on one screen, on the TV, or on everyone’s phones, online or offline.')));
-      box.appendChild(FF.ui.el('p', { class: 'about-ver' }, t('version', 'Version {v}', { v: VERSION }) + ' · playmora.com'));
+      box.appendChild(FF.ui.el('p', { class: 'about-ver' }, t('version', 'Version {v}', { v: VERSION }) + ' · playmona.com'));
       return box;
     },
 
@@ -1515,7 +1515,7 @@ window.FF = window.FF || {};
       return sheet;
     },
 
-    // Install PlayMora as an app (browser prompt, or steps on iPhone/iPad).
+    // Install PlayMona as an app (browser prompt, or steps on iPhone/iPad).
     install: function () {
       if (!FF.Install) return;
       if (FF.Install.kind() === 'ios') {
@@ -1524,14 +1524,14 @@ window.FF = window.FF || {};
           body: FF.ui.el('ol', { class: 'install-steps' }, [
             FF.ui.el('li', {}, t('iosStep1', 'Tap the Share button in Safari.')),
             FF.ui.el('li', {}, t('iosStep2', 'Choose Add to Home Screen.')),
-            FF.ui.el('li', {}, t('iosStep3', 'Tap Add. PlayMora appears with your other apps.'))
+            FF.ui.el('li', {}, t('iosStep3', 'Tap Add. PlayMona appears with your other apps.'))
           ]),
           actions: [{ label: t('gotIt', 'Got it'), primary: true }]
         });
         return;
       }
       FF.Install.prompt().then(function (outcome) {
-        if (outcome === 'accepted') FF.UI.toast(t('installed', 'PlayMora is installing'), { type: 'success' });
+        if (outcome === 'accepted') FF.UI.toast(t('installed', 'PlayMona is installing'), { type: 'success' });
         var card = document.getElementById('install-card');
         if (card && !FF.Install.available()) card.parentNode.removeChild(card);
       });
@@ -1543,7 +1543,7 @@ window.FF = window.FF || {};
       var card = FF.ui.el('section', { class: 'install-card', id: 'install-card', 'aria-labelledby': 'install-card-title' });
       card.appendChild(FF.ui.el('img', { class: 'install-card__icon', src: 'assets/brand/icon-192.png', alt: '', width: 56, height: 56 }));
       card.appendChild(FF.ui.div('install-card__text', [
-        FF.ui.el('strong', { id: 'install-card-title' }, t('installTitle', 'Get the PlayMora app')),
+        FF.ui.el('strong', { id: 'install-card-title' }, t('installTitle', 'Get the PlayMona app')),
         FF.ui.el('span', {}, FF.Install.kind() === 'ios'
           ? t('installIosSub', 'Add it to your home screen from Safari’s Share menu.')
           : t('installSub', 'Opens full screen and works offline. Free, no app store needed.'))
@@ -2095,7 +2095,7 @@ window.FF = window.FF || {};
         return;
       }
       FF.UI.confirm({
-        title: t('signOutQ', 'Sign out of PlayMora?'),
+        title: t('signOutQ', 'Sign out of PlayMona?'),
         body: FF.Auth.isLocal()
           ? t('signOutLocal', 'Your players and stats stay saved on this device for when you sign back in.')
           : t('signOutBody', 'Your players and stats are saved to your account. Sign in again on any device to pick up where you left off.'),

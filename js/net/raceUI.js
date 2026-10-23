@@ -1,5 +1,5 @@
 /* ============================================================
-   PLAYMORA — net/raceUI.js
+   PLAYMONA — net/raceUI.js
    The two screens every racing game shares: the lockout note
    after a wrong answer, and the settled-round result. Written
    once so the engines stay thin.

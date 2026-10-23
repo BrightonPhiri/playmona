@@ -1,5 +1,5 @@
 /* ============================================================
-   PLAYMORA — storage.js
+   PLAYMONA — storage.js
    Safe localStorage wrapper with in-memory fallback.
 
    Keys are either DEVICE keys (appearance, language, the signed-in
@@ -7,8 +7,8 @@
    settings). Account keys are stored per signed-in user, so two
    accounts on one device never see each other's data:
 
-     playmora:<key>              device key
-     playmora:u:<uid>:<key>      account key
+     playmona:<key>              device key
+     playmona:u:<uid>:<key>      account key
 
    FF.Storage.onChange(fn) lets the sync layer push account changes.
    ============================================================ */
@@ -17,14 +17,15 @@ window.FF = window.FF || {};
 (function () {
   'use strict';
 
-  var PREFIX = 'playmora:';
+  var PREFIX = 'playmona:';
+  var PLAYMORA_PREFIX = 'playmora:'; // the brand before PlayMona
   var LEGACY_PREFIX = 'familyfun:';
 
   // Everything not listed here belongs to the signed-in account.
   var DEVICE_KEYS = [
     'session', 'language', 'theme', 'accent', 'font', 'textSize', 'mixAccents',
     'reduceMotion', 'iconStyle', 'devRooms', 'devAuth', 'devAccounts',
-    'roomIdentity', 'migratedFromFamilyFun', 'legacyClaimedBy', 'lastTab',
+    'roomIdentity', 'migratedFromFamilyFun', 'migratedFromPlayMora', 'legacyClaimedBy', 'lastTab',
     'guestId', 'guestProfile', 'guestUpgrade', 'playerCount', 'installDismissed', 'devCloud'
   ];
 
@@ -165,14 +166,19 @@ window.FF = window.FF || {};
       return out;
     },
 
-    // One-time copy of Family Fun data to the PlayMora prefix.
+    // One-time copies of older brands' data to the PlayMona prefix.
+    // PlayMora first: its data already includes anything copied from Family Fun.
     _migrateBrand: function () {
       if (!this.available) return;
-      if (this._read(PREFIX + 'migratedFromFamilyFun', false)) return;
-      var self = this;
+      this._copyPrefix(PLAYMORA_PREFIX, 'migratedFromPlayMora');
+      this._copyPrefix(LEGACY_PREFIX, 'migratedFromFamilyFun');
+    },
+
+    _copyPrefix: function (from, flag) {
+      if (this._read(PREFIX + flag, false)) return;
       this._allRawKeys().forEach(function (k) {
-        if (k && k.indexOf(LEGACY_PREFIX) === 0) {
-          var key = k.slice(LEGACY_PREFIX.length);
+        if (k && k.indexOf(from) === 0) {
+          var key = k.slice(from.length);
           try {
             if (window.localStorage.getItem(PREFIX + key) == null) {
               window.localStorage.setItem(PREFIX + key, window.localStorage.getItem(k));
@@ -180,7 +186,7 @@ window.FF = window.FF || {};
           } catch (e) {}
         }
       });
-      self._write(PREFIX + 'migratedFromFamilyFun', true);
+      this._write(PREFIX + flag, true);
     },
 
     // Remove this account's data from the device (or everything when no account).

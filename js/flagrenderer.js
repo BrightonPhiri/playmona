@@ -1,5 +1,5 @@
 /* ============================================================
-   PLAYMORA — flagrenderer.js
+   PLAYMONA — flagrenderer.js
    Renders country flags from SVG strings or compact specs.
    Flags are local, sharp (vector) and scale to any resolution.
    ============================================================ */

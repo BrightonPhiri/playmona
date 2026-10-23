@@ -1,8 +1,8 @@
-# PlayMora
+# PlayMona
 
-**Games for everyone. Everywhere.** · [playmora.com](https://playmora.com)
+**Games for everyone. Everywhere.** · [playmona.com](https://playmona.com)
 
-PlayMora is a hub of 45 casual games: quizzes, word games, party games, puzzles and more.
+PlayMona is a hub of 45 casual games: quizzes, word games, party games, puzzles and more.
 Play on your own, pass one screen around the room, or play online with everyone on their
 own phone. It is a static web app with no build step.
 
@@ -37,7 +37,7 @@ own phone. It is a static web app with no build step.
 
 | File | What it is |
 |------|------------|
-| `index.html` | Public landing page for playmora.com (`js/landing.js`): rotating hero pictures, live player count, install banner. |
+| `index.html` | Public landing page for playmona.com (`js/landing.js`): rotating hero pictures, live player count, install banner. |
 | `play.html` | The app: sign-in, home, games, online rooms, profile, settings. |
 | `privacy.html` | Privacy notice (draft, needs a legal review before launch). |
 | `manifest.webmanifest`, `sw.js` | Install to home screen and offline support. |
@@ -90,7 +90,7 @@ Setting up Firebase (sign-in methods, authorised domains, database rules): see
 │   └── landing.css            # landing and privacy pages
 ├── js/
 │   ├── core.js, ui-kit.js     # FF namespace, DOM helpers, dialogs, toasts
-│   ├── storage.js             # localStorage, scoped per account (playmora:u:<uid>:key)
+│   ├── storage.js             # localStorage, scoped per account (playmona:u:<uid>:key)
 │   ├── auth.js, authUI.js     # accounts (Firebase or device-only) and sign-in screens
 │   ├── sync.js                # syncs account data to /users/{uid}/data
 │   ├── avatars.js             # the 48 characters

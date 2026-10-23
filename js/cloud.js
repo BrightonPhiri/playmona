@@ -1,5 +1,5 @@
 /* ============================================================
-   PLAYMORA — cloud.js
+   PLAYMONA — cloud.js
    Small shared-data layer for leaderboards and challenges.
 
    - Firebase accounts: the Realtime Database.
@@ -24,7 +24,7 @@ window.FF = window.FF || {};
       var timer = setTimeout(function () {
         if (done) return;
         done = true;
-        var e = new Error(FF.t ? FF.t('cloudOffline', 'Could not reach PlayMora. Check your connection.') : 'Offline');
+        var e = new Error(FF.t ? FF.t('cloudOffline', 'Could not reach PlayMona. Check your connection.') : 'Offline');
         e.code = 'cloud/timeout';
         reject(e);
       }, TIMEOUT);

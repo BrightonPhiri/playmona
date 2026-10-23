@@ -1,5 +1,5 @@
 /* ============================================================
-   PLAYMORA — theme.js
+   PLAYMONA — theme.js
    Light / Dark / System theme + accent colours.
    ============================================================ */
 window.FF = window.FF || {};

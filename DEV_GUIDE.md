@@ -1,6 +1,6 @@
-# PlayMora — Development Contract (READ ME FIRST)
+# PlayMona — Development Contract (READ ME FIRST)
 
-You are implementing part of **PlayMora**, a game hub for everyone. The app already has a
+You are implementing part of **PlayMona**, a game hub for everyone. The app already has a
 complete engine (shell, scoring, timers, audio, themes, TV navigation, accounts).
 Your job is to add content data and/or games that plug into that engine.
 

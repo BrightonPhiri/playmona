@@ -1,5 +1,5 @@
 /* ============================================================
-   PLAYMORA — brand.css
+   PLAYMONA — brand.css
    Brand pieces and the account-era screens: wordmark, splash,
    sign-in, avatars, who's playing, dashboard, profile, tabs.
    Built on css/tokens.css.
@@ -12,7 +12,7 @@
   font-size: 1.3rem; line-height: 1; white-space: nowrap;
 }
 .wordmark__play { color: var(--text); }
-.wordmark__mora {
+.wordmark__mona {
   background: linear-gradient(90deg, #ffb21f 0%, #ff6a1f 30%, #ff2f8f 55%, #8b3cf7 80%, #2ec84b 100%);
   -webkit-background-clip: text; background-clip: text; color: transparent;
 }
@@ -20,7 +20,7 @@
 .wordmark--lg { font-size: clamp(2.2rem, 6vw, 3.2rem); }
 .brand-lockup { display: inline-flex; align-items: center; gap: 8px; }
 .brand-lockup .brand-logo { width: 34px; height: 34px; }
-@media (forced-colors: active) { .wordmark__mora { color: CanvasText; background: none; } }
+@media (forced-colors: active) { .wordmark__mona { color: CanvasText; background: none; } }
 
 /* ============ Splash ============ */
 .splash { position: fixed; inset: 0; display: grid; place-items: center; background: var(--bg); z-index: 200; }

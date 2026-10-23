@@ -1,6 +1,6 @@
 /* ============================================================
-   PLAYMORA — landing.js
-   The playmora.com home page: signed-in buttons, rotating hero
+   PLAYMONA — landing.js
+   The playmona.com home page: signed-in buttons, rotating hero
    pictures, the live player count and the install banner.
    ============================================================ */
 (function () {
@@ -12,8 +12,8 @@
 
   function store(key, val) {
     try {
-      if (val === undefined) return JSON.parse(localStorage.getItem('playmora:' + key) || 'null');
-      localStorage.setItem('playmora:' + key, JSON.stringify(val));
+      if (val === undefined) return JSON.parse(localStorage.getItem('playmona:' + key) || 'null');
+      localStorage.setItem('playmona:' + key, JSON.stringify(val));
     } catch (e) { return null; }
   }
 
@@ -26,7 +26,7 @@
     $$('.js-cta').forEach(function (a) {
       a.href = 'play.html';
       var label = a.textContent.trim();
-      if (label === 'Play now' || label === 'Get started') a.textContent = 'Open PlayMora';
+      if (label === 'Play now' || label === 'Get started') a.textContent = 'Open PlayMona';
       else if (/Start playing/.test(label)) a.firstChild.textContent = 'Continue playing ';
       else a.textContent = 'Go to my profile';
     });

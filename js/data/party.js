@@ -1,5 +1,5 @@
 /* ============================================================
-   PLAYMORA — party.js
+   PLAYMONA — party.js
    Party-game content: charades, Don't Say It, drawing,
    would-you-rather, this-or-that and more.
    Classic script (no ES modules) so the app runs from file://

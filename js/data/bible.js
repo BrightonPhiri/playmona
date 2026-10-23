@@ -1,5 +1,5 @@
 /* ============================================================
-   PLAYMORA — data/bible.js
+   PLAYMONA — data/bible.js
    Content library for Bible games:
      - questions: Trivia spanning Old & New Testaments, Miracles,
                   Parables, Heroes of Faith, and Kids Bible.

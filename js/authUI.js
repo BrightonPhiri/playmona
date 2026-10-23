@@ -1,5 +1,5 @@
 /* ============================================================
-   PLAYMORA — authUI.js
+   PLAYMONA — authUI.js
    Sign in, create account, reset password, and the "make it
    yours" step (character + name, and a username for Google
    sign-ups). Rendered full screen before the app shell.
@@ -18,11 +18,11 @@ window.FF = window.FF || {};
   var view = 'signin';
   var busy = false;
 
-  // The PlayMora wordmark: "Play" in ink, "Mora" in the brand gradient.
+  // The PlayMona wordmark: "Play" in ink, "Mona" in the brand gradient.
   function wordmark(cls) {
-    var w = FF.ui.el('span', { class: 'wordmark' + (cls ? ' ' + cls : ''), 'aria-label': 'PlayMora' });
+    var w = FF.ui.el('span', { class: 'wordmark' + (cls ? ' ' + cls : ''), 'aria-label': 'PlayMona' });
     w.appendChild(FF.ui.el('span', { class: 'wordmark__play', 'aria-hidden': 'true' }, 'Play'));
-    w.appendChild(FF.ui.el('span', { class: 'wordmark__mora', 'aria-hidden': 'true' }, 'Mora'));
+    w.appendChild(FF.ui.el('span', { class: 'wordmark__mona', 'aria-hidden': 'true' }, 'Mona'));
     return w;
   }
 
@@ -119,7 +119,7 @@ window.FF = window.FF || {};
     if (navigator.onLine !== false || FF.Auth.isLocal()) return null;
     var n = FF.ui.el('div', { class: 'auth__alert', role: 'status' });
     n.appendChild(icon('wifi'));
-    n.appendChild(FF.ui.span('', t('offlineSignIn', 'You are offline. Signing in needs the internet the first time; after that PlayMora works offline.')));
+    n.appendChild(FF.ui.span('', t('offlineSignIn', 'You are offline. Signing in needs the internet the first time; after that PlayMona works offline.')));
     return n;
   }
 
@@ -220,7 +220,7 @@ window.FF = window.FF || {};
   }
 
   function signUpView(panel) {
-    panel.appendChild(FF.ui.el('h1', { class: 'auth__title' }, t('joinPlayMora', 'Join PlayMora')));
+    panel.appendChild(FF.ui.el('h1', { class: 'auth__title' }, t('joinPlayMona', 'Join PlayMona')));
     panel.appendChild(FF.ui.el('p', { class: 'auth__sub' }, FF.Auth.isGuest()
       ? t('signUpGuestSub', 'Free account. Everything you did as a guest comes with you, on every device.')
       : t('signUpSub', 'Free account. Your players, scores and favourites follow you to every device.')));
@@ -423,8 +423,8 @@ window.FF = window.FF || {};
       root.appendChild(art);
 
       var panel = FF.ui.el('main', { class: 'auth__panel', id: 'auth-panel' });
-      // Brand links back to the playmora.com landing page.
-      var mobileBrand = FF.ui.el('a', { class: 'auth__mobile-brand', href: 'index.html', 'aria-label': 'PlayMora home' });
+      // Brand links back to the playmona.com landing page.
+      var mobileBrand = FF.ui.el('a', { class: 'auth__mobile-brand', href: 'index.html', 'aria-label': 'PlayMona home' });
       mobileBrand.appendChild(FF.ui.el('img', { src: 'assets/brand/mark-256.webp', alt: '', width: 40, height: 40 }));
       mobileBrand.appendChild(wordmark());
       panel.appendChild(mobileBrand);
@@ -441,7 +441,7 @@ window.FF = window.FF || {};
       root.appendChild(panel);
 
       if (!root.parentNode) document.body.appendChild(root);
-      document.title = (view === 'signup' ? t('createAccount', 'Create account') : view === 'personalize' ? t('makeItYours', 'Make it yours') : t('signIn', 'Sign in')) + ' · PlayMora';
+      document.title = (view === 'signup' ? t('createAccount', 'Create account') : view === 'personalize' ? t('makeItYours', 'Make it yours') : t('signIn', 'Sign in')) + ' · PlayMona';
       if (firstInput && window.innerWidth >= 768) setTimeout(function () { try { firstInput.focus(); } catch (e) {} }, 30);
     },
 

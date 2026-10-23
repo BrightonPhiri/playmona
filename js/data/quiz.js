@@ -1,5 +1,5 @@
 /* ============================================================
-   PLAYMORA — quiz.js
+   PLAYMONA — quiz.js
    Quiz question data: multiple choice, true/false, guess-who,
    and picture quiz. Attaches to FF.data.quiz.
    Classic script (no ES modules) so the app runs from file://

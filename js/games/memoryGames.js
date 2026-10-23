@@ -1,5 +1,5 @@
 /* ============================================================
-   PLAYMORA — memoryGames.js
+   PLAYMONA — memoryGames.js
    Four memory-category games:
    - memoryMatch        (emoji card pairs)
    - pictureMemory      (SVG illustration pairs)

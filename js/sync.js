@@ -1,5 +1,5 @@
 /* ============================================================
-   PLAYMORA — sync.js
+   PLAYMONA — sync.js
    Keeps account data the same on every device the player signs in on.
 
    Local first: every change is saved on the device immediately (so

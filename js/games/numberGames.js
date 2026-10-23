@@ -1,5 +1,5 @@
 /* ============================================================
-   PLAYMORA — numberGames.js
+   PLAYMONA — numberGames.js
    Number Challenge (mental maths) & Higher or Lower
    Classic script, global FF namespace, no ES modules / network.
    ============================================================ */

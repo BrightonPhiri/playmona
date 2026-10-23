@@ -16,7 +16,7 @@ if (!files.length) {
   process.exit(1);
 }
 
-console.log('PlayMora test suite');
+console.log('PlayMona test suite');
 console.log('');
 files.forEach(function (f) {
   console.log(f);

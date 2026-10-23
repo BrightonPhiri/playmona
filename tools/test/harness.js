@@ -1,4 +1,4 @@
-/* Minimal test harness for PlayMora.
+/* Minimal test harness for PlayMona.
    Node built-ins only. Loads classic `window.FF` scripts via vm. */
 'use strict';
 
