@@ -1,6 +1,6 @@
-# CREDITS & SOURCES — Family Fun
+# CREDITS & SOURCES — PlayMona
 
-Family Fun is designed to be fully offline and self-contained. All bundled assets are original
+PlayMona is designed to be fully offline and self-contained. All bundled assets are original
 creations or legally redistributable content.
 
 ## Original assets
@@ -42,12 +42,11 @@ All are licensed under the **SIL Open Font License 1.1** (distributed via Google
   Bundled at `js/vendor/qrcode.js`, unmodified. Licensed under the **MIT License**.
   https://github.com/kazuhikoarase/qrcode-generator
   ("QR Code" is a registered trademark of DENSO WAVE INCORPORATED.)
-- If you add photographs, record their attribution here and keep the license with the file
-  (see `IMAGE_DOWNLOAD_LIST.md` for recommended sources).
+- If you add photographs, record their attribution here and keep the license with the file.
 
 ## Notes
 
 - Flags, capital cities, and general facts are factual data.
 - The app does not make any network requests and does not collect any data.
 
-*Thank you for playing Family Fun!*
+*Thank you for playing PlayMona!*

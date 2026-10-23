@@ -25,10 +25,12 @@ FF.AssetManifest = {
   },
   "ui": {
     "app-bg": 1,
-    "favorites": 1,
+    "bg-islands-sm": 1,
+    "bg-islands": 1,
+    "bg-knowledge-sm": 1,
+    "bg-knowledge": 1,
     "gamenight": 1,
-    "hero-games": 1,
-    "hero-home": 1,
-    "players": 1
+    "hero-cosmic-sm": 1,
+    "hero-cosmic": 1
   }
 };

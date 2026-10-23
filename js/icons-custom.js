@@ -10,8 +10,7 @@
    Phosphor set — that stays as a second option users can pick in
    Settings → Appearance → Icon style.
 
-   To replace these with AI-generated artwork, see
-   ICON_GENERATION_PROMPTS.md and drop the new SVGs into the
+   To replace these with new artwork, drop the new SVGs into the
    FF.Icons.custom map below (keep the same keys).
    ============================================================ */
 window.FF = window.FF || {};
