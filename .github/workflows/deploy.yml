@@ -15,7 +15,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Run tests
         run: node tools/test/run.js
@@ -40,7 +40,9 @@ jobs:
           fi
 
       - name: Upload the site
-        # --checksum sends only changed files. --delete removes files deleted from the repo,
+        # --checksum sends only changed files. -p with --chmod makes every file readable by
+        # the web server (the server's own default would make new files private).
+        # --delete removes files deleted from the repo,
         # but never touches the excluded paths, so the server's own firebase-config.js,
         # uploads and API secrets stay put.
         env:
@@ -49,7 +51,7 @@ jobs:
           SSH_PORT: ${{ secrets.SSH_PORT }}
           SSH_PATH: ${{ secrets.SSH_PATH }}
         run: |
-          rsync -rlz --checksum --delete --chmod=D755,F644 \
+          rsync -rlpz --checksum --delete --chmod=D755,F644 \
             --exclude='.git/' --exclude='.github/' --exclude='.claude/' \
             --exclude='tools/' --exclude='docs/' --exclude='node_modules/' \
             --exclude='*.md' --exclude='.gitignore' \

@@ -22,6 +22,29 @@ deploy never overwrites or deletes it, nor `uploads/`, `api/config.local.php`,
 
 ---
 
+## How playmona.com is set up (done on 2026-10-23)
+
+- **Server:** HestiaCP on 104.218.50.203, site folder `/home/user/web/playmona.com/public_html`,
+  nginx in front of Apache.
+- **Deploy login:** GitHub logs in as the Hestia user `user` with a key that can only run
+  `rrsync` into the site folder (see `/home/user/.ssh/authorized_keys`). It cannot open a shell.
+  The private key exists only in the GitHub secret `SSH_KEY`. To revoke it, delete that line.
+- **Secrets set:** `SSH_HOST`, `SSH_USER` (`user`), `SSH_PATH` (`.`, relative to the rrsync
+  folder), `SSH_KEY`, `SSH_KNOWN_HOSTS`.
+- **Web template:** playmona.com uses the Hestia proxy template `playmona`
+  (`/usr/local/hestia/data/templates/web/nginx/playmona.stpl`, a copy of `default.stpl`). It adds
+  the clean addresses and `.html` redirects, and sets pages, scripts and styles to `no-cache`
+  (the default template sent `expires max`, so browsers kept old files for years). Images and
+  fonts are cached for 30 days. Other domains keep the default template.
+  To undo: `v-change-web-domain-proxy-tpl user playmona.com default "<extensions>" yes`. Always
+  pass the extensions list as the 4th argument; the 5th is the restart flag.
+- **Backups** from the setup are in `/root/backups/` (site files, old nginx configs, old
+  authorized_keys).
+
+The rest of this page is the general guide for setting this up on another server.
+
+---
+
 ## One-time setup
 
 ### 1. A deploy user and key on the VPS
