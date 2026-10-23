@@ -8,6 +8,19 @@
 var CACHE = 'playmona-v5';
 var SDK_HOST = 'https://www.gstatic.com/firebasejs/';
 
+/* Our own files are always rechecked with the server (cheap when unchanged).
+   The host once told browsers to keep files for years; without this a
+   returning player could keep an old copy even after a deploy. */
+function fresh(req) {
+  if (typeof req === 'string') return new Request(req, { cache: 'no-cache' });
+  if (req.mode === 'navigate') return fetch(req.url, { cache: 'no-cache', credentials: 'same-origin' });
+  return new Request(req, { cache: 'no-cache' });
+}
+function fetchFresh(req) {
+  var r = fresh(req);
+  return r instanceof Request ? fetch(r) : r;
+}
+
 self.addEventListener('install', function (event) {
   event.waitUntil(caches.open(CACHE).then(function (cache) {
     return fetch('play', { cache: 'no-cache' }).then(function (res) {
@@ -20,7 +33,7 @@ self.addEventListener('install', function (event) {
         html.replace(/(?:src|href)="([^"#:]+)"/g, function (m, url) { urls.push(url); return m; });
         return cache.put('play', copy).then(function () {
           // One missing file must not stop the rest from caching.
-          return Promise.all(urls.map(function (u) { return cache.add(u).catch(function () {}); }));
+          return Promise.all(urls.map(function (u) { return cache.add(fresh(u)).catch(function () {}); }));
         });
       });
     }).catch(function () {});
@@ -41,7 +54,7 @@ self.addEventListener('fetch', function (event) {
   // Live data (Firebase database, auth) is never cached; only the SDK files are.
   if (!sameOrigin && url.indexOf(SDK_HOST) !== 0) return;
 
-  event.respondWith(fetch(req).then(function (res) {
+  event.respondWith((sameOrigin ? fetchFresh(req) : fetch(req)).then(function (res) {
     if (res && (res.ok || res.type === 'opaque')) {
       var copy = res.clone();
       caches.open(CACHE).then(function (c) { c.put(req, copy); });
