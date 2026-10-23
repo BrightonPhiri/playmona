@@ -130,9 +130,10 @@ next is in [docs/roadmap.md](docs/roadmap.md).
 
 ## Admin portal
 
-Open `playmona.com/admin` while signed in to PlayMona. The first time it says "Admins only"
-and shows your account id. In the Firebase console → Realtime Database, add
-`admins → <that id> → true`, then press *Check again*. Only the Firebase console can make
+Open `playmona.com/admin` while signed in to PlayMona. Anyone who is not an admin sees only
+"No access". To add an admin, they sign in and open `playmona.com/admin#setup`, which shows
+their account id. In the Firebase console → Realtime Database, add `admins → <that id> → true`,
+then press *Check again*. Only the Firebase console can make
 admins; the rules stop anyone making themselves one.
 
 - **Overview**: active players (accounts and guests), games played, sign-ups, installs, rooms,

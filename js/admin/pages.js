@@ -306,7 +306,7 @@ window.FF = window.FF || {};
 
     /* ================= Users ================= */
     users: function (main) {
-      main.appendChild(head('Players', 'People with accounts. Each person appears here after they next open PlayMona.'));
+      main.appendChild(head('Players', 'People with accounts. The list started on 23 Oct 2026: each person appears the next time they open PlayMona, so older accounts fill in as they come back.'));
       var summary = el('div', { class: 'kpi-grid kpi-grid--quiet' });
       main.appendChild(summary);
       var tools = el('div', { class: 'admin-tools' });
@@ -325,13 +325,13 @@ window.FF = window.FF || {};
       Promise.all([D().get('stats/players'), D().daysFrom(lastDays(1)[0])]).then(function (res) {
         var today = res[1] && res[1][lastDays(1)[0]];
         var active = Object.keys((today && today.active) || {}).length;
-        summary.appendChild(tile('Registered players', res[0] || 0));
+        summary.appendChild(tile('Registered players', res[0] || 0, null, 'All accounts, including ones not in the list yet'));
         summary.appendChild(tile('Active today', active));
       }).catch(function () {});
 
       function render(rows) {
         FF.ui.clear(box);
-        if (!rows.length) { box.appendChild(el('p', { class: 'admin-empty' }, search.value ? 'Nobody matches that username.' : 'No players to show yet.')); return; }
+        if (!rows.length) { box.appendChild(el('p', { class: 'admin-empty' }, search.value ? 'Nobody matches that username.' : 'Nobody has opened PlayMona since the list started. Players appear here the next time they open the app.')); return; }
         var tbl = el('table', { class: 'admin-table' });
         tbl.appendChild(el('thead', {}, [el('tr', {}, ['Player', 'Joined', 'Last seen', 'Games', 'App', 'Status', ''].map(function (h) { return el('th', { scope: 'col' }, h); }))]));
         var tbody = el('tbody');

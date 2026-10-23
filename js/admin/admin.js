@@ -6,7 +6,8 @@
 
    Making someone an admin (once, by hand): Firebase console →
    Realtime Database → add  admins / <their uid> : true
-   The "not an admin" screen shows the uid to copy.
+   Everyone else just sees "No access". To find a new admin's uid,
+   they open /admin#setup while signed in.
    ============================================================ */
 window.FF = window.FF || {};
 
@@ -44,6 +45,15 @@ window.FF = window.FF || {};
     return a;
   }
 
+  // What a signed-in non-admin sees: nothing about how admin works.
+  function noAccess() {
+    var home = el('a', { class: 'btn btn-lg btn-primary', href: FF.page('play') });
+    home.appendChild(FF.Icons.icon('arrow-right'));
+    home.appendChild(FF.ui.span('', 'Go to PlayMona'));
+    message('No access', 'This page is not available for your account.', [home]);
+  }
+
+  // /admin#setup: shows the account id to add as an admin in the Firebase console.
   function notAdmin() {
     var uid = FF.AdminData.uid() || '';
     var body = el('div', {});
@@ -107,11 +117,16 @@ window.FF = window.FF || {};
       return FF.AdminData.connect();
     }).then(function (result) {
       if (result === 'signed-out') {
-        message('Sign in first', 'Sign in to PlayMona with your admin account on this device, then come back to this page.', [signInLink()]);
+        message('Sign in', 'Sign in to PlayMona to continue.', [signInLink()]);
+        return;
+      }
+      if (result === 'not-admin') {
+        if (window.location.hash === '#setup') notAdmin(); else noAccess();
         return;
       }
       me();
-      if (result === 'not-admin') { notAdmin(); return; }
+      // Admins count as active too, and get their own entry in the player list.
+      if (FF.Track) FF.Track.seen();
       window.addEventListener('hashchange', show);
       show();
     }).catch(function () {
