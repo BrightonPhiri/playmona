@@ -3,9 +3,9 @@
   "configurations": [
     {
       "name": "familyfun",
-      "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "8952"],
-      "port": 8952
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["tools/serve.js", "8960"],
+      "port": 8960
     }
   ]
 }

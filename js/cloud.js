@@ -61,6 +61,12 @@ window.FF = window.FF || {};
       this._write(tree);
       return Promise.resolve();
     },
+    update: function (path, val) {
+      var self = this;
+      return Object.keys(val || {}).reduce(function (p, k) {
+        return p.then(function () { return self.set(path + '/' + k, val[k]); });
+      }, Promise.resolve());
+    },
     transaction: function (path, fn) {
       var self = this;
       return this.get(path).then(function (cur) {
@@ -137,6 +143,61 @@ window.FF = window.FF || {};
     set: function (path, val) { return this._call('set', [path, val]); },
     transaction: function (path, fn) { return this._call('transaction', [path, fn]); },
     // Rows under path, highest `child` first.
-    top: function (path, child, n) { return this._call('top', [path, child, n || 50]); }
+    top: function (path, child, n) { return this._call('top', [path, child, n || 50]); },
+
+    /* Where public data (game switches, site notices) and usage counters live.
+       Unlike the calls above these also work for guests: reads need no
+       sign-in, and guests' counters use Firebase's anonymous sign-in. */
+    shared: function () {
+      if (!FF.Auth) return null;
+      if (FF.Auth.isLocal()) return Local;
+      if (!(FF.Net && FF.Net.sdkConfigured && FF.Net.sdkConfigured())) return null;
+      return Shared;
+    },
+    publicGet: function (path) {
+      var b = this.shared();
+      if (!b) return Promise.reject(Object.assign(new Error('No cloud'), { code: 'cloud/none' }));
+      return timeout(b === Local ? Local.get(path) : Shared.read(path));
+    },
+    // Counters and markers. Never rejects: usage stats must not break play.
+    track: function (fn) {
+      var b = this.shared();
+      if (!b) return Promise.resolve(false);
+      var run = b === Local ? Promise.resolve(Local) : Shared.writer();
+      return timeout(run.then(function (w) { return fn(w, w.uid || (FF.Auth.user() || {}).uid); })).then(function () { return true; }, function () { return false; });
+    },
+    _local: Local
+  };
+
+  /* Firebase access for shared data. Guests get an anonymous sign-in for writes. */
+  var Shared = {
+    read: function (path) {
+      return FF.Net.ensureFirebase().then(function (firebase) {
+        return firebase.database().ref(path).once('value');
+      }).then(function (s) { return s.val(); });
+    },
+    writer: function () {
+      return FF.Net.ensureFirebase().then(function (firebase) {
+        var auth = firebase.auth();
+        var ready = auth.currentUser ? Promise.resolve(auth.currentUser) : new Promise(function (resolve) {
+          var off = auth.onAuthStateChanged(function (u) { off(); resolve(u); });
+        });
+        return ready.then(function (u) {
+          if (u) return u;
+          // Only guests sign in anonymously; a signed-out device is not counted.
+          if (!FF.Auth.isGuest()) throw new Error('Not signed in');
+          return auth.signInAnonymously().then(function (c) { return c.user; });
+        }).then(function (u) {
+          var db = firebase.database();
+          return {
+            uid: u.uid,
+            get: function (path) { return db.ref(path).once('value').then(function (s) { return s.val(); }); },
+            set: function (path, val) { return db.ref(path).set(val); },
+            update: function (path, val) { return db.ref(path).update(val); },
+            transaction: function (path, fn) { return db.ref(path).transaction(fn); }
+          };
+        });
+      });
+    }
   };
 })();

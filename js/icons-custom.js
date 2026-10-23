@@ -139,7 +139,11 @@ window.FF = window.FF || {};
     'dice': '<rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9" r="1"/><circle cx="15" cy="15" r="1"/><circle cx="15" cy="9" r="1"/><circle cx="9" cy="15" r="1"/><circle cx="12" cy="12" r="1"/>',
     'heart-fill': '<path d="M12 20C7 16 3 12.5 3 8.5A4.5 4.5 0 0 1 7.5 4c1.7 0 3.2.9 4.5 2.5C13.3 4.9 14.8 4 16.5 4A4.5 4.5 0 0 1 21 8.5C21 12.5 17 16 12 20Z" fill="currentColor"/>',
     'star-fill': '<path d="M12 3l2.6 5.3 5.9.9-4.3 4.2 1 5.9-5.2-2.7-5.2 2.7 1-5.9L3.5 9.2l5.9-.9L12 3Z" fill="currentColor"/>',
-    'flame': '<path d="M12 3c1 3-2 4-2 7a4 4 0 0 0 8 0c0-1-.3-2-.8-3C18.5 8.5 20 11 20 14a8 8 0 1 1-16 0c0-4 3-7 6-9 0 2 1 3 2 3Z"/>'
+    'flame': '<path d="M12 3c1 3-2 4-2 7a4 4 0 0 0 8 0c0-1-.3-2-.8-3C18.5 8.5 20 11 20 14a8 8 0 1 1-16 0c0-4 3-7 6-9 0 2 1 3 2 3Z"/>',
+    'lock': '<rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/><path d="M12 14.5v2"/>',
+    'power': '<path d="M12 3v8"/><path d="M6.3 6.8a8 8 0 1 0 11.4 0"/>',
+    'megaphone': '<path d="M3 10v4a1 1 0 0 0 1 1h3l7 4V5L7 9H4a1 1 0 0 0-1 1Z"/><path d="M18 9a4 4 0 0 1 0 6"/><path d="M7 15l1.5 5h3L10 16"/>',
+    'download': '<path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M4 20h16"/>'
   };
   Object.keys(extra).forEach(function (k) {
     if (FF.Icons.custom[k] == null) FF.Icons.custom[k] = ico(extra[k]);

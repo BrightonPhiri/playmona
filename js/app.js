@@ -73,6 +73,8 @@ window.FF = window.FF || {};
     scores: { view: 'profile', params: { tab: 'overview' } },
     favorites: { view: 'games', params: { favorites: true } }
   };
+  // Screens a guest may be locked out of (see FF.Access, js/gameConfig.js).
+  var VIEW_FEATURE = { daily: 'daily', challenges: 'challenge', challenge: 'challenge', gamenight: 'gameNight' };
   // Which main destination a view belongs to (for nav highlighting).
   var NAV_OF = { home: 'home', gamenight: 'home', games: 'games', online: 'online', daily: 'online', challenges: 'online', challenge: 'online', profile: 'profile', settings: 'settings', credits: 'settings', about: 'settings' };
 
@@ -121,7 +123,7 @@ window.FF = window.FF || {};
       if (!s) {
         if (splash) splash.parentNode.removeChild(splash);
         this.stop();
-        // The landing page links to play.html?view=signup for new players.
+        // The landing page links to play?view=signup for new players.
         var wantsSignup = /[?&]view=signup\b/.test(window.location.search);
         if (/[?&]view=guest\b/.test(window.location.search) && !this._guestTried) {
           this._guestTried = true;
@@ -151,6 +153,25 @@ window.FF = window.FF || {};
       if (this._started) return;
       this._started = true;
       this._uid = FF.Auth.user() ? FF.Auth.user().uid : null;
+      if (FF.Track) FF.Track.start();
+      if (FF.GameConfig) {
+        if (!this._configHooked) {
+          this._configHooked = true;
+          // New switches from the admin portal: redraw, unless a game is running.
+          FF.GameConfig.onChange(function () {
+            if (!FF.App._started || (FF.GameFlow && FF.GameFlow.current)) return;
+            FF.App.render(FF.App._currentView || 'home', FF.App._currentParams || {});
+          });
+          // Coming back to the app picks up changes made since (at most every 5 minutes).
+          var lastLoad = Date.now();
+          document.addEventListener('visibilitychange', function () {
+            if (document.hidden || Date.now() - lastLoad < 5 * 60 * 1000) return;
+            lastLoad = Date.now();
+            FF.GameConfig.load();
+          });
+        }
+        FF.GameConfig.load();
+      }
       // The browser may offer installing after Home has drawn: add the card then.
       if (FF.Install && !this._installHooked) {
         this._installHooked = true;
@@ -174,13 +195,14 @@ window.FF = window.FF || {};
       if (!this._navReady) { FF.Nav.init(); this._navReady = true; }
       this.render('home');
 
-      // A shared link like .../play.html#room=ABC123 goes straight to join.
+      // A shared link like .../play#room=ABC123 goes straight to join.
       var challengeCode = FF.Challenge && FF.Challenge.codeFromUrl();
       if (challengeCode) { FF.Challenge.openCode(challengeCode); return; }
       var joinCode = (FF.Room && FF.Room.codeFromUrl) ? FF.Room.codeFromUrl() : null;
       if (joinCode && onlineEnabled()) {
         FF.Nav.go('online');
-        FF.RoomUI.showJoin(this.root(), joinCode);
+        var root = this.root();
+        FF.Access.gate('online', function () { FF.RoomUI.showJoin(root, joinCode); });
       }
     },
 
@@ -326,7 +348,7 @@ window.FF = window.FF || {};
       }, { role: 'menuitemcheckbox', checked: dark, keepOpen: true, cls: 'acct-menu__item--toggle' });
       list.lastChild.appendChild(FF.ui.span('acct-menu__switch'));
       if (FF.Install && FF.Install.available()) item('download', t('installApp', 'Install the app'), function () { FF.App.install(); });
-      item('info', t('privacyNotice', 'Privacy notice'), function () { window.open('privacy.html', '_blank', 'noopener'); });
+      item('info', t('privacyNotice', 'Privacy notice'), function () { window.open(FF.page('privacy'), '_blank', 'noopener'); });
       divider();
       item('sign-out', guest ? t('leaveGuest', 'Stop guest play') : t('signOut', 'Log out'), function () { FF.App.confirmSignOut(); }, { cls: 'acct-menu__item--danger' });
       menu.appendChild(list);
@@ -457,7 +479,7 @@ window.FF = window.FF || {};
       footer.appendChild(privacy);
       footer.appendChild(FF.ui.el('button', { type: 'button', class: 'link-btn', onclick: function () { FF.Nav.go('credits'); } }, t('credits', 'Credits')));
       footer.appendChild(FF.ui.el('button', { type: 'button', class: 'link-btn', onclick: function () { FF.Nav.go('about'); } }, t('about', 'About')));
-      footer.appendChild(FF.ui.el('a', { class: 'link-btn', href: 'privacy.html', target: '_blank', rel: 'noopener' }, t('privacy', 'Privacy')));
+      footer.appendChild(FF.ui.el('a', { class: 'link-btn', href: FF.page('privacy'), target: '_blank', rel: 'noopener' }, t('privacy', 'Privacy')));
       footer.appendChild(FF.ui.span('app-footer__ver', 'v' + VERSION));
       app.appendChild(footer);
       app.appendChild(tabbar);
@@ -525,8 +547,17 @@ window.FF = window.FF || {};
       var main = this.root();
       if (!main) return;
       FF.ui.clear(main);
-      var renderer = this.views[view] || this.views.home;
-      FF.safe(function () { renderer.call(FF.App, main, FF.App._currentParams); });
+      var site = FF.GameConfig ? FF.GameConfig.site() : {};
+      var feature = VIEW_FEATURE[view];
+      if (site.maintenance) {
+        main.appendChild(FF.App.maintenancePanel());
+      } else if (feature && FF.Access && !FF.Access.canUse(feature)) {
+        main.appendChild(FF.Access.lockedPanel(feature));
+      } else {
+        if (site.announcement && view === 'home') main.appendChild(FF.App.announcement(site.announcement));
+        var renderer = this.views[view] || this.views.home;
+        FF.safe(function () { renderer.call(FF.App, main, FF.App._currentParams); });
+      }
       this._syncNav();
       var heading = main.querySelector('h1');
       document.title = (view === 'home' || !heading) ? FF.Brand.name + ' — ' + t('titleTag', 'Games for everyone') : heading.textContent + ' · ' + FF.Brand.name;
@@ -646,14 +677,30 @@ window.FF = window.FF || {};
         card.appendChild(body2);
       }
 
+      var badges = FF.ui.div('gcard__badges');
+      var locked = FF.Access && FF.Access.isGuest() && !FF.Access.canPlay(def.id);
+      if (locked) {
+        card.classList.add('gcard--locked');
+        var lk = FF.ui.span('badge badge--locked');
+        lk.appendChild(icon('lock'));
+        lk.appendChild(document.createTextNode(t('membersBadge', 'Sign up')));
+        badges.appendChild(lk);
+        link.setAttribute('aria-label', label + '. ' + t('membersOnly', 'Free account needed'));
+      }
+      var flag = FF.GameConfig ? FF.GameConfig.game(def.id).badge : null;
+      if (flag === 'new' || flag === 'hot') {
+        var nb = FF.ui.span('badge badge--' + flag);
+        nb.appendChild(icon(flag === 'hot' ? 'flame' : 'sparkle'));
+        nb.appendChild(document.createTextNode(flag === 'hot' ? t('hotBadge', 'Hot') : t('newBadge', 'New')));
+        badges.appendChild(nb);
+      }
       if (isOnlineGame(def.id) && onlineEnabled()) {
-        var badges = FF.ui.div('gcard__badges');
         var bd = FF.ui.span('badge badge--online');
         bd.appendChild(icon('wifi'));
         bd.appendChild(document.createTextNode(t('online', 'Online')));
         badges.appendChild(bd);
-        card.appendChild(badges);
       }
+      if (badges.firstChild) card.appendChild(badges);
 
       var fav = FF.ui.el('button', { type: 'button', class: 'fav-toggle' });
       function syncFav() {
@@ -862,7 +909,7 @@ window.FF = window.FF || {};
         var body = FF.ui.div('home-hero__body');
         body.appendChild(FF.ui.el('p', { class: 'home-hero__eyebrow' }, greet + (me.displayName ? ', ' + me.displayName : '')));
         body.appendChild(FF.ui.el('h1', { class: 'home-hero__title', id: 'home-title' }, t('homeTitle', 'What are we playing today?')));
-        body.appendChild(FF.ui.el('p', { class: 'home-hero__sub' }, t('homeSub', '{n} games for every age, solo or together.', { n: FF.Games.all().length })));
+        body.appendChild(FF.ui.el('p', { class: 'home-hero__sub' }, t('homeSub', 'Games for every age, solo or together. New ones added all the time.')));
         hero.appendChild(body);
 
         var actions = FF.ui.div('home-hero__actions');
@@ -948,7 +995,7 @@ window.FF = window.FF || {};
         if (params.category) { l.cat = params.category; }
         if (params.favorites) { l.fav = true; l.cat = null; }
 
-        main.appendChild(FF.App.pageHead(t('navGames', 'Games'), t('libSub', '{n} games for every age. Search, filter, then tap one to play.', { n: FF.Games.all().length })));
+        main.appendChild(FF.App.pageHead(t('navGames', 'Games'), t('libSub', 'Games for every age. Search, filter, then tap one to play.')));
 
         // Toolbar: search + filters
         var toolbar = FF.ui.el('div', { class: 'lib-toolbar', role: 'search' });
@@ -1321,7 +1368,7 @@ window.FF = window.FF || {};
             : t('privacyBodyCloud', 'No ads and no tracking. Your account keeps your profile, players, stats and settings so they follow you between devices. Photos never leave the device that took them. Online rooms share only your display name and character.'))
         ]));
         panel.appendChild(privacy);
-        var link = FF.ui.el('a', { class: 'link-btn', href: 'privacy.html', target: '_blank', rel: 'noopener' }, t('readPrivacy', 'Read the privacy notice'));
+        var link = FF.ui.el('a', { class: 'link-btn', href: FF.page('privacy'), target: '_blank', rel: 'noopener' }, t('readPrivacy', 'Read the privacy notice'));
         panel.appendChild(link);
         FF.App.settingsSection(panel, 'stack', t('yourData', 'Your data'), [
           FF.UI.settingRow(t('clearFavorites', 'Clear favourites'), FF.UI.button(t('clear', 'Clear'), { icon: 'star', onClick: function () { FF.Favorites.clear(); FF.UI.toast(t('favoritesCleared', 'Favourites cleared')); } })),
@@ -1343,7 +1390,7 @@ window.FF = window.FF || {};
         }
         var info = FF.ui.div('btn-stack');
         info.appendChild(FF.UI.button(t('credits', 'Credits'), { class: 'btn-ghost', icon: 'info', onClick: function () { FF.Nav.go('credits'); } }));
-        info.appendChild(FF.ui.el('a', { class: 'btn btn-ghost', href: 'privacy.html', target: '_blank', rel: 'noopener' }, t('privacyNotice', 'Privacy notice')));
+        info.appendChild(FF.ui.el('a', { class: 'btn btn-ghost', href: FF.page('privacy'), target: '_blank', rel: 'noopener' }, t('privacyNotice', 'Privacy notice')));
         panel.appendChild(info);
       }
     },
@@ -1554,6 +1601,28 @@ window.FF = window.FF || {};
         if (card.parentNode) card.parentNode.removeChild(card);
       }, 'install-card__close icon-btn--ghost'));
       return card;
+    },
+
+    // A message from the admin portal (Site > Announcement).
+    announcement: function (text) {
+      var b = FF.ui.el('div', { class: 'notice notice--info notice--announce', role: 'status' });
+      b.appendChild(icon('megaphone'));
+      b.appendChild(FF.ui.span('notice__text', text));
+      return b;
+    },
+
+    // Shown in place of every screen while the admin portal has maintenance on.
+    maintenancePanel: function () {
+      var box = FF.ui.el('section', { class: 'locked-panel' });
+      var ic = FF.ui.span('locked-panel__icon');
+      ic.appendChild(icon('gear'));
+      box.appendChild(ic);
+      box.appendChild(FF.ui.el('h1', { class: 'page-title' }, t('maintenanceTitle', 'Back in a moment')));
+      box.appendChild(FF.ui.el('p', { class: 'page-sub' }, t('maintenanceBody', 'PlayMona is getting an upgrade. Please check back shortly.')));
+      box.appendChild(FF.UI.button(t('tryAgain', 'Try again'), { class: 'btn-lg btn-primary', icon: 'arrow-right', onClick: function () {
+        FF.GameConfig.load().then(function () { FF.App.render(FF.App._currentView || 'home', FF.App._currentParams || {}); });
+      } }));
+      return box;
     },
 
     // Guests: one tap to an account that keeps their progress.
@@ -2050,14 +2119,14 @@ window.FF = window.FF || {};
 
     /* ================= Quick play / demo ================= */
     quickPlay: function () {
-      var pool = FF.Games.all().filter(function (g) { return g.id !== 'drawingChallenge'; });
+      var pool = FF.Games.all().filter(function (g) { return g.id !== 'drawingChallenge' && FF.Access.canPlay(g.id); });
       var def = FF.util.pick(pool);
       FF.Audio.play('roundStart');
       FF.GameFlow.launch(def.id, { skipIntro: true });
     },
 
     quickRound: function () {
-      var pool = FF.Games.all().filter(function (g) { return g.duration <= 5; });
+      var pool = FF.Games.all().filter(function (g) { return g.duration <= 5 && FF.Access.canPlay(g.id); });
       var def = FF.util.pick(pool);
       FF.Audio.play('roundStart');
       FF.GameFlow.launch(def.id, { skipIntro: true, length: 'quick', timer: 20 });

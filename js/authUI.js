@@ -167,7 +167,7 @@ window.FF = window.FF || {};
         if (FF.App && FF.App._route) FF.App._route(FF.Auth.user());
       } }));
     } else {
-      var a = FF.ui.el('a', { class: 'btn btn-ghost btn-sm auth__cancel', href: 'index.html' });
+      var a = FF.ui.el('a', { class: 'btn btn-ghost btn-sm auth__cancel', href: FF.page('home') });
       a.appendChild(icon('arrow-left'));
       a.appendChild(FF.ui.span('', t('cancel', 'Cancel')));
       bar.appendChild(a);
@@ -286,7 +286,7 @@ window.FF = window.FF || {};
     if (guest) panel.appendChild(guest);
     var fine = FF.ui.el('p', { class: 'auth__fine' });
     fine.appendChild(document.createTextNode(t('agreeLead', 'By creating an account you agree to how we handle your data in our ')));
-    fine.appendChild(FF.ui.el('a', { href: 'privacy.html', target: '_blank', rel: 'noopener' }, t('privacyNotice', 'privacy notice')));
+    fine.appendChild(FF.ui.el('a', { href: FF.page('privacy'), target: '_blank', rel: 'noopener' }, t('privacyNotice', 'privacy notice')));
     fine.appendChild(document.createTextNode('.'));
     panel.appendChild(fine);
     return email.input;
@@ -424,7 +424,7 @@ window.FF = window.FF || {};
 
       var panel = FF.ui.el('main', { class: 'auth__panel', id: 'auth-panel' });
       // Brand links back to the playmona.com landing page.
-      var mobileBrand = FF.ui.el('a', { class: 'auth__mobile-brand', href: 'index.html', 'aria-label': 'PlayMona home' });
+      var mobileBrand = FF.ui.el('a', { class: 'auth__mobile-brand', href: FF.page('home'), 'aria-label': 'PlayMona home' });
       mobileBrand.appendChild(FF.ui.el('img', { src: 'assets/brand/mark-256.webp', alt: '', width: 40, height: 40 }));
       mobileBrand.appendChild(wordmark());
       panel.appendChild(mobileBrand);

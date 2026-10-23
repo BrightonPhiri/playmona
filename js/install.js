@@ -40,6 +40,8 @@ window.FF = window.FF || {};
   });
   window.addEventListener('appinstalled', function () {
     installed = true;
+    // The app counts the install (track.js) the next time it opens.
+    try { window.localStorage.setItem('playmona:installPending', 'true'); } catch (e) {}
     deferred = null;
     notify();
   });

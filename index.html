@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0b1030">
   <title>PlayMona — Games for everyone. Everywhere.</title>
-  <meta name="description" content="45 free games for everyone: quizzes, word games, party games, puzzles and more. Play solo, pass one screen around, or play online on everyone's phones.">
+  <meta name="description" content="A growing collection of free games for everyone: quizzes, word games, party games, puzzles and more. Play solo, pass one screen around, or play online on everyone's phones.">
   <link rel="canonical" href="https://playmona.com/">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="PlayMona">
   <meta property="og:title" content="PlayMona — Games for everyone. Everywhere.">
-  <meta property="og:description" content="45 free games for everyone. Play solo, on one screen together, or online on everyone's phones.">
+  <meta property="og:description" content="A growing collection of games for everyone. Play solo, on one screen together, or online on everyone's phones.">
   <meta property="og:url" content="https://playmona.com/">
   <meta property="og:image" content="https://playmona.com/assets/brand/og-image.jpg">
   <meta property="og:image:width" content="1200">
@@ -28,12 +28,12 @@
   <script type="application/ld+json">
   {"@context":"https://schema.org","@type":"WebApplication","name":"PlayMona","url":"https://playmona.com/",
    "applicationCategory":"GameApplication","operatingSystem":"Any (web browser)",
-   "description":"45 games for everyone: quizzes, word games, party games and puzzles.",
+   "description":"A growing collection of games for everyone: quizzes, word games, party games and puzzles.",
    "offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
   </script>
   <script>
     // An old shared room link (index.html#room=ABC123) opens the game app.
-    if (/^#(room|challenge)=/.test(location.hash)) location.replace('play.html' + location.hash);
+    if (/^#(room|challenge)=/.test(location.hash)) location.replace((location.protocol === 'file:' ? 'play.html' : 'play') + location.hash);
   </script>
 </head>
 <body>
@@ -51,8 +51,8 @@
         <a href="#faq">Questions</a>
       </nav>
       <div class="site-head__cta">
-        <a class="btn btn--quiet js-signed-out" href="play.html">Sign in</a>
-        <a class="btn btn--blue js-cta" href="play.html?view=signup">Play now</a>
+        <a class="btn btn--quiet js-signed-out" href="play">Sign in</a>
+        <a class="btn btn--blue js-cta" href="play?view=signup">Play now</a>
       </div>
     </div>
   </header>
@@ -77,16 +77,16 @@
       </div>
       <div class="wrap hero__inner">
         <div class="hero__copy">
-          <p class="eyebrow">45 games · free · no ads</p>
+          <p class="eyebrow">Free to play · New games all the time · No ads</p>
           <h1 id="hero-title" class="hero__title">Games for<br><span class="hl-yellow">Everyone.</span><br>Everywhere.</h1>
           <p class="hero__lead">Quizzes, word games, party games and puzzles in one place. Play on your own, pass one screen around the room, or join a game online from any phone.</p>
           <div class="hero__actions">
-            <a class="btn btn--yellow btn--lg js-cta" href="play.html?view=signup">Start playing <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
-            <a class="btn btn--glass btn--lg js-signed-out" href="play.html">I have an account</a>
+            <a class="btn btn--yellow btn--lg js-cta" href="play?view=signup">Start playing <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+            <a class="btn btn--glass btn--lg js-signed-out" href="play">I have an account</a>
           </div>
-          <p class="hero__guest js-signed-out"><a href="play.html?view=guest">or play as a guest</a></p>
+          <p class="hero__guest js-signed-out"><a href="play?view=guest">or play as a guest</a></p>
           <ul class="hero__facts" aria-label="At a glance">
-            <li><strong>45</strong><span>games</span></li>
+            <li><strong>New</strong><span>games added often</span></li>
             <li><strong>10</strong><span>categories</span></li>
             <li><strong>1–8</strong><span>per game</span></li>
             <li><strong id="player-count">1+</strong><span>players</span></li>
@@ -152,7 +152,7 @@
           <p class="eyebrow">Your profile</p>
           <h2 id="cast-title">Pick your character</h2>
           <p class="section__lead">48 characters to choose from. Your profile keeps your level, wins, streak and medals, and it follows you to any device you sign in on.</p>
-          <a class="btn btn--yellow js-cta" href="play.html?view=signup">Create your profile</a>
+          <a class="btn btn--yellow js-cta" href="play?view=signup">Create your profile</a>
         </div>
         <ul class="cast__grid" aria-label="Some of the characters">
           <li><img src="assets/avatars/nia.webp" alt="" loading="lazy" width="96" height="96"></li>
@@ -216,7 +216,7 @@
         <img class="finale__mark" src="assets/brand/mark-256.webp" alt="" width="120" height="120" loading="lazy">
         <h2 id="finale-title" class="finale__title"><span class="wordmark wordmark--xl"><span class="wordmark__play">Play</span><span class="wordmark__mona">Mona</span></span></h2>
         <p class="finale__tag">Games for everyone. Everywhere.</p>
-        <a class="btn btn--blue btn--lg js-cta" href="play.html?view=signup">Get started</a>
+        <a class="btn btn--blue btn--lg js-cta" href="play?view=signup">Get started</a>
       </div>
     </section>
   </main>
@@ -225,8 +225,8 @@
     <div class="wrap site-foot__inner">
       <span>© <span id="year">2026</span> PlayMona</span>
       <nav aria-label="Footer">
-        <a href="privacy.html">Privacy</a>
-        <a href="play.html">Sign in</a>
+        <a href="privacy">Privacy</a>
+        <a href="play">Sign in</a>
         <a href="#top">Back to top</a>
       </nav>
     </div>
@@ -249,5 +249,13 @@
   <script src="js/install.js"></script>
   <script src="js/net/firebase-config.js"></script>
   <script src="js/landing.js"></script>
+  <script>
+    // Opened from disk (file://): clean links like "play" need the .html file name.
+    if (location.protocol === 'file:') document.querySelectorAll('a[href]').forEach(function (a) {
+      var h = a.getAttribute('href');
+      if (/^(play|privacy|admin)([?#]|$)/.test(h)) a.setAttribute('href', h.replace(/^(\w+)/, '$1.html'));
+      else if (h === './') a.setAttribute('href', 'index.html');
+    });
+  </script>
 </body>
 </html>

@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0b1030">
   <title>Privacy · PlayMona</title>
   <meta name="description" content="What PlayMona stores about you, where, and how to delete it.">
-  <link rel="canonical" href="https://playmona.com/privacy.html">
+  <link rel="canonical" href="https://playmona.com/privacy">
   <link rel="icon" type="image/png" sizes="32x32" href="assets/brand/favicon-32.png">
   <link rel="stylesheet" href="css/fonts.css">
   <link rel="stylesheet" href="css/landing.css">
@@ -75,8 +75,16 @@
   <footer class="site-foot">
     <div class="wrap site-foot__inner">
       <span>© 2026 PlayMona</span>
-      <nav aria-label="Footer"><a href="./">Home</a><a href="play.html">Play</a></nav>
+      <nav aria-label="Footer"><a href="./">Home</a><a href="play">Play</a></nav>
     </div>
   </footer>
+  <script>
+    // Opened from disk (file://): clean links like "play" need the .html file name.
+    if (location.protocol === 'file:') document.querySelectorAll('a[href]').forEach(function (a) {
+      var h = a.getAttribute('href');
+      if (/^(play|privacy|admin)([?#]|$)/.test(h)) a.setAttribute('href', h.replace(/^(\w+)/, '$1.html'));
+      else if (h === './') a.setAttribute('href', 'index.html');
+    });
+  </script>
 </body>
 </html>

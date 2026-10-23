@@ -221,7 +221,7 @@ window.FF = window.FF || {};
         id: 'mode-friends', tone: 'blue', icon: 'users', cast: cast,
         title: t('playWithFriends', 'Play with friends'),
         desc: t('playWithFriendsDesc', 'Make a private room and share the code. Everyone plays at the same time on their own phone.'),
-        onClick: function () { self.showFriends(main); }
+        onClick: function () { FF.Access.gate('online', function () { self.showFriends(main); }); }
       });
       var daily = FF.Daily && FF.Daily.today();
       card({
@@ -229,13 +229,13 @@ window.FF = window.FF || {};
         badge: daily ? t('doneToday', 'Done today') : t('newToday', 'New today'),
         title: t('dailyChallenge', 'Daily challenge'),
         desc: t('dailyCardDesc', '10 questions, the same for everyone. One try a day, with a daily leaderboard.'),
-        onClick: function () { FF.Nav.go('daily'); }
+        onClick: function () { FF.Access.gate('daily', function () { FF.Nav.go('daily'); }); }
       });
       card({
         id: 'mode-challenge', tone: 'pink', icon: 'swords',
         title: t('challengeFriend', 'Challenge a friend'),
         desc: t('challengeCardDesc', 'Set a score and send a link. Your friend plays the same questions whenever they like.'),
-        onClick: function () { FF.Nav.go('challenges'); }
+        onClick: function () { FF.Access.gate('challenge', function () { FF.Nav.go('challenges'); }); }
       });
       card({
         id: 'mode-match', tone: 'green', icon: 'globe', soon: true,

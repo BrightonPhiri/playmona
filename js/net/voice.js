@@ -27,7 +27,8 @@ window.FF = window.FF || {};
     audioContext: null,
     analyser: null,
     vadInterval: null,
-    peers: {},              // uid -> { pc, audio, speaking, connected }
+    peers: {},              // uid -> { pc, audio, speaking, connected, pending }
+    seenSignals: {},        // signal id -> true, so each message is handled once
     remoteSpeaking: {},     // uid -> boolean
     unsubs: [],
     listeners: { change: [], speaking: [], error: [] }
@@ -213,17 +214,50 @@ window.FF = window.FF || {};
     notifyChange();
   }
 
+  var signalSeq = 0;
+
+  /* Every message gets its own slot (signals/<to>/<from>/<id>). One shared slot let
+     ICE candidates overwrite the offer before the other side read it. */
   function sendSignal(targetUid, data) {
     var transport = getTransport();
     var myUid = getMyUid();
     if (!transport || !myUid) return;
-    var path = 'signals/' + targetUid + '/' + myUid;
+    signalSeq += 1;
+    var id = Date.now().toString(36) + '-' + ('000' + signalSeq).slice(-4) + '-' + Math.random().toString(36).slice(2, 6);
+    var path = 'signals/' + targetUid + '/' + myUid + '/' + id;
     transport.set(path, {
       from: myUid,
       to: targetUid,
       data: data,
       ts: transport.serverNow()
     }).catch(function () {});
+  }
+
+  /* All unread messages from one sender, oldest first; each is deleted once handled. */
+  function handleSignalsFrom(senderUid, messages) {
+    if (!messages || typeof messages !== 'object') return;
+    var transport = getTransport();
+    var myUid = getMyUid();
+    Object.keys(messages).sort().forEach(function (id) {
+      if (state.seenSignals[id]) return;
+      state.seenSignals[id] = true;
+      handleIncomingSignal(senderUid, messages[id]);
+      if (transport && myUid) {
+        try { transport.set('signals/' + myUid + '/' + senderUid + '/' + id, null); } catch (e) {}
+      }
+    });
+  }
+
+  function addCandidate(peer, candidate) {
+    if (!peer || !peer.pc) return;
+    if (!peer.pc.remoteDescription) { (peer.pending = peer.pending || []).push(candidate); return; }
+    peer.pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(function () {});
+  }
+
+  function flushCandidates(peer) {
+    var list = (peer && peer.pending) || [];
+    peer.pending = [];
+    list.forEach(function (c) { addCandidate(peer, c); });
   }
 
   function handleIncomingSignal(senderUid, payload) {
@@ -235,7 +269,7 @@ window.FF = window.FF || {};
     if (data.type === 'offer') {
       var peer = createPeer(senderUid, false);
       peer.pc.setRemoteDescription(new RTCSessionDescription(data.sdp))
-        .then(function () { return peer.pc.createAnswer(); })
+        .then(function () { flushCandidates(peer); return peer.pc.createAnswer(); })
         .then(function (answer) { return peer.pc.setLocalDescription(answer); })
         .then(function () {
           sendSignal(senderUid, { type: 'answer', sdp: peer.pc.localDescription });
@@ -246,15 +280,12 @@ window.FF = window.FF || {};
     } else if (data.type === 'answer') {
       var p = state.peers[senderUid];
       if (p && p.pc) {
-        p.pc.setRemoteDescription(new RTCSessionDescription(data.sdp)).catch(function (e) {
+        p.pc.setRemoteDescription(new RTCSessionDescription(data.sdp)).then(function () { flushCandidates(p); }).catch(function (e) {
           if (window.console) console.error('[FF.Voice] Error setting remote description for answer:', e);
         });
       }
     } else if (data.type === 'candidate' && data.candidate) {
-      var targetPeer = state.peers[senderUid];
-      if (targetPeer && targetPeer.pc) {
-        targetPeer.pc.addIceCandidate(new RTCIceCandidate(data.candidate)).catch(function () {});
-      }
+      addCandidate(state.peers[senderUid], data.candidate);
     }
   }
 
@@ -353,6 +384,7 @@ window.FF = window.FF || {};
         video: false
       }).then(function (stream) {
         state.active = true;
+        state.seenSignals = {};
         state.localStream = stream;
         state.muted = false;
         state.deafened = false;
@@ -382,7 +414,7 @@ window.FF = window.FF || {};
         var unSignal = transport.watch('signals/' + myUid, function (signals) {
           if (!signals) return;
           Object.keys(signals).forEach(function (senderUid) {
-            handleIncomingSignal(senderUid, signals[senderUid]);
+            handleSignalsFrom(senderUid, signals[senderUid]);
           });
         });
         state.unsubs.push(unSignal);

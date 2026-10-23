@@ -261,6 +261,7 @@ window.FF = window.FF || {};
             expiresAt: now + TTL_MS
           };
 
+          if (FF.Track) FF.Track.count('rooms');
           return transport.set('meta', meta)
             .then(function () { return registerPresence(transport, uid, profile); })
             .then(function () {

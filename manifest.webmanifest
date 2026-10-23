@@ -3,7 +3,7 @@
   "short_name": "PlayMona",
   "description": "Games for everyone. Everywhere.",
   "id": "/play.html",
-  "start_url": "play.html",
+  "start_url": "play",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",

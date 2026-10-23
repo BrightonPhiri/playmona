@@ -1,0 +1,71 @@
+# Deploys playmona.com whenever main changes (or on demand from the Actions tab).
+# One-time server setup and the secrets it needs: docs/deploy.md
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run tests
+        run: node tools/test/run.js
+
+      - name: Stamp the service worker cache with this commit
+        # Every deploy gets a new cache name, so returning players get the new files.
+        run: sed -i "s/^var CACHE = '[^']*';/var CACHE = 'playmona-${GITHUB_SHA::7}';/" sw.js && grep -m1 "^var CACHE" sw.js
+
+      - name: Set up SSH
+        env:
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
+          if [ -n "$SSH_KNOWN_HOSTS" ]; then
+            printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          else
+            ssh-keyscan -p "${SSH_PORT:-22}" -H "$SSH_HOST" > ~/.ssh/known_hosts
+          fi
+
+      - name: Upload the site
+        # --checksum sends only changed files. --delete removes files deleted from the repo,
+        # but never touches the excluded paths, so the server's own firebase-config.js,
+        # uploads and API secrets stay put.
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_PATH: ${{ secrets.SSH_PATH }}
+        run: |
+          rsync -rlz --checksum --delete --chmod=D755,F644 \
+            --exclude='.git/' --exclude='.github/' --exclude='.claude/' \
+            --exclude='tools/' --exclude='docs/' --exclude='node_modules/' \
+            --exclude='*.md' --exclude='.gitignore' \
+            --exclude='firebase.json' --exclude='.firebaserc' --exclude='database.rules.json' \
+            --exclude='js/net/firebase-config.js' \
+            --exclude='uploads/' --exclude='api/config.local.php' \
+            --exclude='.well-known/' --exclude='keep/' \
+            -e "ssh -i ~/.ssh/deploy_key -p ${SSH_PORT:-22}" \
+            ./ "$SSH_USER@$SSH_HOST:${SSH_PATH%/}/"
+
+      - name: Publish database rules
+        # Optional: only runs when the FIREBASE_SERVICE_ACCOUNT secret exists.
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        if: env.FIREBASE_SERVICE_ACCOUNT != ''
+        run: |
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/sa.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
+          npx --yes firebase-tools@13 deploy --only database --non-interactive

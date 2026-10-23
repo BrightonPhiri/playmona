@@ -2,22 +2,23 @@
    PLAYMONA — sw.js
    Offline support. Network first, so a new deploy shows up on
    the next load; the cache is the fallback when offline.
-   On install it caches play.html and every file it links to.
+   On install it caches the app page (/play) and every file it links to.
+   Pages use clean URLs; the server maps /play to play.html.
    ============================================================ */
 var CACHE = 'playmona-v5';
 var SDK_HOST = 'https://www.gstatic.com/firebasejs/';
 
 self.addEventListener('install', function (event) {
   event.waitUntil(caches.open(CACHE).then(function (cache) {
-    return fetch('play.html', { cache: 'no-cache' }).then(function (res) {
+    return fetch('play', { cache: 'no-cache' }).then(function (res) {
       if (!res.ok) return;
       var copy = res.clone();
       return res.text().then(function (html) {
         // The public pages too, so each one opens offline as itself.
-        var urls = ['./', 'index.html', 'privacy.html', 'css/landing.css', 'js/install.js',
+        var urls = ['./', 'privacy', 'css/landing.css', 'js/install.js',
           'manifest.webmanifest', 'assets/brand/mark-256.webp'];
         html.replace(/(?:src|href)="([^"#:]+)"/g, function (m, url) { urls.push(url); return m; });
-        return cache.put('play.html', copy).then(function () {
+        return cache.put('play', copy).then(function () {
           // One missing file must not stop the rest from caching.
           return Promise.all(urls.map(function (u) { return cache.add(u).catch(function () {}); }));
         });
@@ -52,7 +53,7 @@ self.addEventListener('fetch', function (event) {
       if (req.mode === 'navigate') {
         // Offline and never cached: the app for app links, else the home page.
         var path = new URL(req.url).pathname;
-        return caches.match(/play\.html$/.test(path) ? 'play.html' : 'index.html').then(function (page) {
+        return caches.match(/\/play(\.html)?$/.test(path) ? 'play' : './').then(function (page) {
           return page || Response.error();
         });
       }

@@ -521,3 +521,23 @@ body.auth-open #app { display: none; }
 .soon-plan__list { list-style: none; display: flex; flex-direction: column; gap: var(--sp-2); }
 .soon-plan__list li { display: flex; gap: var(--sp-2); align-items: flex-start; }
 .soon-plan__list .icon-svg { color: var(--success); flex: none; margin-top: 3px; }
+
+/* ============ Locked for guests, admin switches ============ */
+.gcard__badges .badge--locked .icon-svg { color: #fcd34d; }
+.gcard__badges .badge--new .icon-svg { color: #93c5fd; }
+.gcard__badges .badge--hot .icon-svg { color: #fca5a5; }
+.gcard--locked .gcard__art { filter: saturate(0.55) brightness(0.85); }
+.notice--announce .notice__text { font-weight: 700; }
+
+.locked-panel {
+  max-width: 34rem; margin: var(--sp-8) auto; padding: var(--sp-8) var(--sp-6);
+  text-align: center; border-radius: var(--r-lg, 20px);
+  background: var(--surface); border: 1px solid var(--border, rgba(127, 127, 160, 0.25));
+}
+.locked-panel__icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 64px; height: 64px; margin-bottom: var(--sp-4); border-radius: 50%;
+  background: var(--accent-soft); color: var(--accent); font-size: 1.9rem;
+}
+.locked-panel .page-sub { margin: var(--sp-2) auto var(--sp-6); max-width: 28rem; }
+.locked-panel__actions { max-width: 20rem; margin: 0 auto; }

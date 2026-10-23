@@ -115,6 +115,7 @@ window.FF = window.FF || {};
     try {
       firebase.database().ref('stats/players').transaction(function (n) { return (n || 0) + 1; }).catch(function () {});
     } catch (e) {}
+    if (FF.Track) FF.Track.count('signups');
   }
 
   /* ---------------- Local (on-device) accounts ---------------- */
@@ -155,6 +156,7 @@ window.FF = window.FF || {};
           displayName: o.displayName, avatar: o.avatar, createdAt: Date.now()
         };
         self.save(all);
+        if (FF.Track) setTimeout(function () { FF.Track.count('signups'); }, 0);
         return all[uid];
       });
     },

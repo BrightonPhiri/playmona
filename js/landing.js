@@ -24,7 +24,7 @@
   if (store('session')) {
     document.documentElement.classList.add('is-signed-in');
     $$('.js-cta').forEach(function (a) {
-      a.href = 'play.html';
+      a.href = location.protocol === 'file:' ? 'play.html' : 'play';
       var label = a.textContent.trim();
       if (label === 'Play now' || label === 'Get started') a.textContent = 'Open PlayMona';
       else if (/Start playing/.test(label)) a.firstChild.textContent = 'Continue playing ';

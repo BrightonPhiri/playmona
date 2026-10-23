@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light" data-accent="blue" data-input="pointer">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b1030">
+  <meta name="color-scheme" content="light dark">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Admin · PlayMona</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/brand/favicon-32.png">
+  <link rel="preload" href="assets/fonts/fredoka.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/nunito.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/fonts.css">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/brand.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body class="admin-body">
+  <header class="admin-head">
+    <div class="admin-head__inner">
+      <a class="admin-brand" href="./" aria-label="PlayMona home">
+        <img src="assets/brand/mark-256.webp" alt="" width="32" height="32">
+        <span class="wordmark"><span class="wordmark__play">Play</span><span class="wordmark__mona">Mona</span></span>
+        <span class="admin-brand__tag">Admin</span>
+      </a>
+      <nav class="admin-nav" id="admin-nav" aria-label="Admin sections" hidden></nav>
+      <div class="admin-head__me" id="admin-me"></div>
+    </div>
+  </header>
+
+  <main class="admin-main" id="admin-main" tabindex="-1">
+    <p class="admin-loading">Loading…</p>
+  </main>
+
+  <!-- Shared engine: the same files the app uses -->
+  <script src="js/core.js"></script>
+  <script src="js/ui-kit.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/theme.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/data/avatars.js"></script>
+  <script src="js/avatars.js"></script>
+  <script src="js/players.js"></script>
+  <script src="js/data/assetManifest.js"></script>
+  <script src="js/assets.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/icons-custom.js"></script>
+  <script src="js/registry.js"></script>
+  <script src="js/net/firebase-config.js"></script>
+  <script src="js/net/transport.js"></script>
+  <script src="js/net/firebaseTransport.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/cloud.js"></script>
+  <script src="js/gameConfig.js"></script>
+  <script src="js/track.js"></script>
+
+  <!-- Game list (names and categories for the Games page) -->
+  <script src="js/data/quiz.js"></script>
+  <script src="js/data/words.js"></script>
+  <script src="js/data/countries.js"></script>
+  <script src="js/data/party.js"></script>
+  <script src="js/data/visual.js"></script>
+  <script src="js/data/visual2.js"></script>
+  <script src="js/data/bible.js"></script>
+  <script src="js/games/wordGames.js"></script>
+  <script src="js/games/quizGames.js"></script>
+  <script src="js/games/memoryGames.js"></script>
+  <script src="js/games/reactionGames.js"></script>
+  <script src="js/games/numberGames.js"></script>
+  <script src="js/games/creativeGames.js"></script>
+  <script src="js/games/partyGames.js"></script>
+  <script src="js/games/visualGames.js"></script>
+  <script src="js/games/puzzleGames.js"></script>
+  <script src="js/games/worldGames.js"></script>
+  <script src="js/games/bibleGames.js"></script>
+
+  <!-- Admin portal -->
+  <script src="js/admin/charts.js"></script>
+  <script src="js/admin/data.js"></script>
+  <script src="js/admin/pages.js"></script>
+  <script src="js/admin/admin.js"></script>
+  <script>
+    // Opened from disk (file://): clean links like "play" need the .html file name.
+    if (location.protocol === 'file:') document.querySelectorAll('a[href="./"]').forEach(function (a) { a.setAttribute('href', 'index.html'); });
+  </script>
+</body>
+</html>

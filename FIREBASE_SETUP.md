@@ -70,6 +70,20 @@ On top of the room rules explained below, that file adds:
   when an account is created. It starts counting from the first sign-up after you
   publish the rules. To start from your current number of users, set it once by hand
   in **Realtime Database → Data** (add `stats` → `players` with a number).
+- `/stats/days/{date}` and `/stats/totals`: usage counters for the admin portal
+  (games played, sign-ups, installs, rooms) and who was active each day. Any
+  signed-in user (guests sign in anonymously for this) can only add 1 to a named
+  counter or mark themselves active. Only admins can read them.
+- `/admins/{uid}`: set `true` by hand here in the console to make an admin. Nobody
+  can write it from the app. Each user can read only their own flag.
+- `/config`: game switches and site settings from the admin portal. Everyone reads
+  it; only admins write it.
+- `/userIndex/{uid}`: a small entry per account (name, joined, last seen, games
+  played) for the admin portal's player list. Owner writes, admins read.
+- `/bans/{uid}`: suspended accounts. Admins write; a suspended account can no
+  longer save, join rooms or post scores.
+- `/rooms/{code}/voice` and `/rooms/{code}/signals`: voice chat presence and
+  connection messages, each written only by its own player.
 
 - `/users/{uid}`: only that signed-in (non-anonymous) user can read or write
   it. Synced values are capped at about 200 KB each.

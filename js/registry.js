@@ -53,7 +53,12 @@ window.FF = window.FF || {};
     },
 
     get: function (id) { return FF.Games._registry[id] || null; },
-    all: function () { return this._order.map(function (id) { return FF.Games._registry[id]; }); },
+    // Games switched off in the admin portal are left out of every list.
+    all: function () {
+      var list = this._order.map(function (id) { return FF.Games._registry[id]; });
+      if (!FF.GameConfig) return list;
+      return list.filter(function (g) { return FF.GameConfig.enabled(g.id); });
+    },
 
     byCategory: function (cat) {
       return this.all().filter(function (g) { return g.category === cat; });
@@ -393,6 +398,12 @@ window.FF = window.FF || {};
       if (FF.Advance) FF.Advance.cancelAll();
       const def = FF.Games.get(id);
       if (!def) { FF.Nav.go('home'); return; }
+      // Room games follow the host; everything else checks the switches and guest access.
+      if (FF.Access && !(overrides && overrides.room) && !FF.Access.canPlay(id)) {
+        if (FF.GameConfig && !FF.GameConfig.enabled(id)) FF.UI.toast(FF.t('gameResting', 'This game is taking a break. Try another one.'));
+        else FF.Access.prompt('game');
+        return;
+      }
       const config = this.buildConfig(def, overrides);
       this.current = { def: def, config: config };
 
@@ -687,6 +698,7 @@ window.FF = window.FF || {};
         screen.style.removeProperty('--card-color');
       }
       FF.Scoring.init(config.scorers, config.mode);
+      if (FF.Track) FF.Track.play(def.id, !!config.room);
       const api = {
         def: def,
         config: config,
@@ -1295,7 +1307,7 @@ window.FF = window.FF || {};
     buildSchedule: function (settings) {
       const pool = FF.Games.all().filter(function (g) {
         if (g.id === 'drawing') return false; // drawing is long/odd for tournaments by default
-        return true;
+        return !FF.Access || FF.Access.canPlay(g.id);
       });
       const count = FF.util.clamp(settings.rounds || 5, 1, 12);
       const schedule = [];

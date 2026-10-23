@@ -213,7 +213,7 @@ window.FF = window.FF || {};
     link: function (rec) {
       var code = b64encode({ v: 1, i: rec.id, s: rec.seed, k: rec.topic, n: rec.from ? rec.from.name : me().name,
         a: rec.from ? rec.from.avatar : me().avatar, sc: rec.from ? rec.from.score : rec.me.score, c: rec.from ? rec.from.correct : rec.me.correct });
-      var base = window.location.protocol === 'file:' ? 'https://playmona.com/play.html' : window.location.origin + window.location.pathname;
+      var base = window.location.protocol === 'file:' ? 'https://playmona.com/play' : window.location.origin + window.location.pathname;
       return base + '#challenge=' + code;
     },
 

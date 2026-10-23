@@ -257,6 +257,14 @@ window.FF = window.FF || {};
   };
 
   /* ---------- Error boundary ---------- */
+  /* Link to another page. The live site uses clean URLs (/play, /privacy);
+     a page opened from disk needs the real file name. */
+  FF.page = function (name) {
+    var disk = window.location.protocol === 'file:';
+    if (name === 'home') return disk ? 'index.html' : './';
+    return disk ? name + '.html' : name;
+  };
+
   FF.safe = function (fn, fallback) {
     try { return fn(); } catch (e) {
       if (window.console && console.error) console.error('[FamilyFun]', e);

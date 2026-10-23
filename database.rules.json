@@ -1,10 +1,139 @@
 {
   "rules": {
+    "admins": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid"
+      }
+    },
+    "bans": {
+      ".read": "auth != null && root.child('admins').child(auth.uid).val() === true",
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && root.child('admins').child(auth.uid).val() === true",
+        ".validate": "newData.hasChildren(['t']) && newData.child('t').isNumber()"
+      }
+    },
+    "config": {
+      ".read": true,
+      ".write": "auth != null && root.child('admins').child(auth.uid).val() === true",
+      "games": {
+        "$id": {
+          ".validate": "$id.matches(/^[A-Za-z0-9_-]{1,40}$/)",
+          "enabled": {
+            ".validate": "newData.isBoolean()"
+          },
+          "guest": {
+            ".validate": "newData.isBoolean()"
+          },
+          "tier": {
+            ".validate": "newData.isString() && newData.val().matches(/^(free|limited|premium)$/)"
+          },
+          "freePlays": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+          },
+          "badge": {
+            ".validate": "newData.isString() && newData.val().matches(/^(new|hot)$/)"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      },
+      "site": {
+        "maintenance": {
+          ".validate": "newData.isBoolean()"
+        },
+        "announcement": {
+          ".validate": "newData.isString() && newData.val().length <= 200"
+        },
+        "guest": {
+          "$feature": {
+            ".validate": "newData.isBoolean() && $feature.matches(/^(online|daily|challenge|gameNight)$/)"
+          }
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
     "stats": {
+      ".read": "auth != null && root.child('admins').child(auth.uid).val() === true",
       "players": {
         ".read": true,
         ".write": "auth != null && auth.token.firebase.sign_in_provider !== 'anonymous'",
         ".validate": "newData.isNumber() && newData.val() === (data.exists() ? data.val() : 0) + 1"
+      },
+      "totals": {
+        "$counter": {
+          ".write": "auth != null",
+          ".validate": "newData.isNumber() && newData.val() === (data.exists() ? data.val() : 0) + 1 && $counter.matches(/^(plays|onlinePlays|guestPlays|signups|installs|rooms)$/)"
+        }
+      },
+      "days": {
+        "$day": {
+          ".validate": "$day.matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/)",
+          "games": {
+            "$game": {
+              ".write": "auth != null",
+              ".validate": "newData.isNumber() && newData.val() === (data.exists() ? data.val() : 0) + 1 && $game.matches(/^[A-Za-z0-9_-]{1,40}$/)"
+            }
+          },
+          "onlineGames": {
+            "$game": {
+              ".write": "auth != null",
+              ".validate": "newData.isNumber() && newData.val() === (data.exists() ? data.val() : 0) + 1 && $game.matches(/^[A-Za-z0-9_-]{1,40}$/)"
+            }
+          },
+          "active": {
+            "$uid": {
+              ".write": "auth != null && auth.uid === $uid",
+              ".validate": "newData.isString() && newData.val().matches(/^(u|g)$/)"
+            }
+          },
+          "$counter": {
+            ".write": "auth != null",
+            ".validate": "newData.isNumber() && newData.val() === (data.exists() ? data.val() : 0) + 1 && $counter.matches(/^(plays|onlinePlays|guestPlays|signups|installs|rooms)$/)"
+          }
+        }
+      }
+    },
+    "userIndex": {
+      ".read": "auth != null && root.child('admins').child(auth.uid).val() === true",
+      ".indexOn": [
+        "lastSeen",
+        "createdAt",
+        "username"
+      ],
+      "$uid": {
+        ".write": "auth != null && auth.token.firebase.sign_in_provider !== 'anonymous' && auth.uid === $uid",
+        ".validate": "newData.hasChildren(['displayName', 'lastSeen'])",
+        "username": {
+          ".validate": "newData.isString() && newData.val().length <= 20"
+        },
+        "displayName": {
+          ".validate": "newData.isString() && newData.val().length <= 40"
+        },
+        "avatar": {
+          ".validate": "newData.isString() && newData.val().length <= 60"
+        },
+        "createdAt": {
+          ".validate": "newData.isNumber()"
+        },
+        "lastSeen": {
+          ".validate": "newData.isNumber() && newData.val() <= now + 60000"
+        },
+        "plays": {
+          ".validate": "newData.isNumber() && newData.val() >= 0"
+        },
+        "installed": {
+          ".validate": "newData.isBoolean()"
+        },
+        "provider": {
+          ".validate": "newData.isString() && newData.val().length <= 20"
+        },
+        "$other": {
+          ".validate": false
+        }
       }
     },
     "daily": {
@@ -15,7 +144,7 @@
         ],
         ".validate": "$day.matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/)",
         "$uid": {
-          ".write": "auth != null && auth.uid === $uid && auth.token.firebase.sign_in_provider !== 'anonymous' && !data.exists()",
+          ".write": "auth != null && auth.token.firebase.sign_in_provider !== 'anonymous' && auth.uid === $uid && !root.child('bans').child(auth.uid).exists() && !data.exists()",
           ".validate": "newData.hasChildren(['name', 'score', 'correct', 't']) && newData.child('name').isString() && newData.child('name').val().length <= 40 && newData.child('score').isNumber() && newData.child('score').val() >= 0 && newData.child('score').val() <= 1500 && newData.child('correct').isNumber() && newData.child('correct').val() >= 0 && newData.child('correct').val() <= 10"
         }
       }
@@ -25,15 +154,15 @@
         ".read": "auth != null && auth.token.firebase.sign_in_provider !== 'anonymous'",
         ".validate": "$id.matches(/^[a-z0-9]{6,24}$/)",
         "$uid": {
-          ".write": "auth != null && auth.uid === $uid && auth.token.firebase.sign_in_provider !== 'anonymous' && !data.exists()",
+          ".write": "auth != null && auth.token.firebase.sign_in_provider !== 'anonymous' && auth.uid === $uid && !root.child('bans').child(auth.uid).exists() && !data.exists()",
           ".validate": "newData.hasChildren(['name', 'score', 'correct', 't']) && newData.child('name').isString() && newData.child('name').val().length <= 40 && newData.child('score').isNumber() && newData.child('score').val() >= 0 && newData.child('score').val() <= 1500 && newData.child('correct').isNumber() && newData.child('correct').val() >= 0 && newData.child('correct').val() <= 10"
         }
       }
     },
     "users": {
       "$uid": {
-        ".read": "auth != null && auth.uid === $uid",
-        ".write": "auth != null && auth.uid === $uid && auth.token.firebase.sign_in_provider !== 'anonymous'",
+        ".read": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).val() === true)",
+        ".write": "auth != null && auth.token.firebase.sign_in_provider !== 'anonymous' && auth.uid === $uid && !root.child('bans').child(auth.uid).exists()",
         "profile": {
           ".validate": "newData.hasChildren(['username', 'displayName']) && newData.child('displayName').isString() && newData.child('displayName').val().length <= 40"
         },
@@ -52,15 +181,16 @@
       }
     },
     "rooms": {
+      ".read": "auth != null && root.child('admins').child(auth.uid).val() === true",
       "$code": {
         ".read": "auth != null",
         "meta": {
-          ".write": "auth != null && (!data.exists() || data.child('hostUid').val() === auth.uid || root.child('rooms').child($code).child('players').child(data.child('hostUid').val()).child('online').val() !== true)",
+          ".write": "auth != null && !root.child('bans').child(auth.uid).exists() && (!data.exists() || data.child('hostUid').val() === auth.uid || root.child('rooms').child($code).child('players').child(data.child('hostUid').val()).child('online').val() !== true)",
           ".validate": "newData.hasChildren(['seed', 'status', 'appVersion'])"
         },
         "players": {
           "$uid": {
-            ".write": "auth != null && $uid === auth.uid",
+            ".write": "auth != null && $uid === auth.uid && !root.child('bans').child(auth.uid).exists()",
             ".validate": "newData.hasChildren(['name'])"
           }
         },
@@ -78,6 +208,22 @@
               "$uid": {
                 ".write": "auth != null && $uid === auth.uid && !data.exists()",
                 ".validate": "newData.hasChildren(['correct'])"
+              }
+            }
+          }
+        },
+        "voice": {
+          "$uid": {
+            ".write": "auth != null && $uid === auth.uid"
+          }
+        },
+        "signals": {
+          "$to": {
+            ".write": "auth != null && $to === auth.uid && !newData.exists()",
+            "$from": {
+              ".write": "auth != null && $from === auth.uid",
+              "$id": {
+                ".write": "auth != null && ($from === auth.uid || ($to === auth.uid && !newData.exists()))"
               }
             }
           }
