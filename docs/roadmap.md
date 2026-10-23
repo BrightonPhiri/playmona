@@ -5,7 +5,7 @@ Agreed on 2026-10-23. We work in phases; each phase ships on its own.
 | Phase | What ships | Status |
 |---|---|---|
 | 1 | New wording (no game count), clean URLs, GitHub auto-deploy, voice chat fix, guest limits, **admin portal v1** | Built, waiting for deploy setup |
-| 2 | PHP API on the VPS, **profile pictures**, **payments** with Linkwa (Plus pass and pay-once), paywall, first premium game (**Imposter**), Terms and refund pages | Next |
+| 2 | PHP API on the VPS, **profile pictures**, **payments** with Linkwa (Plus pass and pay-once), paywall, first premium game (**Imposter**), Terms and refund pages | In progress: API, checkout, admin grants and Plus page built (sandbox) |
 | 3 | **Watch link** (viewers see a TV view of the game) and **admin recording** for social clips | Later |
 | 4 | **Live video chat** (LiveKit) and a TURN relay (coturn); voice gets more reliable | Later |
 | 5+ | More trending games, leagues and tournaments, and the extras below | Ongoing |

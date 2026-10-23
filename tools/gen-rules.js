@@ -43,6 +43,7 @@ const rules = {
       },
       site: {
         maintenance: { ".validate": "newData.isBoolean()" },
+        payments: { ".validate": "newData.isBoolean()" },
         announcement: { ".validate": "newData.isString() && newData.val().length <= 200" },
         guest: {
           "$feature": { ".validate": "newData.isBoolean() && $feature.matches(/^(online|daily|challenge|gameNight)$/)" }
@@ -144,6 +145,12 @@ const rules = {
           ".write": ACCOUNT + " && auth.uid === $uid && " + NOT_BANNED + " && !data.exists()",
           ".validate": RESULT
         }
+      }
+    },
+    // Plus and owned games. Only the server (api/, signed in as the service account) writes here.
+    entitlements: {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).val() === true)"
       }
     },
     users: {

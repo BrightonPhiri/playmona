@@ -2,7 +2,9 @@
 /* Local preview server that behaves like the live nginx setup:
    /play serves play.html, and /play.html redirects to /play.
    Usage: node tools/serve.js [port]   (default 8960)
-   Every response is sent with no-store so edits show on reload. */
+   Every response is sent with no-store so edits show on reload.
+   /api/... is passed to PHP's own server on port+1, if it is running:
+     php -S 127.0.0.1:8961 tools/api/router.php   (settings: api/config.local.php) */
 'use strict';
 var http = require('http');
 var fs = require('fs');
@@ -25,7 +27,20 @@ function send(res, file) {
 
 function isFile(p) { try { return fs.statSync(p).isFile(); } catch (e) { return false; } }
 
+function proxyApi(req, res) {
+  var up = http.request({ host: '127.0.0.1', port: PORT + 1, path: req.url, method: req.method, headers: req.headers }, function (r) {
+    res.writeHead(r.statusCode, r.headers);
+    r.pipe(res);
+  });
+  up.on('error', function () {
+    res.writeHead(502, { 'Content-Type': 'application/json' });
+    res.end('{"error":"server","message":"The local API is not running (php -S 127.0.0.1:' + (PORT + 1) + ' tools/api/router.php)."}');
+  });
+  req.pipe(up);
+}
+
 http.createServer(function (req, res) {
+  if (req.url.indexOf('/api/') === 0) return proxyApi(req, res);
   var parts = req.url.split('?');
   var pathname = decodeURIComponent(parts[0]);
   var query = parts.length > 1 ? '?' + parts.slice(1).join('?') : '';

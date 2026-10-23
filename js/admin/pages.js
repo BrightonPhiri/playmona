@@ -519,7 +519,7 @@ window.FF = window.FF || {};
         var site = Object.assign({ maintenance: false, announcement: '' }, cfg.site || {});
         site.guest = Object.assign({}, FF.GameConfig.GUEST_FEATURES, site.guest || {});
         function save() {
-          var clean = { maintenance: !!site.maintenance, guest: site.guest };
+          var clean = { maintenance: !!site.maintenance, payments: !!site.payments, guest: site.guest };
           if (site.announcement) clean.announcement = site.announcement;
           return D().saveSite(clean).then(function () { saved(); }, function () { saved(false); });
         }
@@ -550,6 +550,15 @@ window.FF = window.FF || {};
           }
         }));
         box.appendChild(maint);
+
+        var pay = card('Payments', 'PlayMona Plus and paid games, through Linkwa. Admins always see the Plus page, so you can test before turning this on.');
+        pay.appendChild(FF.UI.switchRow({
+          label: 'Show PlayMona Plus to players',
+          description: 'Adds PlayMona Plus to every account menu. Turn on once live Linkwa payments are set up on the server.',
+          checked: !!site.payments,
+          onChange: function (on) { site.payments = on; save(); }
+        }));
+        box.appendChild(pay);
 
         var guests = card('Guests', 'Guests play without an account. Each locked feature invites them to sign up free. Choose guest games on the Games page.');
         [

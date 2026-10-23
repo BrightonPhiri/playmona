@@ -20,6 +20,9 @@ jobs:
       - name: Run tests
         run: node tools/test/run.js
 
+      - name: Run API tests
+        run: php tools/api/test.php
+
       - name: Stamp the service worker cache with this commit
         # Every deploy gets a new cache name, so returning players get the new files.
         run: sed -i "s/^var CACHE = '[^']*';/var CACHE = 'playmona-${GITHUB_SHA::7}';/" sw.js && grep -m1 "^var CACHE" sw.js

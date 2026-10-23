@@ -43,6 +43,9 @@
         "maintenance": {
           ".validate": "newData.isBoolean()"
         },
+        "payments": {
+          ".validate": "newData.isBoolean()"
+        },
         "announcement": {
           ".validate": "newData.isString() && newData.val().length <= 200"
         },
@@ -207,6 +210,11 @@
           ".write": "auth != null && auth.token.firebase.sign_in_provider !== 'anonymous' && auth.uid === $uid && !root.child('bans').child(auth.uid).exists() && !data.exists()",
           ".validate": "newData.hasChildren(['name', 'score', 'correct', 't']) && newData.child('name').isString() && newData.child('name').val().length <= 40 && newData.child('score').isNumber() && newData.child('score').val() >= 0 && newData.child('score').val() <= 1500 && newData.child('correct').isNumber() && newData.child('correct').val() >= 0 && newData.child('correct').val() <= 10"
         }
+      }
+    },
+    "entitlements": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).val() === true)"
       }
     },
     "users": {

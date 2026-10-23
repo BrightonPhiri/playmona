@@ -188,3 +188,29 @@
 .qr-tf { min-height: 88px; font-size: var(--fs-xl); }
 .qr-tf--yes:not(:disabled) { border-color: var(--success); }
 .qr-tf--no:not(:disabled) { border-color: var(--danger); }
+
+/* ============ PlayMona Plus (js/plus.js) ============ */
+.plus-status__row { display: flex; align-items: center; gap: var(--sp-3); }
+.plus-status__icon { flex: none; font-size: 1.8rem; color: var(--muted); }
+.plus-status__icon.is-on { color: var(--success); }
+.plus-status__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.plus-status__text strong { font-family: var(--font-display); font-size: var(--fs-xl); font-weight: 600; }
+.plus-status__text span, .plus-status__games { color: var(--muted); }
+.plus-status__games { margin: 0; }
+
+.plus-plans { display: grid; gap: var(--sp-3); grid-template-columns: 1fr; margin-bottom: var(--sp-4); }
+@media (min-width: 640px) { .plus-plans { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.plus-plan {
+  position: relative; display: flex; flex-direction: column; gap: var(--sp-1); padding: var(--sp-5);
+  border-radius: var(--r-lg); background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-1);
+}
+.plus-plan--best { border: 2px solid var(--accent); }
+.plus-plan__badge {
+  position: absolute; top: calc(-1 * var(--sp-3)); right: var(--sp-4); padding: 4px 10px; border-radius: var(--r-pill);
+  font-size: var(--fs-xs); font-weight: 800; background: var(--accent); color: var(--accent-text);
+}
+.plus-plan__name { font-size: var(--fs-lg); }
+.plus-plan__price { font-family: var(--font-display); font-size: var(--fs-4xl); font-weight: 600; line-height: 1.1; margin: 0; font-variant-numeric: tabular-nums; }
+.plus-plan__note { color: var(--muted); font-size: var(--fs-sm); margin: 0 0 var(--sp-3); }
+.plus-plan .btn { margin-top: auto; }
+.plus-admin-note { color: var(--muted); font-size: var(--fs-sm); text-align: center; }

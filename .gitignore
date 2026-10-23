@@ -10,3 +10,7 @@ FIREBASE_SERVICE_ACCOUNT*.json
 *.pem
 *.key
 .env
+
+# API settings and local test databases
+api/config.local.php
+*.sqlite

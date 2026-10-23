@@ -1,0 +1,14 @@
+# PlayMona API: clean addresses (/api/checkout, never .php).
+# Every request goes to index.php; the code folders are never served directly.
+Options -Indexes
+RewriteEngine On
+RewriteBase /api/
+
+RewriteRule ^(lib|tests)(/|$) - [F,L]
+RewriteRule ^(cron\.php|config.*\.php)$ - [F,L]
+
+RewriteCond %{REQUEST_URI} !^/api/index\.php$
+RewriteRule ^ index.php [L,QSA]
+
+# Apache drops the Authorization header for PHP-FPM unless it is passed on.
+SetEnvIf Authorization "(.+)" HTTP_AUTHORIZATION=$1

@@ -76,7 +76,7 @@ window.FF = window.FF || {};
   // Screens a guest may be locked out of (see FF.Access, js/gameConfig.js).
   var VIEW_FEATURE = { daily: 'daily', challenges: 'challenge', challenge: 'challenge', gamenight: 'gameNight' };
   // Which main destination a view belongs to (for nav highlighting).
-  var NAV_OF = { home: 'home', gamenight: 'home', games: 'games', online: 'online', daily: 'online', challenges: 'online', challenge: 'online', profile: 'profile', settings: 'settings', credits: 'settings', about: 'settings' };
+  var NAV_OF = { home: 'home', gamenight: 'home', games: 'games', online: 'online', daily: 'online', challenges: 'online', challenge: 'online', plus: 'profile', profile: 'profile', settings: 'settings', credits: 'settings', about: 'settings' };
 
   FF.App = {
     session: { games: 0, wins: {}, totalPoints: 0, players: {} },
@@ -194,6 +194,10 @@ window.FF = window.FF || {};
       this.buildShell();
       if (!this._navReady) { FF.Nav.init(); this._navReady = true; }
       this.render('home');
+      if (FF.Plus) {
+        FF.Plus.init();
+        FF.Plus.handleReturn();   // back from a Linkwa checkout
+      }
 
       // A shared link like .../play#room=ABC123 goes straight to join.
       var challengeCode = FF.Challenge && FF.Challenge.codeFromUrl();
@@ -335,6 +339,10 @@ window.FF = window.FF || {};
         { hint: String(FF.Players.all().length) });
       item('chart-line', t('myStats', 'My stats'), function () { FF.Nav.go('profile', { tab: 'overview' }); });
       item('sliders', t('navSettings', 'Settings'), function () { FF.App._navTo('settings'); });
+      if (FF.Plus && FF.Plus.visible()) {
+        item('crown', t('plusTitle', 'PlayMona Plus'), function () { FF.Nav.go('plus'); },
+          { hint: FF.Plus.hasPlus() ? t('plusOnShort', 'On') : null });
+      }
       divider();
       var dark = FF.Theme.resolvedTheme() === 'dark';
       item(dark ? 'moon' : 'sun', t('darkMode', 'Dark mode'), function (b) {
@@ -395,6 +403,7 @@ window.FF = window.FF || {};
       this._extraViews = true;
       var views = this.views;
       Object.keys(FF.Social.views).forEach(function (k) { views[k] = FF.Social.views[k]; });
+      if (FF.Plus) Object.keys(FF.Plus.views).forEach(function (k) { views[k] = FF.Plus.views[k]; });
     },
 
     /* ================= Shell ================= */

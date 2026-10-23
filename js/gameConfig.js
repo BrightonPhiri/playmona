@@ -84,7 +84,7 @@ window.FF = window.FF || {};
       var s = cached().site || {};
       var guest = {};
       for (var k in GUEST_FEATURES) guest[k] = s.guest && s.guest[k] != null ? !!s.guest[k] : GUEST_FEATURES[k];
-      return { maintenance: !!s.maintenance, announcement: s.announcement || '', guest: guest };
+      return { maintenance: !!s.maintenance, payments: !!s.payments, announcement: s.announcement || '', guest: guest };
     }
   };
 

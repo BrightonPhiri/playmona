@@ -53,6 +53,8 @@ self.addEventListener('fetch', function (event) {
   var sameOrigin = url.indexOf(self.location.origin) === 0;
   // Live data (Firebase database, auth) is never cached; only the SDK files are.
   if (!sameOrigin && url.indexOf(SDK_HOST) !== 0) return;
+  // The API (payments, orders) always goes to the server.
+  if (sameOrigin && url.indexOf(self.location.origin + '/api/') === 0) return;
 
   event.respondWith((sameOrigin ? fetchFresh(req) : fetch(req)).then(function (res) {
     if (res && (res.ok || res.type === 'opaque')) {
