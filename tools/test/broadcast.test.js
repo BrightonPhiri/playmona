@@ -274,3 +274,10 @@ test('broadcast: leaving the room tells listeners nobody is watching', async fun
   await tick(10);
   assertEqual(seen, 0, 'back to zero');
 });
+
+test('broadcast: the round carries the answer time the host picked', function () {
+  const FF = phone(makeBus(), 'Ana');
+  const b = FF.Broadcast.build(input({ meta: { status: 'playing', settings: { timer: 20 } } }));
+  assertEqual(b.round.timerMs, 20000);
+  assertEqual(FF.Broadcast.build(input({ meta: { status: 'playing', settings: { timer: 0 } } })).round.timerMs, null, 'no limit');
+});

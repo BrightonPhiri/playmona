@@ -73,6 +73,7 @@ window.FF = window.FF || {};
         n: n,
         total: (typeof input.total === 'number' && input.total > 0) ? input.total : null,
         opensAt: node.startedAt != null ? node.startedAt : null,
+        timerMs: (meta.settings && Number(meta.settings.timer) > 0) ? Number(meta.settings.timer) * 1000 : null,
         screen: mine ? screen.screen : null,
         answer: mine && screen.answer != null ? screen.answer : null
       };
