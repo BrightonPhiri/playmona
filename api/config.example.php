@@ -32,6 +32,17 @@ return [
         'signing_secret' => '',
     ],
 
+    // Who the invoices are from. address and tax_id are optional (leave them out to hide them).
+    'business' => [
+        'name' => 'PlayMona',
+        'site' => 'playmona.com',
+        'email' => 'support@playmona.com',
+        // 'address' => '',
+        // 'tax_id' => '',
+    ],
+    // Dates on invoices are shown in this time zone.
+    'timezone' => 'Africa/Harare',
+
     // Games sold one at a time: id => name and price in cents.
     'premium_games' => [
         // 'imposter' => ['name' => 'Imposter', 'cents' => 199],

@@ -53,8 +53,16 @@ every `/api/...` address to `api/index.php`, so nginx needs no change. No Compos
 | `POST /api/checkout` | Signed-in player starts a purchase; returns the Linkwa checkout address |
 | `GET /api/checkout/return` | Linkwa sends the player here; checks the payment, then back to `/play?payment=…` |
 | `POST /api/linkwa/webhook` | Linkwa's `payment.completed` (checks `X-Linkwa-Signature`) |
-| `GET /api/me`, `GET /api/orders/<id>` | The player's access and orders |
-| `POST /api/admin/grant`, `GET /api/admin/access` | Admins give Plus or a game, with a note |
+| `GET /api/me`, `GET /api/orders/<id>` | The player's access and orders (an order includes its invoice once paid) |
+| `GET /api/orders/<id>/invoice` | The invoice as a PDF (the buyer or an admin) |
+| `POST /api/admin/grant`, `GET /api/admin/access` | Admins give Plus or a game, with a note; see a player's grants and payments |
+| `POST /api/admin/revoke`, `POST /api/admin/reset-own` | Remove an admin's gift; admins can clear their own account (paid too) to test again |
+| `GET /api/admin/finance/summary`, `GET /api/admin/finance/orders` | The admin Finances page (real and test money kept apart) |
+
+Premium is a list of grants (purchases and gifts) that is never deleted: removing one marks it
+removed and access is rebuilt from the rest. Paid orders get invoice numbers `PM-2026-000001`
+(real money) or `TEST-2026-000001` (sandbox), each counting up with no gaps. Invoices show the
+`business` settings (name, site, email) from `config.php`.
 
 A payment is credited exactly once, whichever of the return page, the webhook or the cron job
 sees it first. Access is recorded in MariaDB and copied to Firebase `/entitlements/<uid>`.

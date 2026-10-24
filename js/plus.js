@@ -165,6 +165,29 @@ window.FF = window.FF || {};
     order: function (id) { return api('GET', '/orders/' + encodeURIComponent(id)); },
     me: function () { return api('GET', '/me'); },
 
+    /*
+     * Fills target with the player's payments (FF.Billing.historyList): View and
+     * Download PDF on each paid one. opts.hideWhenEmpty hides target when there are none.
+     */
+    history: function (target, opts) {
+      opts = opts || {};
+      if (!online()) { target.hidden = !!opts.hideWhenEmpty; return; }
+      var body = opts.body || target;
+      FF.ui.clear(body);
+      body.appendChild(FF.ui.el('p', { class: 'bill-loading' }, t('loading', 'Loading…')));
+      this.me().then(function (data) {
+        FF.ui.clear(body);
+        var orders = (data.orders || []).filter(function (o) { return o.status === 'paid' || o.status === 'pending'; });
+        if (!orders.length && opts.hideWhenEmpty) { target.hidden = true; return; }
+        target.hidden = false;
+        body.appendChild(FF.Billing.historyList(orders));
+      }).catch(function () {
+        FF.ui.clear(body);
+        if (opts.hideWhenEmpty) { target.hidden = true; return; }
+        body.appendChild(FF.ui.el('p', { class: 'bill-error' }, t('historyDown', 'Your payments could not be loaded. Check the connection and try again.')));
+      });
+    },
+
     /* Called by app.js once the app has drawn: says how the payment went. */
     handleReturn: function () {
       if (!returned) return;
@@ -252,7 +275,7 @@ window.FF = window.FF || {};
           var perWeek = Math.round(p.cents / (p.days / 7));
           card.appendChild(FF.ui.el('p', { class: 'plus-plan__note' }, p.days === 7 ? t('plusOneOff', 'One payment') : t('plusPerWeek', 'About {price} a week', { price: money(perWeek) })));
           var btn = FF.UI.button(t('buyFor', 'Buy for {price}', { price: money(p.cents) }), {
-            class: p.best ? 'btn-primary btn-block' : 'btn-ghost btn-block',
+            class: 'btn-primary btn-block',
             onClick: function () { FF.Plus.buy(p.id, btn); }
           });
           card.appendChild(btn);
@@ -276,6 +299,15 @@ window.FF = window.FF || {};
         });
         how.appendChild(list);
         main.appendChild(how);
+
+        // Payment history, with invoices
+        var hist = FF.ui.el('section', { class: 'social-card plus-history' });
+        hist.appendChild(FF.ui.el('h2', { class: 'panel__heading' }, t('paymentHistory', 'Payment history')));
+        var histBody = FF.ui.div('');
+        hist.appendChild(histBody);
+        main.appendChild(hist);
+        if (online()) FF.Plus.history(hist, { body: histBody });
+        else histBody.appendChild(FF.ui.el('p', { class: 'bill-empty' }, t('historyOnline', 'Your payments show here when you are signed in on playmona.com.')));
 
         if (!FF.GameConfig || !FF.GameConfig.site().payments) {
           main.appendChild(FF.ui.el('p', { class: 'plus-admin-note' }, t('plusAdminOnly', 'Only admins can see this page. Turn on Payments in the admin portal (Site) to show it to everyone.')));

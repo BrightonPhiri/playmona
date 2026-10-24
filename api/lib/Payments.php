@@ -28,7 +28,7 @@ class Payments
      * $origin is the address the player is on (already checked by Routes), so Linkwa
      * sends them back to the same one: sign-ins are kept per address (www or not).
      */
-    public function checkout(AuthUser $user, string $productId, ?string $origin = null): array
+    public function checkout(AuthUser $user, string $productId, ?string $origin = null, ?string $buyerName = null): array
     {
         if ($user->isAnonymous()) throw new HttpError(403, 'Create a free account to buy.', 'needs-account');
         $product = $this->catalog->find($productId);
@@ -46,9 +46,16 @@ class Payments
             'amount_cents' => (int) $product['cents'],
             'currency' => $product['currency'],
         ];
+        $name = trim((string) ($buyerName ?: $user->name));
         $this->db->run(
-            'INSERT INTO orders (id, uid, product, amount_cents, currency, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [$order['id'], $order['uid'], $order['product'], $order['amount_cents'], $order['currency'], 'pending', nowMs()]
+            'INSERT INTO orders (id, uid, product, amount_cents, currency, status, mode, buyer_name, buyer_email, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [
+                $order['id'], $order['uid'], $order['product'], $order['amount_cents'], $order['currency'], 'pending',
+                $this->gateway->mode(),
+                $name !== '' ? mb_substr($name, 0, 80) : null,
+                $user->email ? mb_substr($user->email, 0, 120) : null,
+                nowMs(),
+            ]
         );
 
         $returnUrl = rtrim($origin ?? $this->siteUrl, '/') . '/api/checkout/return?order=' . $order['id'];
@@ -165,6 +172,7 @@ class Payments
                 [nowMs(), substr($reference, 0, 80), $via, $order['id']]
             );
             if ($changed !== 1) return false;
+            $db->run('UPDATE orders SET invoice_no = ? WHERE id = ?', [$this->nextInvoiceNo($db, $order['mode'] ?? $this->gateway->mode()), $order['id']]);
             if (!$product) throw new \RuntimeException('Paid order ' . $order['id'] . ' has an unknown product.');
             $grant = $product['kind'] === 'plus'
                 ? ['kind' => 'plus', 'days' => $product['days']]
@@ -175,6 +183,42 @@ class Payments
         if ($done) $this->store->sync($order['uid']);
         return $done;
     }
+
+    /**
+     * The next invoice number, e.g. PM-2026-000001 (live) or TEST-2026-000001 (sandbox).
+     * Each series counts up by one with no gaps. Runs inside markPaid's transaction,
+     * so the counter row stays locked until the order is saved.
+     */
+    private function nextInvoiceNo(Db $db, ?string $mode): string
+    {
+        $prefix = $mode === 'live' ? 'PM' : 'TEST';
+        $series = $prefix . '-' . gmdate('Y');
+        if ($db->run('UPDATE counters SET value = value + 1 WHERE name = ?', [$series]) === 0) {
+            $db->run('INSERT INTO counters (name, value) VALUES (?, 1)', [$series]);
+        }
+        $n = (int) $db->one('SELECT value FROM counters WHERE name = ?', [$series])['value'];
+        return sprintf('%s-%06d', $series, $n);
+    }
+
+    /**
+     * Fills in what older orders are missing: the mode (they were all made with the
+     * current gateway) and invoice numbers for paid ones, in the order they were paid.
+     * Safe to run again; cron.php runs it after migrate.
+     */
+    public function backfill(): int
+    {
+        $this->db->run('UPDATE orders SET mode = ? WHERE mode IS NULL', [$this->gateway->mode()]);
+        $done = 0;
+        foreach ($this->db->all("SELECT id, mode FROM orders WHERE status = 'paid' AND invoice_no IS NULL ORDER BY paid_at, id") as $o) {
+            $this->db->transaction(function (Db $db) use ($o) {
+                $db->run('UPDATE orders SET invoice_no = ? WHERE id = ? AND invoice_no IS NULL', [$this->nextInvoiceNo($db, $o['mode']), $o['id']]);
+            });
+            $done++;
+        }
+        return $done;
+    }
+
+    public function catalog(): Catalog { return $this->catalog; }
 
     public function order(string $id): ?array
     {
@@ -189,8 +233,11 @@ class Payments
             'id' => $order['id'],
             'product' => $order['product'],
             'amount' => $order['amount_cents'] / 100,
+            'amountCents' => (int) $order['amount_cents'],
             'currency' => $order['currency'],
             'status' => $order['status'],
+            'test' => ($order['mode'] ?? 'sandbox') !== 'live',
+            'invoiceNo' => $order['invoice_no'] ?? null,
             'createdAt' => (int) $order['created_at'],
             'paidAt' => $order['paid_at'] !== null ? (int) $order['paid_at'] : null,
         ];

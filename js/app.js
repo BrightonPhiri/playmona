@@ -1291,6 +1291,15 @@ window.FF = window.FF || {};
         ]));
         panel.appendChild(sync);
 
+        // Payments and invoices (hidden until there is something to show, unless Plus is on sale).
+        if (FF.Plus && FF.Billing && !FF.Auth.isLocal()) {
+          var pay = FF.ui.div('settings-payments');
+          var payBody = FF.ui.div('');
+          FF.App.settingsSection(pay, 'stack', t('paymentHistory', 'Payment history'), [payBody]);
+          panel.appendChild(pay);
+          FF.Plus.history(pay, { body: payBody, hideWhenEmpty: !FF.Plus.visible() });
+        }
+
         FF.App.settingsSection(panel, 'alert', t('dangerZone', 'Danger zone'), [
           FF.UI.settingRow(t('deleteAccount', 'Delete account'),
             FF.UI.button(t('deleteAccountBtn', 'Delete my account'), { class: 'btn-danger', icon: 'trash', onClick: function () { FF.App.confirmDeleteAccount(); } }),

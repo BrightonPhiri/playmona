@@ -442,7 +442,10 @@ window.FF = window.FF || {};
             el('td', { class: 'num' }, num(r.plays)),
             el('td', {}, r.installed ? 'Installed' : '—'),
             el('td', {}, banned ? [el('span', { class: 'badge badge--danger' }, 'Suspended')] : '—'),
-            el('td', {}, [suspendButton(r, label, rows)])
+            el('td', { class: 'admin-row-actions' }, guests || !FF.AdminPremium ? [suspendButton(r, label, rows)] : [
+              FF.UI.button('Premium', { class: 'btn-sm btn-ghost', icon: 'crown', onClick: function () { FF.AdminPremium.open(r.key, label); } }),
+              suspendButton(r, label, rows)
+            ])
           ]));
         });
         tbl.appendChild(tbody);

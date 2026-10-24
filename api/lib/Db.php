@@ -124,7 +124,25 @@ class Db
             created_at BIGINT NOT NULL,
             PRIMARY KEY (day, visitor_id)
         )$engine");
+        // Invoice number series (PM-2026, TEST-2026): the last number used in each.
+        $this->pdo->exec("CREATE TABLE IF NOT EXISTS counters (
+            name VARCHAR(32) NOT NULL PRIMARY KEY,
+            value INTEGER NOT NULL
+        )$engine");
+        // Columns added after the first release. Each fails harmlessly once it exists.
         foreach ([
+            'ALTER TABLE orders ADD COLUMN mode VARCHAR(8) NULL',
+            'ALTER TABLE orders ADD COLUMN invoice_no VARCHAR(24) NULL',
+            'ALTER TABLE orders ADD COLUMN buyer_name VARCHAR(80) NULL',
+            'ALTER TABLE orders ADD COLUMN buyer_email VARCHAR(120) NULL',
+            'ALTER TABLE grants ADD COLUMN revoked_at BIGINT NULL',
+            'ALTER TABLE grants ADD COLUMN revoked_by VARCHAR(128) NULL',
+        ] as $sql) {
+            try { $this->pdo->exec($sql); } catch (\PDOException $e) { /* already there */ }
+        }
+        foreach ([
+            'CREATE UNIQUE INDEX orders_invoice ON orders (invoice_no)',
+            'CREATE INDEX orders_mode ON orders (mode, status, paid_at)',
             'CREATE INDEX visits_country ON visits (day, country)',
             'CREATE INDEX visits_visitor ON visits (visitor_id, day)',
             'CREATE INDEX orders_uid ON orders (uid, created_at)',

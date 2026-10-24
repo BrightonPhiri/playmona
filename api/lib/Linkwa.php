@@ -14,6 +14,12 @@ interface PaymentGateway
 
     /** Recent incoming payments: list of ['id', 'link_id', 'amount', 'currency']. */
     public function recentPayments(int $perPage = 50): array;
+
+    /** 'sandbox' while testing, 'live' for real money. */
+    public function mode(): string;
+
+    /** Money held at the gateway: list of ['currency', 'available', 'pending']. */
+    public function balance(): array;
 }
 
 /**
@@ -66,6 +72,25 @@ class Linkwa implements PaymentGateway
                 'link_id' => (string) ($row['recipient']['external_payment_link_id'] ?? ''),
                 'amount' => (float) ($row['amount'] ?? 0),
                 'currency' => (string) ($row['currency'] ?? ''),
+            ];
+        }
+        return $out;
+    }
+
+    public function mode(): string
+    {
+        return preg_match('/sandbox|staging/i', $this->apiBase) ? 'sandbox' : 'live';
+    }
+
+    public function balance(): array
+    {
+        $data = $this->call('GET', '/balance');
+        $out = [];
+        foreach ($data['balances'] ?? [] as $b) {
+            $out[] = [
+                'currency' => (string) ($b['currency'] ?? ''),
+                'available' => (float) ($b['available_balance'] ?? 0),
+                'pending' => (float) ($b['pending_balance'] ?? 0),
             ];
         }
         return $out;

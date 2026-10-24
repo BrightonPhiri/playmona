@@ -12,17 +12,26 @@ class HttpError extends \RuntimeException
     }
 }
 
-/** What a route returns: a JSON body or a redirect. */
+/** What a route returns: a JSON body, a redirect, or a file to download. */
 class Response
 {
     public function __construct(
         public readonly int $status = 200,
         public readonly array $body = [],
-        public readonly ?string $location = null
+        public readonly ?string $location = null,
+        public readonly ?string $file = null,
+        public readonly string $contentType = 'application/json; charset=utf-8',
+        public readonly ?string $filename = null
     ) {}
 
     public static function json(array $body, int $status = 200): self { return new self($status, $body); }
     public static function redirect(string $to): self { return new self(302, [], $to); }
+
+    /** A download, e.g. an invoice PDF. */
+    public static function file(string $bytes, string $contentType, string $filename): self
+    {
+        return new self(200, [], null, $bytes, $contentType, preg_replace('/[^A-Za-z0-9._-]/', '', $filename));
+    }
 
     public function send(): void
     {
@@ -31,6 +40,13 @@ class Response
         header('X-Content-Type-Options: nosniff');
         if ($this->location !== null) {
             header('Location: ' . $this->location);
+            return;
+        }
+        if ($this->file !== null) {
+            header('Content-Type: ' . $this->contentType);
+            header('Content-Length: ' . strlen($this->file));
+            if ($this->filename) header('Content-Disposition: attachment; filename="' . $this->filename . '"');
+            echo $this->file;
             return;
         }
         header('Content-Type: application/json; charset=utf-8');

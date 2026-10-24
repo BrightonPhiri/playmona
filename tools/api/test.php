@@ -79,6 +79,10 @@ class FakeGateway implements PaymentGateway
 
     public function recentPayments(int $perPage = 50): array { return $this->statement; }
 
+    public string $mode = 'sandbox';
+    public function mode(): string { return $this->mode; }
+    public function balance(): array { return [['currency' => 'USD', 'available' => 12.5, 'pending' => 1.0]]; }
+
     public function pay(string $short, string $ref, float $amount, string $status = 'COMPLETED', string $currency = 'USD'): void
     {
         $this->statuses["$short|$ref"] = ['status' => $status, 'amount' => $amount, 'currency_code' => $currency, 'short_url' => $short, 'payment_reference' => $ref];
@@ -460,6 +464,169 @@ test('visits: admins only, and old rows are pruned', function () {
     $v->record(str_repeat('b', 24), 'l', '1.2.3.4', null, $now - 10 * 86400000);
     eq(1, $v->prune($now));
     eq(1, (int) $w['db']->one('SELECT COUNT(*) AS n FROM visits')['n']);
+});
+
+echo "\nInvoices, premium and finances\n";
+
+/** Checks out and pays one product for $user through the return page. Returns the order row. */
+function buy(array $w, AuthUser $user, string $product): array
+{
+    $o = $w['pay']->checkout($user, $product)['order'];
+    $order = $w['pay']->order($o);
+    $w['gw']->pay($order['short_url'], 'ref-' . $o, $order['amount_cents'] / 100);
+    eq('paid', $w['pay']->confirmReturn($o, $order['short_url'], 'ref-' . $o));
+    return $w['pay']->order($o);
+}
+
+test('paid orders get gap-free invoice numbers, with test and live kept apart', function () use ($alice) {
+    $w = world();
+    $y = gmdate('Y');
+    $a = buy($w, $alice, 'plus_week');
+    $b = buy($w, $alice, 'plus_month');
+    eq("TEST-$y-000001", $a['invoice_no']);
+    eq("TEST-$y-000002", $b['invoice_no']);
+    eq('sandbox', $a['mode']);
+    $w['gw']->mode = 'live';
+    $c = buy($w, $alice, 'plus_week');
+    eq("PM-$y-000001", $c['invoice_no']);
+    eq('live', $c['mode']);
+    $w['pay']->confirmReturn($a['id'], $a['short_url'], 'ref-' . $a['id']);   // again: same number
+    eq("TEST-$y-000001", $w['pay']->order($a['id'])['invoice_no']);
+    $pending = $w['pay']->checkout($alice, 'plus_week')['order'];
+    eq(null, $w['pay']->order($pending)['invoice_no']);
+});
+test('older orders get their mode and invoice numbers filled in once', function () use ($alice) {
+    $w = world();
+    $a = buy($w, $alice, 'plus_week');
+    $w['db']->run('UPDATE orders SET mode = NULL, invoice_no = NULL');
+    $w['db']->run('DELETE FROM counters');
+    eq(1, $w['pay']->backfill());
+    eq(0, $w['pay']->backfill());
+    $row = $w['pay']->order($a['id']);
+    eq('sandbox', $row['mode']);
+    eq('TEST-' . gmdate('Y') . '-000001', $row['invoice_no']);
+});
+test('orders remember who bought them for the invoice', function () {
+    $w = world();
+    $o = $w['routes']->handle(req('POST', '/checkout', ['token' => idToken(['name' => 'Alice Moyo', 'email' => 'alice@example.com']), 'json' => ['product' => 'plus_week']]))->body['order'];
+    $row = $w['pay']->order($o);
+    eq('Alice Moyo', $row['buyer_name']);
+    eq('alice@example.com', $row['buyer_email']);
+    $w['rtdb']->data['userIndex/user2/displayName'] = 'Tendai';
+    $o2 = $w['routes']->handle(req('POST', '/checkout', ['token' => idToken(['sub' => 'user2']), 'json' => ['product' => 'plus_week']]))->body['order'];
+    eq('Tendai', $w['pay']->order($o2)['buyer_name']);
+});
+test('removing an admin gift takes its days away; paid premium cannot be removed', function () use ($alice) {
+    $w = world();
+    buy($w, $alice, 'plus_week');
+    $w['db']->transaction(fn () => $w['store']->grant('alice', ['kind' => 'plus', 'days' => 30], 'admin', null, 'boss', 'prize'));
+    $w['db']->transaction(fn () => $w['store']->grant('alice', ['kind' => 'game', 'game' => 'imposter'], 'admin', null, 'boss', 'tester'));
+    $days = fn () => round(($w['store']->get('alice')['plusUntil'] - PlayMona\nowMs()) / 86400000);
+    eq(37.0, $days());
+    $grants = $w['store']->history('alice');
+    $byKind = [];
+    foreach ($grants as $g) $byKind[$g['source'] . ':' . $g['kind']] = $g;
+    $w['store']->revoke($byKind['admin:plus']['id'], 'boss');
+    eq(7.0, $days());
+    $w['store']->revoke($byKind['admin:game']['id'], 'boss');
+    eq([], $w['store']->get('alice')['games']);
+    throwsHttp(403, fn () => $w['store']->revoke($byKind['purchase:plus']['id'], 'boss'));
+    eq(7.0, $days());
+    eq(1, $w['store']->revoke($byKind['admin:plus']['id'], 'boss') === 'alice' ? 1 : 0);   // twice is fine
+});
+test('admins can remove anything on their own account, then buy again', function () {
+    $w = world();
+    $boss = new AuthUser('boss', 'password', null, null);
+    $first = buy($w, $boss, 'plus_week');
+    eq(1, $w['store']->resetOwn('boss'));
+    eq(0, $w['store']->get('boss')['plusUntil']);
+    eq('paid', $w['pay']->order($first['id'])['status']);            // the record stays
+    buy($w, $boss, 'plus_week');
+    $days = ($w['store']->get('boss')['plusUntil'] - PlayMona\nowMs()) / 86400000;
+    eq(true, $days > 6.99 && $days <= 7.0, '7 fresh days, got ' . $days);
+    eq(true, $w['rtdb']->data['entitlements/boss']['plusUntil'] > 0, 'copied to Firebase');
+});
+test('admin routes: grant, see what can be removed, remove, reset own', function () use ($alice) {
+    $w = world();
+    $w['rtdb']->data['admins/user1'] = true;
+    buy($w, $alice, 'plus_week');
+    $tok = idToken();
+    eq(200, $w['routes']->handle(req('POST', '/admin/grant', ['token' => $tok, 'json' => ['uid' => 'alice', 'kind' => 'plus', 'days' => 7, 'note' => 'prize']]))->status);
+    $info = $w['routes']->handle(req('GET', '/admin/access', ['token' => $tok, 'query' => ['uid' => 'alice']]))->body;
+    eq(false, $info['isSelf']);
+    $removable = array_values(array_filter($info['grants'], fn ($g) => $g['canRevoke']));
+    eq(1, count($removable));
+    eq('admin', $removable[0]['source']);
+    $paid = array_values(array_filter($info['grants'], fn ($g) => $g['source'] === 'purchase'))[0];
+    eq(403, $w['routes']->handle(req('POST', '/admin/revoke', ['token' => $tok, 'json' => ['grantId' => $paid['id']]]))->status);
+    $after = $w['routes']->handle(req('POST', '/admin/revoke', ['token' => $tok, 'json' => ['grantId' => $removable[0]['id']]]));
+    eq(200, $after->status);
+    eq(true, $after->body['grants'][0]['revokedAt'] > 0);
+    eq(403, $w['routes']->handle(req('POST', '/admin/reset-own', ['token' => idToken(['sub' => 'mallory'])]))->status);
+    $own = $w['routes']->handle(req('POST', '/admin/reset-own', ['token' => $tok]));
+    eq(200, $own->status);
+    eq(true, $own->body['isSelf']);
+});
+test('invoices: the buyer and admins can see and download them, nobody else', function () {
+    $w = world();
+    $tok = idToken(['name' => 'Alice Moyo']);
+    $o = $w['routes']->handle(req('POST', '/checkout', ['token' => $tok, 'json' => ['product' => 'plus_month']]))->body['order'];
+    eq(404, $w['routes']->handle(req('GET', "/orders/$o/invoice", ['token' => $tok]))->status, 'unpaid');
+    $w['gw']->pay('s1', 'r1', 3.00);
+    $w['pay']->confirmReturn($o, 's1', 'r1');
+    $view = $w['routes']->handle(req('GET', "/orders/$o", ['token' => $tok]))->body;
+    eq('TEST-' . gmdate('Y') . '-000001', $view['invoice']['number']);
+    eq(true, $view['invoice']['test']);
+    eq('Alice Moyo', $view['invoice']['buyer']['name']);
+    eq(300, $view['invoice']['totalCents']);
+    $pdf = $w['routes']->handle(req('GET', "/orders/$o/invoice", ['token' => $tok]));
+    eq(200, $pdf->status);
+    eq('application/pdf', $pdf->contentType);
+    eq(true, str_starts_with((string) $pdf->file, '%PDF-1.4'));
+    eq(true, str_contains((string) $pdf->file, 'TEST-' . gmdate('Y') . '-000001'), 'number in the PDF');
+    eq(true, str_contains((string) $pdf->file, '%%EOF'));
+    eq('PlayMona-invoice-TEST-' . gmdate('Y') . '-000001.pdf', $pdf->filename);
+    eq(404, $w['routes']->handle(req('GET', "/orders/$o/invoice", ['token' => idToken(['sub' => 'mallory'])]))->status);
+    $w['rtdb']->data['admins/boss'] = true;
+    eq(200, $w['routes']->handle(req('GET', "/orders/$o/invoice", ['token' => idToken(['sub' => 'boss'])]))->status);
+    eq('user1', $w['routes']->handle(req('GET', "/orders/$o", ['token' => idToken(['sub' => 'boss'])]))->body['order']['uid']);
+});
+test('the PDF writer makes a valid file with every object listed', function () {
+    $pdf = new PlayMona\Pdf();
+    $pdf->text(48, 60, 'Hello (PlayMona) \\ caf' . "\u{e9}", 12, true, '#000', 'right');
+    $out = $pdf->output();
+    eq(true, str_starts_with($out, '%PDF-1.4'));
+    preg_match('/startxref\n(\d+)/', $out, $m);
+    eq('xref', substr($out, (int) $m[1], 4), 'startxref points at the table');
+    eq(500.0, round($pdf->width('MM', 10) * 1000 / 10 / 2 * (500 / 833)), 'M is 833 units wide');
+});
+test('finances count live money only, and the order list filters and searches', function () use ($alice) {
+    $w = world();
+    $w['rtdb']->data['admins/user1'] = true;
+    buy($w, $alice, 'plus_week');                 // test payment
+    $w['gw']->mode = 'live';
+    $live = buy($w, $alice, 'plus_month');       // real payment
+    $w['pay']->checkout($alice, 'plus_year');     // still pending
+    $sum = $w['routes']->handle(req('GET', '/admin/finance/summary', ['token' => idToken(), 'query' => ['mode' => 'live']]))->body;
+    eq(300, $sum['all']['cents']);
+    eq(1, $sum['all']['orders']);
+    eq(300, $sum['today']['cents']);
+    eq(1, $sum['pending']);
+    eq(30, count($sum['days']));
+    eq(300, end($sum['days'])['cents']);
+    eq('plus_month', $sum['byProduct'][0]['product']);
+    eq(12.5, $sum['balance'][0]['available']);
+    $test = $w['routes']->handle(req('GET', '/admin/finance/summary', ['token' => idToken(), 'query' => ['mode' => 'sandbox']]))->body;
+    eq(100, $test['all']['cents']);
+    eq(null, $test['balance'], 'the key is for live, so no sandbox balance');
+    $list = $w['routes']->handle(req('GET', '/admin/finance/orders', ['token' => idToken(), 'query' => ['mode' => 'live', 'status' => 'all']]))->body;
+    eq(2, $list['total']);
+    $found = $w['routes']->handle(req('GET', '/admin/finance/orders', ['token' => idToken(), 'query' => ['mode' => 'live', 'q' => $live['invoice_no']]]))->body;
+    eq(1, $found['total']);
+    eq($live['id'], $found['orders'][0]['id']);
+    $none = $w['routes']->handle(req('GET', '/admin/finance/orders', ['token' => idToken(), 'query' => ['mode' => 'live', 'q' => '100%_!']]))->body;
+    eq(0, $none['total']);
+    eq(403, $w['routes']->handle(req('GET', '/admin/finance/summary', ['token' => idToken(['sub' => 'mallory'])]))->status);
 });
 
 echo "\n" . ($GLOBALS['count'] - $GLOBALS['failures']) . '/' . $GLOBALS['count'] . " passed\n";

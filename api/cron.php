@@ -19,6 +19,13 @@ $app = new App(Config::load(PlayMona\configPath()));
 $task = $argv[1] ?? 'all';
 
 $app->db()->migrate();
+// Older orders: test/live mode and invoice numbers (needs the gateway settings).
+try {
+    $filled = $app->payments()->backfill();
+    if ($filled) echo "Numbered $filled older invoice(s).\n";
+} catch (Throwable $e) {
+    fwrite(STDERR, 'Backfill failed: ' . $e->getMessage() . "\n");
+}
 if ($task === 'migrate') {
     echo "Tables are ready.\n";
     exit;

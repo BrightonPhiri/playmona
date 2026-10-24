@@ -41,6 +41,7 @@ class App
     public function catalog(): Catalog { return $this->make('catalog', fn () => new Catalog((array) $this->config->get('premium_games', []))); }
     public function store(): Store { return $this->make('store', fn () => new Store($this->db(), $this->rtdb())); }
     public function visits(): Visits { return $this->make('visits', fn () => new Visits($this->db())); }
+    public function finance(): Finance { return $this->make('finance', fn () => new Finance($this->db())); }
 
     public function payments(): Payments
     {
@@ -78,10 +79,15 @@ class Routes
         if ($m === 'POST' && $p === '/checkout') return $this->checkout($req);
         if ($m === 'GET' && $p === '/checkout/return') return $this->checkoutReturn($req);
         if ($m === 'GET' && preg_match('#^/orders/([A-Za-z0-9_]+)$#', $p, $mm)) return $this->order($req, $mm[1]);
+        if ($m === 'GET' && preg_match('#^/orders/([A-Za-z0-9_]+)/invoice$#', $p, $mm)) return $this->invoicePdf($req, $mm[1]);
         if ($m === 'GET' && $p === '/me') return $this->me($req);
         if ($m === 'POST' && $p === '/linkwa/webhook') return $this->webhook($req);
         if ($m === 'POST' && $p === '/admin/grant') return $this->adminGrant($req);
         if ($m === 'GET' && $p === '/admin/access') return $this->adminAccess($req);
+        if ($m === 'POST' && $p === '/admin/revoke') return $this->adminRevoke($req);
+        if ($m === 'POST' && $p === '/admin/reset-own') return $this->adminResetOwn($req);
+        if ($m === 'GET' && $p === '/admin/finance/summary') return $this->financeSummary($req);
+        if ($m === 'GET' && $p === '/admin/finance/orders') return $this->financeOrders($req);
         if ($m === 'POST' && $p === '/visit') return $this->visit($req);
         if ($m === 'GET' && $p === '/admin/visitors') return $this->adminVisitors($req);
 
@@ -112,7 +118,19 @@ class Routes
     {
         $user = $this->user($req);
         $product = (string) ($req->json()['product'] ?? '');
-        return Response::json($this->app->payments()->checkout($user, $product, $this->origin($req)));
+        return Response::json($this->app->payments()->checkout($user, $product, $this->origin($req), $this->displayName($user)));
+    }
+
+    /** The player's PlayMona display name, for their invoices. */
+    private function displayName(AuthUser $user): ?string
+    {
+        if ($user->name) return $user->name;
+        try {
+            $name = $this->app->rtdb()->get('userIndex/' . $user->uid . '/displayName');
+            return is_string($name) && trim($name) !== '' ? $name : null;
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 
     /**
@@ -149,10 +167,39 @@ class Routes
 
     private function order(Request $req, string $id): Response
     {
+        [$order, $asAdmin] = $this->viewableOrder($req, $id);
+        return Response::json([
+            'order' => $asAdmin ? Finance::adminOrder($order) : Payments::publicOrder($order),
+            'invoice' => $order['status'] === 'paid' ? $this->invoiceData($order) : null,
+        ]);
+    }
+
+    private function invoicePdf(Request $req, string $id): Response
+    {
+        [$order] = $this->viewableOrder($req, $id);
+        if ($order['status'] !== 'paid') throw new HttpError(404, 'This order has no invoice yet.', 'no-invoice');
+        $data = $this->invoiceData($order);
+        return Response::file(Invoice::pdf($data, Invoice::logoJpeg()), 'application/pdf', Invoice::filename($data));
+    }
+
+    /** The player's own order, or any order for an admin. Returns [order, seen as admin]. */
+    private function viewableOrder(Request $req, string $id): array
+    {
         $user = $this->user($req);
         $order = $this->app->payments()->order($id);
-        if (!$order || $order['uid'] !== $user->uid) throw new HttpError(404, 'Order not found.', 'no-order');
-        return Response::json(['order' => Payments::publicOrder($order)]);
+        if ($order && $order['uid'] === $user->uid) return [$order, false];
+        if ($order && $this->app->rtdb()->get('admins/' . $user->uid) === true) return [$order, true];
+        throw new HttpError(404, 'Order not found.', 'no-order');
+    }
+
+    private function invoiceData(array $order): array
+    {
+        return Invoice::data(
+            $order,
+            $this->app->catalog()->find($order['product']),
+            (array) $this->app->config->get('business', []),
+            (string) $this->app->config->get('timezone', 'Africa/Harare')
+        );
     }
 
     private function me(Request $req): Response
@@ -226,14 +273,81 @@ class Routes
 
     private function adminAccess(Request $req): Response
     {
-        $this->admin($req);
+        $admin = $this->admin($req);
         $uid = (string) ($req->query['uid'] ?? '');
         if (!preg_match('/^[A-Za-z0-9_-]{1,128}$/', $uid)) throw new HttpError(400, 'Choose a player.', 'bad-uid');
+        return Response::json($this->accessReport($uid, $admin->uid));
+    }
+
+    /** A player's access, every grant (with whether this admin may remove it) and their orders. */
+    private function accessReport(string $uid, string $adminUid): array
+    {
         $orders = $this->app->db()->all('SELECT * FROM orders WHERE uid = ? ORDER BY created_at DESC LIMIT 20', [$uid]);
-        return Response::json([
+        $grants = array_map(fn ($g) => [
+            'id' => $g['id'],
+            'kind' => $g['kind'],
+            'game' => $g['game'],
+            'days' => $g['days'] !== null ? (int) $g['days'] : null,
+            'source' => $g['source'],
+            'orderId' => $g['order_id'],
+            'adminUid' => $g['admin_uid'],
+            'note' => $g['note'],
+            'createdAt' => (int) $g['created_at'],
+            'revokedAt' => $g['revoked_at'] !== null ? (int) $g['revoked_at'] : null,
+            'canRevoke' => Store::canRevoke($g, $adminUid),
+        ], $this->app->store()->history($uid));
+        return [
+            'uid' => $uid,
+            'isSelf' => $uid === $adminUid,
             'access' => $this->app->store()->get($uid),
-            'grants' => $this->app->store()->history($uid),
-            'orders' => array_map([Payments::class, 'publicOrder'], $orders),
-        ]);
+            'grants' => $grants,
+            'orders' => array_map([Finance::class, 'adminOrder'], $orders),
+        ];
+    }
+
+    private function adminRevoke(Request $req): Response
+    {
+        $admin = $this->admin($req);
+        $id = (string) ($req->json()['grantId'] ?? '');
+        if (!preg_match('/^g_[a-f0-9]{24}$/', $id)) throw new HttpError(400, 'Choose what to remove.', 'bad-grant');
+        $uid = $this->app->store()->revoke($id, $admin->uid);
+        $this->app->store()->sync($uid);
+        return Response::json($this->accessReport($uid, $admin->uid));
+    }
+
+    /** Testing payments: an admin removes all premium from their own account, paid or not. */
+    private function adminResetOwn(Request $req): Response
+    {
+        $admin = $this->admin($req);
+        $this->app->store()->resetOwn($admin->uid);
+        $this->app->store()->sync($admin->uid);
+        return Response::json($this->accessReport($admin->uid, $admin->uid));
+    }
+
+    private function financeSummary(Request $req): Response
+    {
+        $this->admin($req);
+        $mode = ($req->query['mode'] ?? 'live') === 'live' ? 'live' : 'sandbox';
+        $summary = $this->app->finance()->summary($mode);
+        $summary['gatewayMode'] = null;
+        $summary['balance'] = null;
+        try {
+            $gateway = $this->app->gateway();
+            $summary['gatewayMode'] = $gateway->mode();
+            // The Linkwa balance belongs to whichever server the key is for (sandbox or live).
+            if ($gateway->mode() === $mode) $summary['balance'] = $gateway->balance();
+        } catch (\Throwable $e) {
+            $summary['balanceError'] = 'Linkwa did not answer.';
+        }
+        $names = [];
+        foreach ($this->app->catalog()->all() as $id => $item) $names[$id] = $item['name'];
+        $summary['productNames'] = $names;
+        return Response::json($summary);
+    }
+
+    private function financeOrders(Request $req): Response
+    {
+        $this->admin($req);
+        return Response::json($this->app->finance()->orders($req->query));
     }
 }
