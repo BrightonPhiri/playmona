@@ -327,7 +327,17 @@ test('the return page redirects to the app with the outcome', function () {
     $w['gw']->pay('s1', 'r1', 1.00);
     $res = $w['routes']->handle(req('GET', '/checkout/return', ['query' => ['order' => $order, 'short_url' => 's1', 'payment_reference' => 'r1']]));
     eq(302, $res->status);
-    eq("https://playmona.test/play?payment=paid&order=$order", $res->location);
+    eq("/play?payment=paid&order=$order", $res->location);
+});
+test('Linkwa sends players back to the address they started on (www or not)', function () {
+    $w = world();
+    $buy = fn ($origin) => $w['routes']->handle(req('POST', '/checkout', ['token' => idToken(), 'json' => ['product' => 'plus_week'], 'headers' => $origin ? ['origin' => $origin] : []]));
+    $buy('https://www.playmona.test');
+    $buy('https://playmona.test');
+    $buy('https://evil.example');
+    $buy(null);
+    $returns = array_map(fn ($l) => strstr($l['return'], '/api/', true), array_values($w['gw']->links));
+    eq(['https://www.playmona.test', 'https://playmona.test', 'https://playmona.test', 'https://playmona.test'], $returns);
 });
 test('players only see their own orders', function () {
     $w = world();

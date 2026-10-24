@@ -23,8 +23,12 @@ class Payments
         private string $siteUrl
     ) {}
 
-    /** Starts a purchase: saves the order and asks Linkwa for a checkout address. */
-    public function checkout(AuthUser $user, string $productId): array
+    /**
+     * Starts a purchase: saves the order and asks Linkwa for a checkout address.
+     * $origin is the address the player is on (already checked by Routes), so Linkwa
+     * sends them back to the same one: sign-ins are kept per address (www or not).
+     */
+    public function checkout(AuthUser $user, string $productId, ?string $origin = null): array
     {
         if ($user->isAnonymous()) throw new HttpError(403, 'Create a free account to buy.', 'needs-account');
         $product = $this->catalog->find($productId);
@@ -47,7 +51,7 @@ class Payments
             [$order['id'], $order['uid'], $order['product'], $order['amount_cents'], $order['currency'], 'pending', nowMs()]
         );
 
-        $returnUrl = rtrim($this->siteUrl, '/') . '/api/checkout/return?order=' . $order['id'];
+        $returnUrl = rtrim($origin ?? $this->siteUrl, '/') . '/api/checkout/return?order=' . $order['id'];
         try {
             $link = $this->gateway->createLink($order, $product['name'], $returnUrl);
         } catch (\Throwable $e) {

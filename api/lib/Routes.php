@@ -109,7 +109,26 @@ class Routes
     {
         $user = $this->user($req);
         $product = (string) ($req->json()['product'] ?? '');
-        return Response::json($this->app->payments()->checkout($user, $product));
+        return Response::json($this->app->payments()->checkout($user, $product, $this->origin($req)));
+    }
+
+    /**
+     * The site address the request came from, if it is one of ours: site_url, its www or
+     * non-www twin, or anything in the allowed_origins setting. Otherwise site_url.
+     */
+    private function origin(Request $req): string
+    {
+        $site = rtrim((string) $this->app->config->require('site_url'), '/');
+        $allowed = array_map(fn ($o) => rtrim((string) $o, '/'), (array) $this->app->config->get('allowed_origins', []));
+        $allowed[] = $site;
+        $parts = parse_url($site);
+        if (isset($parts['scheme'], $parts['host'])) {
+            $host = $parts['host'];
+            $twin = str_starts_with($host, 'www.') ? substr($host, 4) : 'www.' . $host;
+            $allowed[] = $parts['scheme'] . '://' . $twin . (isset($parts['port']) ? ':' . $parts['port'] : '');
+        }
+        $origin = rtrim((string) $req->header('origin'), '/');
+        return in_array($origin, $allowed, true) ? $origin : $site;
     }
 
     private function checkoutReturn(Request $req): Response
@@ -120,8 +139,9 @@ class Routes
             (string) ($req->query['short_url'] ?? ''),
             (string) ($req->query['payment_reference'] ?? '')
         );
-        $site = rtrim((string) $this->app->config->require('site_url'), '/');
-        return Response::redirect($site . '/play?payment=' . $outcome . '&order=' . rawurlencode(preg_replace('/[^A-Za-z0-9_]/', '', $order)));
+        // A relative address keeps the player on the host Linkwa sent them to, which is
+        // the one they started on (see origin()), so they are still signed in.
+        return Response::redirect('/play?payment=' . $outcome . '&order=' . rawurlencode(preg_replace('/[^A-Za-z0-9_]/', '', $order)));
     }
 
     private function order(Request $req, string $id): Response
