@@ -376,7 +376,10 @@ test('admin grants: only admins, a note is required, and it is recorded', functi
     $info = $w['routes']->handle(req('GET', '/admin/access', ['token' => idToken(), 'query' => ['uid' => 'bob']]))->body;
     eq(['imposter' => true], $info['access']['games']);
     eq(2, count($info['grants']));
-    eq('Quiz night prize', $info['grants'][1]['note']);
+    // Both grants can land in the same millisecond, so their order is not fixed.
+    $notes = array_column($info['grants'], 'note');
+    sort($notes);
+    eq(['Quiz night prize', 'tester'], $notes);
 });
 test('errors inside a route become a plain 500 without details', function () {
     $w = world();
