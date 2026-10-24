@@ -143,3 +143,9 @@ test('tv render: pictures are drawn safely', function () {
   assert(/^data:image\/svg\+xml/.test(imgSrc({ svg: '<svg><script>alert(1)</script></svg>' })), 'drawings only as an image');
   tv.destroy();
 });
+
+test('tv model: only viewers who checked in recently are counted', function () {
+  const FF = boot();
+  assertEqual(FF.WatchView.countViewers({ a: NOW - 1000, b: NOW - 120000, c: 'x' }, NOW), 1);
+  assertEqual(FF.WatchView.countViewers(null, NOW), 0);
+});

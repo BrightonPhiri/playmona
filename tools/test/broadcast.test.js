@@ -240,7 +240,7 @@ test('broadcast: viewers are counted for everyone in the room', async function (
   let seen = null;
   B.Broadcast.onViewers(function (n) { seen = n; });
   const doc = watchDoc(bus);
-  doc.watchers = { [code]: { v1: 1, v2: 2, v3: 3 } };
+  doc.watchers = { [code]: { v1: Date.now(), v2: Date.now(), v3: Date.now() } };
   bus.write('', doc);
   await tick(30);
   assertEqual(seen, 3);
@@ -266,7 +266,7 @@ test('broadcast: leaving the room tells listeners nobody is watching', async fun
   let seen = null;
   A.Broadcast.onViewers(function (n) { seen = n; });
   const doc = watchDoc(bus);
-  doc.watchers = { [code]: { v1: 1 } };
+  doc.watchers = { [code]: { v1: Date.now() } };
   bus.write('', doc);
   await tick(30);
   assertEqual(seen, 1);
@@ -280,4 +280,20 @@ test('broadcast: the round carries the answer time the host picked', function ()
   const b = FF.Broadcast.build(input({ meta: { status: 'playing', settings: { timer: 20 } } }));
   assertEqual(b.round.timerMs, 20000);
   assertEqual(FF.Broadcast.build(input({ meta: { status: 'playing', settings: { timer: 0 } } })).round.timerMs, null, 'no limit');
+});
+
+test('broadcast: viewers who stopped checking in are not counted', async function () {
+  const bus = makeBus();
+  const A = phone(bus, 'Ana');
+  await A.Room.create({ dev: true });
+  await tick(80);
+  const code = onlyBroadcast(bus).code;
+  let seen = null;
+  A.Broadcast.onViewers(function (n) { seen = n; });
+  const doc = watchDoc(bus);
+  doc.watchers = { [code]: { here: Date.now() - 1000, gone: Date.now() - 120000, junk: 5 } };
+  bus.write('', doc);
+  await tick(30);
+  assertEqual(seen, 1);
+  A.Room.leave();
 });

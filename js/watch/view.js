@@ -128,5 +128,15 @@ window.FF = window.FF || {};
     };
   }
 
-  FF.WatchView = { STALE_MS: STALE_MS, model: model };
+  // Viewers check in every 30 s; older entries are people who left without saying so.
+  var VIEWER_MS = 90000;
+  function countViewers(entries, now) {
+    if (!entries || typeof entries !== 'object') return 0;
+    return Object.keys(entries).filter(function (k) {
+      var t = entries[k];
+      return typeof t === 'number' && (now - t) <= VIEWER_MS;
+    }).length;
+  }
+
+  FF.WatchView = { STALE_MS: STALE_MS, VIEWER_MS: VIEWER_MS, model: model, countViewers: countViewers };
 })();

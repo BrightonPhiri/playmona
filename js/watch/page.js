@@ -123,7 +123,7 @@ window.FF = window.FF || {};
           tv.update(FF.WatchView.model(b, tr.serverNow()));
         });
         var offW = tr.watch('watchers/' + code, function (v) {
-          if (tv && !gone) tv.setViewers(v && typeof v === 'object' ? Object.keys(v).length : 0);
+          if (tv && !gone) tv.setViewers(FF.WatchView.countViewers(v, tr.serverNow()));
         });
         // A host whose phone died stops writing: notice it without any new data.
         var staleCheck = setInterval(function () {

@@ -333,12 +333,157 @@
       }
     },
     "broadcasts": {
+      ".indexOn": [
+        "updatedAt"
+      ],
       "$wc": {
         ".read": "auth != null",
         ".write": "auth != null && root.child('rooms').child(root.child('watchRooms').child($wc).val()).child('meta').child('hostUid').val() === auth.uid",
-        ".validate": "newData.hasChildren(['v', 'status', 'updatedAt']) && (newData.child('public').val() !== true || root.child('rooms').child(root.child('watchRooms').child($wc).val()).child('admin').child('delisted').val() !== true)",
+        ".validate": "newData.hasChildren(['v', 'status', 'updatedAt']) && newData.child('updatedAt').isNumber() && newData.child('updatedAt').val() <= now + 60000 && (newData.child('public').val() !== true || root.child('rooms').child(root.child('watchRooms').child($wc).val()).child('admin').child('delisted').val() !== true)",
+        "v": {
+          ".validate": "newData.isNumber()"
+        },
+        "name": {
+          ".validate": "newData.isString() && newData.val().length <= 40"
+        },
         "public": {
-          ".write": "auth != null && root.child('admins').child(auth.uid).val() === true && newData.val() === false"
+          ".write": "auth != null && root.child('admins').child(auth.uid).val() === true && newData.val() === false",
+          ".validate": "newData.isBoolean()"
+        },
+        "status": {
+          ".validate": "newData.isString() && newData.val().matches(/^(lobby|playing|ended)$/)"
+        },
+        "mode": {
+          ".validate": "newData.isString() && newData.val().matches(/^(players|teams)$/)"
+        },
+        "startAt": {
+          ".validate": "newData.isNumber()"
+        },
+        "updatedAt": {
+          ".validate": "newData.isNumber()"
+        },
+        "game": {
+          "id": {
+            ".validate": "newData.isString() && newData.val().length <= 40"
+          },
+          "name": {
+            ".validate": "newData.isString() && newData.val().length <= 60"
+          },
+          "category": {
+            ".validate": "newData.isString() && newData.val().length <= 20"
+          },
+          "$other": {
+            ".validate": false
+          }
+        },
+        "round": {
+          "n": {
+            ".validate": "newData.isNumber()"
+          },
+          "total": {
+            ".validate": "newData.isNumber()"
+          },
+          "opensAt": {
+            ".validate": "newData.isNumber()"
+          },
+          "timerMs": {
+            ".validate": "newData.isNumber()"
+          },
+          "answer": {
+            ".validate": "newData.isNumber()"
+          },
+          "screen": {
+            "kind": {
+              ".validate": "newData.isString() && newData.val().matches(/^(choice|card)$/)"
+            },
+            "text": {
+              ".validate": "newData.isString() && newData.val().length <= 200"
+            },
+            "options": {
+              "$i": {
+                ".validate": "newData.isString() && newData.val().length <= 80"
+              }
+            },
+            "image": {
+              "flag": {
+                ".validate": "newData.isString() && newData.val().length <= 12"
+              },
+              "src": {
+                ".validate": "newData.isString() && newData.val().length <= 200"
+              },
+              "emoji": {
+                ".validate": "newData.isString() && newData.val().length <= 16"
+              },
+              "svg": {
+                ".validate": "newData.isString() && newData.val().length <= 30000"
+              },
+              "$other": {
+                ".validate": false
+              }
+            },
+            "$other": {
+              ".validate": false
+            }
+          },
+          "$other": {
+            ".validate": false
+          }
+        },
+        "players": {
+          "$uid": {
+            "name": {
+              ".validate": "newData.isString() && newData.val().length <= 40"
+            },
+            "avatar": {
+              ".validate": "newData.isString() && newData.val().length <= 60"
+            },
+            "color": {
+              ".validate": "newData.isString() && newData.val().length <= 20"
+            },
+            "score": {
+              ".validate": "newData.isNumber()"
+            },
+            "answered": {
+              ".validate": "newData.isBoolean()"
+            },
+            "correct": {
+              ".validate": "newData.isBoolean()"
+            },
+            "talking": {
+              ".validate": "newData.isBoolean()"
+            },
+            "online": {
+              ".validate": "newData.isBoolean()"
+            },
+            "teamId": {
+              ".validate": "newData.isString() && newData.val().length <= 20"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        },
+        "results": {
+          "$i": {
+            "id": {
+              ".validate": "newData.isString() && newData.val().length <= 64"
+            },
+            "name": {
+              ".validate": "newData.isString() && newData.val().length <= 40"
+            },
+            "avatar": {
+              ".validate": "newData.isString() && newData.val().length <= 60"
+            },
+            "score": {
+              ".validate": "newData.isNumber()"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        },
+        "$other": {
+          ".validate": false
         }
       }
     },
@@ -347,7 +492,7 @@
         ".read": "auth != null",
         "$uid": {
           ".write": "auth != null && $uid === auth.uid",
-          ".validate": "newData.isNumber()"
+          ".validate": "newData.isNumber() && newData.val() <= now + 60000 && $wc.matches(/^[ABCDEFGHJKMNPQRSTUVWXYZ2-9]{8}$/) && root.child('watchRooms').child($wc).exists()"
         }
       }
     }

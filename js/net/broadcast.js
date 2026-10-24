@@ -17,6 +17,7 @@ window.FF = window.FF || {};
   var HEARTBEAT_MS = 15000;    // rewrite while idle, so viewers know the room is alive
   var STALE_MS = 45000;        // after this long without a write a broadcast counts as ended
   var ONLINE_MS = 20000;       // same as the room's presence check
+  var VIEWER_MS = 90000;       // viewers check in every 30 s; older entries have left
 
   var cur = null;              // { room, meta, players, rounds, voice, admin }
   var offs = [];
@@ -214,7 +215,10 @@ window.FF = window.FF || {};
     watchTransport().then(function (t) {
       if (viewersFor !== code || !cur) return;
       offViewers = t.watch('watchers/' + code, function (v) {
-        viewerCount = v && typeof v === 'object' ? Object.keys(v).length : 0;
+        var at = t.serverNow();
+        viewerCount = v && typeof v === 'object' ? Object.keys(v).filter(function (k) {
+          return typeof v[k] === 'number' && (at - v[k]) <= VIEWER_MS;
+        }).length : 0;
         notifyViewers();
       });
     }).catch(function () {});

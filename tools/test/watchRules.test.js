@@ -41,3 +41,20 @@ test('watch rules: limits and the watchers counter', function () {
   assert(RULES.stats.totals.$counter['.validate'].indexOf('watchers') !== -1, 'total counter');
   assert(RULES.stats.days.$day.$counter['.validate'].indexOf('watchers') !== -1, 'day counter');
 });
+
+test('watch rules: broadcasts have a known shape, cannot claim a future time, and are indexed by time', function () {
+  const b = RULES.broadcasts;
+  assertEqual(JSON.stringify(b['.indexOn']), JSON.stringify(['updatedAt']), 'fresh-only queries need the index');
+  assert(/updatedAt'\)\.val\(\) <= now/.test(b.$wc['.validate']), 'no future updatedAt');
+  assertEqual(b.$wc.$other['.validate'], false, 'no unknown fields');
+  assertEqual(b.$wc.players.$uid.$other['.validate'], false, 'players have a known shape');
+  assert(/length <= 40/.test(b.$wc.players.$uid.name['.validate']), 'names are short');
+  assert(/length <= 30000/.test(b.$wc.round.screen.image.svg['.validate']), 'drawings are capped');
+  assert(/length <= 200/.test(b.$wc.round.screen.text['.validate']), 'question text is capped');
+});
+
+test('watch rules: viewer entries belong to a real watch code and hold a recent time', function () {
+  const v = RULES.watchers.$wc.$uid['.validate'];
+  assert(/watchRooms/.test(v) && /exists\(\)/.test(v), 'only for watch codes that exist');
+  assert(/<= now/.test(v), 'no future times');
+});

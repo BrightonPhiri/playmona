@@ -13,6 +13,11 @@ const ROOM_CODE = "/^[ABCDEFGHJKMNPQRSTUVWXYZ2-9]{6}$/";
 // The room a watch code belongs to, looked up without revealing it to readers.
 const ROOM_OF = (wc) => "root.child('rooms').child(root.child('watchRooms').child(" + wc + ").val())";
 const HOST_OF = (wc) => ROOM_OF(wc) + ".child('meta').child('hostUid').val() === auth.uid";
+// Broadcast field checks (what js/net/broadcast.js writes; nothing else is accepted).
+const STR = (max) => ({ ".validate": "newData.isString() && newData.val().length <= " + max });
+const NUM = { ".validate": "newData.isNumber()" };
+const BOOL = { ".validate": "newData.isBoolean()" };
+const NONE = { ".validate": false };
 const RESULT = "newData.hasChildren(['name', 'score', 'correct', 't']) && newData.child('name').isString() && newData.child('name').val().length <= 40 && newData.child('score').isNumber() && newData.child('score').val() >= 0 && newData.child('score').val() <= 1500 && newData.child('correct').isNumber() && newData.child('correct').val() >= 0 && newData.child('correct').val() <= 10";
 
 const counterNode = (nameCheck) => ({
@@ -256,12 +261,41 @@ const rules = {
     },
     // What viewers see. Read one at a time (no read on the list, so private rooms cannot be found).
     broadcasts: {
+      // /api/live asks only for broadcasts written in the last 45 seconds.
+      ".indexOn": ["updatedAt"],
       "$wc": {
         ".read": "auth != null",
         ".write": "auth != null && " + HOST_OF('$wc'),
-        ".validate": "newData.hasChildren(['v', 'status', 'updatedAt']) && (newData.child('public').val() !== true || " + ROOM_OF('$wc') + ".child('admin').child('delisted').val() !== true)",
+        ".validate": "newData.hasChildren(['v', 'status', 'updatedAt']) && newData.child('updatedAt').isNumber() && newData.child('updatedAt').val() <= now + 60000 && (newData.child('public').val() !== true || " + ROOM_OF('$wc') + ".child('admin').child('delisted').val() !== true)",
+        v: NUM,
+        name: STR(40),
         // Admins can take a room off Watch live straight away.
-        public: { ".write": ADMIN + " && newData.val() === false" }
+        public: { ".write": ADMIN + " && newData.val() === false", ".validate": "newData.isBoolean()" },
+        status: { ".validate": "newData.isString() && newData.val().matches(/^(lobby|playing|ended)$/)" },
+        mode: { ".validate": "newData.isString() && newData.val().matches(/^(players|teams)$/)" },
+        startAt: NUM,
+        updatedAt: NUM,
+        game: { id: STR(40), name: STR(60), category: STR(20), "$other": NONE },
+        round: {
+          n: NUM, total: NUM, opensAt: NUM, timerMs: NUM, answer: NUM,
+          screen: {
+            kind: { ".validate": "newData.isString() && newData.val().matches(/^(choice|card)$/)" },
+            text: STR(200),
+            options: { "$i": STR(80) },
+            image: { flag: STR(12), src: STR(200), emoji: STR(16), svg: STR(30000), "$other": NONE },
+            "$other": NONE
+          },
+          "$other": NONE
+        },
+        players: {
+          "$uid": {
+            name: STR(40), avatar: STR(60), color: STR(20), score: NUM,
+            answered: BOOL, correct: BOOL, talking: BOOL, online: BOOL, teamId: STR(20),
+            "$other": NONE
+          }
+        },
+        results: { "$i": { id: STR(64), name: STR(40), avatar: STR(60), score: NUM, "$other": NONE } },
+        "$other": NONE
       }
     },
     // One entry per viewer (removed when they leave); the count is the number of entries.
@@ -270,7 +304,8 @@ const rules = {
         ".read": "auth != null",
         "$uid": {
           ".write": "auth != null && $uid === auth.uid",
-          ".validate": "newData.isNumber()"
+          // The time this viewer last checked in, for a watch code that exists.
+          ".validate": "newData.isNumber() && newData.val() <= now + 60000 && $wc.matches(" + WC + ") && root.child('watchRooms').child($wc).exists()"
         }
       }
     }
