@@ -107,3 +107,37 @@
 
 .is-locked { opacity: 0.45; cursor: default; }
 ol.results__leaderboard, ul.player-list, ul.achievement-grid, ul.team-col__members, ul.setup-roster { list-style: none; padding: 0; }
+
+/* Room header: name (the host can rename it), save and leave */
+.rm-roomhead { display: flex; flex-direction: column; align-items: center; gap: var(--sp-2); text-align: center; }
+.rm-roomhead__name { display: flex; align-items: center; justify-content: center; gap: var(--sp-1); max-width: 100%; }
+.rm-title { margin: 0; overflow-wrap: anywhere; }
+.rm-roomhead__edit { flex: none; }
+.rm-roomhead__tools { width: 100%; }
+.rm-roomhead .rm-hint { margin: 0; }
+
+/* Your rooms: rooms saved to come back to */
+.rm-saved { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--sp-2); }
+.rm-saved__item {
+  display: flex; align-items: center; gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-2) var(--sp-2) var(--sp-3);
+  background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-md);
+}
+.rm-saved__info { flex: 1 1 auto; min-width: 0; text-align: left; }
+.rm-saved__name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rm-saved__code { color: var(--muted); font-size: var(--fs-sm); font-family: var(--font-mono); letter-spacing: 0.12em; }
+.rm-saved__item .btn { flex: none; }
+.rm-saved__remove { flex: none; }
+
+/* QR scanner */
+.rm-scan {
+  position: relative; width: 100%; max-width: 360px; aspect-ratio: 1; margin: 0 auto;
+  border-radius: var(--r-lg); overflow: hidden; background: var(--surface-3);
+}
+.rm-scan[hidden] { display: none; }
+.rm-scan__video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.rm-scan__frame {
+  position: absolute; inset: 18%; border: 3px solid var(--accent); border-radius: var(--r-md);
+  pointer-events: none;
+}
+.rm-scan__status { text-align: center; margin-top: var(--sp-2); }

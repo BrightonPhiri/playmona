@@ -63,6 +63,11 @@ window.FF = window.FF || {};
   function t(key, fallback, vars) { return FF.t(key, fallback, vars); }
   function icon(key, fallback) { return FF.Icons.icon(key, fallback); }
   function onlineEnabled() { return !!(FF.Net && FF.Net.configured && FF.Net.configured()); }
+  // A room screen (join form, lobby, countdown...) is showing: background
+  // updates must not redraw the Online page over it.
+  function roomScreenShowing() {
+    return FF.App._currentView === 'online' && !!(FF.RoomUI && FF.RoomUI.busy && FF.RoomUI.busy());
+  }
   function onlineIds() { return (FF.RoomUI && FF.RoomUI.ONLINE_GAMES) || []; }
   function isOnlineGame(id) { return onlineIds().indexOf(id) !== -1; }
 
@@ -160,7 +165,7 @@ window.FF = window.FF || {};
           this._configHooked = true;
           // New switches from the admin portal: redraw, unless a game is running.
           FF.GameConfig.onChange(function () {
-            if (!FF.App._started || (FF.GameFlow && FF.GameFlow.current)) return;
+            if (!FF.App._started || (FF.GameFlow && FF.GameFlow.current) || roomScreenShowing()) return;
             FF.App.render(FF.App._currentView || 'home', FF.App._currentParams || {});
           });
           // Coming back to the app picks up changes made since (at most every 5 minutes).
@@ -215,7 +220,7 @@ window.FF = window.FF || {};
             clearTimeout(plusRedraw);
             plusRedraw = setTimeout(function () {
               var view = FF.App._currentView || 'home';
-              if (!FF.App._started || view === 'plus' || (FF.GameFlow && FF.GameFlow.current)) return;
+              if (!FF.App._started || view === 'plus' || (FF.GameFlow && FF.GameFlow.current) || roomScreenShowing()) return;
               FF.App.render(view, FF.App._currentParams || {});
             }, 50);
           });
@@ -230,7 +235,8 @@ window.FF = window.FF || {};
       if (joinCode && onlineEnabled()) {
         FF.Nav.go('online');
         var root = this.root();
-        FF.Access.gate('online', function () { FF.RoomUI.showJoin(root, joinCode); });
+        // Straight into the room (the join form only if this device has no name yet).
+        FF.Access.gate('online', function () { FF.RoomUI.joinCode(root, joinCode); });
       }
     },
 
@@ -254,7 +260,7 @@ window.FF = window.FF || {};
 
     // Another device's changes arrived: redraw what is on screen.
     onSynced: function () {
-      if (!this._started || (FF.GameFlow && FF.GameFlow.current)) return;
+      if (!this._started || (FF.GameFlow && FF.GameFlow.current) || roomScreenShowing()) return;
       this.render(this._currentView || 'home', this._currentParams || {});
     },
 

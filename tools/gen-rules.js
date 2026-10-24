@@ -180,8 +180,10 @@ const rules = {
       "$code": {
         ".read": "auth != null",
         meta: {
-          ".write": "auth != null && " + NOT_BANNED + " && (!data.exists() || data.child('hostUid').val() === auth.uid || root.child('rooms').child($code).child('players').child(data.child('hostUid').val()).child('online').val() !== true)",
-          ".validate": "newData.hasChildren(['seed', 'status', 'appVersion'])"
+          // The room's owner may take the host role back when they return.
+          ".write": "auth != null && " + NOT_BANNED + " && (!data.exists() || data.child('hostUid').val() === auth.uid || data.child('ownerUid').val() === auth.uid || root.child('rooms').child($code).child('players').child(data.child('hostUid').val()).child('online').val() !== true)",
+          ".validate": "newData.hasChildren(['seed', 'status', 'appVersion'])",
+          name: { ".validate": "newData.isString() && newData.val().length <= 30" }
         },
         players: {
           "$uid": {

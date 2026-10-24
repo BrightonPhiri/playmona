@@ -15,7 +15,7 @@ function makeDocument() {
     const el = {
       tagName: String(tag).toUpperCase(),
       children: [],
-      style: {},
+      style: { setProperty: function (k, v) { this[k] = v; }, removeProperty: function (k) { delete this[k]; } },
       dataset: {},
       attributes: {},
       textContent: '',
@@ -49,13 +49,29 @@ function makeDocument() {
       querySelector: function () { return null; },
       querySelectorAll: function () { return []; },
       focus: function () {},
-      remove: function () { if (this.parentNode) this.parentNode.removeChild(this); }
+      remove: function () { if (this.parentNode) this.parentNode.removeChild(this); },
+      get firstChild() { return this.children[0] || null; },
+      // On the page when its chain of parents reaches the document.
+      get isConnected() { let n = this; while (n && n.parentNode) n = n.parentNode; return n === doc; }
     };
     return el;
   }
-  const doc = makeEl('document');
+  let doc = null;
+  doc = makeEl('document');
   doc.head = makeEl('head');
   doc.body = makeEl('body');
+  doc.body.parentNode = doc;
+  doc.head.parentNode = doc;
+  doc.children.push(doc.head, doc.body);
+  doc.getElementById = function (id) {
+    const walk = function (n) {
+      if (!n) return null;
+      if (n.id === id) return n;
+      for (const c of n.children || []) { const hit = walk(c); if (hit) return hit; }
+      return null;
+    };
+    return walk(doc);
+  };
   doc.createElement = makeEl;
   doc.createTextNode = function (t) { return { nodeType: 3, textContent: String(t) }; };
   return doc;

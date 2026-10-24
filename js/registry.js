@@ -226,7 +226,11 @@ window.FF = window.FF || {};
         }
       });
       syncVoiceBtn();
-      FF.Voice.on('change', syncVoiceBtn);
+      // One listener per game bar, removed when the game closes (they used to pile up).
+      const offVoice = FF.Voice.on('change', function () {
+        if (voiceBtn.isConnected) { voiceBtn.dataset.mounted = '1'; syncVoiceBtn(); }
+        else if (voiceBtn.dataset.mounted) offVoice();
+      });
       bar.appendChild(voiceBtn);
     }
     bar.appendChild(pauseBtn);
@@ -768,7 +772,10 @@ window.FF = window.FF || {};
       }
 
       if (Object.keys(scores).length) {
-        return FF.Room.racePlayers().map(function (p) {
+        // Past visitors of a saved room are not part of this game.
+        return FF.Room.racePlayers().filter(function (p) {
+          return p.online || scores[p.uid] || p.uid === room.uid;
+        }).map(function (p) {
           return {
             id: p.uid,
             uid: p.uid,
@@ -1078,9 +1085,26 @@ window.FF = window.FF || {};
     pause: function () {
       const cur = this.current;
       if (!cur) return;
+      const t = FF.t;
+      // Online, the game keeps going for everyone else: no Restart (it would
+      // restart this phone alone), and rounds stop waiting for this player.
+      if (cur.config && cur.config.room && FF.Room && FF.Room.current()) {
+        FF.Room.setAway(true);
+        this._overlay({
+          icon: 'pause',
+          title: t('pausedOnline', 'You stepped out'),
+          sub: t('pausedOnlineSub', 'The game carries on for the others. Rounds won’t wait for you until you come back.'),
+          actions: [
+            { label: t('backToGame', 'Back to the game'), primary: true, icon: 'play', onClick: function () { FF.GameFlow.resume(); } },
+            { label: t('howToPlay', 'How to play'), icon: 'lightbulb', onClick: function () { FF.GameFlow.showRules(cur.def); } },
+            { label: t('leaveGame', 'Leave game'), ghost: true, icon: 'close', onClick: function () { FF.GameFlow.exitToHome(); } },
+            { label: t('leaveRoom', 'Leave room'), ghost: true, icon: 'sign-out', onClick: function () { FF.GameFlow.leaveRoom(); } }
+          ]
+        });
+        return;
+      }
       if (FF.Advance) FF.Advance.pauseAll();
       if (cur.shell && cur.shell.timer && cur.shell.timer.isRunning()) cur.shell.timer.pause();
-      const t = FF.t;
       this._overlay({
         icon: 'pause',
         title: t('paused', 'Paused'),
@@ -1104,6 +1128,9 @@ window.FF = window.FF || {};
     resume: function () {
       const overlay = FF.ui.$('.pause-overlay', FF.ui.$('#game-screen'));
       if (overlay) overlay.parentNode.removeChild(overlay);
+      if (this.current && this.current.config && this.current.config.room && FF.Room && FF.Room.current()) {
+        FF.Room.setAway(false);
+      }
       if (this.current && this.current.shell && this.current.shell.timer) {
         // only resume if it was running before pause (best effort)
         if (!this.current.shell.timer.isFinished() && this.current.shell.timer.remaining > 0) this.current.shell.timer.resume();
@@ -1168,6 +1195,14 @@ window.FF = window.FF || {};
 
     close: function (view) {
       if (FF.Advance) FF.Advance.cancelAll();
+      // Leaving an online game early: stop following its rounds, and tell the
+      // room so nobody's round waits for this player.
+      const leaving = this.current;
+      if (leaving && leaving.config && leaving.config.room && FF.Room && FF.Room.current()) {
+        FF.Room.setAway(false);
+        if (!leaving.roomEnding) FF.Room.markLeftGame(leaving.config.roomStartAt);
+        if (FF.Race && FF.Race.running()) FF.Race.end();
+      }
       const screen = FF.ui.$('#game-screen');
       if (screen) {
         screen.className = 'game-screen hidden';
@@ -1180,6 +1215,19 @@ window.FF = window.FF || {};
       this.current = null;
       if (typeof FF.App !== 'undefined' && FF.App.onGameExit) FF.App.onGameExit();
       FF.Nav.go(view || 'home');
+    },
+
+    // Leave the room from inside a game (pause menu).
+    leaveRoom: function () {
+      if (FF.Voice) FF.Voice.leave();
+      if (FF.Room && FF.Room.current()) {
+        const cur = this.current;
+        if (cur && cur.config && cur.config.room && !cur.roomEnding) FF.Room.markLeftGame(cur.config.roomStartAt);
+        if (FF.Race && FF.Race.running()) FF.Race.end();
+        FF.Room.leave();
+        FF.Room.clearUrlCode();
+      }
+      this.close('online');
     },
 
     exitToHome: function () {

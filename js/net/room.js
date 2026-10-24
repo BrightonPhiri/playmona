@@ -11,7 +11,10 @@ window.FF = window.FF || {};
   var ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';   // no O, 0, I, 1
   var CODE_LENGTH = 6;
   var MAX_PLAYERS = 12;
-  var TTL_MS = 6 * 60 * 60 * 1000;                     // 6 hours
+  // A room lasts 30 days after it was last used, so a saved room keeps
+  // working week after week. Every game the host starts renews it.
+  var TTL_MS = 30 * 24 * 60 * 60 * 1000;
+  var NAME_MAX = 30;
   var APP_VERSION = '2.0.0';
   // How long everyone gets to look up from their phone before round one.
   var COUNTDOWN_MS = 10000;
@@ -20,6 +23,7 @@ window.FF = window.FF || {};
 
   var state = null;
   var heartbeat = null;
+  var offVisibility = null;
   var handlers = { players: [], meta: [], rounds: [], error: [] };
   var unsubs = [];
 
@@ -144,6 +148,7 @@ window.FF = window.FF || {};
       emit('rounds', state.rounds);
     }));
     if (transport.watchConnection) {
+      watchVisibility();
       unsubs.push(transport.watchConnection(function (online) {
         if (online && state && state.transport === transport) {
           restorePresence(transport, state.uid);
@@ -165,11 +170,61 @@ window.FF = window.FF || {};
       teamId: profile.teamId || null,
       joinedAt: now,
       lastSeen: now,
-      online: true
+      online: true,
+      away: isHidden()
     }).then(function () {
       return transport.onDisconnectSet('players/' + uid + '/online', false);
     });
   }
+
+  function isHidden() { return !!(typeof document !== 'undefined' && document.hidden); }
+
+  /* A player who switches to another app is marked away at once, so a round
+     never waits for someone who is not looking at the game. */
+  function watchVisibility() {
+    if (offVisibility) offVisibility();
+    if (typeof document === 'undefined' || !document.addEventListener) return;
+    var onChange = function () {
+      if (!state) return;
+      var patch = { away: isHidden() };
+      if (!patch.away) { patch.online = true; patch.lastSeen = state.transport.serverNow(); }
+      state.transport.update('players/' + state.uid, patch).catch(function () {});
+    };
+    document.addEventListener('visibilitychange', onChange);
+    offVisibility = function () { document.removeEventListener('visibilitychange', onChange); offVisibility = null; };
+  }
+
+  /* Opening a room nobody else is in: take it over as host and clear any game
+     left from last time, so a saved room always opens on its lobby. The owner
+     who made the room also gets the host role back when they return. */
+  function settleIn(transport, uid, meta, players) {
+    var now = transport.serverNow();
+    var othersHere = Object.keys(players || {}).some(function (u) {
+      return u !== uid && playerIsOnline(players[u], now);
+    });
+    var patch = null;
+    if (!othersHere) {
+      patch = { hostUid: uid, expiresAt: now + TTL_MS };
+      if ((meta.status || 'lobby') !== 'lobby') {
+        patch.status = 'lobby'; patch.gameId = null; patch.startAt = null; patch.endedAt = null; patch.results = null;
+      }
+    } else if (meta.ownerUid === uid && meta.hostUid !== uid && (meta.status || 'lobby') === 'lobby') {
+      patch = { hostUid: uid };
+    }
+    if (!patch) return Promise.resolve(meta);
+    return transport.update('meta', patch).then(function () {
+      var next = Object.assign({}, meta, patch);
+      if (!patch.status) return next;
+      return transport.set('rounds', null).catch(function () {}).then(function () { return next; });
+    }).catch(function () { return meta; });
+  }
+
+  /* ---------- Saved rooms (kept on this device, and on the account) ---------- */
+  function savedList() {
+    var list = FF.Storage.get('savedRooms', []);
+    return Array.isArray(list) ? list.filter(function (r) { return r && r.code; }) : [];
+  }
+  function writeSaved(list) { FF.Storage.set('savedRooms', list); }
 
   function restorePresence(transport, uid) {
     return transport.update('players/' + uid, {
@@ -203,6 +258,7 @@ window.FF = window.FF || {};
     CODE_LENGTH: CODE_LENGTH,
     MAX_PLAYERS: MAX_PLAYERS,
     TTL_MS: TTL_MS,
+    NAME_MAX: NAME_MAX,
     APP_VERSION: APP_VERSION,
     COUNTDOWN_MS: COUNTDOWN_MS,
     newCode: newCode,
@@ -241,6 +297,76 @@ window.FF = window.FF || {};
       return m ? m[1].toUpperCase() : null;
     },
 
+    /* A room code from anything a QR code or a paste might hold: a share
+       link, a bare code, or a code with spaces. */
+    codeFromText: function (text) {
+      text = String(text || '').trim();
+      var m = /[#&?]room=([A-Za-z0-9]{6})\b/.exec(text);
+      if (m) return m[1].toUpperCase();
+      var bare = text.replace(/[\s-]/g, '').toUpperCase();
+      return /^[A-Z0-9]{6}$/.test(bare) ? bare : null;
+    },
+
+    /* Take the room code out of the address bar (after leaving), so a
+       reload does not join the room again. */
+    clearUrlCode: function () {
+      if (!this.codeFromUrl() || !window.history || !history.replaceState) return;
+      try { history.replaceState(history.state, '', window.location.pathname + window.location.search); } catch (e) {}
+    },
+
+    /* Players to show in the lobby: everyone here now. Old visitors to a
+       saved room stay in its records but are not listed. */
+    presentPlayers: function () {
+      return this.racePlayers().filter(function (p) { return p.online || (state && p.uid === state.uid); });
+    },
+
+    /* The room's name, or a friendly default. */
+    displayName: function (meta, players) {
+      meta = meta || (state && state.meta) || {};
+      if (meta.name) return meta.name;
+      var host = (players || (state && state.players) || {})[meta.ownerUid || meta.hostUid];
+      return host && host.name ? FF.t('roomOf', '{name}\u2019s room', { name: host.name }) : FF.t('yourRoom', 'Your room');
+    },
+
+    rename: function (name) {
+      if (!state) return Promise.reject(new Error('Not in a room.'));
+      if (!state.isHost) return Promise.reject(new Error('Only the room host can rename the room.'));
+      name = String(name || '').replace(/\s+/g, ' ').trim().slice(0, NAME_MAX);
+      var code = state.code;
+      return state.transport.update('meta', { name: name || null }).then(function () {
+        FF.Room.saved.touch(code, { name: name });
+      });
+    },
+
+    /* Rooms this player saved to come back to, newest first. */
+    saved: {
+      list: function () {
+        return savedList().sort(function (a, b) { return (b.lastUsed || 0) - (a.lastUsed || 0); });
+      },
+      has: function (code) {
+        return savedList().some(function (r) { return r.code === code; });
+      },
+      add: function (code, info) {
+        var list = savedList().filter(function (r) { return r.code !== code; });
+        info = info || {};
+        list.push({ code: code, name: info.name || '', mode: info.mode || 'players', lastUsed: Date.now() });
+        writeSaved(list.slice(-20));
+      },
+      remove: function (code) {
+        writeSaved(savedList().filter(function (r) { return r.code !== code; }));
+      },
+      // Keep a saved room's name and last-used time up to date.
+      touch: function (code, info) {
+        var list = savedList();
+        var hit = list.filter(function (r) { return r.code === code; })[0];
+        if (!hit) return;
+        if (info && info.name != null) hit.name = info.name;
+        if (info && info.mode) hit.mode = info.mode;
+        hit.lastUsed = Date.now();
+        writeSaved(list);
+      }
+    },
+
     create: function (opts) {
       opts = opts || {};
       var profile = identity();
@@ -257,9 +383,11 @@ window.FF = window.FF || {};
             mode: opts.mode === 'teams' ? 'teams' : 'players',
             appVersion: APP_VERSION,
             hostUid: uid,
+            ownerUid: uid,
             createdAt: now,
             expiresAt: now + TTL_MS
           };
+          if (opts.name) meta.name = String(opts.name).trim().slice(0, NAME_MAX);
 
           if (FF.Track) FF.Track.count('rooms');
           return transport.set('meta', meta)
@@ -297,17 +425,23 @@ window.FF = window.FF || {};
               throw new Error('VERSION_MISMATCH');
             }
             return transport.get('players').then(function (players) {
-              var count = players ? Object.keys(players).length : 0;
-              var alreadyIn = !!(players && players[uid]);
-              if (count >= MAX_PLAYERS && !alreadyIn) {
+              // Only people here now count: a saved room remembers past visitors.
+              var now = transport.serverNow();
+              var count = Object.keys(players || {}).filter(function (u) {
+                return u !== uid && playerIsOnline(players[u], now);
+              }).length;
+              if (count >= MAX_PLAYERS) {
                 throw new Error('That room is full (' + MAX_PLAYERS + ' devices).');
               }
               return registerPresence(transport, uid, merged).then(function () {
+                return settleIn(transport, uid, meta, players);
+              }).then(function (settled) {
                 state = {
-                  code: code, uid: uid, isHost: meta.hostUid === uid,
-                  meta: meta, players: players || {}, rounds: {}, transport: transport
+                  code: code, uid: uid, isHost: settled.hostUid === uid,
+                  meta: settled, players: players || {}, rounds: {}, transport: transport
                 };
                 watchAll(transport);
+                FF.Room.saved.touch(code, { name: settled.name || '' });
                 return state;
               });
             });
@@ -336,7 +470,9 @@ window.FF = window.FF || {};
           color: p.color || '#8b5cf6',
           teamId: p.teamId || null,
           joinedAt: p.joinedAt || 0,
-          lastSeen: p.lastSeen == null ? null : p.lastSeen
+          lastSeen: p.lastSeen == null ? null : p.lastSeen,
+          away: !!p.away,
+          leftGame: p.leftGame == null ? null : p.leftGame
         };
       });
     },
@@ -404,7 +540,8 @@ window.FF = window.FF || {};
         status: 'playing',
         startAt: transport.serverNow() + COUNTDOWN_MS,
         endedAt: null,
-        results: null
+        results: null,
+        expiresAt: transport.serverNow() + TTL_MS
       };
       if (settings) payload.settings = settings;
       return transport.set('rounds', null).then(function () {
@@ -439,17 +576,50 @@ window.FF = window.FF || {};
       });
     },
 
+    /* Paused or otherwise not looking: rounds do not wait for this player. */
+    setAway: function (away) {
+      if (!state) return Promise.resolve();
+      return state.transport.update('players/' + state.uid, { away: !!away || isHidden() }).catch(function () {});
+    },
+
+    /* This player stopped playing the running game but stays in the room.
+       Rounds stop waiting for them. */
+    markLeftGame: function (startAt) {
+      if (!state || startAt == null) return Promise.resolve();
+      return state.transport.update('players/' + state.uid, { leftGame: startAt }).catch(function () {});
+    },
+
+    /* Leave for good: hand the host role to someone still here, then take
+       this player out of the room's list. */
     leave: function () {
-      if (!state) return;
+      if (!state) return Promise.resolve();
       var s = state;
+      var transport = s.transport;
+      var now = transport.serverNow();
+      var next = null;
+      if (s.meta && s.meta.hostUid === s.uid) {
+        next = this.racePlayers().filter(function (p) {
+          return p.uid !== s.uid && playerIsOnline(s.players[p.uid], now);
+        }).sort(function (a, b) { return (a.joinedAt || 0) - (b.joinedAt || 0); })[0] || null;
+      }
       stopHeartbeat();
+      if (offVisibility) offVisibility();
       unsubs.slice().forEach(function (off) { try { off(); } catch (e) {} });
       unsubs = [];
       this.offAll();
-      try { s.transport.set('players/' + s.uid + '/online', false); } catch (e) {}
-      try { s.transport.close(); } catch (e) {}
       state = null;
       FF.Random.unseed();
+      var handOff = next ? transport.update('meta', { hostUid: next.uid }) : Promise.resolve();
+      return handOff.catch(function () {}).then(function () {
+        // The "went offline" write registered on joining must not bring this
+        // player back into the list after they are removed.
+        if (transport.onDisconnectCancel) return transport.onDisconnectCancel('players/' + s.uid + '/online');
+      }).catch(function () {}).then(function () {
+        try { transport.close(); } catch (e) {}
+        return transport.set('players/' + s.uid, null);
+      }).catch(function () {
+        return transport.set('players/' + s.uid + '/online', false);
+      }).catch(function () {});
     }
   };
 })();

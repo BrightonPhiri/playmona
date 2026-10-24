@@ -45,6 +45,18 @@ window.FF = window.FF || {};
     return p ? p.name : 'Someone';
   }
 
+  /* Who a round waits for: players here and looking at this game. Someone
+     who left the game for the lobby, or switched to another app, is skipped,
+     so one absent phone can no longer hold up (freeze) every round. */
+  function playersInGame() {
+    var r = room();
+    var startAt = r && r.meta ? r.meta.startAt : null;
+    return FF.Room.racePlayers().filter(function (p) {
+      if (p.away) return false;
+      return !(startAt != null && p.leftGame === startAt);
+    });
+  }
+
   /* Re-evaluate the current round whenever round data changes, and
      on a slow poll so a pure timeout still settles with no writes. */
   function finalise(winnerId, reason) {
@@ -82,7 +94,7 @@ window.FF = window.FF || {};
     var node = currentRound();
     var verdict = FF.RaceRules.settle(
       node,
-      FF.Room.racePlayers(),
+      playersInGame(),
       session.timerMs,
       r.transport.serverNow(),
       session.mode
@@ -370,6 +382,8 @@ window.FF = window.FF || {};
         }
       });
     },
+
+    playersInGame: playersInGame,
 
     roster: function () {
       return FF.Room ? FF.Room.scorers() : [];

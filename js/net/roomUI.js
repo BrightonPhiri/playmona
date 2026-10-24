@@ -62,6 +62,68 @@ window.FF = window.FF || {};
     return list;
   }
 
+  /* Listeners that belong to the screen on show. Each screen switch removes
+     them, so an old lobby can never redraw itself over the countdown, a game
+     or the results (voice listeners used to pile up and do exactly that). */
+  var screenOffs = [];
+  var screenName = 'home';
+  function onScreen(off) { if (typeof off === 'function') screenOffs.push(off); }
+  function resetScreen(name) {
+    screenOffs.splice(0).forEach(function (off) { try { off(); } catch (e) {} });
+    FF.Room.offAll();
+    if (name) screenName = name;
+  }
+
+  // The QR code for a link, drawn once and reused on every lobby redraw.
+  var qrCache = { url: null, node: null };
+  function qrFor(url) {
+    if (qrCache.url !== url) {
+      qrCache.url = url;
+      qrCache.node = (FF.QR && FF.QR.available()) ? FF.QR.svg(url, { size: 170 }) : null;
+    }
+    return qrCache.node;
+  }
+
+  function scanButton(onCode, cls) {
+    if (!FF.QRScan || !FF.QRScan.available()) return null;
+    return FF.UI.button(FF.t('scanQr', 'Scan QR code'), {
+      class: cls || 'btn-lg', icon: 'qr-scan',
+      onClick: function () { FF.QRScan.open(onCode); }
+    });
+  }
+
+  function renameRoom(onDone) {
+    var s = FF.Room.current();
+    if (!s) return;
+    var input = FF.ui.el('input', {
+      class: 'rm-input rm-input--text', type: 'text', id: 'rm-rename-input',
+      maxlength: FF.Room.NAME_MAX, value: (s.meta && s.meta.name) || '',
+      placeholder: FF.Room.displayName(), autocomplete: 'off', enterkeyhint: 'done'
+    });
+    function save() {
+      FF.Room.rename(input.value).then(function () {
+        FF.UI.toast(FF.t('roomRenamed', 'Room renamed'), { type: 'success' });
+        if (onDone) onDone();
+      }, function (e) {
+        FF.UI.toast((e && e.message) || FF.t('renameFailed', 'Could not rename the room.'), { type: 'error' });
+      });
+    }
+    var dlg = FF.UI.dialog({
+      title: FF.t('nameRoom', 'Name this room'),
+      body: [
+        FF.ui.el('label', { class: 'setting__label', for: 'rm-rename-input' }, FF.t('roomName', 'Room name')),
+        input,
+        FF.ui.el('p', {}, FF.t('nameRoomHint', 'Everyone in the room sees this name, and it shows in their saved rooms.'))
+      ],
+      actions: [
+        { label: FF.t('cancel', 'Cancel') },
+        { label: FF.t('saveName', 'Save name'), primary: true, icon: 'check', onClick: save }
+      ]
+    });
+    input.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { save(); dlg.close(); } });
+    setTimeout(function () { try { input.focus(); input.select(); } catch (e) {} }, 60);
+  }
+
   function voicePanel(renderFn) {
     if (!FF.Voice || !FF.Voice.isSupported()) return null;
     var vWrap = FF.ui.el('section', { class: 'rm-voice', 'aria-label': FF.t('voiceChat', 'Voice chat') });
@@ -129,8 +191,13 @@ window.FF = window.FF || {};
     /* A playful waiting screen for the moments that need a network round
        trip. Returns a handle: setStatus(text) to update the caption, and
        stop() when the screen is replaced. */
+    /* True while a room screen other than the Play online page is showing,
+       so the app does not redraw that page over it. */
+    busy: function () { return screenName !== 'home'; },
+
     showLoading: function (main, opts) {
       opts = opts || {};
+      resetScreen('loading');
       FF.ui.clear(main);
 
       var castImg = FF.Avatars.img(LOAD_CAST[0], 'rm-load__ava');
@@ -176,7 +243,7 @@ window.FF = window.FF || {};
 
     /* The Online page: the ways to play with other people. */
     showHome: function (main) {
-      FF.Room.offAll();
+      resetScreen('home');
       FF.ui.clear(main);
       var self = this;
       var t = FF.t;
@@ -254,17 +321,68 @@ window.FF = window.FF || {};
 
     /* Play with friends: private rooms with a code. */
     showFriends: function (main) {
-      FF.Room.offAll();
+      resetScreen('friends');
       FF.ui.clear(main);
       var self = this;
-      main.appendChild(panel([
-        hero('users', FF.t('playWithFriends', 'Play with friends'), FF.t('playTogetherLead', 'Everyone plays the same game at the same time, each on their own phone or tablet. The first correct answer wins the point.')),
-        FF.UI.button(FF.t('createRoom', 'Create a room'), { class: 'btn-lg btn-primary', icon: 'plus', onClick: function () { self.showModePicker(main); } }),
-        FF.UI.button(FF.t('joinRoom', 'Join with a code'), { class: 'btn-lg', icon: 'arrow-right', onClick: function () { self.showJoin(main, FF.Room.codeFromUrl()); } }),
-        FF.ui.el('p', { class: 'rm-hint' }, FF.t('roomPrivacy', 'Rooms are private: only people with the code can join. Names and characters are shared while the room is open.')),
-        backButton(function () { self.showHome(main); })
-      ]));
+      var children = [
+        hero('users', FF.t('playWithFriends', 'Play with friends'), FF.t('playTogetherLead', 'Everyone plays the same game at the same time, each on their own phone or tablet. The first correct answer wins the point.'))
+      ];
+      var saved = FF.Room.saved.list();
+      if (saved.length) {
+        children.push(FF.ui.el('h2', { class: 'rm-subtitle' }, FF.t('yourRooms', 'Your rooms')));
+        var list = FF.ui.el('ul', { class: 'rm-saved' });
+        saved.forEach(function (r) {
+          var label = r.name || FF.t('roomCodeN', 'Room {code}', { code: r.code });
+          var info = FF.ui.div('rm-saved__info', [
+            FF.ui.div('rm-saved__name', label),
+            FF.ui.div('rm-saved__code', r.code + (r.mode === 'teams' ? ' \u00b7 ' + FF.t('inTeams', 'In teams') : ''))
+          ]);
+          var join = FF.UI.button(FF.t('open', 'Open'), {
+            class: 'btn-primary', icon: 'arrow-right', ariaLabel: FF.t('openRoomName', 'Open {name}', { name: label }),
+            onClick: function () { self.joinCode(main, r.code); }
+          });
+          var remove = FF.UI.iconButton('trash', FF.t('removeRoomName', 'Remove {name} from your rooms', { name: label }), function () {
+            FF.Room.saved.remove(r.code);
+            FF.UI.toast(FF.t('roomRemoved', 'Removed from your rooms'));
+            self.showFriends(main);
+          }, 'rm-saved__remove');
+          list.appendChild(FF.ui.el('li', { class: 'rm-saved__item' }, [info, join, remove]));
+        });
+        children.push(list);
+        children.push(FF.ui.el('h2', { class: 'rm-subtitle' }, FF.t('newRoomOrCode', 'Start or join another room')));
+      }
+      children.push(FF.UI.button(FF.t('createRoom', 'Create a room'), { class: 'btn-lg' + (saved.length ? '' : ' btn-primary'), icon: 'plus', onClick: function () { self.showModePicker(main); } }));
+      children.push(FF.UI.button(FF.t('joinRoom', 'Join with a code'), { class: 'btn-lg', icon: 'arrow-right', onClick: function () { self.showJoin(main, FF.Room.codeFromUrl()); } }));
+      children.push(scanButton(function (code) { self.joinCode(main, code); }));
+      children.push(FF.ui.el('p', { class: 'rm-hint' }, FF.t('roomPrivacy', 'Rooms are private: only people with the code can join. Names and characters are shared while the room is open.')));
+      children.push(backButton(function () { self.showHome(main); }));
+      main.appendChild(panel(children));
       FF.Nav.focusFirst(main);
+    },
+
+    /* Open a room straight from a link, a QR code or a saved room, with this
+       player's usual name. Falls back to the join form when that fails or
+       when this device has never chosen a name. */
+    joinCode: function (main, code) {
+      var self = this;
+      code = String(code || '').toUpperCase();
+      var id = FF.Room.identity();
+      var signedIn = !!(FF.Auth && FF.Auth.profile && FF.Auth.profile() && !(FF.Auth.isGuest && FF.Auth.isGuest()));
+      if (!signedIn && (!id.name || id.name === 'Player')) { this.showJoin(main, code); return; }
+      var load = this.showLoading(main, {
+        title: FF.t('joiningRoom', 'Joining the room'),
+        messages: ['Knocking on the door\u2026', 'Finding the other players\u2026', 'Taking your seat\u2026']
+      });
+      FF.Room.join(code, {}).then(function () {
+        load.stop();
+        self.showLobby(main);
+      }).catch(function (e) {
+        load.stop();
+        if (e && e.message === 'VERSION_MISMATCH') { self.showVersionBlock(main); return; }
+        self.showJoin(main, code);
+        var err = main.querySelector('.rm-error');
+        if (err) err.textContent = (e && e.message) || 'Could not join that room.';
+      });
     },
 
     // Quick match: placeholder until matchmaking is planned.
@@ -311,7 +429,7 @@ window.FF = window.FF || {};
     },
 
     showComingSoon: function (main, o) {
-      FF.Room.offAll();
+      resetScreen('soon');
       FF.ui.clear(main);
       var self = this;
       var h = hero(o.icon, o.title, o.lead);
@@ -338,6 +456,7 @@ window.FF = window.FF || {};
     },
 
     showModePicker: function (main) {
+      resetScreen('modes');
       FF.ui.clear(main);
       var self = this;
       main.appendChild(panel([
@@ -372,7 +491,7 @@ window.FF = window.FF || {};
     },
 
     showJoin: function (main, prefill) {
-      FF.Room.offAll();
+      resetScreen('join');
       FF.ui.clear(main);
       var self = this;
       var id = FF.Room.identity();
@@ -443,6 +562,7 @@ window.FF = window.FF || {};
         nameInput,
         error,
         joinBtn,
+        scanButton(function (code) { codeInput.value = code; go(); }),
         backButton(function () { self.showFriends(main); })
       ]));
       FF.Nav.focusFirst(main);
@@ -451,8 +571,11 @@ window.FF = window.FF || {};
     showLobby: function (main) {
       var self = this;
       if (!FF.Room.current()) { this.showHome(main); return; }
+      // Coming back to the lobby while the countdown runs: show the countdown.
+      var cur = FF.Room.current();
+      if (this._starting && cur.meta && cur.meta.status === 'playing') { this.startWhenReady(main, cur.meta); return; }
 
-      FF.Room.offAll();
+      resetScreen('lobby');
 
       // Remembered across re-renders so an arriving player does not reset
       // the host's choice.
@@ -522,11 +645,46 @@ window.FF = window.FF || {};
         FF.ui.clear(main);
 
         var url = FF.Room.shareUrl(s.code);
-        var players = FF.Room.racePlayers();
+        var players = FF.Room.presentPlayers();
+        var roomName = FF.Room.displayName();
+        var isSaved = FF.Room.saved.has(s.code);
+        if (isSaved) FF.Room.saved.touch(s.code, { name: (s.meta && s.meta.name) || '', mode: s.meta && s.meta.mode });
 
         var qrWrap = FF.ui.div('rm-qr');
-        var qr = (FF.QR && FF.QR.available()) ? FF.QR.svg(url, { size: 170 }) : null;
+        var qr = qrFor(url);
         if (qr) qrWrap.appendChild(qr);
+
+        // Room name (host can rename), save for later, and leave.
+        var head = FF.ui.div('rm-roomhead');
+        var nameRow = FF.ui.div('rm-roomhead__name');
+        nameRow.appendChild(FF.ui.el('h1', { class: 'page-title rm-title' }, roomName));
+        if (s.isHost) {
+          nameRow.appendChild(FF.UI.iconButton('pencil', FF.t('renameRoom', 'Rename room'), function () { renameRoom(render); }, 'rm-roomhead__edit'));
+        }
+        head.appendChild(nameRow);
+        head.appendChild(FF.ui.el('p', { class: 'rm-hint' }, s.isHost
+          ? FF.t('shareCode', 'Share this code, or let others scan the QR code.')
+          : FF.t('youreIn', 'You\u2019re in!')));
+        var tools = FF.ui.div('rm-row rm-roomhead__tools');
+        var saveBtn = FF.UI.button(isSaved ? FF.t('savedRoom', 'Saved') : FF.t('saveRoom', 'Save room'), {
+          icon: isSaved ? 'star-fill' : 'star',
+          onClick: function () {
+            if (FF.Room.saved.has(s.code)) {
+              FF.Room.saved.remove(s.code);
+              FF.UI.toast(FF.t('roomRemoved', 'Removed from your rooms'));
+            } else {
+              FF.Room.saved.add(s.code, { name: (s.meta && s.meta.name) || '', mode: s.meta && s.meta.mode });
+              FF.UI.toast(FF.t('roomSavedToast', 'Saved. Find it under Your rooms next time, no code needed.'), { type: 'success', duration: 3500 });
+            }
+            render();
+          }
+        });
+        saveBtn.setAttribute('aria-pressed', isSaved ? 'true' : 'false');
+        tools.appendChild(saveBtn);
+        tools.appendChild(FF.UI.button(FF.t('leaveRoom', 'Leave room'), {
+          class: 'btn-ghost', icon: 'sign-out', onClick: function () { self.leaveRoom(main); }
+        }));
+        head.appendChild(tools);
 
         var share = FF.ui.div('rm-share', [
           FF.UI.button(FF.t('copyLink', 'Copy link'), {
@@ -551,7 +709,7 @@ window.FF = window.FF || {};
         var codeBox = FF.ui.el('div', { class: 'rm-code', 'aria-label': FF.t('roomCodeIs', 'Room code {code}', { code: s.code.split('').join(' ') }) }, s.code);
 
         var children = [
-          hero('wifi', s.isHost ? FF.t('yourRoom', 'Your room') : FF.t('youreIn', 'You’re in!'), s.isHost ? FF.t('shareCode', 'Share this code, or let others scan the QR code.') : null),
+          head,
           codeBox,
           share,
           qrWrap,
@@ -594,36 +752,71 @@ window.FF = window.FF || {};
         }
 
         children.push(FF.UI.button(FF.t('leaveRoom', 'Leave room'), {
-          class: 'btn-lg btn-ghost', icon: 'close',
-          onClick: function () {
-            if (FF.Voice) FF.Voice.leave();
-            FF.Room.leave();
-            self.showFriends(main);
-          }
+          class: 'btn-lg btn-ghost', icon: 'sign-out',
+          onClick: function () { self.leaveRoom(main); }
         }));
 
         main.appendChild(panel(children));
         FF.Nav.focusFirst(main);
       }
 
-      FF.Room.on('players', render);
-      FF.Room.on('meta', function (meta) {
+      // Redraw when something on screen changed: not on every write.
+      function metaKey(m) { m = m || {}; return [m.hostUid, m.name, m.mode, FF.Room.current() && FF.Room.current().isHost].join('|'); }
+      var lastMeta = metaKey(cur.meta);
+      onScreen(FF.Room.on('players', render));
+      onScreen(FF.Room.on('meta', function (meta) {
         if (meta && meta.status === 'playing' && meta.gameId) {
           self.startWhenReady(main, meta);
+          return;
         }
-      });
+        var k = metaKey(meta);
+        if (k !== lastMeta) { lastMeta = k; render(); }
+      }));
       if (FF.Voice) {
-        FF.Voice.on('change', render);
-        FF.Voice.on('speaking', function (ev) {
+        var voiceKey = function (v) { return v ? [v.active, v.muted, v.deafened, v.peerCount].join('|') : ''; };
+        var lastVoice = null;
+        onScreen(FF.Voice.on('change', function (v) {
+          var k = voiceKey(v);
+          if (k === lastVoice) return;   // speaking on/off is handled below, without a redraw
+          lastVoice = k;
+          render();
+        }));
+        onScreen(FF.Voice.on('speaking', function (ev) {
           var chip = main.querySelector('.rm-player[data-uid="' + ev.uid + '"]');
           if (chip) {
             chip.classList.toggle('rm-player--speaking', !!ev.speaking);
             var ava = chip.querySelector('.rm-player__ava');
             if (ava) ava.classList.toggle('rm-player__ava--speaking', !!ev.speaking);
           }
-        });
+        }));
       }
       render();
+    },
+
+    /* Leave the room. The host role passes to someone still here. */
+    leaveRoom: function (main) {
+      var self = this;
+      var s = FF.Room.current();
+      function go() {
+        resetScreen('friends');
+        if (FF.Voice) FF.Voice.leave();
+        FF.Room.leave();
+        FF.Room.clearUrlCode();
+        self.showFriends(main);
+        FF.UI.toast(FF.t('leftRoom', 'You left the room'));
+      }
+      if (!s) { go(); return; }
+      var others = FF.Room.presentPlayers().filter(function (p) { return p.uid !== s.uid; });
+      if (s.isHost && others.length) {
+        FF.UI.confirm({
+          title: FF.t('leaveRoomQ', 'Leave this room?'),
+          body: FF.t('leaveRoomHost', '{name} becomes the host and the others can keep playing.', { name: others.slice().sort(function (a, b) { return (a.joinedAt || 0) - (b.joinedAt || 0); })[0].name }),
+          confirmLabel: FF.t('leaveRoom', 'Leave room'), danger: true, icon: 'sign-out',
+          onConfirm: go
+        });
+        return;
+      }
+      go();
     },
 
     /* Everyone counts down to the same instant and starts together. A device
@@ -633,16 +826,20 @@ window.FF = window.FF || {};
       if (!s) return;
       var startToken = String(meta.startAt || 0) + ':' + String(meta.gameId || '');
       if (this._lastStartAt === startToken) return;
-      if (this._starting) return;
+      // Already counting down: just put the countdown back on screen.
+      if (this._starting) {
+        if (this._starting.token === startToken) this._starting.draw(main);
+        return;
+      }
 
       var def = FF.Games.get(meta.gameId);
       var serverNow = function () { return s.transport.serverNow(); };
       var startAt = meta.startAt || 0;
 
       function launch() {
-        FF.RoomUI._starting = false;
+        FF.RoomUI._starting = null;
         FF.RoomUI._lastStartAt = startToken;
-        FF.Room.offAll();
+        resetScreen('game');
         var set = (meta && meta.settings) || {};
         FF.GameFlow.launch(meta.gameId, {
           skipIntro: true,
@@ -656,24 +853,33 @@ window.FF = window.FF || {};
 
       if (!startAt || serverNow() >= startAt) { launch(); return; }
 
-      this._starting = true;
-      FF.ui.clear(main);
-
-      var num = FF.ui.div('rm-count__num', '');
-      var wrap = panel([
-        FF.ui.el('h1', { class: 'rm-count__game' }, def ? def.name : FF.t('getReady', 'Get ready')),
-        num,
-        FF.ui.div('rm-hint', FF.t('startsTogether', 'Everyone starts together at zero.')),
-        playerChips(FF.Room.racePlayers(), s.uid)
-      ]);
-      wrap.classList.add('rm-count');
-      main.appendChild(wrap);
-
+      resetScreen('countdown');
+      var num = null;
       var lastShown = null;
+      // Drawn by a function so anything that redraws the page can put the
+      // countdown straight back (it used to vanish while the clock ran on).
+      function draw(target) {
+        main = target || main;
+        FF.ui.clear(main);
+        num = FF.ui.div('rm-count__num', lastShown == null ? '' : (lastShown > 0 ? String(lastShown) : FF.t('go', 'Go!')));
+        var wrap = panel([
+          FF.ui.el('h1', { class: 'rm-count__game' }, def ? def.name : FF.t('getReady', 'Get ready')),
+          num,
+          FF.ui.div('rm-hint', FF.t('startsTogether', 'Everyone starts together at zero.')),
+          playerChips(FF.Room.presentPlayers(), s.uid)
+        ]);
+        wrap.classList.add('rm-count');
+        main.appendChild(wrap);
+      }
+      this._starting = { token: startToken, draw: draw };
+      draw(main);
+
+      var launched = false;
       var iv = setInterval(function () {
-        if (!FF.Room.current()) { clearInterval(iv); FF.RoomUI._starting = false; return; }
+        if (!FF.Room.current()) { clearInterval(iv); FF.RoomUI._starting = null; return; }
+        if (!num || !num.isConnected) draw(main);   // something cleared the screen: redraw
         var left = startAt - serverNow();
-        var secs = Math.ceil(left / 1000);
+        var secs = Math.max(0, Math.ceil(left / 1000));
         if (secs !== lastShown) {
           lastShown = secs;
           num.textContent = secs > 0 ? String(secs) : FF.t('go', 'Go!');
@@ -682,7 +888,10 @@ window.FF = window.FF || {};
           num.classList.add('rm-count__num--pop');
           if (secs > 0 && secs <= 3) FF.Audio.play('countdown');
         }
-        if (left <= 0) {
+        // Everyone sees "Go!" for a moment before the game opens; the pause is
+        // the same on every phone, so they still start together.
+        if (left <= -600 && !launched) {
+          launched = true;
           clearInterval(iv);
           FF.Audio.play('roundStart');
           launch();
@@ -693,7 +902,7 @@ window.FF = window.FF || {};
       var self = this;
       if (!FF.Room.current()) { this.showHome(main); return; }
 
-      FF.Room.offAll();
+      resetScreen('results');
 
       function render() {
         var state = FF.Room.current();
@@ -735,9 +944,9 @@ window.FF = window.FF || {};
           children.push(FF.ui.div('rm-hint', FF.t('waitingHostShort', 'Waiting for the host…')));
         }
 
-        children.push(FF.UI.button(FF.t('leaveRoom', 'Leave room'), { icon: 'close',
+        children.push(FF.UI.button(FF.t('leaveRoom', 'Leave room'), { icon: 'sign-out',
           class: 'btn-lg btn-ghost',
-          onClick: function () { FF.Room.leave(); self.showFriends(main); }
+          onClick: function () { self.leaveRoom(main); }
         }));
 
         main.appendChild(panel(children));
@@ -745,15 +954,16 @@ window.FF = window.FF || {};
       }
 
       // Play Again returns everyone to the lobby together.
-      FF.Room.on('meta', function (meta) {
+      onScreen(FF.Room.on('meta', function (meta) {
         if (meta && meta.status === 'lobby') self.showLobby(main);
         else if (meta && meta.status === 'playing' && meta.gameId) self.startWhenReady(main, meta);
-      });
-      FF.Room.on('players', render);
+      }));
+      onScreen(FF.Room.on('players', render));
       render();
     },
 
     showVersionBlock: function (main) {
+      resetScreen('error');
       FF.ui.clear(main);
       main.appendChild(panel([
         hero('restart', FF.t('updateNeeded', 'Update needed'), FF.t('updateNeededText', 'This device has an older version of the game than the room. Refresh the page to update, then join again.')),
@@ -766,6 +976,7 @@ window.FF = window.FF || {};
     },
 
     showError: function (main, message) {
+      resetScreen('error');
       FF.ui.clear(main);
       var self = this;
       main.appendChild(panel([

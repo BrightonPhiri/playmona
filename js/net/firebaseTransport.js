@@ -131,6 +131,10 @@ window.FF = window.FF || {};
             return ref(path).onDisconnect().set(value);
           },
 
+          onDisconnectCancel: function (path) {
+            return ref(path).onDisconnect().cancel();
+          },
+
           serverTimestamp: function () {
             return window.firebase.database.ServerValue.TIMESTAMP;
           },

@@ -187,6 +187,11 @@ window.FF = window.FF || {};
         return Promise.resolve();
       },
 
+      onDisconnectCancel: function (path) {
+        disconnects = disconnects.filter(function (d) { return d.path !== path; });
+        return Promise.resolve();
+      },
+
       close: function () {
         if (closed) return;
         closed = true;
