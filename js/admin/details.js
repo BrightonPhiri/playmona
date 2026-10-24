@@ -22,7 +22,7 @@ window.FF = window.FF || {};
   function el(tag, attrs, kids) { return FF.ui.el(tag, attrs, kids); }
 
   var PEOPLE_LIMIT = 100;   // people listed before a window shows "the most active 100"
-  var PAGE_NAMES = { l: 'Landing page', a: 'The app', p: 'Privacy notice' };
+  var PAGE_NAMES = { l: 'Landing page', a: 'The app', p: 'Privacy, Terms or Refunds' };
 
   /* ---------- Shared pieces ---------- */
   function rangeText(ctx) {

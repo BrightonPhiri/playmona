@@ -365,6 +365,11 @@ body.auth-open #app { display: none; }
 .edit-profile { display: flex; flex-direction: column; gap: var(--sp-3); }
 .edit-profile__ava { position: relative; width: 112px; height: 112px; margin: 0 auto; border-radius: 50%; padding: 4px; background: var(--brand-gradient-mark); }
 .edit-profile__img { width: 100%; height: 100%; background: var(--surface); }
+.edit-profile__photo { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--sp-2); }
+.edit-profile__photo[hidden] { display: none; }
+.edit-profile__photo-hint { flex-basis: 100%; text-align: center; margin: 0; }
+/* Photos are squares of a real face: fill the circle instead of floating like the characters. */
+.avatar-img--photo { object-fit: cover; border-radius: 50%; }
 .edit-profile__badge { position: absolute; right: 0; bottom: 0; width: 34px; height: 34px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: var(--accent-text); border: 3px solid var(--surface); }
 
 /* Saved players list */
@@ -526,6 +531,8 @@ body.auth-open #app { display: none; }
 .gcard__badges .badge--locked .icon-svg { color: #fcd34d; }
 .gcard__badges .badge--new .icon-svg { color: #93c5fd; }
 .gcard__badges .badge--hot .icon-svg { color: #fca5a5; }
+.gcard__badges .badge--plus .icon-svg { color: #fcd34d; }
+.gcard__badges .badge--plays .icon-svg { color: #6ee7b7; }
 .gcard--locked .gcard__art { filter: saturate(0.55) brightness(0.85); }
 .notice--announce .notice__text { font-weight: 700; }
 

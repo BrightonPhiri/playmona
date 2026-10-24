@@ -6,7 +6,7 @@
 
    Each device gets a random id (no personal details). Once a day it
    writes stats/days/<UTC day>/visitors/<id> = the first page seen:
-   'l' landing, 'a' app, 'p' privacy notice. The database rules let
+   'l' landing, 'a' app, 'p' a reading page (privacy, terms, refunds). The database rules let
    anyone add an id once and nobody read the list but admins.
 
    It also sends the same id and page to /api/visit. The server adds
@@ -31,7 +31,7 @@
   function page() {
     var p = window.location.pathname;
     if (/\/play(\.html)?$/.test(p)) return 'a';
-    if (/\/privacy(\.html)?$/.test(p)) return 'p';
+    if (/\/(privacy|terms|refunds)(\.html)?$/.test(p)) return 'p';
     return 'l';
   }
 

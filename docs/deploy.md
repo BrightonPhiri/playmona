@@ -159,6 +159,8 @@ location ~ ^/(sw\.js|manifest\.webmanifest)$ {
 }
 location = /play    { add_header Cache-Control "no-cache"; try_files /play.html =404; }
 location = /privacy { add_header Cache-Control "no-cache"; try_files /privacy.html =404; }
+location = /terms   { add_header Cache-Control "no-cache"; try_files /terms.html =404; }
+location = /refunds { add_header Cache-Control "no-cache"; try_files /refunds.html =404; }
 location = /        { add_header Cache-Control "no-cache"; try_files /index.html =404; }
 
 # The admin portal stays out of search engines.

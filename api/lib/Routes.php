@@ -48,6 +48,10 @@ class App
     public function store(): Store { return $this->make('store', fn () => new Store($this->db(), $this->rtdb())); }
     public function visits(): Visits { return $this->make('visits', fn () => new Visits($this->db())); }
     public function finance(): Finance { return $this->make('finance', fn () => new Finance($this->db())); }
+    public function photos(): Photos
+    {
+        return $this->make('photos', fn () => new Photos((string) ($this->config->get('uploads.avatars_dir') ?: Photos::defaultDir())));
+    }
 
     public function payments(): Payments
     {
@@ -97,6 +101,9 @@ class Routes
         if ($m === 'GET' && $p === '/admin/finance/summary') return $this->financeSummary($req);
         if ($m === 'GET' && $p === '/admin/finance/orders') return $this->financeOrders($req);
         if ($m === 'POST' && $p === '/visit') return $this->visit($req);
+        if ($m === 'POST' && $p === '/avatar') return $this->uploadAvatar($req);
+        if ($m === 'POST' && $p === '/avatar/remove') return $this->removeAvatar($req);
+        if ($m === 'POST' && $p === '/admin/avatar/remove') return $this->adminRemoveAvatar($req);
         if ($m === 'GET' && $p === '/admin/visitors') return $this->adminVisitors($req);
 
         throw new HttpError(404, 'Not found.', 'not-found');
@@ -288,6 +295,37 @@ class Routes
         $this->app->db()->transaction(fn () => $store->grant($uid, $grant, 'admin', null, $admin->uid, $note));
         $store->sync($uid);
         return Response::json(['access' => $store->get($uid)]);
+    }
+
+    /** A player's own profile picture: the body is the picture itself. The app then saves the returned avatar. */
+    private function uploadAvatar(Request $req): Response
+    {
+        $user = $this->user($req);
+        if ($user->isAnonymous()) throw new HttpError(403, 'Create a free account to add a photo.', 'anonymous');
+        if ($this->app->rtdb()->get('bans/' . $user->uid) !== null) throw new HttpError(403, 'This account is suspended.', 'banned');
+        $avatar = $this->app->photos()->save($user->uid, $req->rawBody);
+        return Response::json(['avatar' => $avatar, 'url' => Photos::url(substr($avatar, 6))]);
+    }
+
+    /** The player went back to a character: their picture file goes. */
+    private function removeAvatar(Request $req): Response
+    {
+        $user = $this->user($req);
+        return Response::json(['removed' => $this->app->photos()->remove($user->uid)]);
+    }
+
+    /** Admins take down a player's picture; the player gets a character instead. */
+    private function adminRemoveAvatar(Request $req): Response
+    {
+        $this->admin($req);
+        $uid = (string) ($req->json()['uid'] ?? '');
+        if (!preg_match('/^[A-Za-z0-9_-]{1,128}$/', $uid)) throw new HttpError(400, 'Choose a player.', 'bad-uid');
+        $removed = $this->app->photos()->remove($uid);
+        $character = Photos::fallbackCharacter($uid);
+        $rtdb = $this->app->rtdb();
+        if (Photos::isValue($rtdb->get('users/' . $uid . '/profile/avatar'))) $rtdb->set('users/' . $uid . '/profile/avatar', $character);
+        if (Photos::isValue($rtdb->get('userIndex/' . $uid . '/avatar'))) $rtdb->set('userIndex/' . $uid . '/avatar', $character);
+        return Response::json(['removed' => $removed, 'avatar' => $character]);
     }
 
     /** js/visit.js, once a day per device. No sign-in. */

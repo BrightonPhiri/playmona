@@ -398,10 +398,9 @@ window.FF = window.FF || {};
       if (FF.Advance) FF.Advance.cancelAll();
       const def = FF.Games.get(id);
       if (!def) { FF.Nav.go('home'); return; }
-      // Room games follow the host; everything else checks the switches and guest access.
+      // Room games follow the host; everything else checks the switches, guest access and the paywall.
       if (FF.Access && !(overrides && overrides.room) && !FF.Access.canPlay(id)) {
-        if (FF.GameConfig && !FF.GameConfig.enabled(id)) FF.UI.toast(FF.t('gameResting', 'This game is taking a break. Try another one.'));
-        else FF.Access.prompt('game');
+        FF.Access.explain(id);
         return;
       }
       const config = this.buildConfig(def, overrides);
@@ -699,6 +698,8 @@ window.FF = window.FF || {};
       }
       FF.Scoring.init(config.scorers, config.mode);
       if (FF.Track) FF.Track.play(def.id, !!config.room);
+      // Uses up one of today's free plays (limited games only). Room guests play on the host's.
+      if (FF.Access && !config.room) FF.Access.usePlay(def.id);
       const api = {
         def: def,
         config: config,

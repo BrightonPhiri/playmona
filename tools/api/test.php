@@ -7,7 +7,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/../../api/lib/bootstrap.php';
 
-use PlayMona\{App, AuthUser, Catalog, Config, Db, FirebaseAuth, HttpError, Jwt, PaymentGateway, Payments, RealtimeDb, Request, Routes, Store};
+use PlayMona\{App, AuthUser, Catalog, Config, Db, FirebaseAuth, HttpError, Jwt, PaymentGateway, Payments, Photos, RealtimeDb, Request, Routes, Store};
 
 /* ---------- tiny harness ---------- */
 $GLOBALS['failures'] = 0;
@@ -109,8 +109,9 @@ function world(bool $oldPrices = true): array
     ]);
     $key = testKey();
     $auth = new FirebaseAuth('play-mona', fn () => ['kid1' => $key['public']]);
-    $app = new App($config, ['db' => $db, 'rtdb' => $rtdb, 'gateway' => $gateway, 'auth' => $auth]);
-    return ['app' => $app, 'db' => $db, 'rtdb' => $rtdb, 'gw' => $gateway, 'routes' => new Routes($app), 'pay' => $app->payments(), 'store' => $app->store()];
+    $photoDir = sys_get_temp_dir() . '/playmona-test-avatars-' . bin2hex(random_bytes(4));
+    $app = new App($config, ['db' => $db, 'rtdb' => $rtdb, 'gateway' => $gateway, 'auth' => $auth, 'photos' => new Photos($photoDir)]);
+    return ['app' => $app, 'db' => $db, 'rtdb' => $rtdb, 'gw' => $gateway, 'routes' => new Routes($app), 'pay' => $app->payments(), 'store' => $app->store(), 'photoDir' => $photoDir];
 }
 
 /** New RSA key. Windows PHP needs an openssl.cnf to make keys, so the tests bring a tiny one. */
@@ -704,6 +705,100 @@ test('lifetime Plus lasts 100 years and says so on the invoice', function () use
     eq(true, str_contains($inv['lines'][0]['detail'], 'for life'));
     eq(9999, $inv['totalCents']);
 });
+
+echo "\nProfile pictures\n";
+// The tests draw their pictures with GD. Without it (some CI machines) they are skipped.
+if (!function_exists('imagecreatetruecolor')) {
+    echo "  skip (no GD image library here)\n";
+} else {
+
+/** A JPEG made with GD, with a fake EXIF block (where phones keep the location) put in after the start. */
+function photoJpeg(int $w = 640, int $h = 480): string
+{
+    $im = imagecreatetruecolor($w, $h);
+    imagefill($im, 0, 0, imagecolorallocate($im, 30, 120, 255));
+    ob_start();
+    imagejpeg($im);
+    $jpg = (string) ob_get_clean();
+    $exif = "Exif\0\0" . 'GPS 17.8292 S 31.0522 E secret-place';
+    $app1 = "\xFF\xE1" . pack('n', strlen($exif) + 2) . $exif;
+    return substr($jpg, 0, 2) . $app1 . substr($jpg, 2);
+}
+function photoFiles(array $w): array { return glob($w['photoDir'] . '/*') ?: []; }
+
+test('a photo is checked, cropped to 256 px, saved without its hidden data and returned as an avatar', function () {
+    $w = world();
+    $res = $w['routes']->handle(req('POST', '/avatar', ['token' => idToken(), 'raw' => photoJpeg()]));
+    eq(200, $res->status, json_encode($res->body));
+    eq(true, Photos::isValue($res->body['avatar']), 'avatar value ' . $res->body['avatar']);
+    eq('/uploads/avatars/' . substr($res->body['avatar'], 6), $res->body['url']);
+    $files = photoFiles($w);
+    eq(1, count($files));
+    $saved = file_get_contents($files[0]);
+    $info = getimagesizefromstring($saved);
+    eq([256, 256], [$info[0], $info[1]]);
+    eq(false, str_contains($saved, 'secret-place'), 'location data is gone');
+    eq(true, strlen($saved) <= strlen(photoJpeg()));
+});
+test('a new photo replaces the old file; removing it deletes the file', function () {
+    $w = world();
+    $first = $w['routes']->handle(req('POST', '/avatar', ['token' => idToken(), 'raw' => photoJpeg()]))->body['avatar'];
+    $second = $w['routes']->handle(req('POST', '/avatar', ['token' => idToken(), 'raw' => photoJpeg(300, 900)]))->body['avatar'];
+    eq(true, $first !== $second, 'a new name, so phones do not show the old one from their cache');
+    eq([substr($second, 6)], array_map('basename', photoFiles($w)));
+    // Another player's picture is left alone.
+    $w['routes']->handle(req('POST', '/avatar', ['token' => idToken(['sub' => 'bob']), 'raw' => photoJpeg()]));
+    eq(2, count(photoFiles($w)));
+    eq(1, $w['routes']->handle(req('POST', '/avatar/remove', ['token' => idToken()]))->body['removed']);
+    eq(1, count(photoFiles($w)), "only bob's is left");
+});
+test('photo uploads refuse non-pictures, huge files, guests, suspended players and no sign-in', function () {
+    $w = world();
+    $r = $w['routes'];
+    eq(401, $r->handle(req('POST', '/avatar', ['raw' => photoJpeg()]))->status);
+    eq(403, $r->handle(req('POST', '/avatar', ['token' => idToken(['firebase' => ['sign_in_provider' => 'anonymous']]), 'raw' => photoJpeg()]))->status);
+    eq(415, $r->handle(req('POST', '/avatar', ['token' => idToken(), 'raw' => '<?php echo 1; ?>']))->status);
+    eq(415, $r->handle(req('POST', '/avatar', ['token' => idToken(), 'raw' => "GIF89a\x01\x00\x01\x00\x00\x00\x00;"]))->status);
+    eq(400, $r->handle(req('POST', '/avatar', ['token' => idToken(), 'raw' => '']))->status);
+    eq(413, $r->handle(req('POST', '/avatar', ['token' => idToken(), 'raw' => str_repeat('x', Photos::MAX_BYTES + 1)]))->status);
+    eq(400, $r->handle(req('POST', '/avatar', ['token' => idToken(), 'raw' => photoJpeg(20, 20)]))->status, 'too small');
+    $w['rtdb']->data['bans/user1'] = ['by' => 'admin'];
+    eq(403, $r->handle(req('POST', '/avatar', ['token' => idToken(), 'raw' => photoJpeg()]))->status);
+    eq(0, count(photoFiles($w)), 'nothing was saved');
+});
+test('without the GD library only small pictures made by the app are taken, as they are', function () {
+    $dir = sys_get_temp_dir() . '/playmona-test-avatars-' . bin2hex(random_bytes(4));
+    $plain = new Photos($dir, false);
+    $small = photoJpeg(256, 256);
+    $value = $plain->save('alice', $small);
+    eq(true, Photos::isValue($value) && str_ends_with($value, '.jpg'));
+    throwsHttp(415, fn () => $plain->save('alice', photoJpeg(1200, 900)));
+    $im = imagecreatetruecolor(64, 64);
+    ob_start(); imagepng($im); $png = (string) ob_get_clean();
+    throwsHttp(415, fn () => $plain->save('alice', $png));
+});
+test('admins remove a player photo and the player gets a character back; others cannot', function () {
+    $w = world();
+    $r = $w['routes'];
+    $value = $r->handle(req('POST', '/avatar', ['token' => idToken(['sub' => 'bob']), 'raw' => photoJpeg()]))->body['avatar'];
+    $w['rtdb']->data['users/bob/profile/avatar'] = $value;
+    $w['rtdb']->data['userIndex/bob/avatar'] = $value;
+    eq(403, $r->handle(req('POST', '/admin/avatar/remove', ['token' => idToken(), 'json' => ['uid' => 'bob']]))->status);
+    eq(1, count(photoFiles($w)));
+    $w['rtdb']->data['admins/user1'] = true;
+    eq(400, $r->handle(req('POST', '/admin/avatar/remove', ['token' => idToken(), 'json' => ['uid' => '../x']]))->status);
+    $res = $r->handle(req('POST', '/admin/avatar/remove', ['token' => idToken(), 'json' => ['uid' => 'bob']]));
+    eq(200, $res->status);
+    eq(1, $res->body['removed']);
+    eq(0, count(photoFiles($w)));
+    eq(Photos::fallbackCharacter('bob'), $w['rtdb']->data['users/bob/profile/avatar']);
+    eq(Photos::fallbackCharacter('bob'), $w['rtdb']->data['userIndex/bob/avatar']);
+    // A player who already uses a character keeps it.
+    $w['rtdb']->data['users/cara/profile/avatar'] = 'unicorn';
+    $r->handle(req('POST', '/admin/avatar/remove', ['token' => idToken(), 'json' => ['uid' => 'cara']]));
+    eq('unicorn', $w['rtdb']->data['users/cara/profile/avatar']);
+});
+}
 
 echo "\n" . ($GLOBALS['count'] - $GLOBALS['failures']) . '/' . $GLOBALS['count'] . " passed\n";
 exit($GLOBALS['failures'] ? 1 : 0);

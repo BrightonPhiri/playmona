@@ -200,6 +200,19 @@ window.FF = window.FF || {};
       if (last) FF.Nav.go(last.view, last.params);
       if (FF.Plus) {
         FF.Plus.init();
+        if (!this._plusHooked) {
+          this._plusHooked = true;
+          // Buying Plus (or learning this account is an admin) changes the Plus badges on games.
+          var plusRedraw = null;
+          FF.Plus.onChange(function () {
+            clearTimeout(plusRedraw);
+            plusRedraw = setTimeout(function () {
+              var view = FF.App._currentView || 'home';
+              if (!FF.App._started || view === 'plus' || (FF.GameFlow && FF.GameFlow.current)) return;
+              FF.App.render(view, FF.App._currentParams || {});
+            }, 50);
+          });
+        }
         FF.Plus.handleReturn();   // back from a Linkwa checkout
       }
 
@@ -364,6 +377,7 @@ window.FF = window.FF || {};
       list.lastChild.appendChild(FF.ui.span('acct-menu__switch'));
       if (FF.Install && FF.Install.available()) item('download', t('installApp', 'Install the app'), function () { FF.App.install(); });
       item('info', t('privacyNotice', 'Privacy notice'), function () { window.open(FF.page('privacy'), '_blank', 'noopener'); });
+      item('scroll', t('termsOfService', 'Terms of Service'), function () { window.open(FF.page('terms'), '_blank', 'noopener'); });
       divider();
       item('sign-out', guest ? t('leaveGuest', 'Stop guest play') : t('signOut', 'Log out'), function () { FF.App.confirmSignOut(); }, { cls: 'acct-menu__item--danger' });
       menu.appendChild(list);
@@ -496,6 +510,7 @@ window.FF = window.FF || {};
       footer.appendChild(FF.ui.el('button', { type: 'button', class: 'link-btn', onclick: function () { FF.Nav.go('credits'); } }, t('credits', 'Credits')));
       footer.appendChild(FF.ui.el('button', { type: 'button', class: 'link-btn', onclick: function () { FF.Nav.go('about'); } }, t('about', 'About')));
       footer.appendChild(FF.ui.el('a', { class: 'link-btn', href: FF.page('privacy'), target: '_blank', rel: 'noopener' }, t('privacy', 'Privacy')));
+      footer.appendChild(FF.ui.el('a', { class: 'link-btn', href: FF.page('terms'), target: '_blank', rel: 'noopener' }, t('terms', 'Terms')));
       footer.appendChild(FF.ui.span('app-footer__ver', 'v' + VERSION));
       app.appendChild(footer);
       app.appendChild(tabbar);
@@ -723,6 +738,15 @@ window.FF = window.FF || {};
         lk.appendChild(document.createTextNode(t('membersBadge', 'Sign up')));
         badges.appendChild(lk);
         link.setAttribute('aria-label', label + '. ' + t('membersOnly', 'Free account needed'));
+      }
+      var pay = !locked && FF.Access && FF.Access.cardBadge ? FF.Access.cardBadge(def.id) : null;
+      if (pay) {
+        var pb = FF.ui.span('badge badge--' + pay.kind);
+        pb.appendChild(icon(pay.kind === 'plus' ? 'crown' : 'play'));
+        pb.appendChild(document.createTextNode(pay.text));
+        badges.appendChild(pb);
+        if (pay.kind === 'plus') link.setAttribute('aria-label', label + '. ' + t('plusGameLabel', 'PlayMona Plus game'));
+        else link.setAttribute('aria-label', label + '. ' + pay.text);
       }
       var flag = FF.GameConfig ? FF.GameConfig.game(def.id).badge : null;
       if (flag === 'new' || flag === 'hot') {
@@ -1941,6 +1965,63 @@ window.FF = window.FF || {};
       badge.appendChild(icon('pencil'));
       pick.appendChild(badge);
       body.appendChild(pick);
+
+      // Profile photo: saved straight away (the file is already on the server).
+      var hadPhoto = FF.Avatars.isPhoto(p.avatar);
+      function showAvatar(value) {
+        img.src = FF.Avatars.url(value);
+        img.classList.toggle('avatar-img--photo', FF.Avatars.isPhoto(value));
+      }
+      function savedAvatar(value, message) {
+        return FF.Auth.updateProfile({ avatar: value }).then(function () {
+          if (FF.Track && FF.Track.seen) FF.Track.seen();   // the admin player list shows the new picture
+          chosen = value;
+          showAvatar(value);
+          drawPhotoRow();
+          FF.App.buildShell();
+          FF.UI.toast(message, { type: 'success' });
+        });
+      }
+      var photoRow = FF.ui.div('edit-profile__photo');
+      function drawPhotoRow() {
+        FF.ui.clear(photoRow);
+        if (!FF.Photo || !FF.Photo.available()) { photoRow.hidden = true; return; }
+        photoRow.hidden = false;
+        var isPhoto = FF.Avatars.isPhoto(chosen);
+        var up = FF.UI.button(isPhoto ? t('profileChangePhoto', 'Change photo') : t('profileUploadPhoto', 'Upload photo'), {
+          class: '', icon: 'image',
+          onClick: function () {
+            FF.Photo.choose(function (file) {
+              up.disabled = true;
+              up.setAttribute('aria-busy', 'true');
+              FF.Photo.upload(file).then(function (value) {
+                hadPhoto = false;   // the server already replaced the old file
+                return savedAvatar(value, t('photoSaved', 'Photo saved'));
+              }).catch(function (e) {
+                up.disabled = false;
+                up.removeAttribute('aria-busy');
+                FF.UI.toast(e.message, { type: 'error' });
+              });
+            });
+          }
+        });
+        photoRow.appendChild(up);
+        if (isPhoto) {
+          photoRow.appendChild(FF.UI.button(t('profileRemovePhoto', 'Remove photo'), {
+            class: 'btn-ghost', icon: 'trash',
+            onClick: function () {
+              var character = FF.Avatars.fallback(chosen);
+              FF.Photo.remove();
+              hadPhoto = false;
+              savedAvatar(character, t('photoRemoved', 'Photo removed. Tap your picture to choose a character.'))
+                .catch(function (e) { FF.UI.toast(e.message, { type: 'error' }); });
+            }
+          }));
+        }
+        photoRow.appendChild(FF.ui.el('p', { class: 'field__hint edit-profile__photo-hint' }, t('photoHint', 'Other players see your photo. Use a photo of yourself, and nothing rude.')));
+      }
+      drawPhotoRow();
+      body.appendChild(photoRow);
       function field(label, value, max, hint) {
         var id = FF.UI.uid('f');
         var wrap = FF.ui.div('field');
@@ -1958,7 +2039,7 @@ window.FF = window.FF || {};
       var user = isGuest ? null : field(t('username', 'Username'), p.username, 20, t('usernameHint', '3 to 20 letters, numbers, dots or underscores. Shown to other players.'));
       pick.addEventListener('click', function () {
         FF.Players.pickLook(null, { kind: 'profile', current: chosen, name: name.input.value, onDone: function (aid) {
-          if (aid) { chosen = aid; img.src = FF.Avatars.url(aid); }
+          if (aid) { chosen = aid; showAvatar(aid); }
         } });
       });
       FF.UI.sheet({
@@ -1976,6 +2057,8 @@ window.FF = window.FF || {};
               var patchP = { displayName: name.input.value, avatar: chosen };
               if (user) patchP.username = user.input.value;
               return FF.Auth.updateProfile(patchP).then(function () {
+                // Swapped the photo for a character: the photo file goes.
+                if (hadPhoto && !FF.Avatars.isPhoto(chosen) && FF.Photo) FF.Photo.remove();
                 api.close();
                 FF.UI.toast(t('profileSaved', 'Profile saved'), { type: 'success' });
                 FF.App.buildShell();
@@ -2238,7 +2321,9 @@ window.FF = window.FF || {};
               FF.UI.toast(t('usernameMismatch', 'That does not match your username.'), { type: 'error' });
               return;
             }
-            FF.Auth.deleteAccount().then(function () {
+            // The photo file goes first, while the account can still prove who it is.
+            var photoGone = FF.Photo && FF.Avatars.isPhoto(p.avatar) ? FF.Photo.remove() : Promise.resolve();
+            photoGone.then(function () { return FF.Auth.deleteAccount(); }).then(function () {
               api.close();
               FF.UI.toast(t('accountDeleted', 'Your account has been deleted.'));
             }).catch(function (e) {

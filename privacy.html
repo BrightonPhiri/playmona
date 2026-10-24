@@ -10,18 +10,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="assets/brand/favicon-32.png">
   <link rel="stylesheet" href="css/fonts.css">
   <link rel="stylesheet" href="css/landing.css">
-  <style>
-    .doc-head { background: var(--navy); color: #fff; padding: 20px 0 56px; }
-    .doc-head .lockup { min-height: 60px; }
-    .doc-head h1 { font-size: clamp(2.2rem, 6vw, 3.2rem); margin-top: 28px; }
-    .doc-head p { color: rgba(255, 255, 255, 0.78); margin-top: 10px; }
-    .doc { max-width: 760px; padding: 48px var(--gutter) 80px; }
-    .doc h2 { font-size: 1.6rem; margin: 40px 0 12px; }
-    .doc p, .doc li { color: #2b3360; }
-    .doc ul { padding-left: 1.2em; }
-    .doc li { margin: 6px 0; }
-    .draft { background: #fff4d6; border: 1px solid #f0c75e; border-radius: 14px; padding: 14px 18px; font-weight: 700; color: #5c3a00; }
-  </style>
+  <link rel="stylesheet" href="css/doc.css">
 </head>
 <body>
   <header class="doc-head">
@@ -31,7 +20,7 @@
         <span class="wordmark"><span class="wordmark__play">Play</span><span class="wordmark__mona">Mona</span></span>
       </a>
       <h1>Privacy</h1>
-      <p>What we keep about you, where it lives, and how to delete it.</p>
+      <p>What we keep about you, where it lives, and how to delete it. Last updated 24 October 2026.</p>
     </div>
   </header>
 
@@ -43,53 +32,65 @@
     <p>To play you need a PlayMona account. When you create one we store:</p>
     <ul>
       <li>your email address (or your Google account's email, if you sign in with Google)</li>
-      <li>your username, display name and chosen character</li>
+      <li>your username, display name, and your chosen character or profile photo</li>
       <li>a password managed by Google Firebase Authentication. PlayMona never sees or stores your password.</li>
     </ul>
     <p>Your username is public: other players can look it up, and it is used to sign in with a username instead of an email. To make that work, the email linked to a username can be read by anyone who knows the username.</p>
 
+    <h2>Your profile photo</h2>
+    <p>Adding a profile photo is up to you. If you add one:</p>
+    <ul>
+      <li>it is made smaller (256 by 256 pixels) on your device, then drawn again on our server. This removes the hidden data phones keep in photos, such as where and when it was taken.</li>
+      <li>it is stored on PlayMona's own server, and other players see it wherever your picture shows: online rooms, challenges, leaderboards and the scoreboard.</li>
+      <li>when you change or remove it, or delete your account, the old file is deleted. PlayMona staff can remove a photo that breaks the <a href="terms">Terms of Service</a>.</li>
+    </ul>
+
     <h2>Your game data</h2>
-    <p>So your progress follows you between devices, these are saved to your account: your saved players (names, characters, colours), teams, favourite games, recent games, scores and medals, and your game settings. Player photos never leave the device they were added on.</p>
+    <p>So your progress follows you between devices, these are saved to your account: your saved players (names, characters, colours), teams, favourite games, recent games, scores and medals, your game settings and how many free plays you have used today. Photos you add to saved players (not your profile photo) never leave the device they were added on.</p>
     <p>A copy is also kept in your browser so games work offline. Display settings such as theme and text size stay on each device.</p>
 
+    <h2>Payments</h2>
+    <p>You pay for PlayMona Plus and paid games on the secure payment page of our payment provider, Linkwa. Your card number, mobile money number and PIN go to Linkwa and the payment network, never to PlayMona. Linkwa looks after them under its own privacy policy.</p>
+    <p>For each purchase we keep: what you bought, the price, the date, whether it was paid, the payment reference and type of payment Linkwa sends back, and your name and email for the invoice. We keep these records for as long as tax and accounting law requires, even if you delete your account. Only you and PlayMona staff can see them.</p>
+
     <h2>Online rooms</h2>
-    <p>When you join an online room, the other players in that room see your display name and character, and the room holds your answers and score while the game runs. Voice chat, if you switch it on, connects you straight to the other players' devices. Voice is not recorded or stored.</p>
+    <p>When you join an online room, the other players in that room see your display name and your character or photo, and the room holds your answers and score while the game runs. Voice chat, if you switch it on, connects you straight to the other players' devices. Voice is not recorded or stored.</p>
 
     <h2>Who handles the data</h2>
-    <p>Accounts and saved data are held by Google Firebase (Authentication and Realtime Database). There are no ads and no advertising trackers.</p>
+    <ul>
+      <li><strong>Google Firebase</strong> (Authentication and Realtime Database): accounts, saved data, rooms and what you own.</li>
+      <li><strong>PlayMona's own server</strong>: payment records, invoices, profile photos and visit counts.</li>
+      <li><strong>Linkwa</strong>: payments.</li>
+      <li><strong>Cloudflare</strong>: the website runs through Cloudflare, which protects it from attacks and makes it faster. Cloudflare sees each connection to do this.</li>
+    </ul>
+    <p>There are no ads and no advertising trackers.</p>
 
     <h2>Usage counts</h2>
     <p>To see how PlayMona is used, we count visits, games played, sign-ups and app installs per day. Each device gets a random id for this, so a person counts once a day; it holds no name or email. With each day's visit we also note the country you are visiting from and a shortened IP address (for example 41.216.x.x), which is not enough to find you or your home. These are kept for about 13 months, and only PlayMona staff can see them. Guests get a number (for example Guest001) so staff can see how many people play as guests. Nothing is sold or shared.</p>
 
     <h2>Children</h2>
-    <p>PlayMona is made for all ages. Younger players should play on a parent or guardian's account, adding themselves as saved players, rather than creating their own account.</p>
+    <p>PlayMona is made for all ages. Younger players should play on a parent or guardian's account, adding themselves as saved players, rather than creating their own account. A parent or guardian should decide whether to add a profile photo.</p>
 
     <h2>Deleting your data</h2>
     <ul>
-      <li><strong>Delete your account:</strong> Settings, then Account, then Delete account. This removes your profile, saved players, stats and username from our servers.</li>
+      <li><strong>Delete your account:</strong> Settings, then Account, then Delete account. This removes your profile, profile photo, saved players, stats and username from our servers. Payment records stay for as long as the law requires (see Payments).</li>
+      <li><strong>Remove your photo:</strong> tap your picture in Settings, then Remove photo.</li>
       <li><strong>Reset your progress:</strong> Settings, then Privacy, then Reset. This clears your saved players, teams, favourites and stats on every device, and keeps your account.</li>
       <li><strong>Sign out:</strong> your saved data stays in this browser so you can play offline next time. To remove it from a shared device, clear the site's data in your browser settings.</li>
     </ul>
 
     <h2>Contact</h2>
-    <p>Questions about your data: <a href="mailto:privacy@playmona.com">privacy@playmona.com</a>.</p>
+    <p>Questions about your data: <a href="mailto:privacy@playmona.com">privacy@playmona.com</a>. See also the <a href="terms">Terms of Service</a> and <a href="refunds">Refund policy</a>.</p>
   </main>
 
   <footer class="site-foot">
     <div class="wrap site-foot__inner">
       <span>© 2026 PlayMona</span>
-      <nav aria-label="Footer"><a href="./">Home</a><a href="play">Play</a></nav>
+      <nav aria-label="Footer"><a href="./">Home</a><a href="play">Play</a><a href="privacy" aria-current="page">Privacy</a><a href="terms">Terms</a><a href="refunds">Refunds</a></nav>
     </div>
   </footer>
   <script src="js/net/firebase-config.js"></script>
   <script src="js/visit.js"></script>
-  <script>
-    // Opened from disk (file://): clean links like "play" need the .html file name.
-    if (location.protocol === 'file:') document.querySelectorAll('a[href]').forEach(function (a) {
-      var h = a.getAttribute('href');
-      if (/^(play|privacy|admin)([?#]|$)/.test(h)) a.setAttribute('href', h.replace(/^(\w+)/, '$1.html'));
-      else if (h === './') a.setAttribute('href', 'index.html');
-    });
-  </script>
+  <script src="js/doc.js"></script>
 </body>
 </html>

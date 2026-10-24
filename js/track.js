@@ -80,12 +80,13 @@ window.FF = window.FF || {};
     },
 
     /* Mark this account (or guest) active today and refresh its entry in the
-       admin portal's player list. At most once per day per device. */
+       admin portal's player list. At most once per day per device, or
+       again when the picture changes (so admins see a new photo). */
     seen: function () {
       var s = FF.Auth && FF.Auth.user && FF.Auth.user();
       if (!s || s.needsProfile || !FF.Cloud || !FF.Cloud.track) return Promise.resolve(false);
       var today = day();
-      var mark = s.uid + '|' + today;
+      var mark = s.uid + '|' + today + '|' + (s.avatar || '');
       if (FF.Storage.get('trackSeen', null) === mark) return Promise.resolve(false);
       var guest = isGuest();
       return FF.Cloud.track(function (w, uid) {

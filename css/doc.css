@@ -1,0 +1,18 @@
+/* ============================================================
+   PLAYMONA — doc.css
+   The reading pages: Privacy, Terms and Refunds (on top of landing.css).
+   ============================================================ */
+.doc-head { background: var(--navy); color: #fff; padding: 20px 0 56px; }
+.doc-head .lockup { min-height: 60px; }
+.doc-head h1 { font-size: clamp(2.2rem, 6vw, 3.2rem); margin-top: 28px; }
+.doc-head p { color: rgba(255, 255, 255, 0.78); margin-top: 10px; }
+.doc { max-width: 760px; padding: 48px var(--gutter) 80px; }
+.doc h2 { font-size: 1.6rem; margin: 40px 0 12px; }
+.doc p, .doc li { color: #2b3360; }
+.doc ul, .doc ol { padding-left: 1.2em; }
+.doc li { margin: 6px 0; }
+.doc a { color: #1e5fd6; font-weight: 700; }
+.draft { background: #fff4d6; border: 1px solid #f0c75e; border-radius: 14px; padding: 14px 18px; font-weight: 700; color: #5c3a00; }
+.doc-summary { margin-top: 28px; background: #eef3ff; border: 1px solid #cdd8f6; border-radius: 14px; padding: 6px 20px 14px; }
+.doc-summary h2 { margin-top: 14px; font-size: 1.25rem; }
+.site-foot a[aria-current="page"] { text-decoration: underline; }

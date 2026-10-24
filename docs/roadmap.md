@@ -5,7 +5,7 @@ Agreed on 2026-10-23. We work in phases; each phase ships on its own.
 | Phase | What ships | Status |
 |---|---|---|
 | 1 | New wording (no game count), clean URLs, GitHub auto-deploy, voice chat fix, guest limits, **admin portal v1** | Built, waiting for deploy setup |
-| 2 | PHP API on the VPS, **profile pictures**, **payments** with Linkwa (Plus pass and pay-once), paywall, first premium game (**Imposter**), Terms and refund pages | In progress: API, checkout, admin grants and Plus page built (sandbox) |
+| 2 | PHP API on the VPS, **profile pictures**, **payments** with Linkwa (Plus pass and pay-once), paywall, first premium game (**Imposter**), Terms and refund pages | Built (sandbox). Imposter moved to phase 5 with the other new games. Before real payments: legal review of Terms/Refunds/Privacy, live Linkwa keys, then switch on Payments |
 | 3 | **Watch link** (viewers see a TV view of the game) and **admin recording** for social clips | Later |
 | 4 | **Live video chat** (LiveKit) and a TURN relay (coturn); voice gets more reliable | Later |
 | 5+ | More trending games, leagues and tournaments, and the extras below | Ongoing |
@@ -84,6 +84,21 @@ set time, or unlock a game for them: for prizes, testers, partners and support c
 the server to `/entitlements/<uid>` with a note of which admin granted it and why.
 
 Also before taking money: Terms of Service, refund policy, privacy notice update.
+
+### Built (24 Oct 2026)
+
+- **Paywall**: game tiers from the admin portal now apply. Plus games show a Plus badge; limited
+  games show "N free today" and count plays per account per UTC day. A locked game opens an
+  "Upgrade to play" window (Get Plus, or unlock that game when the server sells it alone). The
+  paywall stays off until Site > Payments is on, except for admins (so they can test it). Guests
+  keep the sign-up invitation. In rooms the host needs the game; everyone else joins free.
+- **Profile photos**: Settings > Edit profile > Upload photo. The app shrinks it to 256 px, the
+  server (`POST /api/avatar`) checks and redraws it, keeping one file per player in
+  `uploads/avatars/`. The avatar value becomes `photo:<file>`, so it shows everywhere a
+  character does. Admins can remove a photo from the Players page. Reporting photos waits for
+  moderation (phase 5).
+- **Terms, Refunds, Privacy**: `/terms`, `/refunds` and an updated `/privacy` (drafts, need a
+  legal review). Linked from the Plus page, the unlock offer, and the site and app footers.
 
 ## Phase 3: watch link and recording
 

@@ -408,6 +408,27 @@ window.FF = window.FF || {};
         } });
       }
 
+      // Takes down a profile photo; the player gets a character instead.
+      function photoButton(r, label, rows) {
+        return FF.UI.button('Remove photo', { class: 'btn-sm btn-ghost', icon: 'trash', onClick: function () {
+          FF.UI.confirm({
+            title: 'Remove ' + label + '’s photo?',
+            body: 'The photo is deleted and they get a character instead. They can upload a new photo later; suspend them if they keep posting bad ones.',
+            confirmLabel: 'Remove photo', danger: true,
+            onConfirm: function () {
+              FF.Billing.api('POST', '/admin/avatar/remove', { uid: r.key }).then(function (data) {
+                r.avatar = data.avatar;
+                saved();
+                render(rows);
+              }, function (e) {
+                saved(false);
+                FF.UI.toast(e.message, { type: 'error' });
+              });
+            }
+          });
+        } });
+      }
+
       function render(rows) {
         FF.ui.clear(box);
         if (!rows.length) {
@@ -442,10 +463,11 @@ window.FF = window.FF || {};
             el('td', { class: 'num' }, num(r.plays)),
             el('td', {}, r.installed ? 'Installed' : '—'),
             el('td', {}, banned ? [el('span', { class: 'badge badge--danger' }, 'Suspended')] : '—'),
-            el('td', { class: 'admin-row-actions' }, guests || !FF.AdminPremium ? [suspendButton(r, label, rows)] : [
-              FF.UI.button('Premium', { class: 'btn-sm btn-ghost', icon: 'crown', onClick: function () { FF.AdminPremium.open(r.key, label); } }),
+            el('td', { class: 'admin-row-actions' }, (guests || !FF.AdminPremium ? [] : [
+              FF.UI.button('Premium', { class: 'btn-sm btn-ghost', icon: 'crown', onClick: function () { FF.AdminPremium.open(r.key, label); } })
+            ]).concat(!guests && FF.Avatars && FF.Avatars.isPhoto(r.avatar) && FF.Billing ? [photoButton(r, label, rows)] : [], [
               suspendButton(r, label, rows)
-            ])
+            ]))
           ]));
         });
         tbl.appendChild(tbody);

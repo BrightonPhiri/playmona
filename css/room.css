@@ -65,6 +65,14 @@
 .rm-game__icon { font-size: 1.7rem; line-height: 1; color: var(--rm-game-color, var(--accent)); }
 .rm-game__name { font-weight: 800; font-size: var(--fs-sm); line-height: 1.2; }
 .rm-game__cat { font-size: var(--fs-xs); font-weight: 700; color: var(--muted); }
+.rm-game__pay {
+  display: inline-flex; align-items: center; gap: 3px; margin-top: 2px;
+  padding: 1px 8px; border-radius: var(--r-pill);
+  font-size: var(--fs-xs); font-weight: 800;
+  background: var(--warn-soft); color: var(--warn);
+}
+.rm-game__pay .icon-svg { font-size: 12px; }
+.rm-game__pay--plays { background: var(--success-soft); color: var(--success); }
 .rm-count { align-items: center; text-align: center; gap: var(--sp-2); }
 .rm-count__game { font-family: var(--font-display); font-size: var(--fs-2xl); font-weight: 600; }
 .rm-count__num { font-family: var(--font-display); font-size: clamp(4rem, 20vw, 6rem); font-weight: 600; line-height: 1; color: var(--accent); }

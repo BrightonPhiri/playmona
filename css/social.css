@@ -233,3 +233,19 @@
   .plus-plan .btn { grid-column: 1 / -1; margin-top: var(--sp-3); }
 }
 .plus-admin-note { color: var(--muted); font-size: var(--fs-sm); text-align: center; }
+
+/* ============ Upgrade to play (paywall) ============ */
+.upgrade { display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--sp-2); }
+.upgrade__icon {
+  display: grid; place-items: center; width: 64px; height: 64px; border-radius: 50%;
+  background: var(--warn-soft); color: var(--warn);
+}
+.upgrade__icon { font-size: 32px; }
+.upgrade__text { margin: 0; color: var(--text); line-height: var(--lh-body); }
+.upgrade__text + .upgrade__text { color: var(--muted); }
+.upgrade__offer { width: 100%; display: flex; flex-direction: column; gap: var(--sp-2); margin-top: var(--sp-2); padding-top: var(--sp-3); border-top: 1px solid var(--border); }
+.upgrade__offer[hidden] { display: none; }
+.upgrade__or { margin: 0; font-size: var(--fs-sm); color: var(--muted); font-weight: 700; }
+.plus-agree { margin: var(--sp-3) 0 0; font-size: var(--fs-sm); color: var(--muted); }
+.plus-agree a { color: var(--accent); font-weight: 700; }
+.upgrade__offer .plus-agree { margin: 0; }

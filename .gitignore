@@ -14,3 +14,6 @@ FIREBASE_SERVICE_ACCOUNT*.json
 # API settings and local test databases
 api/config.local.php
 *.sqlite
+
+# Profile photos players upload (live on the server only)
+uploads/

@@ -7,14 +7,22 @@
                   and answers "is this game on?".
    FF.Access      decides what the current player may open. Guests
                   get a starter set of games; everything else asks
-                  them to create a free account.
+                  them to create a free account. Signed-in players
+                  meet the paywall: 'premium' games need Plus (or
+                  that game bought), 'limited' games give a few free
+                  plays a day first. The paywall is off until the
+                  admin portal's Site > Payments switch is on, except
+                  for admins, who see it early to test it.
    ============================================================ */
 window.FF = window.FF || {};
 
 (function () {
   'use strict';
 
-  function t(k, f, v) { return FF.t ? FF.t(k, f, v) : f; }
+  function t(k, f, v) {
+    if (FF.t) return FF.t(k, f, v);
+    return String(f).replace(/\{(\w+)\}/g, function (m, n) { return v && v[n] != null ? v[n] : m; });
+  }
 
   // Games a guest can play until the admin portal says otherwise.
   // One or two from each kind of game, so guests get a real taste.
@@ -91,9 +99,135 @@ window.FF = window.FF || {};
   FF.Access = {
     isGuest: function () { return !!(FF.Auth && FF.Auth.isGuest && FF.Auth.isGuest()); },
 
-    canPlay: function (id) {
-      if (!FF.GameConfig.enabled(id)) return false;
-      return !this.isGuest() || FF.GameConfig.game(id).guest;
+    // Nobody meets a paywall they cannot pay through: it waits for the Payments switch.
+    paywallOn: function () {
+      if (this.isGuest()) return false;
+      if (FF.GameConfig.site().payments) return true;
+      return !!(FF.Plus && FF.Plus.isAdmin && FF.Plus.isAdmin());
+    },
+
+    owns: function (id) { return !!(FF.Plus && FF.Plus.ownsGame && FF.Plus.ownsGame(id)); },
+
+    // 'free' | 'limited' | 'premium' for this player right now ('free' once they own it).
+    tier: function (id) {
+      var tier = FF.GameConfig.game(id).tier;
+      if (tier !== 'limited' && tier !== 'premium') return 'free';
+      if (!this.paywallOn() || this.owns(id)) return 'free';
+      return tier;
+    },
+
+    // Free plays are counted per account per day (UTC, like the admin counters).
+    _plays: function () {
+      var today = new Date().toISOString().slice(0, 10);
+      var saved = FF.Storage.get('freePlays', null);
+      if (!saved || saved.day !== today || typeof saved.counts !== 'object' || !saved.counts) {
+        saved = { day: today, counts: {} };
+      }
+      return saved;
+    },
+
+    playsUsed: function (id) { return Number(this._plays().counts[id]) || 0; },
+
+    // Free plays left today for a 'limited' game, or null when the game has no limit.
+    playsLeft: function (id) {
+      if (this.tier(id) !== 'limited') return null;
+      return Math.max(0, (Number(FF.GameConfig.game(id).freePlays) || 0) - this.playsUsed(id));
+    },
+
+    // Called when a game really starts. Only limited games count.
+    usePlay: function (id) {
+      if (this.tier(id) !== 'limited') return;
+      var saved = this._plays();
+      saved.counts[id] = (Number(saved.counts[id]) || 0) + 1;
+      FF.Storage.set('freePlays', saved);
+    },
+
+    /* Why this game cannot be opened now: null (it can), 'off', 'guest', 'premium' or 'limit'. */
+    lock: function (id) {
+      if (!FF.GameConfig.enabled(id)) return 'off';
+      if (this.isGuest()) return FF.GameConfig.game(id).guest ? null : 'guest';
+      var tier = this.tier(id);
+      if (tier === 'premium') return 'premium';
+      if (tier === 'limited' && this.playsLeft(id) <= 0) return 'limit';
+      return null;
+    },
+
+    canPlay: function (id) { return !this.lock(id); },
+
+    /* Tell the player why a game will not open, with the way forward. */
+    explain: function (id) {
+      var why = this.lock(id);
+      if (why === 'off') FF.UI.toast(t('gameResting', 'This game is taking a break. Try another one.'));
+      else if (why === 'guest') this.prompt('game');
+      else if (why) this.upgrade(id);
+    },
+
+    /* "Upgrade to play": Plus, or buying just this game when it is on sale. */
+    upgrade: function (id) {
+      if (!FF.UI || !FF.UI.dialog) return;
+      var def = FF.Games && FF.Games.get ? FF.Games.get(id) : null;
+      var name = def ? def.name : id;
+      var why = this.lock(id);
+      var lines = [];
+      if (why === 'limit') {
+        var n = Number(FF.GameConfig.game(id).freePlays) || 0;
+        lines.push(n === 1
+          ? t('upgradeLimitOne', 'You have used your free play of {name} today.', { name: name })
+          : t('upgradeLimit', 'You have used your {n} free plays of {name} today.', { name: name, n: n }));
+        lines.push(n > 0
+          ? t('upgradeLimitSub', 'Get PlayMona Plus to play as much as you like, or come back tomorrow for more free plays.')
+          : t('upgradePlusSub', 'Get PlayMona Plus to play it, and every other Plus game, as much as you like.'));
+      } else {
+        lines.push(t('upgradePremium', '{name} is a PlayMona Plus game.', { name: name }));
+        lines.push(t('upgradePlusSub', 'Get PlayMona Plus to play it, and every other Plus game, as much as you like.'));
+      }
+      var body = FF.ui.div('upgrade');
+      var ic = FF.ui.span('upgrade__icon');
+      ic.appendChild(FF.Icons.icon('crown'));
+      body.appendChild(ic);
+      lines.forEach(function (line) { body.appendChild(FF.ui.el('p', { class: 'upgrade__text' }, line)); });
+      var offer = FF.ui.div('upgrade__offer');
+      offer.hidden = true;
+      body.appendChild(offer);
+
+      var dlg = FF.UI.dialog({
+        title: t('upgradeTitle', 'Upgrade to play'),
+        body: body,
+        className: 'upgrade-dialog',
+        actions: [
+          { label: t('notNow', 'Not now') },
+          { label: t('getPlus', 'Get Plus'), primary: true, icon: 'crown', onClick: function () { if (FF.Nav) FF.Nav.go('plus'); } }
+        ]
+      });
+
+      // Pay once for this game, when the server sells it on its own.
+      if (FF.Plus && FF.Plus.gameOffer) {
+        FF.Plus.gameOffer(id).then(function (item) {
+          if (!item || !offer.isConnected) return;
+          offer.hidden = false;
+          offer.appendChild(FF.ui.el('p', { class: 'upgrade__or' }, t('upgradeOr', 'Or keep just this game, yours for good:')));
+          var btn = FF.UI.button(t('unlockFor', 'Unlock {name} for {price}', { name: name, price: FF.Plus.money(item.cents) }), {
+            class: 'btn-block', icon: 'lock',
+            onClick: function () { FF.Plus.buy(item.id, btn); }
+          });
+          offer.appendChild(btn);
+          if (FF.Plus.agreeLine) offer.appendChild(FF.Plus.agreeLine());
+        });
+      }
+      return dlg;
+    },
+
+    /* A short line for a game card: 'Plus', or how many free plays are left today. */
+    cardBadge: function (id) {
+      var tier = this.tier(id);
+      if (tier === 'premium') return { kind: 'plus', text: t('plusBadge', 'Plus') };
+      if (tier === 'limited') {
+        var left = this.playsLeft(id);
+        return left > 0
+          ? { kind: 'plays', text: t('freeLeft', '{n} free today', { n: left }) }
+          : { kind: 'plus', text: t('plusBadge', 'Plus') };
+      }
+      return null;
     },
 
     // feature: 'online' | 'daily' | 'challenge' | 'gameNight'

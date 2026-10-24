@@ -6,6 +6,11 @@
    Players store an avatar id such as 'fox'. Values saved before the
    character set existed (emoji like '😀') map to a stable character,
    so nobody's picture changes at random between visits.
+
+   A profile photo is stored the same way, as 'photo:<file>' (see
+   js/photo.js and api/lib/Photos.php), so it shows everywhere a
+   character does. If the file is gone (an admin removed it), the
+   picture falls back to a character.
    ============================================================ */
 window.FF = window.FF || {};
 
@@ -24,12 +29,17 @@ window.FF = window.FF || {};
     return h >>> 0;
   }
 
+  var PHOTO = /^photo:([a-f0-9]{16}-[a-f0-9]{8}\.(?:webp|jpg))$/;
+
   FF.Avatars = {
     GROUPS: ['people', 'animals', 'fantasy'],
 
     all: function () { return list(); },
 
+    isPhoto: function (value) { return typeof value === 'string' && PHOTO.test(value); },
+
     has: function (id) {
+      if (this.isPhoto(id)) return true;
       return list().some(function (a) { return a.id === id; });
     },
 
@@ -37,7 +47,17 @@ window.FF = window.FF || {};
       return list().filter(function (a) { return a.id === id; })[0] || null;
     },
 
-    url: function (id) { return 'assets/avatars/' + id + '.webp'; },
+    url: function (id) {
+      var m = typeof id === 'string' ? PHOTO.exec(id) : null;
+      if (m) return '/uploads/avatars/' + m[1];
+      return 'assets/avatars/' + id + '.webp';
+    },
+
+    // The character shown when a photo cannot load.
+    fallback: function (value) {
+      var items = list();
+      return items.length ? items[hash(value || 'player') % items.length].id : '';
+    },
 
     // Any stored value -> a valid avatar id (stable for the same input).
     normalize: function (value, seed) {
@@ -58,15 +78,31 @@ window.FF = window.FF || {};
 
     // <img> for an avatar id. Decorative by default (names sit next to it).
     img: function (id, cls, alt) {
-      return FF.ui.el('img', {
-        class: (cls ? cls + ' ' : '') + 'avatar-img',
-        src: this.url(this.normalize(id)),
+      var value = this.normalize(id);
+      var el = FF.ui.el('img', {
+        class: (cls ? cls + ' ' : '') + 'avatar-img' + (this.isPhoto(value) ? ' avatar-img--photo' : ''),
+        src: this.url(value),
         alt: alt || '',
         loading: 'lazy',
         decoding: 'async',
         draggable: 'false',
         width: 96,
         height: 96
+      });
+      this.guard(el);
+      return el;
+    },
+
+    // A photo that will not load (removed, or offline and never seen) shows a character instead.
+    guard: function (el) {
+      var self = this;
+      if (el._avatarGuard) return;
+      el._avatarGuard = true;
+      el.addEventListener('error', function () {
+        var m = /\/uploads\/avatars\/([a-f0-9]{16}-[a-f0-9]{8}\.(?:webp|jpg))$/.exec(el.src || '');
+        if (!m) return;
+        el.classList.remove('avatar-img--photo');
+        el.src = self.url(self.fallback('photo:' + m[1]));
       });
     }
   };

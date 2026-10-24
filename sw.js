@@ -28,7 +28,7 @@ self.addEventListener('install', function (event) {
       var copy = res.clone();
       return res.text().then(function (html) {
         // The public pages too, so each one opens offline as itself.
-        var urls = ['./', 'privacy', 'css/landing.css', 'js/install.js',
+        var urls = ['./', 'privacy', 'terms', 'refunds', 'css/landing.css', 'css/doc.css', 'js/doc.js', 'js/install.js',
           'manifest.webmanifest', 'assets/brand/mark-256.webp'];
         html.replace(/(?:src|href)="([^"#:]+)"/g, function (m, url) { urls.push(url); return m; });
         return cache.put('play', copy).then(function () {

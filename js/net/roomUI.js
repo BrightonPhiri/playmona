@@ -491,12 +491,16 @@ window.FF = window.FF || {};
           if (!def) return;
           var cat = (FF.Categories && FF.Categories[def.category]) || { name: def.category, color: '#8b5cf6' };
 
+          // The host needs the game (Plus games, or free plays left); everyone else joins free.
+          var pay = FF.Access && FF.Access.cardBadge ? FF.Access.cardBadge(id) : null;
           var card = FF.ui.el('button', {
-            class: 'rm-game' + (id === chosen ? ' rm-game--on' : ''),
+            class: 'rm-game' + (id === chosen ? ' rm-game--on' : '') + (pay && pay.kind === 'plus' ? ' rm-game--plus' : ''),
             type: 'button',
             'aria-pressed': id === chosen ? 'true' : 'false',
+            'aria-label': def.name + (pay ? '. ' + pay.text : ''),
             style: { '--rm-game-color': cat.color },
             onclick: function () {
+              if (FF.Access && !FF.Access.canPlay(id)) { FF.Access.explain(id); return; }
               chosen = id;
               self._lastGame = id;
               FF.Audio.play('click');
@@ -508,6 +512,12 @@ window.FF = window.FF || {};
           card.appendChild(gi);
           card.appendChild(FF.ui.div('rm-game__name', def.name));
           card.appendChild(FF.ui.div('rm-game__cat', cat.name));
+          if (pay) {
+            var tag = FF.ui.span('rm-game__pay rm-game__pay--' + pay.kind);
+            tag.appendChild(FF.Icons.icon(pay.kind === 'plus' ? 'crown' : 'play'));
+            tag.appendChild(document.createTextNode(pay.text));
+            card.appendChild(tag);
+          }
           grid.appendChild(card);
         });
         return grid;
@@ -573,11 +583,14 @@ window.FF = window.FF || {};
           children.push(FF.UI.button(def ? FF.t('startName', 'Start {name}', { name: def.name }) : FF.t('startGame', 'Start game'), {
             class: 'btn-lg btn-primary', icon: 'play',
             onClick: function () {
+              if (FF.Access && !FF.Access.canPlay(chosen)) { FF.Access.explain(chosen); return; }
               FF.Audio.play('roundStart');
               FF.Room.startGame(chosen, {
                 difficulty: rs.difficulty,
                 length: rs.length,
                 timer: rs.timer
+              }).then(function () {
+                if (FF.Access) FF.Access.usePlay(chosen);   // the host's free play, for limited games
               }).catch(function (err) {
                 self.showError(main, (err && err.message) || 'The game could not be started.');
               });

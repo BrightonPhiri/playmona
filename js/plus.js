@@ -141,24 +141,31 @@ window.FF = window.FF || {};
     return t('plusPerWeek', 'About {price} a week', { price: money(Math.round(p.cents / (p.days / 7))) });
   }
 
-  // Plans on sale, from the server. Resolves with the standard plans if it cannot answer.
+  // Everything on sale, from the server. Resolves null when it cannot answer.
   var catalogPromise = null;
-  function loadPlans() {
+  function loadCatalog() {
     if (!catalogPromise) {
       catalogPromise = fetch('/api/catalog', { cache: 'no-store' }).then(function (r) {
         if (!r.ok) throw new Error('catalog ' + r.status);
         return r.json();
       }).then(function (data) {
-        var plans = (data.items || []).filter(function (it) { return it.kind === 'plus'; });
+        var items = data.items || [];
         if (FF.Billing) {
           var names = {};
-          (data.items || []).forEach(function (it) { names[it.id] = it.name; });
+          items.forEach(function (it) { names[it.id] = it.name; });
           FF.Billing.setProductNames(names);
         }
-        return plans;
-      }).catch(function () { catalogPromise = null; return PLANS; });
+        return items;
+      }).catch(function () { catalogPromise = null; return null; });
     }
     return catalogPromise;
+  }
+
+  // Plans on sale. Resolves with the standard plans if the server cannot answer.
+  function loadPlans() {
+    return loadCatalog().then(function (items) {
+      return items ? items.filter(function (it) { return it.kind === 'plus'; }) : PLANS;
+    });
   }
 
   FF.Plus = {
@@ -179,6 +186,15 @@ window.FF = window.FF || {};
     isLifetime: function () { return access.plusUntil > Date.now() + 50 * 365 * 86400000; },
     ownsGame: function (id) { return this.hasPlus() || !!access.games[id]; },
     isAdmin: function () { return isAdmin; },
+    money: money,
+
+    // The pay-once item for one game (from the server's catalog), or null when it is not sold alone.
+    gameOffer: function (id) {
+      if (!online()) return Promise.resolve(null);
+      return loadCatalog().then(function (items) {
+        return (items || []).filter(function (it) { return it.kind === 'game' && it.game === id; })[0] || null;
+      });
+    },
 
     // The Plus page shows for admins (testing) and for everyone once payments are switched on.
     visible: function () {
@@ -200,6 +216,18 @@ window.FF = window.FF || {};
         if (button) { button.disabled = false; button.removeAttribute('aria-busy'); }
         FF.UI.toast(e.message, { type: 'error' });
       });
+    },
+
+    /* "By buying you agree to the Terms and Refund policy", with links. */
+    agreeLine: function () {
+      var p = FF.ui.el('p', { class: 'plus-agree' });
+      var parts = t('plusAgree', 'By buying you agree to the {terms} and the {refunds}.').split(/(\{terms\}|\{refunds\})/);
+      parts.forEach(function (part) {
+        if (part === '{terms}') p.appendChild(FF.ui.el('a', { href: FF.page('terms'), target: '_blank', rel: 'noopener' }, t('termsOfService', 'Terms of Service')));
+        else if (part === '{refunds}') p.appendChild(FF.ui.el('a', { href: FF.page('refunds'), target: '_blank', rel: 'noopener' }, t('refundPolicy', 'Refund policy')));
+        else if (part) p.appendChild(document.createTextNode(part));
+      });
+      return p;
     },
 
     order: function (id) { return api('GET', '/orders/' + encodeURIComponent(id)); },
@@ -363,6 +391,7 @@ window.FF = window.FF || {};
           list.appendChild(li);
         });
         how.appendChild(list);
+        how.appendChild(FF.Plus.agreeLine());
         main.appendChild(how);
 
         // Payment history, with invoices

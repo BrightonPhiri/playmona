@@ -226,6 +226,8 @@
       <span>© <span id="year">2026</span> PlayMona</span>
       <nav aria-label="Footer">
         <a href="privacy">Privacy</a>
+        <a href="terms">Terms</a>
+        <a href="refunds">Refunds</a>
         <a href="play">Sign in</a>
         <a href="#top">Back to top</a>
       </nav>
@@ -254,7 +256,7 @@
     // Opened from disk (file://): clean links like "play" need the .html file name.
     if (location.protocol === 'file:') document.querySelectorAll('a[href]').forEach(function (a) {
       var h = a.getAttribute('href');
-      if (/^(play|privacy|admin)([?#]|$)/.test(h)) a.setAttribute('href', h.replace(/^(\w+)/, '$1.html'));
+      if (/^(play|privacy|terms|refunds|admin)([?#]|$)/.test(h)) a.setAttribute('href', h.replace(/^(\w+)/, '$1.html'));
       else if (h === './') a.setAttribute('href', 'index.html');
     });
   </script>
