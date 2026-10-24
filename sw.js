@@ -55,6 +55,8 @@ self.addEventListener('fetch', function (event) {
   if (!sameOrigin && url.indexOf(SDK_HOST) !== 0) return;
   // The API (payments, orders) always goes to the server.
   if (sameOrigin && url.indexOf(self.location.origin + '/api/') === 0) return;
+  // Songs stream in pieces (range requests) that the cache cannot store: the browser fetches them itself.
+  if (req.headers.has('range') || (sameOrigin && url.indexOf(self.location.origin + '/assets/music/') === 0)) return;
 
   event.respondWith((sameOrigin ? fetchFresh(req) : fetch(req)).then(function (res) {
     if (res && (res.ok || res.type === 'opaque')) {

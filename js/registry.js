@@ -16,7 +16,6 @@ window.FF = window.FF || {};
       timer: 20,
       sound: true,
       music: true,
-      musicMode: 'off',
       volume: 0.7,
       animations: true,
       reduceMotion: false,

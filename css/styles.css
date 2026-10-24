@@ -330,6 +330,7 @@ input[type="range"] { width: min(260px, 100%); accent-color: var(--accent); min-
 .topbar__tools { display: flex; align-items: center; gap: var(--sp-2); margin-left: auto; }
 .topbar__tools .icon-btn { background: transparent; border-color: transparent; }
 .topbar__tools .icon-btn:hover { background: var(--surface-2); }
+.topbar__music.is-off { color: var(--muted); }
 
 .tabbar {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: var(--z-tabbar);

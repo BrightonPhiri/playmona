@@ -194,6 +194,12 @@ window.FF = window.FF || {};
       this.resetLibrary();
       this.buildShell();
       if (!this._navReady) { FF.Nav.init(); this._navReady = true; }
+      // Music starts as the player arrives, signed in or as a guest.
+      if (!this._musicHooked) {
+        this._musicHooked = true;
+        FF.Audio.onMusicChange(function () { FF.App._syncMusicControls(); });
+      }
+      FF.Audio.startAppMusic();
       // A refresh comes back to the page this tab was on (read before Home overwrites it).
       // Links below (challenge, room invite, back from a payment) still win: they run after.
       var last = this._lastView();
@@ -232,6 +238,7 @@ window.FF = window.FF || {};
     stop: function () {
       if (!this._started) return;
       this._started = false;
+      FF.Audio.stopAppMusic();
       if (FF.GameFlow && FF.GameFlow.current) FF.GameFlow.close('home');
       if (FF.Room && FF.Room.current && FF.Room.current()) { try { FF.Room.leave(); } catch (e) {} }
       var app = document.getElementById('app');
@@ -496,6 +503,7 @@ window.FF = window.FF || {};
       if (document.fullscreenEnabled && document.documentElement.requestFullscreen) {
         tools.appendChild(FF.UI.iconButton('arrows-out', t('fullscreen', 'Full screen'), function () { self.toggleFullscreen(); }, 'topbar__fs'));
       }
+      tools.appendChild(this.musicButton());
       tools.appendChild(this.accountButton());
       header.appendChild(tools);
       app.appendChild(header);
@@ -532,6 +540,30 @@ window.FF = window.FF || {};
         document.body.appendChild(FF.ui.el('div', { id: 'ff-live', class: 'sr-only', 'aria-live': 'polite', 'aria-atomic': 'true' }));
       }
       this._syncNav();
+    },
+
+    // Music on/off in the top bar. It and the Settings switch always agree.
+    musicButton: function () {
+      var on = FF.Audio.musicEnabled;
+      var b = FF.UI.iconButton(on ? 'music' : 'music-off', on ? t('musicTurnOff', 'Turn music off') : t('musicTurnOn', 'Turn music on'),
+        function () { FF.Audio.setMusic(!FF.Audio.musicEnabled); }, 'topbar__music' + (on ? '' : ' is-off'));
+      b.id = 'topbar-music';
+      return b;
+    },
+
+    _syncMusicControls: function () {
+      var old = document.getElementById('topbar-music');
+      if (old) {
+        var focused = document.activeElement === old;
+        var b = this.musicButton();
+        old.parentNode.replaceChild(b, old);
+        if (focused) b.focus();
+      }
+      var on = FF.Audio.musicEnabled;
+      FF.ui.$$('[data-music-switch] .switch').forEach(function (sw) {
+        sw.setAttribute('aria-checked', on ? 'true' : 'false');
+        sw.classList.toggle('on', on);
+      });
     },
 
     /* The page this tab is on, kept for a refresh. sessionStorage is per tab and
@@ -1417,9 +1449,11 @@ window.FF = window.FF || {};
       sound: function (panel) {
         var vol = FF.ui.el('input', { type: 'range', min: 0, max: 100, value: Math.round(FF.Audio.volume * 100), 'aria-label': t('volume', 'Volume'),
           oninput: function (e) { FF.Audio.setVolume(e.target.value / 100); FF.Settings.set('volume', FF.Audio.volume); } });
+        var music = FF.UI.switchRow({ label: t('music', 'Music'), checked: FF.Audio.musicEnabled, onChange: function (on) { FF.Audio.setMusic(on); } });
+        music.setAttribute('data-music-switch', '');
         FF.App.settingsSection(panel, 'speaker', t('sound', 'Sound'), [
           FF.UI.switchRow({ label: t('soundEffects', 'Sound effects'), checked: !!FF.Settings.get('sound'), onChange: function (on) { FF.Audio.setEffects(on); FF.Settings.set('sound', on); } }),
-          FF.UI.switchRow({ label: t('music', 'Music'), checked: !!FF.Settings.get('music'), onChange: function (on) { FF.Audio.setMusic(on); FF.Settings.set('music', on); } }),
+          music,
           FF.UI.settingRow(t('volume', 'Volume'), vol)
         ]);
       },

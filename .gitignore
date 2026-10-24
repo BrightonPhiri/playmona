@@ -17,3 +17,6 @@ api/config.local.php
 
 # Profile photos players upload (live on the server only)
 uploads/
+
+# Full-quality song files; the app plays the smaller copies in assets/music/
+assets/music/originals/

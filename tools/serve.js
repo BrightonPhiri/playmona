@@ -20,8 +20,25 @@ var TYPES = {
   '.mp3': 'audio/mpeg', '.ogg': 'audio/ogg', '.wav': 'audio/wav', '.txt': 'text/plain; charset=utf-8'
 };
 
-function send(res, file) {
-  res.writeHead(200, { 'Content-Type': TYPES[path.extname(file).toLowerCase()] || 'application/octet-stream', 'Cache-Control': 'no-store' });
+// Range requests are answered like nginx does, so songs can be streamed and skipped through.
+function send(res, file, req) {
+  var head = { 'Content-Type': TYPES[path.extname(file).toLowerCase()] || 'application/octet-stream', 'Cache-Control': 'no-store', 'Accept-Ranges': 'bytes' };
+  var size = fs.statSync(file).size;
+  var r = /^bytes=(\d*)-(\d*)$/.exec((req && req.headers.range) || '');
+  if (r && (r[1] || r[2])) {
+    var start = r[1] ? Number(r[1]) : Math.max(0, size - Number(r[2]));
+    var end = r[1] && r[2] ? Math.min(Number(r[2]), size - 1) : size - 1;
+    if (start >= size || start > end) {
+      res.writeHead(416, { 'Content-Range': 'bytes */' + size });
+      return res.end();
+    }
+    head['Content-Range'] = 'bytes ' + start + '-' + end + '/' + size;
+    head['Content-Length'] = end - start + 1;
+    res.writeHead(206, head);
+    return fs.createReadStream(file, { start: start, end: end }).pipe(res);
+  }
+  head['Content-Length'] = size;
+  res.writeHead(200, head);
   fs.createReadStream(file).pipe(res);
 }
 
@@ -56,8 +73,8 @@ http.createServer(function (req, res) {
   if (file.indexOf(ROOT) !== 0) { res.writeHead(403); return res.end(); }
   if (pathname.endsWith('/')) file = path.join(file, 'index.html');
 
-  if (isFile(file)) return send(res, file);
-  if (isFile(file + '.html')) return send(res, file + '.html');
+  if (isFile(file)) return send(res, file, req);
+  if (isFile(file + '.html')) return send(res, file + '.html', req);
   res.writeHead(404, { 'Content-Type': 'text/plain' });
   res.end('Not found');
 }).listen(PORT, function () {
