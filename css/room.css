@@ -165,3 +165,28 @@ ol.results__leaderboard, ul.player-list, ul.achievement-grid, ul.team-col__membe
   margin: var(--sp-2) 0 0; padding: var(--sp-2) var(--sp-3); border-radius: var(--r-sm);
   background: var(--accent-soft); color: var(--text); font-weight: 600; font-size: var(--fs-sm);
 }
+
+/* ---------- Watching (phase 3) ---------- */
+.rm-watch {
+  display: flex; flex-direction: column; gap: var(--sp-2);
+  background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--r-lg);
+  padding: var(--sp-4); box-shadow: var(--shadow-1);
+}
+.rm-watch__title { display: inline-flex; align-items: center; gap: var(--sp-2); }
+.rm-watch__title svg { width: 20px; height: 20px; color: var(--accent); }
+.rm-watch__note { margin: 0; color: var(--warn); font-weight: 700; font-size: var(--fs-sm); }
+.rm-watch__actions { flex-wrap: wrap; gap: var(--sp-2); }
+.rm-watch .switch[disabled] { opacity: 0.45; cursor: not-allowed; }
+.rm-invite { display: flex; flex-direction: column; gap: var(--sp-3); align-items: center; text-align: center; }
+.rm-invite__link {
+  margin: 0; padding: var(--sp-2) var(--sp-3); border-radius: var(--r-sm); background: var(--surface-2);
+  font-family: var(--font-mono); font-size: var(--fs-sm); word-break: break-all; color: var(--text);
+}
+.rm-viewers {
+  position: fixed; z-index: var(--z-toast); top: calc(var(--header-h) + var(--sp-2)); right: var(--sp-3);
+  display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: var(--r-pill);
+  background: var(--surface); color: var(--text); border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-1); font-weight: 800; font-size: var(--fs-sm); pointer-events: none;
+}
+.rm-viewers[hidden] { display: none; }
+.rm-viewers svg { width: 16px; height: 16px; color: var(--brand-pink); }

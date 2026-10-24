@@ -2027,9 +2027,11 @@ window.FF = window.FF || {};
       pick.appendChild(badge);
       body.appendChild(pick);
 
+      var photoRow = null;
       function showAvatar(value) {
         img.src = FF.Avatars.url(value);
         img.classList.toggle('avatar-img--photo', FF.Avatars.isPhoto(value));
+        if (photoRow) photoRow.hidden = !FF.Avatars.isPhoto(value);
       }
       body.appendChild(FF.ui.el('p', { class: 'field__hint edit-profile__hint' }, t('pictureHint', 'Tap your picture to pick a character or add a photo.')));
       function field(label, value, max, hint) {
@@ -2047,6 +2049,16 @@ window.FF = window.FF || {};
       var name = field(t('displayName', 'Display name'), p.displayName, 24);
       var isGuest = FF.Auth.isGuest();
       var user = isGuest ? null : field(t('username', 'Username'), p.username, 20, t('usernameHint', '3 to 20 letters, numbers, dots or underscores. Shown to other players.'));
+      // Watching (phase 3): people watching a room game see the photo unless this is off.
+      var showPhoto = !FF.Storage.get('hidePhotoPublic', false);
+      photoRow = FF.UI.switchRow({
+        label: t('showPhotoViewers', 'Show my photo to people watching'),
+        description: t('showPhotoViewersHint', 'When off, people watching see your character.'),
+        checked: showPhoto,
+        onChange: function (on) { showPhoto = on; }
+      });
+      photoRow.hidden = !FF.Avatars.isPhoto(chosen);
+      body.appendChild(photoRow);
       pick.addEventListener('click', function () {
         FF.Players.pickLook(null, { kind: 'profile', current: chosen, name: name.input.value, onDone: function (aid) {
           if (aid) { chosen = aid; showAvatar(aid); }
@@ -2070,6 +2082,8 @@ window.FF = window.FF || {};
               var hadPhoto = FF.Avatars.isPhoto((FF.Auth.profile() || {}).avatar);
               return FF.Auth.updateProfile(patchP).then(function () {
                 if (hadPhoto && !FF.Avatars.isPhoto(chosen) && FF.Photo) FF.Photo.remove();
+                FF.Storage.set('hidePhotoPublic', !showPhoto);
+                if (FF.Room && FF.Room.setHidePhoto) FF.Room.setHidePhoto(!showPhoto);
                 api.close();
                 FF.UI.toast(t('profileSaved', 'Profile saved'), { type: 'success' });
                 FF.App.buildShell();

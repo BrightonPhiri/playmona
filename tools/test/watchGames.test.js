@@ -17,3 +17,11 @@ test('every room game describes its screen', function () {
     assert(n >= files[f], f + ' describes its rounds (' + n + ' of ' + files[f] + ')');
   });
 });
+
+test('the "show my photo to people watching" setting follows the account', function () {
+  const src = fs.readFileSync(path.join(ROOT, 'js/sync.js'), 'utf8');
+  const keys = /SYNC_KEYS = \[([\s\S]*?)\]/.exec(src)[1];
+  assert(keys.indexOf("'hidePhotoPublic'") !== -1, 'synced with the account');
+  const app = fs.readFileSync(path.join(ROOT, 'js/app.js'), 'utf8');
+  assert(/hidePhotoPublic/.test(app) && /setHidePhoto/.test(app), 'Edit profile saves it and tells the room');
+});

@@ -18,7 +18,7 @@ window.FF = window.FF || {};
     'players', 'teams', 'favorites', 'recents', 'stats',
     'difficulty', 'length', 'timer', 'sound', 'music', 'volume', 'animations',
     'randomOrder', 'randomQuestions', 'displaySeconds', 'autoAdvanceMs',
-    'dailyLog', 'challenges', 'savedRooms'
+    'dailyLog', 'challenges', 'savedRooms', 'hidePhotoPublic'
   ];
   var PUSH_DELAY = 1500;
 

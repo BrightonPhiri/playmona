@@ -271,6 +271,7 @@ window.FF = window.FF || {};
       }
       cur = null; watchP = null; lastJson = null; lastCode = null; lastPublish = 0;
       removedFor = null; codeP = null; viewersFor = null; viewerCount = 0;
+      notifyViewers();
       return p;
     },
 

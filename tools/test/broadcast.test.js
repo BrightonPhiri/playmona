@@ -256,3 +256,21 @@ test('broadcast: the last person leaving takes the broadcast down', async functi
   await tick(30);
   assertEqual(onlyBroadcast(bus).count, 0);
 });
+
+test('broadcast: leaving the room tells listeners nobody is watching', async function () {
+  const bus = makeBus();
+  const A = phone(bus, 'Ana');
+  await A.Room.create({ dev: true });
+  await tick(80);
+  const code = onlyBroadcast(bus).code;
+  let seen = null;
+  A.Broadcast.onViewers(function (n) { seen = n; });
+  const doc = watchDoc(bus);
+  doc.watchers = { [code]: { v1: 1 } };
+  bus.write('', doc);
+  await tick(30);
+  assertEqual(seen, 1);
+  await A.Room.leave();
+  await tick(10);
+  assertEqual(seen, 0, 'back to zero');
+});

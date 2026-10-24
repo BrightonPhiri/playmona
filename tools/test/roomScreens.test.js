@@ -155,3 +155,113 @@ test('room screens: the host picks a game, then the list folds away and settings
   assert(find(host.main, 'rm-games'), 'Change game shows the list again');
   host.FF.Room.leave();
 });
+
+/* ---------- Watching (phase 3): lobby controls, viewer chip, Watch live card ---------- */
+function stubBroadcast(FF, opts) {
+  opts = opts || {};
+  const calls = [];
+  const cbs = [];
+  FF.Broadcast = {
+    calls: calls,
+    start: function () {},
+    stop: function () { return Promise.resolve(); },
+    delisted: function () { return !!opts.delisted; },
+    isPublic: function () { return false; },
+    isWatching: function () { return true; },
+    code: function () { return 'ABCDEFGH'; },
+    watchUrl: function (c) { return 'https://playmona.com/watch/' + c; },
+    ensureCode: function () { return Promise.resolve('ABCDEFGH'); },
+    setPublic: function (v) { calls.push(['setPublic', v]); return Promise.resolve(); },
+    setWatching: function (v) { calls.push(['setWatching', v]); return Promise.resolve(); },
+    newLink: function () { calls.push(['newLink']); return Promise.resolve('HGFEDCBA'); },
+    onViewers: function (cb) { cbs.push(cb); return function () { const i = cbs.indexOf(cb); if (i !== -1) cbs.splice(i, 1); }; },
+    emitViewers: function (n) { cbs.slice().forEach(function (fn) { fn(n); }); }
+  };
+  return FF.Broadcast;
+}
+function findAll(node, cls, out) {
+  out = out || [];
+  if (!node) return out;
+  if (typeof node.className === 'string' && node.className.split(' ').indexOf(cls) !== -1) out.push(node);
+  (node.children || []).forEach(function (c) { findAll(c, cls, out); });
+  return out;
+}
+
+test('room screens: the host sees the Watching panel; other players do not', async function () {
+  const bus = makeBus();
+  const host = phone(bus, 'Ana'), guest = phone(bus, 'Ben');
+  stubBroadcast(host.FF); stubBroadcast(guest.FF);
+  const room = await host.FF.Room.create({ dev: true });
+  await guest.FF.Room.join(room.code, {}, { dev: true });
+  host.FF.RoomUI.showLobby(host.main);
+  guest.FF.RoomUI.showLobby(guest.main);
+  await tick(20);
+  const panelEl = find(host.main, 'rm-watch');
+  assert(panelEl, 'host has the panel');
+  assert(/Watching/.test(text(panelEl)) && /Public/.test(text(panelEl)) && /Let people watch/.test(text(panelEl)), 'switches');
+  assert(/Invite viewers/.test(text(panelEl)) && /New watch link/.test(text(panelEl)), 'buttons');
+  assert(!find(guest.main, 'rm-watch'), 'guest has no panel');
+  host.FF.Room.leave(); guest.FF.Room.leave();
+});
+
+test('room screens: switching Public calls setPublic', async function () {
+  const bus = makeBus();
+  const host = phone(bus, 'Ana');
+  const b = stubBroadcast(host.FF);
+  await host.FF.Room.create({ dev: true });
+  host.FF.RoomUI.showLobby(host.main);
+  await tick(20);
+  const sw = findAll(find(host.main, 'rm-watch'), 'switch')[0];
+  sw.dispatch('click');
+  await tick(10);
+  assertEqual(JSON.stringify(b.calls[0]), JSON.stringify(['setPublic', true]));
+  host.FF.Room.leave();
+});
+
+test('room screens: a delisted room shows the note and a disabled Public switch', async function () {
+  const bus = makeBus();
+  const host = phone(bus, 'Ana');
+  stubBroadcast(host.FF, { delisted: true });
+  await host.FF.Room.create({ dev: true });
+  host.FF.RoomUI.showLobby(host.main);
+  await tick(20);
+  const panelEl = find(host.main, 'rm-watch');
+  assert(/An admin removed this room from Watch live\./.test(text(panelEl)), 'note shown');
+  assertEqual(findAll(panelEl, 'switch')[0].disabled, true, 'Public switch disabled');
+  host.FF.Room.leave();
+});
+
+test('room screens: the viewer chip shows the count and hides at zero', async function () {
+  const bus = makeBus();
+  const host = phone(bus, 'Ana');
+  const b = stubBroadcast(host.FF);
+  await host.FF.Room.create({ dev: true });
+  host.FF.RoomUI.showLobby(host.main);
+  await tick(20);
+  b.emitViewers(3);
+  const chip = find(host.FF.__sandbox.document.body, 'rm-viewers');
+  assert(chip && !chip.hidden, 'chip shown');
+  assert(/3 watching/.test(text(chip)), 'count');
+  b.emitViewers(1);
+  assert(/1 watching/.test(text(chip)), 'one');
+  b.emitViewers(0);
+  assertEqual(chip.hidden, true, 'hidden at zero');
+  host.FF.Room.leave();
+});
+
+test('room screens: the Online page has a Watch live card that is open to guests', async function () {
+  const bus = makeBus();
+  const p = phone(bus, 'Ana');
+  stubBroadcast(p.FF);
+  const gated = [];
+  p.FF.Access = { gate: function (what, fn) { gated.push(what); } };
+  let opened = 0;
+  p.FF.RoomUI.showHome(p.main);
+  await tick(10);
+  p.FF.RoomUI.openWatch = function () { opened++; };
+  const card = find(p.main, 'mode-card--teal');
+  assert(card && /Watch live/.test(text(card)), 'card shown');
+  card.dispatch('click');
+  assertEqual(opened, 1, 'opens Watch live');
+  assertEqual(gated.length, 0, 'no sign-up gate');
+});

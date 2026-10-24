@@ -102,6 +102,124 @@ window.FF = window.FF || {};
     return qrCache.node;
   }
 
+  /* ---------- Watching (phase 3) ---------- */
+
+  // "N watching": one small chip for everyone in a room, in the lobby and during games.
+  var viewerChip = null;
+  var offViewerChip = null;
+  function trackViewers() {
+    if (offViewerChip || !FF.Broadcast || !FF.Broadcast.onViewers) return;
+    offViewerChip = FF.Broadcast.onViewers(function (n) {
+      if (!viewerChip) {
+        viewerChip = FF.ui.el('div', { class: 'rm-viewers', role: 'status', 'aria-live': 'polite' });
+        viewerChip.hidden = true;
+        document.body.appendChild(viewerChip);
+      }
+      FF.ui.clear(viewerChip);
+      var show = n > 0 && !!FF.Room.current();
+      viewerChip.hidden = !show;
+      if (!show) return;
+      viewerChip.appendChild(FF.Icons.icon('eye'));
+      viewerChip.appendChild(FF.ui.span('', FF.t('nWatching', '{n} watching', { n: n })));
+    });
+  }
+
+  function copyText(value) {
+    FF.Audio.play('click');
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(value).then(function () {
+        FF.UI.toast(FF.t('linkCopied', 'Link copied'), { type: 'success' });
+      }, function () { FF.UI.toast(value); });
+    } else {
+      FF.UI.toast(value);
+    }
+  }
+
+  // The watch link to share, with copy, share and a QR code.
+  function inviteViewers() {
+    FF.Broadcast.ensureCode().then(function (code) {
+      var url = FF.Broadcast.watchUrl(code);
+      var body = FF.ui.div('rm-invite');
+      body.appendChild(FF.ui.el('p', { class: 'rm-hint' }, FF.t('inviteViewersText', 'This link is for watching. Viewers see the game but can\u2019t play.')));
+      body.appendChild(FF.ui.el('p', { class: 'rm-invite__link' }, url));
+      body.appendChild(FF.ui.div('rm-share', [
+        FF.UI.button(FF.t('copyLink', 'Copy link'), { icon: 'copy', onClick: function () { copyText(url); } }),
+        navigator.share ? FF.UI.button(FF.t('share', 'Share'), { icon: 'share', onClick: function () {
+          navigator.share({ title: 'PlayMona', text: FF.t('watchShareText', 'Watch our game live on PlayMona'), url: url }).catch(function () {});
+        } }) : null
+      ].filter(Boolean)));
+      var qr = (FF.QR && FF.QR.available()) ? FF.QR.svg(url, { size: 170 }) : null;
+      if (qr) body.appendChild(FF.ui.div('rm-qr', [qr]));
+      FF.UI.sheet({ title: FF.t('inviteViewers', 'Invite viewers'), body: body, actions: [{ label: FF.t('done', 'Done'), primary: true }] });
+    }, function () {
+      FF.UI.toast(FF.t('watchLinkFailed', 'The watch link is not ready. Try again in a moment.'), { type: 'error' });
+    });
+  }
+
+  // Host only: Public or Private, watching on or off, invite viewers, new link.
+  function watchPanel(renderFn) {
+    if (!FF.Broadcast) return null;
+    var B = FF.Broadcast;
+    var wrap = FF.ui.el('section', { class: 'rm-watch', 'aria-label': FF.t('watching', 'Watching') });
+    var title = FF.ui.el('strong', { class: 'rm-watch__title' });
+    title.appendChild(FF.Icons.icon('eye'));
+    title.appendChild(document.createTextNode(FF.t('watching', 'Watching')));
+    wrap.appendChild(title);
+
+    var delisted = B.delisted();
+    var isPublic = B.isPublic();
+    var watching = B.isWatching();
+    var pub = FF.UI.switchRow({
+      label: FF.t('publicRoom', 'Public'),
+      description: isPublic
+        ? FF.t('publicOnHint', 'Anyone can find this game on Watch live.')
+        : FF.t('publicOffHint', 'Only people with the watch link can watch.'),
+      checked: isPublic,
+      onChange: function (on) {
+        B.setPublic(on).then(renderFn, function (e) {
+          FF.UI.toast(e && e.message === 'DELISTED'
+            ? FF.t('delistedNote', 'An admin removed this room from Watch live.')
+            : FF.t('tryAgain', 'That did not work. Try again.'), { type: 'error' });
+          renderFn();
+        });
+      }
+    });
+    if (delisted) {
+      var sw = pub.children[pub.children.length - 1];
+      sw.disabled = true;
+      sw.setAttribute('aria-disabled', 'true');
+    }
+    wrap.appendChild(pub);
+    if (delisted) wrap.appendChild(FF.ui.el('p', { class: 'rm-watch__note' }, FF.t('delistedNote', 'An admin removed this room from Watch live.')));
+
+    wrap.appendChild(FF.UI.switchRow({
+      label: FF.t('letPeopleWatch', 'Let people watch'),
+      description: watching ? FF.t('watchOnHint', 'People with the watch link can watch.') : FF.t('watchOffHint', 'Nobody can watch this room.'),
+      checked: watching,
+      onChange: function (on) { B.setWatching(on).then(renderFn, renderFn); }
+    }));
+
+    var actions = FF.ui.div('rm-row rm-watch__actions');
+    actions.appendChild(FF.UI.button(FF.t('inviteViewers', 'Invite viewers'), { class: 'btn-soft', icon: 'link', onClick: inviteViewers }));
+    actions.appendChild(FF.UI.button(FF.t('newWatchLink', 'New watch link'), {
+      class: 'btn-ghost', icon: 'arrows-left-right',
+      onClick: function () {
+        FF.UI.confirm({
+          title: FF.t('newWatchLinkQ', 'Make a new watch link?'),
+          body: FF.t('newWatchLinkBody', 'The old link will stop working.'),
+          confirmLabel: FF.t('newLink', 'New link'),
+          onConfirm: function () {
+            B.newLink().then(function () {
+              FF.UI.toast(FF.t('newLinkMade', 'New watch link made'), { type: 'success' });
+            }, function () { FF.UI.toast(FF.t('tryAgain', 'That did not work. Try again.'), { type: 'error' }); });
+          }
+        });
+      }
+    }));
+    wrap.appendChild(actions);
+    return wrap;
+  }
+
   function scanButton(onCode, cls) {
     if (!FF.QRScan || !FF.QRScan.available()) return null;
     return FF.UI.button(FF.t('scanQr', 'Scan QR code'), {
@@ -229,6 +347,11 @@ window.FF = window.FF || {};
   FF.RoomUI = {
     ONLINE_GAMES: ONLINE_GAMES,
 
+    /* The Watch live page (its own page, so viewers need no account). */
+    openWatch: function () {
+      window.location.href = FF.page ? FF.page('watch') : 'watch';
+    },
+
     /* A playful waiting screen for the moments that need a network round
        trip. Returns a handle: setStatus(text) to update the caption, and
        stop() when the screen is replaced. */
@@ -323,6 +446,13 @@ window.FF = window.FF || {};
         title: t('playWithFriends', 'Play with friends'),
         desc: t('playWithFriendsDesc', 'Make a private room and share the code. Everyone plays at the same time on their own phone.'),
         onClick: function () { FF.Access.gate('online', function () { self.showFriends(main); }); }
+      });
+      card({
+        id: 'mode-watch', tone: 'teal', icon: 'eye',
+        title: t('watchLive', 'Watch live'),
+        desc: t('watchLiveDesc', 'Watch public games being played right now.'),
+        // Open to everyone, guests included.
+        onClick: function () { self.openWatch(); }
       });
       var daily = FF.Daily && FF.Daily.today();
       card({
@@ -617,6 +747,7 @@ window.FF = window.FF || {};
       if (this._starting && cur.meta && cur.meta.status === 'playing') { this.startWhenReady(main, cur.meta); return; }
 
       resetScreen('lobby');
+      trackViewers();
 
       // Remembered across re-renders so an arriving player does not reset
       // the host's choice.
@@ -768,6 +899,11 @@ window.FF = window.FF || {};
         if (vPanel) children.push(vPanel);
 
         if (s.isHost) {
+          var wPanel = watchPanel(render);
+          if (wPanel) children.push(wPanel);
+        }
+
+        if (s.isHost) {
           var def = chosen ? FF.Games.get(chosen) : null;
           if (self._pickingGame || !def) {
             children.push(FF.ui.el('h2', { class: 'rm-subtitle', id: 'rm-pick-title' }, FF.t('pickAGame', 'Pick a game')));
@@ -875,7 +1011,7 @@ window.FF = window.FF || {};
       }
 
       // Redraw when something on screen changed: not on every write.
-      function metaKey(m) { m = m || {}; return [m.hostUid, m.name, m.mode, FF.Room.current() && FF.Room.current().isHost].join('|'); }
+      function metaKey(m) { m = m || {}; return [m.hostUid, m.name, m.mode, m.public, m.watching, m.watchCode, FF.Room.current() && FF.Room.current().isHost].join('|'); }
       var lastMeta = metaKey(cur.meta);
       onScreen(FF.Room.on('players', render));
       onScreen(FF.Room.on('meta', function (meta) {
