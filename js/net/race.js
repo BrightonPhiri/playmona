@@ -23,6 +23,12 @@ window.FF = window.FF || {};
   var settleHandlers = [];
   var offRounds = null;
   var timeoutPoll = null;
+  // What the current round shows, for people watching (FF.Broadcast). The
+  // answer is kept back until the round settles, so a watch link opened on a
+  // second phone can never give it away.
+  var described = null;        // { n, screen, answer, revealed }
+  // Unlike settle handlers these outlive a game: the broadcaster listens once per room.
+  var screenListeners = [];
 
   function room() { return FF.Room ? FF.Room.current() : null; }
 
@@ -42,7 +48,25 @@ window.FF = window.FF || {};
     return r.meta.startAt + secs * 1000;
   }
 
+  function clip(text, max) { return String(text == null ? '' : text).slice(0, max); }
+
+  function screenInfo() {
+    if (!described) return null;
+    return { n: described.n, screen: described.screen, answer: described.revealed ? described.answer : null };
+  }
+
+  function emitScreen() {
+    var info = screenInfo();
+    screenListeners.slice().forEach(function (fn) {
+      try { fn(info); } catch (e) { if (window.console) console.error('[FF.Race]', e); }
+    });
+  }
+
   function emitSettle(payload) {
+    if (described && session && described.n === session.index && !described.revealed) {
+      described.revealed = true;
+      emitScreen();
+    }
     settleHandlers.slice().forEach(function (fn) {
       try { fn(payload); } catch (e) { if (window.console) console.error('[FF.Race]', e); }
     });
@@ -273,6 +297,7 @@ window.FF = window.FF || {};
       session.index = n;
       session.settled = false;
       session.claiming = false;
+      if (described && described.n !== n) described = null;
 
       FF.Random.seed(FF.Random.roundSeed(r.meta.seed, session.gameId, n));
 
@@ -285,6 +310,37 @@ window.FF = window.FF || {};
         startPoll();
         evaluate();
       }).catch(function () { /* a lost race for startedAt is harmless */ });
+    },
+
+    /* Say what this round shows, for people watching. screen is
+       { kind: 'choice', text, image?, options } or { kind: 'card', text, image? };
+       image is { flag } | { src } | { emoji }. answer is the right option's
+       index (or null); it is only shared once the round has settled. */
+    describe: function (screen, answer) {
+      if (!room() || !session || !screen) return;
+      var clean = { kind: screen.kind === 'card' ? 'card' : 'choice', text: clip(screen.text, 200) };
+      if (screen.image) clean.image = screen.image;
+      if (clean.kind === 'choice') {
+        clean.options = (screen.options || []).slice(0, 6).map(function (o) { return clip(o, 80); });
+      }
+      described = {
+        n: session.index,
+        screen: clean,
+        answer: (typeof answer === 'number' && answer >= 0) ? answer : null,
+        revealed: !!session.settled
+      };
+      emitScreen();
+    },
+
+    /* { n, screen, answer } for the current round (answer null until it settles), or null. */
+    screen: function () { return screenInfo(); },
+
+    onScreen: function (cb) {
+      screenListeners.push(cb);
+      return function () {
+        var i = screenListeners.indexOf(cb);
+        if (i !== -1) screenListeners.splice(i, 1);
+      };
     },
 
     /* The server-aligned instant this round opens for answers, or null. */
