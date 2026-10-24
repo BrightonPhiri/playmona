@@ -184,6 +184,38 @@ window.FF = window.FF || {};
 
     rooms: function () { return this.get('rooms').then(function (v) { return v || {}; }); },
 
+    /* ---------- Watching (phase 3) ---------- */
+    WATCH_DEFAULTS: { room: 20, site: 50 },
+
+    /* Take a room off Watch live for good: the host cannot make it public again.
+       Its broadcast goes private straight away, when there is one (a lone
+       'public' without the rest of the broadcast would break its rules). */
+    delistRoom: function (code, watchCode) {
+      var self = this;
+      return this.set('rooms/' + code + '/admin', { delisted: true }).then(function () {
+        if (!watchCode) return null;
+        return self.get('broadcasts/' + watchCode).then(function (b) {
+          return b ? self.set('broadcasts/' + watchCode + '/public', false) : null;
+        });
+      });
+    },
+
+    /* Viewers per watch code. The rules only allow reading one code at a time. */
+    watcherCounts: function (codes) {
+      var self = this;
+      var out = {};
+      return Promise.all((codes || []).map(function (wc) {
+        return self.get('watchers/' + wc).then(function (v) {
+          out[wc] = v && typeof v === 'object' ? Object.keys(v).length : 0;
+        }, function () { out[wc] = 0; });
+      })).then(function () { return out; });
+    },
+
+    saveWatchLimits: function (room, site) {
+      function clamp(n, max, fallback) { n = Math.round(Number(n)); return isFinite(n) ? Math.max(1, Math.min(max, n)) : fallback; }
+      return this.set('config/site/watch', { room: clamp(room, 1000, 20), site: clamp(site, 100000, 50) });
+    },
+
     /* Visitor countries and shortened IPs, from the PlayMona server (api/lib/Visits.php).
        opts: { view: 'list' | 'countries', country: 'ZM' | 'unknown' }.
        Device-only accounts have no server, so this rejects with code 'local'. */

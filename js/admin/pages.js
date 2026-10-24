@@ -97,7 +97,7 @@ window.FF = window.FF || {};
   function setSwitch(sw, on) { sw.setAttribute('aria-checked', on ? 'true' : 'false'); sw.classList.toggle('on', on); }
 
   /* ---------- Sums over a set of days ---------- */
-  var COUNTERS = ['plays', 'onlinePlays', 'guestPlays', 'signups', 'installs', 'rooms'];
+  var COUNTERS = ['plays', 'onlinePlays', 'guestPlays', 'signups', 'installs', 'rooms', 'watchers'];
   function summarise(days, keys) {
     var sum = { accounts: {}, guests: {}, games: {}, visitors: {}, landingOnly: 0 };
     COUNTERS.forEach(function (c) { sum[c] = 0; });
@@ -215,6 +215,7 @@ window.FF = window.FF || {};
           tiles.appendChild(tile('New sign-ups', now.signups, prev.signups, null, open('signups')));
           tiles.appendChild(tile('App installs', now.installs, prev.installs, null, open('installs')));
           tiles.appendChild(tile('Rooms created', now.rooms, prev.rooms, null, open('rooms')));
+          tiles.appendChild(tile('Watch views', now.watchers, prev.watchers, 'Times someone opened a game to watch'));
           body.appendChild(tiles);
 
           var all = card('All time');
@@ -496,7 +497,7 @@ window.FF = window.FF || {};
     /* ================= Live rooms ================= */
     rooms: function (main) {
       var refresh = FF.UI.button('Refresh', { class: 'btn-sm', icon: 'arrows-left-right', onClick: function () { draw(); } });
-      main.appendChild(head('Live rooms', 'Online rooms open right now. Watching a room comes with watch links (phase 3).', refresh));
+      main.appendChild(head('Live rooms', 'Online rooms open right now, whether they are on Watch live, and how many people are watching.', refresh));
       var box = el('div', { class: 'admin-stack' });
       main.appendChild(box);
 
@@ -515,7 +516,8 @@ window.FF = window.FF || {};
               total: ids.length,
               online: ids.filter(function (u) { return players[u] && players[u].online; }).length,
               host: (players[meta.hostUid] || {}).name || '—',
-              voice: Object.keys(r.voice || {}).length
+              voice: Object.keys(r.voice || {}).length,
+              delisted: !!(r.admin && r.admin.delisted)
             };
           }).filter(function (r) { return r.online > 0 && (!r.meta.expiresAt || r.meta.expiresAt > now); })
             .sort(function (a, b) { return (b.meta.createdAt || 0) - (a.meta.createdAt || 0); });
@@ -527,9 +529,16 @@ window.FF = window.FF || {};
           box.appendChild(tiles);
 
           if (!live.length) { box.appendChild(el('p', { class: 'admin-empty' }, 'No rooms are open right now.')); return; }
+          box._live = live;
+          var watchCodes = live.map(function (r) { return r.meta.watchCode; }).filter(Boolean);
+          D().watcherCounts(watchCodes).then(function (counts) { drawTable(counts); }, function () { drawTable({}); });
+        }).catch(function (e) { failed(box, e); });
+
+        function drawTable(counts) {
+          var live = box._live;
           var wrap = el('div', { class: 'admin-table-wrap' });
           var tbl = el('table', { class: 'admin-table' });
-          tbl.appendChild(el('thead', {}, [el('tr', {}, ['Room', 'Game', 'Status', 'Players', 'Host', 'Voice', 'Opened'].map(function (h) { return el('th', { scope: 'col' }, h); }))]));
+          tbl.appendChild(el('thead', {}, [el('tr', {}, ['Room', 'Game', 'Status', 'Players', 'Host', 'Voice', 'Watch live', 'Watching', 'Opened', ''].map(function (h) { return el('th', { scope: 'col' }, h); }))]));
           var tbody = el('tbody');
           live.forEach(function (r) {
             tbody.appendChild(el('tr', {}, [
@@ -539,13 +548,27 @@ window.FF = window.FF || {};
               el('td', { class: 'num' }, r.online + (r.total > r.online ? ' of ' + r.total : '')),
               el('td', {}, r.host),
               el('td', { class: 'num' }, r.voice ? r.voice + ' talking' : '—'),
-              el('td', {}, ago(r.meta.createdAt))
+              el('td', {}, r.delisted ? 'Removed' : (r.meta.public === true ? 'Public' : 'Private')),
+              el('td', { class: 'num' }, r.meta.watchCode ? String(counts[r.meta.watchCode] || 0) : '—'),
+              el('td', {}, ago(r.meta.createdAt)),
+              el('td', {}, (r.meta.public === true && !r.delisted) ? FF.UI.button('Take off Watch live', { class: 'btn-sm btn-danger-soft', onClick: function () { delist(r); } }) : '')
             ]));
           });
           tbl.appendChild(tbody);
           wrap.appendChild(tbl);
           box.appendChild(wrap);
-        }).catch(function (e) { failed(box, e); });
+        }
+      }
+
+      function delist(r) {
+        FF.UI.confirm({
+          title: 'Take this room off Watch live?',
+          body: 'The host can\u2019t make it public again. Its watch link keeps working.',
+          confirmLabel: 'Take it off', danger: true,
+          onConfirm: function () {
+            D().delistRoom(r.code, r.meta.watchCode).then(function () { saved(); draw(); }, function () { saved(false); });
+          }
+        });
       }
       draw();
     },
@@ -563,6 +586,8 @@ window.FF = window.FF || {};
         site.guest = Object.assign({}, FF.GameConfig.GUEST_FEATURES, site.guest || {});
         function save() {
           var clean = { maintenance: !!site.maintenance, payments: !!site.payments, guest: site.guest };
+          // Keep the viewer limits (saved on their own below).
+          if (site.watch) clean.watch = site.watch;
           if (site.announcement) clean.announcement = site.announcement;
           return D().saveSite(clean).then(function () { saved(); }, function () { saved(false); });
         }
@@ -616,6 +641,29 @@ window.FF = window.FF || {};
           }));
         });
         box.appendChild(guests);
+
+        var lim = Object.assign({}, D().WATCH_DEFAULTS, site.watch || {});
+        var watchCard = card('Viewer limits', 'How many people can watch games at once. Firebase\u2019s free plan allows 100 connections in total. Raise these after moving to the Blaze plan.');
+        function numberField(label, value, max) {
+          var id = FF.UI.uid('f');
+          var input = el('input', { id: id, type: 'number', class: 'input', min: 1, max: max, step: 1, value: String(value) });
+          watchCard.appendChild(el('div', { class: 'field' }, [el('label', { class: 'field__label', for: id }, label), input]));
+          return input;
+        }
+        var perRoom = numberField('Viewers per room', lim.room, 1000);
+        var perSite = numberField('Viewers across the site', lim.site, 100000);
+        var limActs = el('div', { class: 'admin-actions' });
+        limActs.appendChild(FF.UI.button('Save limits', { class: 'btn-primary', icon: 'check', onClick: function () {
+          D().saveWatchLimits(perRoom.value, perSite.value).then(function () {
+            return D().get('config/site/watch');
+          }).then(function (w) {
+            site.watch = w;
+            perRoom.value = String(w.room); perSite.value = String(w.site);
+            saved();
+          }, function () { saved(false); });
+        } }));
+        watchCard.appendChild(limActs);
+        box.appendChild(watchCard);
       }).catch(function (e) { failed(box, e); });
     }
   };

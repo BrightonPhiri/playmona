@@ -201,3 +201,52 @@ test('rules: visitors can be added once without signing in; guests and usernames
   assertEqual(RULES.usernames.$name['.read'], true, 'one name can still be looked up for sign-in');
   assert(/auth.uid === \$uid/.test(RULES.userIndex.$uid['.read']), 'a player can read their own entry');
 });
+
+/* ---------- Watching (phase 3) ---------- */
+async function adminBoot() {
+  const FF = loadFF(FILES.concat(['js/admin/data.js']));
+  FF.__sandbox.crypto = require('crypto').webcrypto;
+  FF.__sandbox.TextEncoder = TextEncoder;
+  FF.Storage.init();
+  FF.Storage.set('devAuth', true);
+  await FF.Auth.init();
+  await FF.Auth.signUp({ email: 'a@example.com', username: 'ada', password: 'password1', displayName: 'Ada', avatar: 'nia' });
+  assertEqual(await FF.AdminData.connect(), 'ok');
+  return FF;
+}
+
+test('admin: taking a room off Watch live sets delisted and switches public off', async function () {
+  const FF = await adminBoot();
+  await FF.AdminData.set('broadcasts/WATCHCD2', { v: 1, status: 'lobby', public: true, updatedAt: 1 });
+  await FF.AdminData.delistRoom('ABC234', 'WATCHCD2');
+  assertEqual(await FF.AdminData.get('rooms/ABC234/admin/delisted'), true);
+  assertEqual(await FF.AdminData.get('broadcasts/WATCHCD2/public'), false);
+  // No broadcast yet: only the room is marked (a lone 'public' would break the broadcast's rules).
+  await FF.AdminData.delistRoom('DEF567', 'WATCHCD3');
+  assertEqual(await FF.AdminData.get('rooms/DEF567/admin/delisted'), true);
+  assertEqual(await FF.AdminData.get('broadcasts/WATCHCD3'), null);
+});
+
+test('admin: viewer limits save to config/site/watch with defaults 20 and 50', async function () {
+  const FF = await adminBoot();
+  assertEqual(JSON.stringify(FF.AdminData.WATCH_DEFAULTS), JSON.stringify({ room: 20, site: 50 }));
+  await FF.AdminData.saveWatchLimits(30, 80);
+  assertEqual(JSON.stringify(await FF.AdminData.get('config/site/watch')), JSON.stringify({ room: 30, site: 80 }));
+  await FF.AdminData.saveWatchLimits(0, 999999);
+  assertEqual(JSON.stringify(await FF.AdminData.get('config/site/watch')), JSON.stringify({ room: 1, site: 100000 }), 'kept within the allowed range');
+  const pages = fs.readFileSync(path.join(__dirname, '..', '..', 'js/admin/pages.js'), 'utf8');
+  assert(/clean\.watch = site\.watch|watch: site\.watch/.test(pages), 'saving other site settings keeps the limits');
+});
+
+test('admin: viewer counts are read one room at a time', async function () {
+  const FF = await adminBoot();
+  await FF.AdminData.set('watchers/WATCHCD2', { v1: 1, v2: 2 });
+  const counts = await FF.AdminData.watcherCounts(['WATCHCD2', 'WATCHCD3']);
+  assertEqual(JSON.stringify(counts), JSON.stringify({ WATCHCD2: 2, WATCHCD3: 0 }));
+});
+
+test('admin: the overview lists watch views', function () {
+  const pages = fs.readFileSync(path.join(__dirname, '..', '..', 'js/admin/pages.js'), 'utf8');
+  assert(/var COUNTERS = \[[^\]]*'watchers'/.test(pages), 'counted');
+  assert(/Watch views/.test(pages), 'shown');
+});
