@@ -392,10 +392,11 @@ window.FF = window.FF || {};
             .then(function () { return registerPresence(transport, uid, profile); })
             .then(function () {
               state = {
-                code: code, uid: uid, isHost: true,
+                code: code, uid: uid, isHost: true, dev: !!opts.dev,
                 meta: meta, players: {}, rounds: {}, transport: transport
               };
               watchAll(transport);
+              if (FF.Broadcast) FF.Broadcast.start();
               return state;
             });
         });
@@ -435,10 +436,11 @@ window.FF = window.FF || {};
                 return settleIn(transport, uid, meta, players);
               }).then(function (settled) {
                 state = {
-                  code: code, uid: uid, isHost: settled.hostUid === uid,
+                  code: code, uid: uid, isHost: settled.hostUid === uid, dev: !!opts.dev,
                   meta: settled, players: players || {}, rounds: {}, transport: transport
                 };
                 watchAll(transport);
+                if (FF.Broadcast) FF.Broadcast.start();
                 FF.Room.saved.touch(code, { name: settled.name || '' });
                 return state;
               });
@@ -609,12 +611,17 @@ window.FF = window.FF || {};
       }
       stopHeartbeat();
       if (offVisibility) offVisibility();
+      // The last one out takes the watch broadcast down.
+      var lastOut = s.meta && s.meta.hostUid === s.uid && !next;
+      var unbroadcast = FF.Broadcast ? FF.Broadcast.stop({ retire: lastOut }) : Promise.resolve();
       unsubs.slice().forEach(function (off) { try { off(); } catch (e) {} });
       unsubs = [];
       this.offAll();
       state = null;
       FF.Random.unseed();
-      var handOff = next ? transport.update('meta', { hostUid: next.uid }) : Promise.resolve();
+      var handOff = unbroadcast.then(function () {
+        return next ? transport.update('meta', { hostUid: next.uid }) : null;
+      });
       return handOff.catch(function () {}).then(function () {
         // The "went offline" write registered on joining must not bring this
         // player back into the list after they are removed.

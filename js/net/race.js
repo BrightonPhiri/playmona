@@ -361,6 +361,12 @@ window.FF = window.FF || {};
       };
     },
 
+    /* How many rounds the current (or last) game plans, or null. */
+    planned: function () {
+      var s = session || lastSession;
+      return s ? s.rounds : null;
+    },
+
     /* The server-aligned instant this round opens for answers, or null. */
     opensAt: function () {
       var node = currentRound();
