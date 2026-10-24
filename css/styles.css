@@ -78,8 +78,13 @@ a { color: var(--accent); }
   -webkit-user-select: none; user-select: none;
 }
 .btn .icon-svg { font-size: 1.2em; }
-.btn:hover { background: var(--surface-2); }
+.btn:hover { background: var(--surface-2); border-color: var(--accent); }
 .btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--press-edge); }
+/* A small lift under the mouse; touch screens skip it (no sticky hover). */
+@media (hover: hover) and (pointer: fine) {
+  .btn:hover:not(:disabled):not(:active) { transform: translateY(-1px); }
+}
+.btn:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
 .btn:disabled, .btn[aria-disabled="true"] { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
 
 .btn-primary, .btn.btn-primary {
@@ -87,20 +92,37 @@ a { color: var(--accent); }
   border-color: transparent;
   box-shadow: 0 4px 0 var(--accent-edge);
 }
-.btn-primary:hover, .btn.btn-primary:hover { background: var(--accent); filter: brightness(1.07); }
+.btn-primary:hover, .btn.btn-primary:hover { background: var(--accent); filter: brightness(1.07); border-color: transparent; }
 .btn-primary:active { box-shadow: 0 1px 0 var(--accent-edge); }
 
 .btn-danger, .btn.danger {
   background: var(--danger); color: var(--on-status); border-color: transparent;
   box-shadow: 0 4px 0 rgba(0, 0, 0, 0.25);
 }
-.btn-danger:hover, .btn.danger:hover { background: var(--danger); filter: brightness(1.07); }
+.btn-danger:hover, .btn.danger:hover { background: var(--danger); filter: brightness(1.07); border-color: transparent; }
 
+/* Quiet buttons (Back, Cancel...) keep an outline so they still read as buttons. */
 .btn-ghost {
-  background: transparent; border-color: transparent; box-shadow: none; color: var(--text);
+  background: transparent; border-color: var(--border-strong); box-shadow: none; color: var(--text);
 }
-.btn-ghost:hover { background: var(--surface-2); }
+.btn-ghost:hover { background: var(--surface-2); border-color: var(--accent); }
 .btn-ghost:active { box-shadow: none; }
+
+/* Tinted: a clear second choice beside the main button (Save room, Change game). */
+.btn-soft, .btn.btn-soft {
+  background: var(--accent-soft); color: var(--accent);
+  border-color: transparent; box-shadow: 0 3px 0 var(--press-edge);
+}
+.btn-soft:hover, .btn.btn-soft:hover { background: var(--accent-soft); border-color: var(--accent); }
+/* Switched on (for example a saved room): outlined, so on and off look different. */
+.btn-soft.is-on { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+
+/* Tinted red: actions that take you out (Leave room). */
+.btn-danger-soft, .btn.btn-danger-soft {
+  background: var(--danger-soft); color: var(--danger);
+  border-color: transparent; box-shadow: 0 3px 0 var(--press-edge);
+}
+.btn-danger-soft:hover, .btn.btn-danger-soft:hover { background: var(--danger-soft); border-color: var(--danger); }
 
 .btn-lg { min-height: var(--tap-lg); padding: 14px 24px; font-size: var(--fs-lg); border-radius: var(--r-md); }
 .btn-sm { min-height: 36px; padding: 6px 12px; font-size: var(--fs-sm); border-radius: var(--r-sm); box-shadow: 0 2px 0 var(--press-edge); }
@@ -112,7 +134,7 @@ a { color: var(--accent); }
   border-color: rgba(255, 255, 255, 0.32);
   box-shadow: 0 3px 0 rgba(0, 0, 0, 0.3);
 }
-.btn-glass:hover { background: rgba(255, 255, 255, 0.24); }
+.btn-glass:hover { background: rgba(255, 255, 255, 0.24); border-color: rgba(255, 255, 255, 0.5); }
 
 .btn-stack { display: flex; flex-wrap: wrap; gap: var(--sp-3); margin: var(--sp-3) 0; }
 

@@ -579,7 +579,10 @@ window.FF = window.FF || {};
 
       // Remembered across re-renders so an arriving player does not reset
       // the host's choice.
-      var chosen = self._lastGame || ONLINE_GAMES[0];
+      // The host picks a game first; the list then folds away and the
+      // settings for that game appear. "Change game" opens the list again.
+      var chosen = self._lastGame || null;
+      if (self._pickingGame == null) self._pickingGame = !chosen;
       if (!self._roomSettings) {
         self._roomSettings = {
           difficulty: (FF.Settings && FF.Settings.get('difficulty')) || 'normal',
@@ -619,7 +622,9 @@ window.FF = window.FF || {};
               if (FF.Access && !FF.Access.canPlay(id)) { FF.Access.explain(id); return; }
               chosen = id;
               self._lastGame = id;
-              FF.Audio.play('click');
+              self._pickingGame = false;
+              self._showPicked = true;
+              FF.Audio.play('select');
               onPick();
             }
           });
@@ -667,7 +672,7 @@ window.FF = window.FF || {};
           : FF.t('youreIn', 'You\u2019re in!')));
         var tools = FF.ui.div('rm-row rm-roomhead__tools');
         var saveBtn = FF.UI.button(isSaved ? FF.t('savedRoom', 'Saved') : FF.t('saveRoom', 'Save room'), {
-          icon: isSaved ? 'star-fill' : 'star',
+          class: isSaved ? 'btn-soft is-on' : 'btn-soft', icon: isSaved ? 'star-fill' : 'star',
           onClick: function () {
             if (FF.Room.saved.has(s.code)) {
               FF.Room.saved.remove(s.code);
@@ -682,7 +687,7 @@ window.FF = window.FF || {};
         saveBtn.setAttribute('aria-pressed', isSaved ? 'true' : 'false');
         tools.appendChild(saveBtn);
         tools.appendChild(FF.UI.button(FF.t('leaveRoom', 'Leave room'), {
-          class: 'btn-ghost', icon: 'sign-out', onClick: function () { self.leaveRoom(main); }
+          class: 'btn-danger-soft', icon: 'sign-out', onClick: function () { self.leaveRoom(main); }
         }));
         head.appendChild(tools);
 
@@ -721,11 +726,26 @@ window.FF = window.FF || {};
         if (vPanel) children.push(vPanel);
 
         if (s.isHost) {
-          var def = FF.Games.get(chosen);
-          children.push(FF.ui.el('h2', { class: 'rm-subtitle' }, FF.t('pickAGame', 'Pick a game')));
-          children.push(gameGrid(render));
-          if (def) children.push(FF.ui.el('p', { class: 'rm-chosen', 'aria-live': 'polite' }, def.name + ': ' + (def.description || '')));
-          var opts = FF.ui.el('section', { class: 'settings-section' });
+          var def = chosen ? FF.Games.get(chosen) : null;
+          if (self._pickingGame || !def) {
+            children.push(FF.ui.el('h2', { class: 'rm-subtitle', id: 'rm-pick-title' }, FF.t('pickAGame', 'Pick a game')));
+            children.push(FF.ui.el('p', { class: 'rm-hint' }, FF.t('pickAGameHint', 'Tap a game to choose it. Its settings come next.')));
+            children.push(gameGrid(render));
+            if (def) {
+              children.push(FF.UI.button(FF.t('keepGame', 'Keep {name}', { name: def.name }), {
+                class: 'btn-ghost', icon: 'arrow-left',
+                onClick: function () { self._pickingGame = false; render(); }
+              }));
+            }
+            main.appendChild(panel(children.concat([FF.UI.button(FF.t('leaveRoom', 'Leave room'), {
+              class: 'btn-lg btn-danger-soft', icon: 'sign-out', onClick: function () { self.leaveRoom(main); }
+            })])));
+            FF.Nav.focusFirst(main);
+            return;
+          }
+          children.push(FF.ui.el('h2', { class: 'rm-subtitle' }, FF.t('yourGame', 'Your game')));
+          children.push(pickedCard(def, function () { self._pickingGame = true; FF.Audio.play('click'); render(); }));
+          var opts = FF.ui.el('section', { class: 'settings-section', id: 'rm-settings' });
           opts.appendChild(settingRow(FF.t('difficulty', 'Difficulty'), segs([['Easy', 'easy'], ['Normal', 'normal'], ['Hard', 'hard']], 'difficulty', FF.t('difficulty', 'Difficulty'))));
           opts.appendChild(settingRow(FF.t('gameLength', 'Game length'), segs([['Quick', 'quick'], ['Short', 'short'], ['Normal', 'normal'], ['Long', 'long']], 'length', FF.t('gameLength', 'Game length'))));
           opts.appendChild(settingRow(FF.t('timeLimit', 'Time limit'), FF.SettingsUI.duration(rs.timer, function (v) { rs.timer = v; }, { allowOff: true })));
@@ -752,12 +772,35 @@ window.FF = window.FF || {};
         }
 
         children.push(FF.UI.button(FF.t('leaveRoom', 'Leave room'), {
-          class: 'btn-lg btn-ghost', icon: 'sign-out',
+          class: 'btn-lg btn-danger-soft', icon: 'sign-out',
           onClick: function () { self.leaveRoom(main); }
         }));
 
         main.appendChild(panel(children));
         FF.Nav.focusFirst(main);
+        // Just picked a game: bring its card and the settings into view.
+        if (self._showPicked) {
+          self._showPicked = false;
+          var picked = main.querySelector('.rm-picked');
+          if (picked && picked.scrollIntoView) {
+            try { picked.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) { picked.scrollIntoView(); }
+          }
+        }
+      }
+
+      // The chosen game, with a button to pick another.
+      function pickedCard(def, onChange) {
+        var cat = (FF.Categories && FF.Categories[def.category]) || { name: def.category, color: '#8b5cf6' };
+        var icon = FF.ui.div('rm-picked__icon');
+        icon.appendChild(FF.Icons.icon(FF.Icons.game[def.id] || cat.iconKey, def.icon || '\ud83c\udfae'));
+        var info = FF.ui.div('rm-picked__info', [
+          FF.ui.div('rm-picked__name', def.name),
+          FF.ui.div('rm-picked__cat', cat.name),
+          def.description ? FF.ui.el('p', { class: 'rm-picked__desc' }, def.description) : null
+        ]);
+        var change = FF.UI.button(FF.t('changeGame', 'Change game'), { icon: 'arrows-left-right', onClick: onChange });
+        var card = FF.ui.el('div', { class: 'rm-picked', style: { '--rm-game-color': cat.color }, 'aria-live': 'polite' }, [icon, info, change]);
+        return card;
       }
 
       // Redraw when something on screen changed: not on every write.
@@ -945,7 +988,7 @@ window.FF = window.FF || {};
         }
 
         children.push(FF.UI.button(FF.t('leaveRoom', 'Leave room'), { icon: 'sign-out',
-          class: 'btn-lg btn-ghost',
+          class: 'btn-lg btn-danger-soft',
           onClick: function () { self.leaveRoom(main); }
         }));
 

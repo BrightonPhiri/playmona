@@ -114,6 +114,7 @@ ol.results__leaderboard, ul.player-list, ul.achievement-grid, ul.team-col__membe
 .rm-title { margin: 0; overflow-wrap: anywhere; }
 .rm-roomhead__edit { flex: none; }
 .rm-roomhead__tools { width: 100%; }
+.rm-roomhead__tools > .btn { flex: 1 1 150px; }
 .rm-roomhead .rm-hint { margin: 0; }
 
 /* Your rooms: rooms saved to come back to */
@@ -141,3 +142,20 @@ ol.results__leaderboard, ul.player-list, ul.achievement-grid, ul.team-col__membe
   pointer-events: none;
 }
 .rm-scan__status { text-align: center; margin-top: var(--sp-2); }
+
+/* The host's chosen game: shown once picked, with the settings below it */
+.rm-picked {
+  display: grid; grid-template-columns: auto 1fr; gap: var(--sp-2) var(--sp-3); align-items: center;
+  padding: var(--sp-3); border-radius: var(--r-lg);
+  background: var(--accent-soft); border: 2px solid var(--rm-game-color, var(--accent));
+  scroll-margin-top: 80px;
+}
+.rm-picked__icon {
+  width: 56px; height: 56px; border-radius: var(--r-md); display: inline-flex; align-items: center; justify-content: center;
+  background: var(--surface); color: var(--rm-game-color, var(--accent)); font-size: 1.9rem;
+}
+.rm-picked__info { min-width: 0; }
+.rm-picked__name { font-family: var(--font-display); font-size: var(--fs-lg); font-weight: 700; }
+.rm-picked__cat { font-size: var(--fs-sm); font-weight: 700; color: var(--muted); }
+.rm-picked__desc { margin: var(--sp-1) 0 0; color: var(--muted); font-size: var(--fs-sm); }
+.rm-picked > .btn { grid-column: 1 / -1; }

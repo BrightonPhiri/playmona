@@ -130,3 +130,28 @@ test('room screens: the lobby shows the room name, Save and Leave', async functi
   assertEqual(host.FF.Room.current(), null, 'left the room');
   assert(!host.FF.RoomUI.busy() || find(host.main, 'mode-grid') || /Play with friends/.test(text(host.main)), 'back on Play with friends');
 });
+
+test('room screens: the host picks a game, then the list folds away and settings appear', async function () {
+  const bus = makeBus();
+  const host = phone(bus, 'Ana');
+  await host.FF.Room.create({ dev: true });
+  host.FF.RoomUI._lastGame = undefined;
+  host.FF.RoomUI._pickingGame = null;
+  host.FF.RoomUI.showLobby(host.main);
+  await tick(20);
+  assert(find(host.main, 'rm-games'), 'the game list shows first');
+  assert(!find(host.main, 'settings-section'), 'no settings before a game is picked');
+
+  find(host.main, 'rm-game').dispatch('click');
+  await tick(20);
+  assert(!find(host.main, 'rm-games'), 'the list is hidden after picking');
+  assert(find(host.main, 'rm-picked'), 'the chosen game is shown');
+  assert(find(host.main, 'settings-section'), 'the settings appear');
+
+  // Change game opens the list again.
+  const change = find(host.main, 'rm-picked').children.filter(function (c) { return c.tagName === 'BUTTON'; })[0];
+  change.dispatch('click');
+  await tick(20);
+  assert(find(host.main, 'rm-games'), 'Change game shows the list again');
+  host.FF.Room.leave();
+});
