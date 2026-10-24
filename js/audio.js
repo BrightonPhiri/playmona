@@ -48,6 +48,27 @@ window.FF = window.FF || {};
       return this.ctx;
     },
 
+    /* The tap sound for every button, link, tab and menu item (wired in navigation.js).
+       It waits until the tap's own handlers have run: if one of them played a sound
+       (a correct answer, a game starting), that sound wins and the tap stays quiet. */
+    TAP_TARGETS: 'button, a[href], [role="button"], [role="tab"], [role="menuitem"], [role="menuitemcheckbox"], ' +
+      '[role="menuitemradio"], [role="switch"], [role="radio"], [role="option"], [role="checkbox"], summary, select, ' +
+      'input[type="checkbox"], input[type="radio"]',
+    _tapPending: false,
+    tap: function (e) {
+      if (this._tapPending) return;   // one sound per tap (a label also clicks its input)
+      var t = e && e.target;
+      var el = t && t.closest ? t.closest(this.TAP_TARGETS) : null;
+      if (!el || el.disabled || el.getAttribute('aria-disabled') === 'true' || el.closest('[data-no-tap-sound]')) return;
+      var self = this;
+      var before = this.plays;
+      this._tapPending = true;
+      setTimeout(function () {
+        self._tapPending = false;
+        if (self.plays === before) self.play('click');
+      }, 0);
+    },
+
     unlock: function () {
       const ctx = this._ensureCtx();
       if (ctx && ctx.state === 'suspended') { try { ctx.resume(); } catch (e) {} }
@@ -81,7 +102,12 @@ window.FF = window.FF || {};
       osc.stop(start + dur + 0.05);
     },
 
+    // How many sounds have been asked for. The app-wide tap sound (FF.Audio.tap)
+    // checks it, so a control that plays its own sound is not doubled.
+    plays: 0,
+
     play: function (name) {
+      this.plays++;
       if (!this.effectsEnabled) return;
       const s = SFX[name];
       if (!s) return;

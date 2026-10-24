@@ -26,7 +26,7 @@ window.FF = window.FF || {};
         self._keydown(e);
       });
       document.addEventListener('pointerdown', function () { self._setModality('pointer'); }, true);
-      document.addEventListener('click', function (e) { FF.Audio.unlock(); }, true);
+      document.addEventListener('click', function (e) { FF.Audio.unlock(); FF.Audio.tap(e); }, true);
       document.addEventListener('pointerdown', function (e) { FF.Audio.unlock(); }, true);
 
       // Keep the device/browser "back" button inside the app instead of

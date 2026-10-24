@@ -355,7 +355,7 @@ window.FF = window.FF || {};
       item('user', t('myProfile', 'My profile'), function () { FF.App._navTo('profile'); });
       item('users', t('savedPlayers', 'Saved players'), function () { FF.Nav.go('profile', { tab: 'players' }); },
         { hint: String(FF.Players.all().length) });
-      item('chart-line', t('myStats', 'My stats'), function () { FF.Nav.go('profile', { tab: 'overview' }); });
+      item('chart-line', t('myStats', 'My stats'), function () { FF.Nav.go('profile', { tab: 'overview', focus: 'stats' }); });
       item('sliders', t('navSettings', 'Settings'), function () { FF.App._navTo('settings'); });
       if (FF.Plus && FF.Plus.visible()) {
         item('crown', t('plusTitle', 'PlayMona Plus'), function () { FF.Nav.go('plus'); },
@@ -538,7 +538,9 @@ window.FF = window.FF || {};
        survives a reload, so a new visit still opens on Home. */
     _rememberView: function (view, params) {
       try {
-        sessionStorage.setItem('playmona:lastView', JSON.stringify({ uid: this._uid, view: view, params: params || {} }));
+        var keep = Object.assign({}, params || {});
+        delete keep.focus;   // a one-time jump (My stats) is not repeated by a refresh
+        sessionStorage.setItem('playmona:lastView', JSON.stringify({ uid: this._uid, view: view, params: keep }));
       } catch (e) {}
     },
 
@@ -1196,6 +1198,21 @@ window.FF = window.FF || {};
         if (tab === 'teams') FF.App.renderTeams(panel);
         else if (tab === 'players') FF.App.renderPlayers(panel);
         else FF.App.renderOverview(panel);
+        // "My stats" in the account menu: go straight to the stats and point them out.
+        if (params.focus === 'stats') {
+          delete params.focus;   // once: later redraws stay where the player is
+          var dash = panel.querySelector('.dash');
+          if (dash) setTimeout(function () {
+            if (!dash.isConnected) return;
+            var reduce = FF.Settings && FF.Settings.get && FF.Settings.get('reduceMotion');
+            var startY = window.scrollY;
+            try { dash.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' }); } catch (e) { dash.scrollIntoView(); }
+            // Some browsers skip smooth scrolling (power saving): then jump there.
+            setTimeout(function () { if (dash.isConnected && window.scrollY === startY) dash.scrollIntoView(); }, 500);
+            dash.classList.add('is-spotlight');
+            setTimeout(function () { dash.classList.remove('is-spotlight'); }, 1600);
+          }, 60);
+        }
       },
 
       gamenight: function (main) {
