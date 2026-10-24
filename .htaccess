@@ -1,0 +1,13 @@
+# PlayMona: Apache rules for the site root (nginx sits in front; see docs/deploy.md).
+# nginx maps /play and /privacy itself and passes other addresses on to Apache.
+Options -Indexes
+RewriteEngine On
+
+# Uploaded files (profile photos) are never run as code.
+RewriteRule ^uploads/.*\.(php\d?|phtml|phar|cgi|pl|py)$ - [F,L,NC]
+
+# Clean addresses for pages nginx does not list by name: /terms -> terms.html.
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{DOCUMENT_ROOT}/$1.html -f
+RewriteRule ^([a-z0-9-]+)$ $1.html [L]
