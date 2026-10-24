@@ -1447,14 +1447,17 @@ window.FF = window.FF || {};
       },
 
       sound: function (panel) {
-        var vol = FF.ui.el('input', { type: 'range', min: 0, max: 100, value: Math.round(FF.Audio.volume * 100), 'aria-label': t('volume', 'Volume'),
-          oninput: function (e) { FF.Audio.setVolume(e.target.value / 100); FF.Settings.set('volume', FF.Audio.volume); } });
+        var vol = FF.ui.el('input', { type: 'range', min: 0, max: 100, value: Math.round(FF.Audio.volume * 100), 'aria-label': t('effectsVolume', 'Effects volume'),
+          oninput: function (e) { FF.Audio.setVolume(e.target.value / 100); } });
+        var musicVol = FF.ui.el('input', { type: 'range', min: 0, max: 100, value: Math.round(FF.Audio.musicVolume * 100), 'aria-label': t('musicVolume', 'Music volume'),
+          oninput: function (e) { FF.Audio.setMusicVolume(e.target.value / 100); } });
         var music = FF.UI.switchRow({ label: t('music', 'Music'), checked: FF.Audio.musicEnabled, onChange: function (on) { FF.Audio.setMusic(on); } });
         music.setAttribute('data-music-switch', '');
         FF.App.settingsSection(panel, 'speaker', t('sound', 'Sound'), [
           FF.UI.switchRow({ label: t('soundEffects', 'Sound effects'), checked: !!FF.Settings.get('sound'), onChange: function (on) { FF.Audio.setEffects(on); FF.Settings.set('sound', on); } }),
+          FF.UI.settingRow(t('effectsVolume', 'Effects volume'), vol),
           music,
-          FF.UI.settingRow(t('volume', 'Volume'), vol)
+          FF.UI.settingRow(t('musicVolume', 'Music volume'), musicVol)
         ]);
       },
 

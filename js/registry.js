@@ -17,6 +17,7 @@ window.FF = window.FF || {};
       sound: true,
       music: true,
       volume: 0.7,
+      musicVolume: 1,
       animations: true,
       reduceMotion: false,
       randomOrder: true,

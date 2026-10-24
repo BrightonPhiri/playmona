@@ -28,12 +28,14 @@ window.FF = window.FF || {};
     ctx: null,
     effectsEnabled: true,
     musicEnabled: true,
-    volume: 0.7,
+    volume: 0.7,        // sound effects
+    musicVolume: 1,     // music: the song's own level unless the player lowers it
 
     init: function () {
       this.effectsEnabled = FF.Storage.get('sound', true);
       this.musicEnabled = FF.Storage.get('music', true);
       this.volume = FF.Storage.get('volume', 0.7);
+      this.musicVolume = FF.Storage.get('musicVolume', 1);
       FF.Storage.remove('musicMode');   // the old built-in tunes are gone
     },
 
@@ -84,6 +86,9 @@ window.FF = window.FF || {};
     _musicListeners: [],
     setVolume: function (v) {
       this.volume = FF.util.clamp(v, 0, 1); FF.Storage.set('volume', this.volume);
+    },
+    setMusicVolume: function (v) {
+      this.musicVolume = FF.util.clamp(v, 0, 1); FF.Storage.set('musicVolume', this.musicVolume);
       this._duckMusic(0.2);
     },
 
@@ -125,15 +130,14 @@ window.FF = window.FF || {};
     },
 
     /* ---------- Music ----------
-       Plays quietly on a loop while someone is in the app, signed in or as a
+       Plays on a loop at the Music volume setting while someone is in the app, signed in or as a
        guest (FF.App calls startAppMusic / stopAppMusic). Browsers only allow
        sound after a tap: if the first try is refused, the next tap starts it.
        It drops lower during a game or a voice chat, and pauses while the tab
        is hidden. To add a song, put the file in assets/music/ and its path in
        PLAYLIST; songs play in order and the list repeats. */
     PLAYLIST: ['assets/music/One_World_One_Game.mp3'],
-    MUSIC_LEVEL: 0.2,   // on menus (times the volume slider)
-    DUCK_LEVEL: 0.08,   // during a game or a voice chat
+    DUCK_SHARE: 0.4,    // during a game or a voice chat, this share of the music volume
     _music: null,       // { el, gain, target }
     _musicOn: false,    // the app is open
     _musicBlocked: false,
@@ -185,7 +189,7 @@ window.FF = window.FF || {};
     _musicTarget: function () {
       var duck = document.body.classList.contains('game-active') ||
         !!(FF.Voice && FF.Voice.isActive && FF.Voice.isActive());
-      return (duck ? this.DUCK_LEVEL : this.MUSIC_LEVEL) * this.volume;
+      return (duck ? this.DUCK_SHARE : 1) * this.musicVolume;
     },
 
     _duckMusic: function (secs) {
