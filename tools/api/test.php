@@ -46,12 +46,73 @@ class MemoryRtdb implements RealtimeDb
     public array $data = [];
     public bool $down = false;
     public int $writes = 0;
-    public function get(string $path): mixed { return $this->data[$path] ?? null; }
+    /** Every path read, with ' ?query' when it was a query (tests check what was downloaded). */
+    public array $reads = [];
+
+    /** The stored key that holds $path: the path itself, or a parent whose tree contains it. */
+    private function holder(string $path): ?array
+    {
+        if (array_key_exists($path, $this->data)) return [$path, []];
+        $parts = explode('/', $path);
+        for ($i = count($parts) - 1; $i > 0; $i--) {
+            $key = implode('/', array_slice($parts, 0, $i));
+            if (array_key_exists($key, $this->data)) return [$key, array_slice($parts, $i)];
+        }
+        return null;
+    }
+
+    public function get(string $path): mixed
+    {
+        $this->reads[] = $path;
+        $h = $this->holder($path);
+        if (!$h) return null;
+        $node = $this->data[$h[0]];
+        foreach ($h[1] as $part) {
+            if (!is_array($node) || !array_key_exists($part, $node)) return null;
+            $node = $node[$part];
+        }
+        return $node;
+    }
+
     public function set(string $path, mixed $value): void
     {
         if ($this->down) throw new RuntimeException('offline');
         $this->writes++;
-        $this->data[$path] = $value;
+        $h = $this->holder($path);
+        if (!$h || !$h[1]) {
+            if ($value === null) unset($this->data[$path]); else $this->data[$path] = $value;
+            return;
+        }
+        $node = &$this->data[$h[0]];
+        $last = array_pop($h[1]);
+        foreach ($h[1] as $part) {
+            if (!isset($node[$part]) || !is_array($node[$part])) $node[$part] = [];
+            $node = &$node[$part];
+        }
+        if ($value === null) unset($node[$last]); else $node[$last] = $value;
+    }
+
+    /** Firebase REST queries: orderBy a child, startAt / endAt, limitToFirst, shallow. */
+    public function query(string $path, array $params): mixed
+    {
+        $tree = $this->get($path);
+        array_pop($this->reads);
+        $this->reads[] = $path . ' ?' . http_build_query($params);
+        if (!is_array($tree)) return null;
+        if (!empty($params['shallow'])) return array_map(fn () => true, $tree);
+        $by = $params['orderBy'] ?? null;
+        if ($by) {
+            $tree = array_filter($tree, function ($v) use ($by, $params) {
+                $x = is_array($v) ? ($v[$by] ?? null) : null;
+                if ($x === null) return false;
+                if (isset($params['startAt']) && $x < $params['startAt']) return false;
+                if (isset($params['endAt']) && $x > $params['endAt']) return false;
+                return true;
+            });
+            uasort($tree, fn ($a, $b) => ($a[$by] ?? 0) <=> ($b[$by] ?? 0));
+        }
+        if (isset($params['limitToFirst'])) $tree = array_slice($tree, 0, (int) $params['limitToFirst'], true);
+        return $tree;
     }
 }
 
@@ -854,6 +915,13 @@ function liveWorld(): array
     return ['rtdb' => $rtdb, 'live' => new \PlayMona\Live($rtdb, $dir), 'dir' => $dir];
 }
 const LIVE_NOW = 1_010_000;
+/** n viewers who checked in just now. */
+function liveViewers(int $n, string $prefix = 'v'): array
+{
+    $out = [];
+    for ($i = 1; $i <= $n; $i++) $out[$prefix . $i] = LIVE_NOW - 1000;
+    return $out;
+}
 
 test('live: only fresh public rooms are listed, busiest first', function () {
     $w = liveWorld();
@@ -864,9 +932,9 @@ test('live: only fresh public rooms are listed, busiest first', function () {
         'DDDDDDDD' => liveBroadcast(['name' => 'Gone quiet', 'updatedAt' => LIVE_NOW - 46_000]),
     ];
     $w['rtdb']->data['watchers'] = [
-        'AAAAAAAA' => ['v1' => 1, 'v2' => 2],
-        'BBBBBBBB' => ['v1' => 1, 'v2' => 2, 'v3' => 3, 'v4' => 4, 'v5' => 5],
-        'CCCCCCCC' => ['v9' => 1],
+        'AAAAAAAA' => liveViewers(2),
+        'BBBBBBBB' => liveViewers(5),
+        'CCCCCCCC' => liveViewers(1),
     ];
     $list = $w['live']->list(LIVE_NOW);
     eq(['BBBBBBBB', 'AAAAAAAA'], array_column($list['rooms'], 'code'));
@@ -900,13 +968,14 @@ test('live: full when the room or the site is at its limit', function () {
     $w = liveWorld();
     $w['rtdb']->data['config/site/watch'] = ['room' => 2, 'site' => 3];
     $w['rtdb']->data['broadcasts'] = ['AAAAAAAA' => liveBroadcast(), 'BBBBBBBB' => liveBroadcast()];
-    $w['rtdb']->data['watchers'] = ['AAAAAAAA' => ['v1' => 1, 'v2' => 2]];
+    $w['rtdb']->data['watchers'] = ['AAAAAAAA' => liveViewers(2)];
     $a = $w['live']->room('AAAAAAAA', LIVE_NOW, false);
     eq(true, $a['full']);
     eq('room', $a['reason']);
     eq(false, $w['live']->room('BBBBBBBB', LIVE_NOW, false)['full'], 'one more fits the site');
-    $w['rtdb']->data['watchers']['BBBBBBBB'] = ['v3' => 1];
-    $b = $w['live']->room('BBBBBBBB', LIVE_NOW, false);
+    $w['rtdb']->data['watchers']['BBBBBBBB'] = liveViewers(1, 'w');
+    // The site total comes from the list, cached for ten seconds.
+    $b = $w['live']->room('BBBBBBBB', LIVE_NOW + 11_000, false);
     eq(true, $b['full']);
     eq('site', $b['reason']);
     eq(3, $b['siteViewers']);
@@ -925,7 +994,7 @@ test('live: opening a watch view counts a watcher once, not when full', function
     $w = liveWorld();
     $w['rtdb']->data['config/site/watch'] = ['room' => 1, 'site' => 50];
     $w['rtdb']->data['broadcasts'] = ['AAAAAAAA' => liveBroadcast(), 'BBBBBBBB' => liveBroadcast()];
-    $w['rtdb']->data['watchers'] = ['BBBBBBBB' => ['v1' => 1]];
+    $w['rtdb']->data['watchers'] = ['BBBBBBBB' => liveViewers(1)];
     $day = gmdate('Y-m-d', intdiv(LIVE_NOW, 1000));
     $w['live']->room('AAAAAAAA', LIVE_NOW, true);
     eq(1, $w['rtdb']->data["stats/days/$day/watchers"]);
@@ -957,6 +1026,50 @@ test('live: the list is cached for ten seconds', function () {
     eq(0, count($w['live']->list(LIVE_NOW + 11_000)['rooms']), 'read again after ten seconds');
 });
 
+test('live: the list downloads only fresh broadcasts, never the whole trees', function () {
+    $w = liveWorld();
+    $w['rtdb']->data['broadcasts'] = ['AAAAAAAA' => liveBroadcast(), 'GGGGGGGG' => liveBroadcast(['updatedAt' => 1])];
+    $w['rtdb']->data['watchers'] = ['AAAAAAAA' => liveViewers(2), 'GGGGGGGG' => liveViewers(9)];
+    $list = $w['live']->list(LIVE_NOW);
+    eq(['AAAAAAAA'], array_column($list['rooms'], 'code'));
+    eq(2, $list['viewers']);
+    eq(false, in_array('broadcasts', $w['rtdb']->reads, true), 'no full broadcasts download');
+    eq(false, in_array('watchers', $w['rtdb']->reads, true), 'no full watchers download');
+    eq(true, (bool) preg_grep('/^broadcasts \?orderBy=updatedAt&startAt=/', $w['rtdb']->reads), 'asked for fresh ones only');
+});
+
+test('live: one watch code reads only that game', function () {
+    $w = liveWorld();
+    $w['rtdb']->data['broadcasts'] = ['AAAAAAAA' => liveBroadcast()];
+    $w['rtdb']->data['watchers'] = ['AAAAAAAA' => liveViewers(1)];
+    $w['live']->room('AAAAAAAA', LIVE_NOW, false);
+    eq(false, in_array('broadcasts', $w['rtdb']->reads, true));
+    eq(false, in_array('watchers', $w['rtdb']->reads, true));
+    eq(true, in_array('broadcasts/AAAAAAAA', $w['rtdb']->reads, true));
+});
+
+test('live: viewers who stopped checking in do not count', function () {
+    $w = liveWorld();
+    $w['rtdb']->data['config/site/watch'] = ['room' => 2, 'site' => 50];
+    $w['rtdb']->data['broadcasts'] = ['AAAAAAAA' => liveBroadcast()];
+    $w['rtdb']->data['watchers'] = ['AAAAAAAA' => ['gone1' => LIVE_NOW - 120_000, 'gone2' => 5, 'here' => LIVE_NOW - 1000]];
+    $a = $w['live']->room('AAAAAAAA', LIVE_NOW, false);
+    eq(1, $a['viewers']);
+    eq(false, $a['full'], 'old entries cannot pin a room as full');
+});
+
+test('live: old broadcasts and their viewer lists are cleaned up', function () {
+    $w = liveWorld();
+    $w['rtdb']->data['broadcasts'] = [
+        'AAAAAAAA' => liveBroadcast(),
+        'GGGGGGGG' => liveBroadcast(['updatedAt' => LIVE_NOW - 11 * 60_000]),
+        'HHHHHHHH' => liveBroadcast(['updatedAt' => LIVE_NOW - 5 * 60_000]),
+    ];
+    $w['rtdb']->data['watchers'] = ['GGGGGGGG' => liveViewers(1), 'AAAAAAAA' => liveViewers(1)];
+    eq(1, $w['live']->prune(LIVE_NOW));
+    eq(['AAAAAAAA', 'HHHHHHHH'], array_keys($w['rtdb']->data['broadcasts']), 'only the long-gone one goes');
+    eq(['AAAAAAAA'], array_keys($w['rtdb']->data['watchers']));
+});
 test('live: the routes answer /live and /live/<code>', function () {
     $w = world();
     $w['rtdb']->data['broadcasts'] = ['AAAAAAAA' => liveBroadcast(['updatedAt' => \PlayMona\nowMs()])];

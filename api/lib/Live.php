@@ -18,6 +18,10 @@ final class Live
     public const STALE_MS = 45000;
     public const CACHE_SECONDS = 10;
     public const CODE = '/^[ABCDEFGHJKMNPQRSTUVWXYZ2-9]{8}$/';
+    /** Viewers check in every 30 s; an entry older than this is someone who left without saying so. */
+    public const VIEWER_MS = 90000;
+    /** Broadcasts silent for this long are deleted by the cron job, with their viewer lists. */
+    public const PRUNE_MS = 600000;
 
     public function __construct(private RealtimeDb $db, private string $cacheDir) {}
 
@@ -26,7 +30,8 @@ final class Live
     {
         $cached = $this->readCache($now);
         if ($cached !== null) return $cached;
-        $out = self::summarize($this->broadcasts(), $this->watchers(), $this->limits(), $now);
+        $fresh = $this->freshBroadcasts($now);
+        $out = self::summarize($fresh, $this->watchersFor(array_keys($fresh)), $this->limits(), $now);
         $result = ['rooms' => $out['rooms'], 'viewers' => $out['viewers'], 'limits' => $out['limits'], 'time' => $now];
         $this->writeCache($now, $result);
         return $result;
@@ -36,15 +41,14 @@ final class Live
     public function room(string $wc, int $now, bool $open): array
     {
         if (!preg_match(self::CODE, $wc)) throw new HttpError(404, 'This game is not live right now.', 'not-live');
-        $broadcasts = $this->broadcasts();
-        $b = $broadcasts[$wc] ?? null;
+        // Only this game is read; the site total comes from the (cached) list.
+        $b = $this->db->get('broadcasts/' . $wc);
         if (!is_array($b) || !self::fresh($b, $now)) throw new HttpError(404, 'This game is not live right now.', 'not-live');
 
-        $watchers = $this->watchers();
         $limits = $this->limits();
-        $all = self::summarize($broadcasts, $watchers, $limits, $now, true);
-        $room = $all['byCode'][$wc];
-        $site = $all['viewers'];
+        $viewers = self::countViewers($this->db->get('watchers/' . $wc), $now);
+        $room = self::liveRoom($wc, $b, $viewers);
+        $site = max((int) $this->list($now)['viewers'], $viewers);
         $reason = null;
         if ($room['viewers'] >= $limits['room']) $reason = 'room';
         elseif ($site >= $limits['site']) $reason = 'site';
@@ -85,7 +89,7 @@ final class Live
         foreach ($broadcasts as $code => $b) {
             $code = (string) $code;
             if (!is_array($b) || !preg_match(self::CODE, $code) || !self::fresh($b, $now)) continue;
-            $viewers = is_array($watchers[$code] ?? null) ? count($watchers[$code]) : 0;
+            $viewers = self::countViewers($watchers[$code] ?? null, $now);
             $site += $viewers;
             $room = self::liveRoom($code, $b, $viewers);
             $byCode[$code] = $room;
@@ -95,6 +99,30 @@ final class Live
         $out = ['rooms' => $rooms, 'viewers' => $site, 'limits' => $limits];
         if ($withAll) $out['byCode'] = $byCode;
         return $out;
+    }
+
+    /** Deletes broadcasts nobody has written for PRUNE_MS (abandoned rooms), and their viewer lists. Cron. */
+    public function prune(int $now): int
+    {
+        $old = $this->db->query('broadcasts', ['orderBy' => 'updatedAt', 'endAt' => $now - self::PRUNE_MS, 'limitToFirst' => 100]);
+        $n = 0;
+        foreach (array_keys(is_array($old) ? $old : []) as $code) {
+            $code = (string) $code;
+            if (!preg_match(self::CODE, $code)) continue;
+            $this->db->set('broadcasts/' . $code, null);
+            $this->db->set('watchers/' . $code, null);
+            $n++;
+        }
+        return $n;
+    }
+
+    /** People watching now: entries that checked in within VIEWER_MS. */
+    private static function countViewers(mixed $entries, int $now): int
+    {
+        if (!is_array($entries)) return 0;
+        $n = 0;
+        foreach ($entries as $t) if (is_numeric($t) && ($now - (int) $t) <= self::VIEWER_MS) $n++;
+        return $n;
     }
 
     private static function fresh(array $b, int $now): bool
@@ -133,16 +161,22 @@ final class Live
         ];
     }
 
-    private function broadcasts(): array
+    /** Broadcasts written in the last STALE_MS (needs .indexOn updatedAt on broadcasts). */
+    private function freshBroadcasts(int $now): array
     {
-        $v = $this->db->get('broadcasts');
+        $v = $this->db->query('broadcasts', ['orderBy' => 'updatedAt', 'startAt' => $now - self::STALE_MS]);
         return is_array($v) ? $v : [];
     }
 
-    private function watchers(): array
+    /** Viewer lists for these watch codes only. */
+    private function watchersFor(array $codes): array
     {
-        $v = $this->db->get('watchers');
-        return is_array($v) ? $v : [];
+        $out = [];
+        foreach ($codes as $code) {
+            $code = (string) $code;
+            if (preg_match(self::CODE, $code)) $out[$code] = $this->db->get('watchers/' . $code);
+        }
+        return $out;
     }
 
     /** +1 on today's and the all-time "watch views" counters (admin Overview). */

@@ -8,6 +8,8 @@ interface RealtimeDb
 {
     public function get(string $path): mixed;
     public function set(string $path, mixed $value): void;
+    /** A filtered read: orderBy (a child), startAt, endAt, limitToFirst, shallow. */
+    public function query(string $path, array $params): mixed;
 }
 
 /**
@@ -38,6 +40,17 @@ class FirebaseDb implements RealtimeDb
     {
         [$status] = $this->http->request('PUT', $this->url($path), $this->headers(), json_encode($value));
         if ($status !== 200) throw new \RuntimeException("Firebase write failed ($status).");
+    }
+
+    public function query(string $path, array $params): mixed
+    {
+        $q = [];
+        foreach (['orderBy', 'startAt', 'endAt'] as $k) if (array_key_exists($k, $params)) $q[$k] = json_encode($params[$k]);
+        if (isset($params['limitToFirst'])) $q['limitToFirst'] = (int) $params['limitToFirst'];
+        if (!empty($params['shallow'])) $q['shallow'] = 'true';
+        [$status, , $raw] = $this->http->request('GET', $this->url($path) . '?' . http_build_query($q), $this->headers());
+        if ($status !== 200) throw new \RuntimeException("Firebase query failed ($status).");
+        return json_decode($raw, true);
     }
 
     private function url(string $path): string

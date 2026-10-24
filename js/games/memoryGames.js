@@ -398,8 +398,9 @@ window.FF = window.FF || {};
         var shown = api.util.sample(EMOJI, count);
         var missingIdx = api.util.int(0, count - 1);
         var missing = shown[missingIdx];
-        // For people watching: the set to remember (one of them goes missing).
-        if (race) race.describe({ kind: 'card', text: FF.t('wmWatch', 'Remember these. One will go missing: {set}', { set: shown.join(' ') }) }, null);
+        // For people watching: what players are doing, not the set itself (a player
+        // with the watch link open could compare it with the gap on their screen).
+        if (race) race.describe({ kind: 'card', text: FF.t('wmWatch', 'Everyone is memorising a row of pictures. Next, one goes missing.') }, null);
 
         var pool = EMOJI.filter(function (e) { return shown.indexOf(e) === -1; });
         pool = api.util.shuffle(pool);

@@ -47,6 +47,14 @@ try {
     fwrite(STDERR, 'Sync failed: ' . $e->getMessage() . "\n");
 }
 
+// Watch live: broadcasts of rooms nobody has used for 10 minutes.
+try {
+    $gone = $app->live()->prune(PlayMona\nowMs());
+    if ($gone) echo "Removed $gone old watch broadcast(s).\n";
+} catch (Throwable $e) {
+    fwrite(STDERR, 'Watch cleanup failed: ' . $e->getMessage() . "\n");
+}
+
 // Visitor details older than about 13 months.
 try {
     $pruned = $app->visits()->prune();

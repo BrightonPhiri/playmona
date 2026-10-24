@@ -46,3 +46,10 @@ test('games that call race.describe get it from a helper that has it', function 
   const race = fs.readFileSync(path.join(ROOT, 'js/net/race.js'), 'utf8');
   assert(/describe: function \(screen, answer\) \{ return self\.describe\(screen, answer\); \}/.test(race), 'forGame passes describe through');
 });
+
+test("What's Missing never shows viewers the whole set (it would give the answer away)", function () {
+  const src = fs.readFileSync(path.join(ROOT, 'js/games/memoryGames.js'), 'utf8');
+  const call = /race\.describe\(([^;]*)\);/.exec(src);
+  assert(call, 'describes its rounds');
+  assert(!/\bshown\b|\.join\(|\{set\}/.test(call[1]), 'the description does not include the emoji');
+});
