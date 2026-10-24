@@ -109,18 +109,18 @@ window.FF = window.FF || {};
         FF.ui.clear(main);
         tv = FF.WatchTV.mount(main, { now: function () { return tr.serverNow(); }, stopHref: 'watch' });
 
+        // Keep listening after a game stops or goes quiet: when the host turns
+        // watching back on, or another player takes over as host, it comes back.
         var offB = tr.watch('broadcasts/' + code, function (b) {
           if (gone) return;
+          last = b || null;
           if (!b) {
-            if (seen) finish(t('hostStopped', 'The host stopped sharing this game.'), t('hostStoppedText', 'Here are other games you can watch.'));
+            if (seen) tv.showMessage(t('hostStopped', 'The host stopped sharing this game.'), t('hostStoppedWait', 'If they share it again, it will show here.'));
             else finish(t('notLive', 'This game isn’t live right now.'), t('notLiveText', 'Check the link, or pick another game.'));
             return;
           }
           seen = true;
-          last = b;
-          var m = FF.WatchView.model(b, tr.serverNow());
-          if (m.state === 'ended') { finish(t('gameEnded', 'This game has ended.'), t('gameEndedText', 'Thanks for watching. Here are other games.')); return; }
-          tv.update(m);
+          tv.update(FF.WatchView.model(b, tr.serverNow()));
         });
         var offW = tr.watch('watchers/' + code, function (v) {
           if (tv && !gone) tv.setViewers(v && typeof v === 'object' ? Object.keys(v).length : 0);
@@ -128,11 +128,14 @@ window.FF = window.FF || {};
         // A host whose phone died stops writing: notice it without any new data.
         var staleCheck = setInterval(function () {
           if (!last || gone) return;
-          if (FF.WatchView.model(last, tr.serverNow()).state === 'ended') {
-            finish(t('gameEnded', 'This game has ended.'), t('gameEndedText', 'Thanks for watching. Here are other games.'));
-          }
+          var m = FF.WatchView.model(last, tr.serverNow());
+          if (m.state === 'ended') tv.update(m);
         }, 5000);
-        parts.push(function () { offB(); offW(); clearInterval(staleCheck); });
+        // Check in, so people who left without saying so stop counting as viewers.
+        var checkIn = setInterval(function () {
+          if (!gone) tr.set(mine, tr.serverNow()).catch(function () {});
+        }, opts.heartbeatMs || 30000);
+        parts.push(function () { offB(); offW(); clearInterval(staleCheck); clearInterval(checkIn); });
       }).catch(function () {
         if (!gone) finish(t('watchFailed', 'This game could not be opened.'), t('watchFailedText', 'Check your connection and try again.'));
       });

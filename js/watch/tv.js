@@ -266,11 +266,23 @@ window.FF = window.FF || {};
       if (m.state === 'lobby') simple(lobbyView(m));
       else if (m.state === 'countdown') simple(countdownView(m));
       else if (m.state === 'podium') simple(podiumView(m));
-      else simple(div('tv-ended', [FF.ui.el('p', {}, t('gameEnded', 'This game has ended.'))]));
+      else showMessage(t('gameEnded', 'This game has ended.'), t('gameEndedWait', 'If the room starts again, it will show here.'));
+    }
+
+    /* A message in place of the game (it ended, or the host stopped sharing).
+       The next update() puts the game back if it carries on. */
+    function showMessage(title, text) {
+      root.setAttribute('data-state', 'message');
+      simple(div('tv-ended', [
+        FF.ui.el('h2', { class: 'tv-ended__title' }, title),
+        text ? FF.ui.el('p', {}, text) : null,
+        FF.ui.el('a', { class: 'btn btn-primary', href: opts.stopHref || 'watch' }, t('otherGames', 'See other live games'))
+      ]));
     }
 
     return {
       update: update,
+      showMessage: showMessage,
       setViewers: function (n) {
         viewers.hidden = !(n > 0);
         viewers.textContent = t('nWatching', '{n} watching', { n: n });

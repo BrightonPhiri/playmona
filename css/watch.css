@@ -208,3 +208,4 @@
 }
 .wl-message__title { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: var(--fs-3xl); }
 .wl-message__text { margin: var(--sp-2) 0 0; color: var(--muted); font-weight: 600; }
+.tv-ended__title { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: var(--fs-3xl); color: var(--text); }

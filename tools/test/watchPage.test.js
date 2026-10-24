@@ -151,3 +151,48 @@ test('watch list: an empty list still invites people to start a room', async fun
   assert(/Start your own room and make it public/.test(text(main)));
   list.destroy();
 });
+
+test('watch page: viewers come back when the broadcast returns', async function () {
+  const bus = makeBus();
+  const { FF, main } = boot(bus);
+  putBroadcast(bus, liveDoc());
+  const page = FF.WatchPage.start({ root: main, pathname: '/watch/' + CODE, fetch: reply(200, { full: false }) });
+  await tick(40);
+  putBroadcast(bus, null);
+  await tick(20);
+  assert(/The host stopped sharing this game\./.test(text(main)), 'stopped');
+  putBroadcast(bus, liveDoc({ name: 'Back again' }));
+  await tick(20);
+  assert(/Back again/.test(text(main)), 'watching again');
+  assert(!/stopped sharing/.test(text(main)), 'message gone');
+  assertEqual(Object.keys((((bus.read('') || {}).watchers || {})[CODE]) || {}).length, 1, 'still counted as a viewer');
+  page.destroy();
+});
+
+test('watch page: a quiet game reads as ended, and comes back when the new host carries on', async function () {
+  const bus = makeBus();
+  const { FF, main } = boot(bus);
+  putBroadcast(bus, liveDoc());
+  const page = FF.WatchPage.start({ root: main, pathname: '/watch/' + CODE, fetch: reply(200, { full: false }) });
+  await tick(40);
+  putBroadcast(bus, liveDoc({ updatedAt: Date.now() - 60000 }));
+  await tick(20);
+  assert(/This game has ended\./.test(text(main)), 'ended');
+  putBroadcast(bus, liveDoc({ name: 'New host' }));
+  await tick(20);
+  assert(/New host/.test(text(main)) && !/has ended/.test(text(main)), 'back');
+  page.destroy();
+});
+
+test('watch page: viewers check in so the count only includes people still here', async function () {
+  const bus = makeBus();
+  const { FF, main } = boot(bus);
+  putBroadcast(bus, liveDoc());
+  const page = FF.WatchPage.start({ root: main, pathname: '/watch/' + CODE, fetch: reply(200, { full: false }), heartbeatMs: 30 });
+  await tick(40);
+  const first = Object.values(((bus.read('') || {}).watchers || {})[CODE])[0];
+  await tick(60);
+  const later = Object.values(((bus.read('') || {}).watchers || {})[CODE])[0];
+  assert(later > first, 'the entry is refreshed');
+  page.destroy();
+});
