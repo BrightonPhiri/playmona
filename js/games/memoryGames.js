@@ -398,6 +398,8 @@ window.FF = window.FF || {};
         var shown = api.util.sample(EMOJI, count);
         var missingIdx = api.util.int(0, count - 1);
         var missing = shown[missingIdx];
+        // For people watching: the set to remember (one of them goes missing).
+        if (race) race.describe({ kind: 'card', text: FF.t('wmWatch', 'Remember these. One will go missing: {set}', { set: shown.join(' ') }) }, null);
 
         var pool = EMOJI.filter(function (e) { return shown.indexOf(e) === -1; });
         pool = api.util.shuffle(pool);

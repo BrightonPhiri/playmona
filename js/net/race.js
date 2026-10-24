@@ -50,6 +50,23 @@ window.FF = window.FF || {};
 
   function clip(text, max) { return String(text == null ? '' : text).slice(0, max); }
 
+  // Pictures people watching can draw. Anything else, or a drawing too big to
+  // send every round, is left out. Viewers show svg only through <img>.
+  var IMAGE_LIMITS = { flag: 12, src: 200, emoji: 16, svg: 30000 };
+  function cleanImage(image) {
+    if (!image || typeof image !== 'object') return null;
+    var kinds = Object.keys(IMAGE_LIMITS);
+    for (var i = 0; i < kinds.length; i++) {
+      var v = image[kinds[i]];
+      if (typeof v === 'string' && v && v.length <= IMAGE_LIMITS[kinds[i]]) {
+        var out = {};
+        out[kinds[i]] = v;
+        return out;
+      }
+    }
+    return null;
+  }
+
   function screenInfo() {
     if (!described) return null;
     return { n: described.n, screen: described.screen, answer: described.revealed ? described.answer : null };
@@ -319,7 +336,8 @@ window.FF = window.FF || {};
     describe: function (screen, answer) {
       if (!room() || !session || !screen) return;
       var clean = { kind: screen.kind === 'card' ? 'card' : 'choice', text: clip(screen.text, 200) };
-      if (screen.image) clean.image = screen.image;
+      var image = cleanImage(screen.image);
+      if (image) clean.image = image;
       if (clean.kind === 'choice') {
         clean.options = (screen.options || []).slice(0, 6).map(function (o) { return clip(o, 80); });
       }
@@ -474,6 +492,9 @@ window.FF = window.FF || {};
 
       return {
         beginRound: function (n) { return self.beginRound(n); },
+
+        /* What this round shows, for people watching. */
+        describe: function (screen, answer) { return self.describe(screen, answer); },
 
         /* Hold the options until the round's shared open instant. */
         gate: function (onOpen) {

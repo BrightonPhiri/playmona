@@ -103,3 +103,16 @@ test('race screen: describing offline does nothing', function () {
   FF.Race.describe(QUESTION, 0);
   assertEqual(FF.Race.screen(), null);
 });
+
+test('race screen: only known picture kinds pass, and big drawings are dropped', async function () {
+  const { A, B } = await twoInARoom();
+  A.Race.describe({ kind: 'choice', text: 'q', options: ['a', 'b'], image: { flag: 'zw' } }, 0);
+  assertEqual(JSON.stringify(A.Race.screen().screen.image), JSON.stringify({ flag: 'zw' }), 'flag kept');
+  A.Race.describe({ kind: 'choice', text: 'q', options: ['a', 'b'], image: { svg: '<svg></svg>', onload: 'x' } }, 0);
+  assertEqual(JSON.stringify(A.Race.screen().screen.image), JSON.stringify({ svg: '<svg></svg>' }), 'only the svg field');
+  A.Race.describe({ kind: 'choice', text: 'q', options: ['a', 'b'], image: { svg: '<svg>' + new Array(30001).join('x') + '</svg>' } }, 0);
+  assertEqual(A.Race.screen().screen.image, undefined, 'too big to send');
+  A.Race.describe({ kind: 'choice', text: 'q', options: ['a', 'b'], image: { script: 'x' } }, 0);
+  assertEqual(A.Race.screen().screen.image, undefined, 'unknown kind dropped');
+  done(A, B);
+});

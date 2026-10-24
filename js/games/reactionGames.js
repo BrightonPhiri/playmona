@@ -159,7 +159,11 @@ window.FF = window.FF || {};
     }
 
     function runRound(player, roundNumber, times, onDone) {
-      if (racing) FF.Race.beginRound(roundNumber);
+      if (racing) {
+        FF.Race.beginRound(roundNumber);
+        // For people watching: everyone waits for the same signal.
+        FF.Race.describe({ kind: 'card', text: FF.t('qtWatch', 'Tap the moment the screen says TAP!') }, null);
+      }
       var root = api.shell.root;
       api.ui.clear(root);
 
@@ -451,6 +455,14 @@ window.FF = window.FF || {};
       var word = api.ui.div('cr-word', round.word.name);
       word.style.color = round.ink.css;
       var question = api.ui.div('cr-question', 'What colour is the text?');
+      if (racing) {
+        // For people watching: the word and the colour names (the right one shows after the round).
+        FF.Race.describe({
+          kind: 'choice',
+          text: FF.t('crWatch', 'The word {word} is written in a colour. What colour is the text?', { word: round.word.name }),
+          options: STROOP_COLORS.map(function (c) { return c.name; })
+        }, STROOP_COLORS.indexOf(round.ink));
+      }
 
       var options = api.ui.div('cr-options');
       var buttons = [];

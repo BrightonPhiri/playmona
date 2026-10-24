@@ -839,6 +839,8 @@ window.FF = window.FF || {};
 
     var ansIdx = (typeof item.answer === 'number') ? item.answer : item.options.indexOf(item.answer);
     if (ansIdx < 0 || ansIdx >= item.options.length) ansIdx = 0;
+    // For people watching (the answer is shared after the round).
+    if (race) race.describe({ kind: 'choice', text: item.question, options: item.options.map(String), image: item.svg ? { svg: item.svg } : null }, ansIdx);
 
     var startMs = Date.now();
     var done = false;

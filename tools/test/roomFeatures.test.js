@@ -198,3 +198,30 @@ test('game clock: every phone ends after the same round when time is up', async 
   assert(A.Race.over(1) && B.Race.over(1), 'no round 2 for anyone');
   A.Race.end(); B.Race.end(); A.Room.leave(); B.Room.leave();
 });
+
+/* ---------- Watching (phase 3): photo privacy in room presence ---------- */
+test('rooms: a player who hides their photo is marked in the room', async function () {
+  const bus = makeBus();
+  const A = phone(bus, 'Ana'), B = phone(bus, 'Ben');
+  B.Storage.set('hidePhotoPublic', true);
+  const room = await A.Room.create({ dev: true });
+  await B.Room.join(room.code, {}, { dev: true });
+  const players = await A.Room.current().transport.get('players');
+  assertEqual(players[B.Room.current().uid].hidePhoto, true, 'Ben is marked');
+  assert(!('hidePhoto' in players[A.Room.current().uid]), 'Ana is not');
+  A.Room.leave(); B.Room.leave();
+});
+
+test('rooms: setHidePhoto updates the room right away', async function () {
+  const bus = makeBus();
+  const A = phone(bus, 'Ana');
+  const room = await A.Room.create({ dev: true });
+  const uid = A.Room.current().uid;
+  await A.Room.setHidePhoto(true);
+  assertEqual((await A.Room.current().transport.get('players/' + uid)).hidePhoto, true, 'hidden');
+  await A.Room.setHidePhoto(false);
+  assert(!('hidePhoto' in (await A.Room.current().transport.get('players/' + uid))), 'shown again');
+  A.Room.leave();
+  await A.Room.setHidePhoto(true);   // not in a room: resolves, does nothing
+  assert(room.code, 'still fine');
+});

@@ -319,6 +319,8 @@ window.FF = window.FF || {};
         wrap.appendChild(turnChip(entity, roundLabel(round + 1, ROUNDS)));
         if (q.category) wrap.appendChild(FF.GameUI.kicker(q.category));
         wrap.appendChild(FF.GameUI.prompt(q.q));
+        // For people watching (the answer is shared after the round).
+        if (race) race.describe({ kind: 'choice', text: q.q, options: q.options }, q.answer);
 
         const optEls = [];
         const group = optionGroup(wrap);
@@ -454,6 +456,8 @@ window.FF = window.FF || {};
         const wrap = cardWrap();
         wrap.appendChild(turnChip(entity, roundLabel(round + 1, ROUNDS)));
         wrap.appendChild(FF.GameUI.prompt(item.q));
+        // For people watching (the answer is shared after the round).
+        if (race) race.describe({ kind: 'choice', text: item.q, options: [FF.t('true', 'True'), FF.t('false', 'False')] }, item.answer === true ? 0 : 1);
 
         const meter = FF.GameUI.meter(1);
         if (api.config.timer > 0) wrap.appendChild(meter);
@@ -826,6 +830,8 @@ window.FF = window.FF || {};
         currentAnswerText = item.answer;
         let revealed = 1;
         const startTime = Date.now();
+        // For people watching: each player opens clues on their own phone, so viewers see the riddle.
+        if (race) race.describe({ kind: 'card', text: FF.t('whoAmI', 'Who or what am I?') + ' ' + item.clues[0] }, null);
 
         api.shell.updateScores(entity ? entity.id : null);
 
@@ -1020,6 +1026,8 @@ window.FF = window.FF || {};
         wrap.appendChild(turnChip(entity, roundLabel(round + 1, TOTAL)));
         wrap.appendChild(FF.GameUI.prompt(p.q));
         wrap.appendChild(FF.GameUI.media(api.assets.illustration(v.svg, 'picquiz-img', FF.t('pictureToGuess', 'Picture to guess'))));
+        // For people watching (the answer is shared after the round).
+        if (race) race.describe({ kind: 'choice', text: p.q, options: p.options, image: { svg: v.svg } }, p.answer);
 
         const optEls = [];
         const group = optionGroup(wrap);

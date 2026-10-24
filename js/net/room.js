@@ -101,14 +101,7 @@ window.FF = window.FF || {};
   }
 
   function makeTransport(code, useDev) {
-    var root = FF.Transport.roomPath(code);
-    if (useDev || (FF.Net && FF.Net.devMode && FF.Net.devMode())) {
-      return Promise.resolve(FF.Transport.dev({ root: root, namespace: 'familyfun' }));
-    }
-    if (!FF.Net || !FF.Net.configured()) {
-      return Promise.reject(new Error('Online play is not configured on this copy of the app.'));
-    }
-    return FF.Net.firebase({ root: root });
+    return FF.Transport.open(FF.Transport.roomPath(code), useDev);
   }
 
   function playersViewSignature(players, now) {
@@ -161,9 +154,12 @@ window.FF = window.FF || {};
     startHeartbeat();
   }
 
+  // "Show my photo to people watching" is off: viewers see the character instead.
+  function hidesPhoto() { return !!(FF.Storage && FF.Storage.get('hidePhotoPublic', false)); }
+
   function registerPresence(transport, uid, profile) {
     var now = transport.serverNow();
-    return transport.set('players/' + uid, {
+    var record = {
       name: profile.name,
       avatar: profile.avatar,
       color: profile.color,
@@ -172,7 +168,9 @@ window.FF = window.FF || {};
       lastSeen: now,
       online: true,
       away: isHidden()
-    }).then(function () {
+    };
+    if (hidesPhoto()) record.hidePhoto = true;
+    return transport.set('players/' + uid, record).then(function () {
       return transport.onDisconnectSet('players/' + uid + '/online', false);
     });
   }
@@ -574,6 +572,13 @@ window.FF = window.FF || {};
           results: null
         });
       });
+    },
+
+    /* The photo setting changed: tell the room straight away, so the next
+       broadcast to viewers already uses the character. */
+    setHidePhoto: function (hide) {
+      if (!state) return Promise.resolve();
+      return state.transport.update('players/' + state.uid, { hidePhoto: hide ? true : null }).catch(function () {});
     },
 
     /* Paused or otherwise not looking: rounds do not wait for this player. */

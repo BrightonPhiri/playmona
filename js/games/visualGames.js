@@ -269,6 +269,13 @@ window.FF = window.FF || {};
       var answered = false;
       currentCorrectName = q.correctName;
 
+      if (racing) {
+        // For people watching (the answer is shared after the round).
+        var shown = { kind: 'choice', text: q.promptText, options: q.options.map(String) };
+        if (q.image) shown.image = q.image;
+        FF.Race.describe(shown, q.options.indexOf(q.correctName));
+      }
+
       var controls = visualRound(wrap, {
         imageDOM: q.imageDOM,
         promptText: q.promptText,
@@ -353,6 +360,7 @@ window.FF = window.FF || {};
           var flag = api.flags.render(country.flag, { code: code, cls: 'flag-big', alt: FF.t('aFlag', 'A country flag') });
           return {
             imageDOM: flag,
+            image: code ? { flag: code } : null,
             promptText: FF.t('whichCountry', 'Which country is this?'),
             correctName: country.name,
             options: makeOptions(country.name, names)
@@ -401,6 +409,7 @@ window.FF = window.FF || {};
           if (item.fact) factLines.push('' + item.fact);
           return {
             imageDOM: illustrationImage(api, item.svg, FF.t('pictureToGuess', 'Picture to guess')),
+            image: { svg: item.svg },
             promptText: FF.t('whereIsThis', 'Where is this?'),
             correctName: item.country,
             options: makeOptions(item.country, countries),
@@ -444,6 +453,7 @@ window.FF = window.FF || {};
           if (item.fact) factLines.push('' + item.fact);
           return {
             imageDOM: illustrationImage(api, item.svg, FF.t('pictureToGuess', 'Picture to guess')),
+            image: { svg: item.svg },
             promptText: FF.t('whatAnimal', 'What animal is this?'),
             correctName: item.name,
             options: makeOptions(item.name, names),
@@ -487,6 +497,7 @@ window.FF = window.FF || {};
           if (item.fact) factLines.push('' + item.fact);
           return {
             imageDOM: illustrationImage(api, item.svg, FF.t('pictureToGuess', 'Picture to guess')),
+            image: { svg: item.svg },
             promptText: FF.t('whatFood', 'What food is this?'),
             correctName: item.name,
             options: makeOptions(item.name, names),
@@ -529,6 +540,8 @@ window.FF = window.FF || {};
           if (item.fact) factLines.push('' + item.fact);
           return {
             imageDOM: objectImage(api, item, difficulty),
+            // Viewers get the picture only when players see all of it too.
+            image: (difficulty !== 'hard' && difficulty !== 'normal') ? { svg: item.svg } : null,
             promptText: FF.t('whatIsThis', 'What is this?'),
             correctName: item.name,
             options: makeOptions(item.name, names),
@@ -569,6 +582,7 @@ window.FF = window.FF || {};
         build: function (item) {
           return {
             imageDOM: illustrationImage(api, item.svg, FF.t('pictureToGuess', 'Picture to guess')),
+            image: { svg: item.svg },
             promptText: FF.t('whichSport', 'Which sport is this?'),
             correctName: item.name,
             options: makeOptions(item.name, names),
@@ -609,6 +623,7 @@ window.FF = window.FF || {};
         build: function (item) {
           return {
             imageDOM: illustrationImage(api, item.svg, FF.t('pictureToGuess', 'Picture to guess')),
+            image: { svg: item.svg },
             promptText: FF.t('whatVehicle', 'What vehicle is this?'),
             correctName: item.name,
             options: makeOptions(item.name, names),

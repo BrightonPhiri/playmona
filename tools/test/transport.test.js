@@ -150,3 +150,19 @@ test('watch fires immediately with the current value, like Firebase', async func
   assertEqual(seen[0], { u1: { name: 'Ana' } },
     'a device that subscribes after writing must see its own write');
 });
+
+test('dev transport: an empty root is the database root', async function () {
+  const FF = loadFF(['js/core.js', 'js/net/transport.js']);
+  const bus = makeBus();
+  const t = FF.Transport.dev({ bus: bus, root: '' });
+  await t.connect();
+  await t.set('broadcasts/X', 1);
+  assertEqual(JSON.stringify(bus.read('')), JSON.stringify({ broadcasts: { X: 1 } }));
+});
+
+test('Transport.open picks the dev transport in dev rooms mode', async function () {
+  const FF = loadFF(['js/core.js', 'js/net/transport.js']);
+  FF.Net = { devMode: function () { return true; }, configured: function () { return false; } };
+  const t = await FF.Transport.open('rooms/ABC234');
+  assert(t && typeof t.watch === 'function', 'a transport');
+});

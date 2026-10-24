@@ -202,6 +202,8 @@ window.FF = window.FF || {};
     }
     var q = numberQuestion(api.config.difficulty || 'normal');
     var startedAt = Date.now();
+    // For people watching (the answer is shared after the round).
+    if (state.race) state.race.describe({ kind: 'choice', text: q.text, options: q.options.map(String) }, q.options.indexOf(q.answer));
     state.locked = false;
     state.q = q;
 

@@ -70,7 +70,8 @@ window.FF = window.FF || {};
 
   function firebaseTransport(opts) {
     opts = opts || {};
-    var root = opts.root || 'rooms/UNKNOWN';
+    // '' is the database root (used by watching); only a missing root gets the default.
+    var root = opts.root != null ? opts.root : 'rooms/UNKNOWN';
 
     if (!configured()) {
       return Promise.reject(new Error('Online play is not configured on this copy of the app.'));
@@ -90,6 +91,7 @@ window.FF = window.FF || {};
         });
 
         function ref(path) {
+          if (!root) return db.ref(path || '/');
           return db.ref(root + (path ? '/' + path : ''));
         }
 

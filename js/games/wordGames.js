@@ -433,6 +433,8 @@ window.FF = window.FF || {};
           // Hold every device until the shared open instant, so nobody
           // starts typing early, and only then start the clock.
           FF.Race.beginRound(0);
+          // For people watching: the letters everyone is making words from.
+          FF.Race.describe({ kind: 'card', text: FF.t('lrWatch', 'Make words from these letters: {letters}', { letters: letters.join(' ').toUpperCase() }) }, null);
           input.disabled = true;
           FF.RaceUI.gate(root, '.wg-input, .btn', function () {
             input.disabled = false;

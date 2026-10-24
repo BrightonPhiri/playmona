@@ -117,8 +117,11 @@ window.FF = window.FF || {};
           }
         }
 
-        if (race) race.beginRound(currentIndex).then(function () { race.gate(openQuestion); });
-        else openQuestion();
+        if (race) {
+          race.beginRound(currentIndex).then(function () { race.gate(openQuestion); });
+          // For people watching: the question and its answers (the answer is shared after the round).
+          race.describe({ kind: 'choice', text: q.q, options: q.options }, q.answer);
+        } else openQuestion();
       }
 
       function handleAnswer(choiceIdx, chosenBtn, optGrid, q) {

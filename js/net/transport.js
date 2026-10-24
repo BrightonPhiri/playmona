@@ -89,7 +89,8 @@ window.FF = window.FF || {};
   function dev(opts) {
     opts = opts || {};
     var bus = opts.bus || browserBus(opts.namespace);
-    var root = opts.root || 'rooms/DEV';
+    // '' is the database root (used by watching); only a missing root gets the default.
+    var root = opts.root != null ? opts.root : 'rooms/DEV';
     var uid = null;
     var disconnects = [];
     var unsubs = [];
@@ -138,7 +139,10 @@ window.FF = window.FF || {};
       update: function (path, obj) {
         var current = readPath(path);
         var merged = (current && typeof current === 'object') ? current : {};
-        Object.keys(obj || {}).forEach(function (k) { merged[k] = obj[k]; });
+        // Like Firebase, a null in an update removes that child.
+        Object.keys(obj || {}).forEach(function (k) {
+          if (obj[k] === null) delete merged[k]; else merged[k] = obj[k];
+        });
         writePath(path, merged);
         return Promise.resolve();
       },
@@ -210,6 +214,18 @@ window.FF = window.FF || {};
     browserBus: browserBus,
     roomPath: function (code, sub) {
       return 'rooms/' + code + (sub ? '/' + sub : '');
+    },
+
+    /* A transport for any part of the database: the development one in dev
+       rooms mode (or when asked), otherwise Firebase. root '' is the top. */
+    open: function (root, useDev) {
+      if (useDev || (FF.Net && FF.Net.devMode && FF.Net.devMode())) {
+        return Promise.resolve(FF.Transport.dev({ root: root, namespace: 'familyfun' }));
+      }
+      if (!FF.Net || !FF.Net.configured || !FF.Net.configured()) {
+        return Promise.reject(new Error('Online play is not configured on this copy of the app.'));
+      }
+      return FF.Net.firebase({ root: root });
     }
   };
 })();

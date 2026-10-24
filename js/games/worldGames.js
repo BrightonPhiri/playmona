@@ -110,6 +110,12 @@ window.FF = window.FF || {};
     return f;
   }
 
+  // The flag as people watching can draw it: its file code, when there is one.
+  function flagImage(country) {
+    var code = (FF.data && FF.data.flagCodes) ? FF.data.flagCodes[country && country.id] : null;
+    return code ? { flag: code } : null;
+  }
+
   function div(cls, children) { return FF.ui.div(cls, children); }
   function span(cls, children) { return FF.ui.span(cls, children); }
 
@@ -240,6 +246,12 @@ window.FF = window.FF || {};
       wrap.appendChild(FF.GameUI.turnBar(scorer, racing ? FF.Race.roundText(roundIndex + 1, roundCount) : FF.t('roundOf', 'Round {n} of {total}', { n: roundIndex + 1, total: roundCount })));
 
       wrap.appendChild(FF.GameUI.prompt(currentQuestion.promptTitle || ''));
+      if (racing) {
+        // For people watching (the answer is shared after the round).
+        var shown = { kind: 'choice', text: currentQuestion.promptTitle || '', options: currentQuestion.options.map(String) };
+        if (currentQuestion.flagImage) shown.image = currentQuestion.flagImage;
+        FF.Race.describe(shown, currentQuestion.answer);
+      }
       if (currentQuestion.flagNode) {
         var fwrap = div('wld-flag');
         fwrap.appendChild(currentQuestion.flagNode);
@@ -415,6 +427,7 @@ window.FF = window.FF || {};
       return {
         promptTitle: promptTitle,
         flagNode: (type === 'flag') ? renderFlagNode(api, correct, 240) : null,
+        flagImage: (type === 'flag') ? flagImage(correct) : null,
         options: made.options,
         answer: made.answer,
         answerText: correct.name,
