@@ -72,11 +72,7 @@ window.FF = window.FF || {};
 
   function me() {
     var box = FF.ui.clear(document.getElementById('admin-me'));
-    var s = FF.Auth.user() || {};
-    if (s.avatar && FF.Avatars) box.appendChild(FF.Avatars.img(s.avatar, 'admin-me__ava'));
-    box.appendChild(el('span', { class: 'admin-me__name' }, s.displayName || ''));
-    var app = el('a', { class: 'btn btn-sm btn-ghost', href: FF.page('play') }, 'Open app');
-    box.appendChild(app);
+    FF.AdminShell.account(box);   // avatar button with the account menu (js/admin/shell.js)
   }
 
   function current() {
@@ -84,18 +80,8 @@ window.FF = window.FF || {};
     return PAGES.some(function (p) { return p.id === id; }) ? id : 'overview';
   }
 
-  function nav() {
-    var n = FF.ui.clear(document.getElementById('admin-nav'));
-    n.hidden = false;
-    var cur = current();
-    PAGES.forEach(function (p) {
-      var a = el('a', { class: 'admin-nav__item' + (p.id === cur ? ' is-active' : ''), href: '#' + p.id });
-      if (p.id === cur) a.setAttribute('aria-current', 'page');
-      a.appendChild(FF.Icons.icon(p.icon));
-      a.appendChild(FF.ui.span('', p.label));
-      n.appendChild(a);
-    });
-  }
+  // Header tabs on wide screens, bottom tab bar on phones (js/admin/shell.js).
+  function nav() { FF.AdminShell.nav(PAGES, current()); }
 
   function show() {
     nav();
