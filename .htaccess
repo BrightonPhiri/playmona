@@ -6,6 +6,9 @@ RewriteEngine On
 # Uploaded files (profile photos) are never run as code.
 RewriteRule ^uploads/.*\.(php\d?|phtml|phar|cgi|pl|py)$ - [F,L,NC]
 
+# Watch links: /watch/<8-character code> opens the watch page (it reads the code itself).
+RewriteRule ^watch/([A-Za-z0-9]{8})/?$ watch.html [L]
+
 # Clean addresses for pages nginx does not list by name: /terms -> terms.html.
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d

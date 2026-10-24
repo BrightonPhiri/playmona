@@ -69,6 +69,9 @@ http.createServer(function (req, res) {
     return res.end();
   }
 
+  // Watch links, like the live .htaccess rule: /watch/<code> is the watch page.
+  if (/^\/watch\/[A-Za-z0-9]{8}\/?$/.test(pathname)) return send(res, path.join(ROOT, 'watch.html'), req);
+
   var file = path.join(ROOT, pathname);
   if (file.indexOf(ROOT) !== 0) { res.writeHead(403); return res.end(); }
   if (pathname.endsWith('/')) file = path.join(file, 'index.html');

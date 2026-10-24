@@ -531,6 +531,7 @@ window.FF = window.FF || {};
       return {
         promptTitle: FF.t('whoseFlag', 'Whose flag is this?'),
         flagNode: renderFlagNode(api, correct, 260),
+        flagImage: flagImage(correct),
         options: made.options,
         answer: made.answer,
         answerText: correct.name,

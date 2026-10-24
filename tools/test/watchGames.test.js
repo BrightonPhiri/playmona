@@ -25,3 +25,10 @@ test('the "show my photo to people watching" setting follows the account', funct
   const app = fs.readFileSync(path.join(ROOT, 'js/app.js'), 'utf8');
   assert(/hidePhotoPublic/.test(app) && /setHidePhoto/.test(app), 'Edit profile saves it and tells the room');
 });
+
+test('every flag question also sends its flag to people watching', function () {
+  const src = fs.readFileSync(path.join(ROOT, 'js/games/worldGames.js'), 'utf8');
+  const flags = (src.match(/flagNode: (\(type === 'flag'\) \? )?renderFlagNode\(/g) || []).length;
+  const sent = (src.match(/flagImage: /g) || []).length;
+  assert(flags > 0 && sent === flags, flags + ' flag questions, ' + sent + ' send the flag');
+});

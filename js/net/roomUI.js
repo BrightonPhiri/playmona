@@ -166,9 +166,11 @@ window.FF = window.FF || {};
     title.appendChild(document.createTextNode(FF.t('watching', 'Watching')));
     wrap.appendChild(title);
 
+    // Read the room itself: it is up to date when the lobby redraws, the broadcaster may not be yet.
+    var meta = (FF.Room.current() && FF.Room.current().meta) || {};
     var delisted = B.delisted();
-    var isPublic = B.isPublic();
-    var watching = B.isWatching();
+    var isPublic = meta.public === true && !delisted;
+    var watching = meta.watching !== false;
     var pub = FF.UI.switchRow({
       label: FF.t('publicRoom', 'Public'),
       description: isPublic

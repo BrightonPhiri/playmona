@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light" data-accent="blue">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <!-- Pages are served at /watch and /watch/<code>: every file below loads from the site root. -->
+  <base href="/">
+  <meta name="theme-color" content="#0b1030">
+  <meta name="color-scheme" content="light dark">
+  <title>Watch live · PlayMona</title>
+  <meta name="description" content="Watch PlayMona games being played live. Pick a public game and watch the questions and the scores as they happen.">
+  <link rel="canonical" href="https://playmona.com/watch">
+  <meta property="og:site_name" content="PlayMona">
+  <meta property="og:title" content="Watch live · PlayMona">
+  <meta property="og:description" content="Watch games being played live on PlayMona.">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/brand/favicon-32.png">
+  <link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png">
+  <link rel="preload" href="assets/fonts/fredoka.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/nunito.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/fonts.css">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/watch.css">
+</head>
+<body class="watch-page">
+  <header class="wh-head">
+    <a class="wh-lockup" href="./" aria-label="PlayMona home">
+      <img src="assets/brand/mark-256.webp" alt="" width="36" height="36">
+      <span class="wh-wordmark"><span>Play</span><span class="wh-wordmark__mona">Mona</span></span>
+    </a>
+    <nav class="wh-nav" aria-label="PlayMona">
+      <a href="watch" class="wh-nav__link">Watch live</a>
+      <a href="play" class="btn btn-primary btn-sm">Play</a>
+    </nav>
+  </header>
+
+  <main class="wh-main" id="main"></main>
+
+  <script src="js/core.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/theme.js"></script>
+  <script src="js/data/avatars.js"></script>
+  <script src="js/avatars.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/icons-custom.js"></script>
+  <script src="js/net/firebase-config.js"></script>
+  <script src="js/net/firebaseTransport.js"></script>
+  <script src="js/net/transport.js"></script>
+  <script src="js/watch/view.js"></script>
+  <script src="js/watch/tv.js"></script>
+  <script src="js/watch/list.js"></script>
+  <script src="js/watch/page.js"></script>
+  <script>
+    (function () {
+      FF.Storage.init();
+      if (FF.Theme) FF.Theme.init();
+      FF.WatchPage.start();
+    })();
+  </script>
+</body>
+</html>

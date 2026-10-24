@@ -265,3 +265,18 @@ test('room screens: the Online page has a Watch live card that is open to guests
   assertEqual(opened, 1, 'opens Watch live');
   assertEqual(gated.length, 0, 'no sign-up gate');
 });
+
+test('room screens: the Public switch follows the room itself, not the broadcaster', async function () {
+  const bus = makeBus();
+  const host = phone(bus, 'Ana');
+  stubBroadcast(host.FF);   // the stub's isPublic() is always false (it has not caught up)
+  await host.FF.Room.create({ dev: true });
+  await host.FF.Room.setMeta({ public: true, watching: false });
+  await tick(20);
+  host.FF.RoomUI.showLobby(host.main);
+  await tick(20);
+  const sws = findAll(find(host.main, 'rm-watch'), 'switch');
+  assertEqual(sws[0].getAttribute('aria-checked'), 'true', 'Public is on');
+  assertEqual(sws[1].getAttribute('aria-checked'), 'false', 'watching is off');
+  host.FF.Room.leave();
+});
