@@ -343,6 +343,9 @@ window.FF = window.FF || {};
         item('crown', t('plusTitle', 'PlayMona Plus'), function () { FF.Nav.go('plus'); },
           { hint: FF.Plus.hasPlus() ? t('plusOnShort', 'On') : null });
       }
+      if (FF.Plus && FF.Plus.isAdmin()) {
+        item('shield', t('adminPortal', 'Admin portal'), function () { window.location.assign(FF.page('admin')); });
+      }
       divider();
       var dark = FF.Theme.resolvedTheme() === 'dark';
       item(dark ? 'moon' : 'sun', t('darkMode', 'Dark mode'), function (b) {
