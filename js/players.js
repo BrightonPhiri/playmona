@@ -441,15 +441,14 @@ window.FF = window.FF || {};
           : FF.t('photoPrivacy', 'Photos stay on this device. They are never uploaded or shared.')));
       }
 
-      var startTab = hasPhoto() ? 'photo' : 'all';
+      var startTab = 'people';
       body.appendChild(FF.UI.segmented({
         label: FF.t('characterType', 'Character type'), value: startTab, compact: true,
         options: [
-          { label: FF.t('all', 'All'), value: 'all' },
           { label: FF.t('people', 'People'), value: 'people' },
           { label: FF.t('animals', 'Animals'), value: 'animals' },
           { label: FF.t('fantasy', 'Fantasy'), value: 'fantasy' },
-          { label: FF.t('photoTab', 'Photo'), value: 'photo', icon: 'image' }
+          { label: FF.t('photoTab', 'Photo'), value: 'photo' }
         ],
         onChange: function (v) { renderGrid(v); }
       }));
