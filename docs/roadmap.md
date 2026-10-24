@@ -5,10 +5,11 @@ Agreed on 2026-10-23. We work in phases; each phase ships on its own.
 | Phase | What ships | Status |
 |---|---|---|
 | 1 | New wording (no game count), clean URLs, GitHub auto-deploy, voice chat fix, guest limits, **admin portal v1** | Built, waiting for deploy setup |
-| 2 | PHP API on the VPS, **profile pictures**, **payments** with Linkwa (Plus pass and pay-once), paywall, first premium game (**Imposter**), Terms and refund pages | Built (sandbox). Imposter moved to phase 5 with the other new games. Before real payments: legal review of Terms/Refunds/Privacy, live Linkwa keys, then switch on Payments |
-| 3 | **Watch link** (viewers see a TV view of the game) and **admin recording** for social clips | Later |
-| 4 | **Live video chat** (LiveKit) and a TURN relay (coturn); voice gets more reliable | Later |
-| 5+ | More trending games, leagues and tournaments, and the extras below | Ongoing |
+| 2 | PHP API on the VPS, **profile pictures**, **payments** with Linkwa (Plus pass and pay-once), paywall, first premium game (**Imposter**), Terms and refund pages | Built (sandbox). Imposter moved to phase 6 with the other new games. Before real payments: legal review of Terms/Refunds/Privacy, live Linkwa keys, then switch on Payments |
+| 3 | **Watch live**: public or private rooms, watch links, a Watch live page, and a TV view of the game for viewers | Building |
+| 4 | **Recording** (admins first) for social clips; its own phase because it has to be perfect | Later |
+| 5 | **Live video chat** (LiveKit) and a TURN relay (coturn); voice gets more reliable | Later |
+| 6+ | More trending games, leagues and tournaments, and the extras below | Ongoing |
 
 ---
 
@@ -19,7 +20,7 @@ Agreed on 2026-10-23. We work in phases; each phase ships on its own.
 - **Auto-deploy**: push to `main` → tests → upload to the VPS. Setup: [deploy.md](deploy.md).
 - **Voice chat**: database rules for `voice` and `signals`, and each signalling message now gets
   its own slot (before, ICE candidates could overwrite the offer). Still needs a two-phone test
-  on the live site, and a TURN server (phase 4) for some mobile networks.
+  on the live site, and a TURN server (phase 5) for some mobile networks.
 - **Guest limits**: guests get a starter set of 10 games; everything else (other games, online
   play, daily challenge, challenges, Game Night) invites them to create a free account. The admin
   portal can change both lists.
@@ -76,8 +77,7 @@ pictures; players can report one.
 - Free plays then Plus (3 a day): Pictionary, Drawing Challenge, Visual Charades, Spot the
   Difference, Hidden Object, Mini Crossword, Brain Battle.
 - Premium (Plus or pay once): new trending games (Imposter first), Game Night tournaments.
-- Plus perks: rooms up to 12, video chat, watch links for more than 2 viewers, extra avatars and
-  themes, full stats history, leagues and tournaments.
+- Plus perks: rooms up to 12, video chat, extra avatars and themes, full stats history, leagues and tournaments.
 
 **Admin grants premium**: on the Players page, admins can give any account (or guest) Plus for a
 set time, or unlock a game for them: for prizes, testers, partners and support cases. Written by
@@ -96,25 +96,34 @@ Also before taking money: Terms of Service, refund policy, privacy notice update
   server (`POST /api/avatar`) checks and redraws it, keeping one file per player in
   `uploads/avatars/`. The avatar value becomes `photo:<file>`, so it shows everywhere a
   character does. Admins can remove a photo from the Players page. Reporting photos waits for
-  moderation (phase 5).
+  moderation (phase 6).
 - **Terms, Refunds, Privacy**: `/terms`, `/refunds` and an updated `/privacy` (drafts, need a
   legal review). Linked from the Plus page, the unlock offer, and the site and app footers.
 
-## Phase 3: watch link and recording
+## Phase 3: watch live
 
-- "Invite viewers" shares `/play?watch=CODE`. Viewers are read-only; the host can turn it off.
-- Viewers see a **TV view**: the current question large, and a tile per player (2×2 for four)
-  with avatar, score and answer state. Built from the room data, not screen streaming, so it is
-  smooth on slow connections. Player cameras join the tiles in phase 4.
-- **Recording** (admins first): a Record button on the watch view saves MP4/WebM, with a 9:16
-  layout and watermark for TikTok and Reels.
+Design: [watch live design](superpowers/specs/2026-10-24-watch-live-design.md). Watching is free.
 
-## Phase 4: video and audio
+- Rooms are **Public** (listed on the Watch live page) or **Private** (the default). Every room has
+  a **watch link** (`/watch/<code>`); the host can turn watching off or make a new link.
+- **Watch live** (`/watch`) lists public games playing now; anyone can watch without signing up.
+- Viewers see a **TV view**: the question on the left, a live leaderboard on the right (stacked on
+  phones). Built from room data, not screen streaming. Player cameras join the tiles in phase 5.
+- Viewers only watch; everyone sees how many are watching. Players can hide their photo from viewers.
+- Viewer limits (20 per room, 50 across the site by default) protect Firebase's free plan; admins
+  change them on the Site page and can take a room off Watch live.
+
+## Phase 4: recording
+
+Admins first: a Record button on the watch view saves MP4/WebM, with a 9:16 layout and watermark
+for TikTok and Reels. Planned on its own so it can be done properly.
+
+## Phase 5: video and audio
 
 LiveKit (self-hosted or LiveKit Cloud) for group video, tokens from the PHP API; coturn for
 reliable voice. Video only in private rooms, host can mute and remove, report button.
 
-## Phase 5+: games and extras
+## Phase 6+: games and extras
 
 - Games: Imposter / Undercover, Who's the Spy, Heads Up, Two Truths and a Lie, Mafia/Werewolf,
   Emoji Decode, Rank It, a Wavelength-style game, Trivia Royale.

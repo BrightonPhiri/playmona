@@ -7,6 +7,12 @@ const ACCOUNT = "auth != null && auth.token.firebase.sign_in_provider !== 'anony
 const NOT_BANNED = "!root.child('bans').child(auth.uid).exists()";
 const COUNTER = "newData.isNumber() && newData.val() === (data.exists() ? data.val() : 0) + 1";
 const ID = "/^[A-Za-z0-9_-]{1,40}$/";
+// Watch codes: 8 characters from the room alphabet (no I, L, O, 0, 1). Room codes are 6.
+const WC = "/^[ABCDEFGHJKMNPQRSTUVWXYZ2-9]{8}$/";
+const ROOM_CODE = "/^[ABCDEFGHJKMNPQRSTUVWXYZ2-9]{6}$/";
+// The room a watch code belongs to, looked up without revealing it to readers.
+const ROOM_OF = (wc) => "root.child('rooms').child(root.child('watchRooms').child(" + wc + ").val())";
+const HOST_OF = (wc) => ROOM_OF(wc) + ".child('meta').child('hostUid').val() === auth.uid";
 const RESULT = "newData.hasChildren(['name', 'score', 'correct', 't']) && newData.child('name').isString() && newData.child('name').val().length <= 40 && newData.child('score').isNumber() && newData.child('score').val() >= 0 && newData.child('score').val() <= 1500 && newData.child('correct').isNumber() && newData.child('correct').val() >= 0 && newData.child('correct').val() <= 10";
 
 const counterNode = (nameCheck) => ({
@@ -48,6 +54,12 @@ const rules = {
         guest: {
           "$feature": { ".validate": "newData.isBoolean() && $feature.matches(/^(online|daily|challenge|gameNight)$/)" }
         },
+        // Viewer limits for watching (phase 3): per room and across the site.
+        watch: {
+          room: { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 1000" },
+          site: { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 100000" },
+          "$other": { ".validate": false }
+        },
         "$other": { ".validate": false }
       }
     },
@@ -65,7 +77,7 @@ const rules = {
         ".validate": COUNTER
       },
       totals: {
-        "$counter": counterNode("$counter.matches(/^(plays|onlinePlays|guestPlays|signups|installs|rooms)$/)")
+        "$counter": counterNode("$counter.matches(/^(plays|onlinePlays|guestPlays|signups|installs|rooms|watchers)$/)")
       },
       days: {
         ".indexOn": [],
@@ -86,7 +98,7 @@ const rules = {
               ".validate": "$vid.matches(/^[a-f0-9]{24}$/) && newData.isString() && newData.val().matches(/^(l|a|p)$/)"
             }
           },
-          "$counter": counterNode("$counter.matches(/^(plays|onlinePlays|guestPlays|signups|installs|rooms)$/)")
+          "$counter": counterNode("$counter.matches(/^(plays|onlinePlays|guestPlays|signups|installs|rooms|watchers)$/)")
         }
       }
     },
@@ -183,7 +195,17 @@ const rules = {
           // The room's owner may take the host role back when they return.
           ".write": "auth != null && " + NOT_BANNED + " && (!data.exists() || data.child('hostUid').val() === auth.uid || data.child('ownerUid').val() === auth.uid || root.child('rooms').child($code).child('players').child(data.child('hostUid').val()).child('online').val() !== true)",
           ".validate": "newData.hasChildren(['seed', 'status', 'appVersion'])",
-          name: { ".validate": "newData.isString() && newData.val().length <= 30" }
+          name: { ".validate": "newData.isString() && newData.val().length <= 30" },
+          // Public rooms are listed on Watch live, unless an admin removed the room.
+          public: { ".validate": "newData.isBoolean() && (newData.val() !== true || root.child('rooms').child($code).child('admin').child('delisted').val() !== true)" },
+          watching: { ".validate": "newData.isBoolean()" },
+          watchCode: { ".validate": "newData.isString() && newData.val().matches(" + WC + ")" }
+        },
+        // Set by admins only: the room was taken off Watch live.
+        admin: {
+          ".write": ADMIN,
+          delisted: { ".validate": "newData.isBoolean()" },
+          "$other": { ".validate": false }
         },
         players: {
           "$uid": {
@@ -219,6 +241,36 @@ const rules = {
               }
             }
           }
+        }
+      }
+    },
+    /* ---------- Watching (phase 3) ----------
+       A watch code points at a room; only admins can read which. The room's host
+       maps a code (when creating and when deleting it) and publishes the broadcast. */
+    watchRooms: {
+      ".read": ADMIN,
+      "$wc": {
+        ".write": "auth != null && $wc.matches(" + WC + ") && (data.exists() ? root.child('rooms').child(data.val()).child('meta').child('hostUid').val() === auth.uid : root.child('rooms').child(newData.val()).child('meta').child('hostUid').val() === auth.uid)",
+        ".validate": "newData.isString() && newData.val().matches(" + ROOM_CODE + ")"
+      }
+    },
+    // What viewers see. Read one at a time (no read on the list, so private rooms cannot be found).
+    broadcasts: {
+      "$wc": {
+        ".read": "auth != null",
+        ".write": "auth != null && " + HOST_OF('$wc'),
+        ".validate": "newData.hasChildren(['v', 'status', 'updatedAt']) && (newData.child('public').val() !== true || " + ROOM_OF('$wc') + ".child('admin').child('delisted').val() !== true)",
+        // Admins can take a room off Watch live straight away.
+        public: { ".write": ADMIN + " && newData.val() === false" }
+      }
+    },
+    // One entry per viewer (removed when they leave); the count is the number of entries.
+    watchers: {
+      "$wc": {
+        ".read": "auth != null",
+        "$uid": {
+          ".write": "auth != null && $uid === auth.uid",
+          ".validate": "newData.isNumber()"
         }
       }
     }

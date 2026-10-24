@@ -54,6 +54,17 @@
             ".validate": "newData.isBoolean() && $feature.matches(/^(online|daily|challenge|gameNight)$/)"
           }
         },
+        "watch": {
+          "room": {
+            ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 1000"
+          },
+          "site": {
+            ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 100000"
+          },
+          "$other": {
+            ".validate": false
+          }
+        },
         "$other": {
           ".validate": false
         }
@@ -74,7 +85,7 @@
       "totals": {
         "$counter": {
           ".write": "auth != null",
-          ".validate": "newData.isNumber() && newData.val() === (data.exists() ? data.val() : 0) + 1 && $counter.matches(/^(plays|onlinePlays|guestPlays|signups|installs|rooms)$/)"
+          ".validate": "newData.isNumber() && newData.val() === (data.exists() ? data.val() : 0) + 1 && $counter.matches(/^(plays|onlinePlays|guestPlays|signups|installs|rooms|watchers)$/)"
         }
       },
       "days": {
@@ -106,7 +117,7 @@
           },
           "$counter": {
             ".write": "auth != null",
-            ".validate": "newData.isNumber() && newData.val() === (data.exists() ? data.val() : 0) + 1 && $counter.matches(/^(plays|onlinePlays|guestPlays|signups|installs|rooms)$/)"
+            ".validate": "newData.isNumber() && newData.val() === (data.exists() ? data.val() : 0) + 1 && $counter.matches(/^(plays|onlinePlays|guestPlays|signups|installs|rooms|watchers)$/)"
           }
         }
       }
@@ -248,6 +259,24 @@
           ".validate": "newData.hasChildren(['seed', 'status', 'appVersion'])",
           "name": {
             ".validate": "newData.isString() && newData.val().length <= 30"
+          },
+          "public": {
+            ".validate": "newData.isBoolean() && (newData.val() !== true || root.child('rooms').child($code).child('admin').child('delisted').val() !== true)"
+          },
+          "watching": {
+            ".validate": "newData.isBoolean()"
+          },
+          "watchCode": {
+            ".validate": "newData.isString() && newData.val().matches(/^[ABCDEFGHJKMNPQRSTUVWXYZ2-9]{8}$/)"
+          }
+        },
+        "admin": {
+          ".write": "auth != null && root.child('admins').child(auth.uid).val() === true",
+          "delisted": {
+            ".validate": "newData.isBoolean()"
+          },
+          "$other": {
+            ".validate": false
           }
         },
         "players": {
@@ -293,6 +322,32 @@
               }
             }
           }
+        }
+      }
+    },
+    "watchRooms": {
+      ".read": "auth != null && root.child('admins').child(auth.uid).val() === true",
+      "$wc": {
+        ".write": "auth != null && $wc.matches(/^[ABCDEFGHJKMNPQRSTUVWXYZ2-9]{8}$/) && (data.exists() ? root.child('rooms').child(data.val()).child('meta').child('hostUid').val() === auth.uid : root.child('rooms').child(newData.val()).child('meta').child('hostUid').val() === auth.uid)",
+        ".validate": "newData.isString() && newData.val().matches(/^[ABCDEFGHJKMNPQRSTUVWXYZ2-9]{6}$/)"
+      }
+    },
+    "broadcasts": {
+      "$wc": {
+        ".read": "auth != null",
+        ".write": "auth != null && root.child('rooms').child(root.child('watchRooms').child($wc).val()).child('meta').child('hostUid').val() === auth.uid",
+        ".validate": "newData.hasChildren(['v', 'status', 'updatedAt']) && (newData.child('public').val() !== true || root.child('rooms').child(root.child('watchRooms').child($wc).val()).child('admin').child('delisted').val() !== true)",
+        "public": {
+          ".write": "auth != null && root.child('admins').child(auth.uid).val() === true && newData.val() === false"
+        }
+      }
+    },
+    "watchers": {
+      "$wc": {
+        ".read": "auth != null",
+        "$uid": {
+          ".write": "auth != null && $uid === auth.uid",
+          ".validate": "newData.isNumber()"
         }
       }
     }

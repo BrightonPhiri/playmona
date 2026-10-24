@@ -61,7 +61,7 @@ jobs:
             --exclude='firebase.json' --exclude='.firebaserc' --exclude='database.rules.json' \
             --exclude='js/net/firebase-config.js' \
             --exclude='uploads/' --exclude='api/config.local.php' \
-            --exclude='.well-known/' --exclude='keep/' \
+            --exclude='.well-known/' --exclude='keep/' --exclude='.superpowers/' \
             -e "ssh -i ~/.ssh/deploy_key -p ${SSH_PORT:-22}" \
             ./ "$SSH_USER@$SSH_HOST:${SSH_PATH%/}/"
 
