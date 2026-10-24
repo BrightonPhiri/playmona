@@ -286,7 +286,7 @@ window.FF = window.FF || {};
     if (guest) panel.appendChild(guest);
     var fine = FF.ui.el('p', { class: 'auth__fine' });
     fine.appendChild(document.createTextNode(t('agreeLead', 'By creating an account you agree to how we handle your data in our ')));
-    fine.appendChild(FF.ui.el('a', { href: FF.page('privacy'), target: '_blank', rel: 'noopener' }, t('privacyNotice', 'privacy notice')));
+    fine.appendChild(FF.Reader.link('privacy', t('privacyNotice', 'privacy notice')));
     fine.appendChild(document.createTextNode('.'));
     panel.appendChild(fine);
     return email.input;

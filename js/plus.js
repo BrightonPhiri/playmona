@@ -223,8 +223,8 @@ window.FF = window.FF || {};
       var p = FF.ui.el('p', { class: 'plus-agree' });
       var parts = t('plusAgree', 'By buying you agree to the {terms} and the {refunds}.').split(/(\{terms\}|\{refunds\})/);
       parts.forEach(function (part) {
-        if (part === '{terms}') p.appendChild(FF.ui.el('a', { href: FF.page('terms'), target: '_blank', rel: 'noopener' }, t('termsOfService', 'Terms of Service')));
-        else if (part === '{refunds}') p.appendChild(FF.ui.el('a', { href: FF.page('refunds'), target: '_blank', rel: 'noopener' }, t('refundPolicy', 'Refund policy')));
+        if (part === '{terms}') p.appendChild(FF.Reader.link('terms', t('termsOfService', 'Terms of Service')));
+        else if (part === '{refunds}') p.appendChild(FF.Reader.link('refunds', t('refundPolicy', 'Refund policy')));
         else if (part) p.appendChild(document.createTextNode(part));
       });
       return p;

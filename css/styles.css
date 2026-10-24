@@ -1181,3 +1181,33 @@ body.game-active .toast-host { bottom: calc(24px + env(safe-area-inset-bottom));
   --card-color: var(--accent-vivid) !important;
   --wash: linear-gradient(160deg, var(--accent-vivid) 0%, var(--art-ink) 100%) !important;
 }
+
+/* ============ Reader: Privacy, Terms and Refunds inside the app (js/reader.js) ============ */
+.reader {
+  position: fixed; inset: 0; z-index: calc(var(--z-dialog) + 5);
+  background: var(--bg); color: var(--text);
+  overflow-y: auto; overscroll-behavior: contain;
+  animation: ff-fade var(--dur-fast) var(--ease);
+}
+.reader:focus { outline: none; }
+.reader--out { animation: ff-fade-out 160ms var(--ease) forwards; }
+body.reader-open { overflow: hidden; }
+.reader__bar {
+  position: sticky; top: 0; z-index: 1;
+  display: flex; align-items: center; min-height: var(--header-h, 64px);
+  padding: 0 var(--gutter); background: var(--header-bg, var(--bg));
+  border-bottom: 1px solid var(--border);
+}
+.reader__page { max-width: 760px; margin: 0 auto; padding: var(--sp-8) var(--gutter) var(--sp-12); }
+.reader__title { font-family: var(--font-display); font-size: var(--fs-3xl); line-height: var(--lh-tight); }
+.reader__sub { color: var(--muted); margin-top: var(--sp-2); }
+.reader__body { margin-top: var(--sp-6); line-height: var(--lh-body); }
+.reader__body > .pm-loader { display: block; margin: var(--sp-8) auto; }
+.reader__body h2 { font-family: var(--font-display); font-size: var(--fs-xl); margin: var(--sp-8) 0 var(--sp-3); }
+.reader__body p, .reader__body li { margin: var(--sp-2) 0; }
+.reader__body ul, .reader__body ol { padding-left: 1.3em; }
+.reader__body a { color: var(--accent); font-weight: 700; }
+.reader__body .draft { background: var(--warn-soft); color: var(--text); border: 1px solid var(--warn); border-radius: var(--r-md); padding: var(--sp-3) var(--sp-4); font-weight: 700; }
+.reader__body .doc-summary { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); padding: var(--sp-2) var(--sp-5) var(--sp-4); margin-top: var(--sp-6); }
+.reader__body .doc-summary h2 { margin-top: var(--sp-3); font-size: var(--fs-lg); }
+.reader__body .btn { margin-top: var(--sp-4); }

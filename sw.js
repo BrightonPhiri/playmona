@@ -28,7 +28,7 @@ self.addEventListener('install', function (event) {
       var copy = res.clone();
       return res.text().then(function (html) {
         // The public pages too, so each one opens offline as itself.
-        var urls = ['./', 'privacy', 'terms', 'refunds', 'css/landing.css', 'css/doc.css', 'js/doc.js', 'js/install.js',
+        var urls = ['./', 'privacy', 'terms', 'refunds', '404', 'error','css/landing.css', 'css/doc.css', 'js/doc.js', 'js/install.js',
           'manifest.webmanifest', 'assets/brand/mark-256.webp'];
         html.replace(/(?:src|href)="([^"#:]+)"/g, function (m, url) { urls.push(url); return m; });
         return cache.put('play', copy).then(function () {
@@ -59,22 +59,30 @@ self.addEventListener('fetch', function (event) {
   if (req.headers.has('range') || (sameOrigin && url.indexOf(self.location.origin + '/assets/music/') === 0)) return;
 
   event.respondWith((sameOrigin ? fetchFresh(req) : fetch(req)).then(function (res) {
+    // The server (or Cloudflare in front of it) has a problem: use the saved copy,
+    // so players keep playing instead of seeing an error.
+    if (res.status >= 500) {
+      return saved(req).then(function (hit) { return hit || res; });
+    }
     if (res && (res.ok || res.type === 'opaque')) {
       var copy = res.clone();
       caches.open(CACHE).then(function (c) { c.put(req, copy); });
     }
     return res;
   }).catch(function () {
-    return caches.match(req, { ignoreSearch: req.mode === 'navigate' }).then(function (hit) {
-      if (hit) return hit;
-      if (req.mode === 'navigate') {
-        // Offline and never cached: the app for app links, else the home page.
-        var path = new URL(req.url).pathname;
-        return caches.match(/\/play(\.html)?$/.test(path) ? 'play' : './').then(function (page) {
-          return page || Response.error();
-        });
-      }
-      return Response.error();
-    });
+    return saved(req).then(function (hit) { return hit || Response.error(); });
   }));
 });
+
+/* The saved copy of a request. A page never saved falls back to the app (for app
+   links) or the home page, and last of all to PlayMona's own "back soon" page. */
+function saved(req) {
+  var page = req.mode === 'navigate';
+  return caches.match(req, { ignoreSearch: page }).then(function (hit) {
+    if (hit || !page) return hit;
+    var path = new URL(req.url).pathname;
+    return caches.match(/\/play(\.html)?$/.test(path) ? 'play' : './').then(function (home) {
+      return home || caches.match('error');
+    });
+  });
+}

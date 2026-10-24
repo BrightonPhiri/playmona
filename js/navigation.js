@@ -76,6 +76,8 @@ window.FF = window.FF || {};
     },
 
     _onPopState: function () {
+      // A reading page (Privacy, Terms) open over the app takes the back press first.
+      if (FF.Reader && FF.Reader.handlePop()) return;
       const gameActive = document.body.classList.contains('game-active');
       if (gameActive && typeof FF.GameFlow !== 'undefined') {
         FF.GameFlow.handleBack();

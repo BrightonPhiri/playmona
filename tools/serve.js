@@ -75,8 +75,9 @@ http.createServer(function (req, res) {
 
   if (isFile(file)) return send(res, file, req);
   if (isFile(file + '.html')) return send(res, file + '.html', req);
-  res.writeHead(404, { 'Content-Type': 'text/plain' });
-  res.end('Not found');
+  // PlayMona's own 404 page, like the live site (.htaccess ErrorDocument).
+  res.writeHead(404, { 'Content-Type': TYPES['.html'], 'Cache-Control': 'no-store' });
+  fs.createReadStream(path.join(ROOT, '404.html')).pipe(res);
 }).listen(PORT, function () {
   console.log('PlayMona preview on http://localhost:' + PORT);
 });

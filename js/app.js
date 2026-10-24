@@ -384,8 +384,8 @@ window.FF = window.FF || {};
       }, { role: 'menuitemcheckbox', checked: dark, keepOpen: true, cls: 'acct-menu__item--toggle' });
       list.lastChild.appendChild(FF.ui.span('acct-menu__switch'));
       if (FF.Install && FF.Install.available()) item('download', t('installApp', 'Install the app'), function () { FF.App.install(); });
-      item('info', t('privacyNotice', 'Privacy notice'), function () { window.open(FF.page('privacy'), '_blank', 'noopener'); });
-      item('scroll', t('termsOfService', 'Terms of Service'), function () { window.open(FF.page('terms'), '_blank', 'noopener'); });
+      item('info', t('privacyNotice', 'Privacy notice'), function () { FF.Reader.open('privacy'); });
+      item('scroll', t('termsOfService', 'Terms of Service'), function () { FF.Reader.open('terms'); });
       divider();
       item('sign-out', guest ? t('leaveGuest', 'Stop guest play') : t('signOut', 'Log out'), function () { FF.App.confirmSignOut(); }, { cls: 'acct-menu__item--danger' });
       menu.appendChild(list);
@@ -518,8 +518,8 @@ window.FF = window.FF || {};
       footer.appendChild(privacy);
       footer.appendChild(FF.ui.el('button', { type: 'button', class: 'link-btn', onclick: function () { FF.Nav.go('credits'); } }, t('credits', 'Credits')));
       footer.appendChild(FF.ui.el('button', { type: 'button', class: 'link-btn', onclick: function () { FF.Nav.go('about'); } }, t('about', 'About')));
-      footer.appendChild(FF.ui.el('a', { class: 'link-btn', href: FF.page('privacy'), target: '_blank', rel: 'noopener' }, t('privacy', 'Privacy')));
-      footer.appendChild(FF.ui.el('a', { class: 'link-btn', href: FF.page('terms'), target: '_blank', rel: 'noopener' }, t('terms', 'Terms')));
+      footer.appendChild(FF.Reader.link('privacy', t('privacy', 'Privacy'), 'link-btn'));
+      footer.appendChild(FF.Reader.link('terms', t('terms', 'Terms'), 'link-btn'));
       footer.appendChild(FF.ui.span('app-footer__ver', 'v' + VERSION));
       app.appendChild(footer);
       app.appendChild(tabbar);
@@ -1493,7 +1493,7 @@ window.FF = window.FF || {};
             : t('privacyBodyCloud', 'No ads and no tracking. Your account keeps your profile, players, stats and settings so they follow you between devices. Photos never leave the device that took them. Online rooms share only your display name and character.'))
         ]));
         panel.appendChild(privacy);
-        var link = FF.ui.el('a', { class: 'link-btn', href: FF.page('privacy'), target: '_blank', rel: 'noopener' }, t('readPrivacy', 'Read the privacy notice'));
+        var link = FF.Reader.link('privacy', t('readPrivacy', 'Read the privacy notice'), 'link-btn');
         panel.appendChild(link);
         FF.App.settingsSection(panel, 'stack', t('yourData', 'Your data'), [
           FF.UI.settingRow(t('clearFavorites', 'Clear favourites'), FF.UI.button(t('clear', 'Clear'), { icon: 'star', onClick: function () { FF.Favorites.clear(); FF.UI.toast(t('favoritesCleared', 'Favourites cleared')); } })),
@@ -1515,7 +1515,7 @@ window.FF = window.FF || {};
         }
         var info = FF.ui.div('btn-stack');
         info.appendChild(FF.UI.button(t('credits', 'Credits'), { class: 'btn-ghost', icon: 'info', onClick: function () { FF.Nav.go('credits'); } }));
-        info.appendChild(FF.ui.el('a', { class: 'btn btn-ghost', href: FF.page('privacy'), target: '_blank', rel: 'noopener' }, t('privacyNotice', 'Privacy notice')));
+        info.appendChild(FF.Reader.link('privacy', t('privacyNotice', 'Privacy notice'), 'btn btn-ghost'));
         panel.appendChild(info);
       }
     },

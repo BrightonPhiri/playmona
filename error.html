@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1030">
+  <meta name="robots" content="noindex">
+  <title>Back soon · PlayMona</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/brand/favicon-32.png">
+  <link rel="stylesheet" href="/css/fonts.css">
+  <!-- Shown when the server has a problem, and by the service worker when a page cannot load
+       and is not saved on the device. Same look as 404.html; everything it needs is inline. -->
+  <style>
+    :root { --navy: #0b1030; --yellow: #ffc83d; }
+    * { box-sizing: border-box; margin: 0; }
+    html, body { height: 100%; }
+    body {
+      display: flex; align-items: center; justify-content: center; padding: 32px 20px;
+      background: radial-gradient(120% 80% at 50% 0%, #1b2462 0%, var(--navy) 60%);
+      color: #fff; font-family: "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif; line-height: 1.5;
+      text-align: center;
+    }
+    main { max-width: 520px; }
+    .mark { width: 88px; height: 88px; }
+    h1 { margin-top: 18px; font-family: "Fredoka", system-ui, sans-serif; font-weight: 700; font-size: clamp(2rem, 7vw, 2.8rem); line-height: 1.1; }
+    p { margin-top: 12px; color: rgba(255, 255, 255, 0.8); font-size: 1.1rem; }
+    .actions { margin-top: 28px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; min-height: 52px; padding: 12px 26px;
+      border-radius: 999px; border: 2px solid transparent; font: inherit; font-weight: 800; font-size: 1.05rem;
+      text-decoration: none; cursor: pointer;
+    }
+    .btn--main { background: var(--yellow); color: var(--navy); }
+    .btn--glass { background: rgba(255, 255, 255, 0.1); color: #fff; border-color: rgba(255, 255, 255, 0.35); }
+    .btn:hover { filter: brightness(1.08); }
+    .btn:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+    .wordmark { margin-top: 40px; display: inline-flex; font-family: "Fredoka", system-ui, sans-serif; font-weight: 700; font-size: 1.3rem; }
+    .wordmark__mona { background: linear-gradient(90deg, #ffb21f 0%, #ff6a1f 30%, #ff2f8f 55%, #8b3cf7 80%, #2ec84b 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  </style>
+</head>
+<body>
+  <main>
+    <img class="mark" src="/assets/brand/mark-256.webp" alt="" width="88" height="88">
+    <h1>We'll be right back</h1>
+    <p id="why">PlayMona can't load this page just now. If you have played on this device before, your games still work without a connection.</p>
+    <div class="actions">
+      <a class="btn btn--main" href="/play">Open games</a>
+      <button class="btn btn--glass" type="button" onclick="location.reload()">Try again</button>
+    </div>
+    <div class="wordmark" aria-hidden="true"><span>Play</span><span class="wordmark__mona">Mona</span></div>
+  </main>
+  <script>
+    if (navigator.onLine === false) {
+      document.getElementById('why').textContent = 'You are offline. If you have played on this device before, your games still work without a connection.';
+    }
+  </script>
+</body>
+</html>
