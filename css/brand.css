@@ -22,9 +22,62 @@
 .brand-lockup .brand-logo { width: 34px; height: 34px; }
 @media (forced-colors: active) { .wordmark__mona { color: CanvasText; background: none; } }
 
+/* ============ Loader: the seven logo dots chasing round a circle ============
+   Every dot runs the same lap with a small delay, and the lap eases in and out,
+   so the dots bunch up at the top and stretch into a comet as they speed round.
+   The leading dot is the biggest; the tail gets smaller. */
+.pm-loader { --pm-size: 48px; --pm-lap: 1.7s; position: relative; display: inline-block; flex: none; width: var(--pm-size); height: var(--pm-size); vertical-align: middle; }
+.pm-loader--sm { --pm-size: 22px; }
+.pm-loader--md { --pm-size: 48px; }
+.pm-loader--lg { --pm-size: 88px; }
+.pm-loader--xl { --pm-size: 148px; }
+.pm-loader__dot {
+  --d: calc(var(--pm-size) * (0.2 - var(--i) * 0.016));
+  position: absolute; inset: 0;
+  animation: pm-orbit var(--pm-lap) cubic-bezier(0.62, 0.04, 0.38, 0.96) infinite;
+  animation-delay: calc(var(--i) * 0.075s - 1s);
+}
+.pm-loader__dot::before {
+  content: ''; position: absolute; top: 0; left: 50%;
+  width: var(--d); height: var(--d); margin-left: calc(var(--d) / -2);
+  border-radius: 50%; background: var(--c);
+  box-shadow: 0 0 calc(var(--d) * 0.6) color-mix(in srgb, var(--c) 45%, transparent);
+}
+/* Round a picture: thinner dots, and the picture sits inside the ring. */
+.pm-loader--ring .pm-loader__dot { --d: calc(var(--pm-size) * (0.11 - var(--i) * 0.008)); }
+.pm-loader__center {
+  position: absolute; inset: 16%; border-radius: 50%; overflow: hidden;
+  display: grid; place-items: center; background: var(--surface-2, var(--surface));
+}
+.pm-loader__center > img { width: 100%; height: 100%; object-fit: cover; }
+@keyframes pm-orbit { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+/* Less motion: the dots stay put round the circle and glow one after another. */
+@keyframes pm-glow { 0%, 100% { opacity: 0.35; } 40% { opacity: 1; } }
+:root[data-reduce="1"] .pm-loader__dot { animation: pm-glow 1.4s ease-in-out infinite; animation-delay: calc(var(--i) * 0.2s); transform: rotate(calc(var(--i) * 51.43deg)); }
+@media (prefers-reduced-motion: reduce) {
+  .pm-loader__dot { animation: pm-glow 1.4s ease-in-out infinite; animation-delay: calc(var(--i) * 0.2s); transform: rotate(calc(var(--i) * 51.43deg)); }
+}
+
+.pm-loading { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--sp-3); padding: var(--sp-6) var(--sp-3); color: var(--muted); font-weight: 700; text-align: center; }
+.pm-loading--compact { flex-direction: row; padding: var(--sp-3) 0; justify-content: flex-start; gap: var(--sp-2); }
+
+/* A busy button: the label hides and a small ring of logo dots turns in its place. */
+.btn.is-busy, .btn[aria-busy="true"] { position: relative; color: transparent !important; }
+.btn.is-busy > *, .btn[aria-busy="true"] > * { visibility: hidden; }
+.btn.is-busy::after, .btn[aria-busy="true"]::after {
+  content: ''; position: absolute; top: 50%; left: 50%; width: 5px; height: 5px; margin: -2.5px 0 0 -2.5px;
+  border-radius: 50%; background: transparent;
+  box-shadow:
+    0 -9px 0 0.5px #ff2f6d, 7px -5.6px 0 0.3px #ffa51f, 8.8px 2px 0 0.1px #2ec84b, 3.9px 8.1px 0 0 #1e9bff,
+    -3.9px 8.1px 0 -0.2px #19c3f0, -8.8px 2px 0 -0.4px #ff8a1f, -7px -5.6px 0 -0.6px #8b3cf7;
+  animation: pm-orbit 0.9s linear infinite;
+}
+:root[data-reduce="1"] .btn.is-busy::after, :root[data-reduce="1"] .btn[aria-busy="true"]::after { animation-duration: 2.4s; }
+
 /* ============ Splash ============ */
-.splash { position: fixed; inset: 0; display: grid; place-items: center; background: var(--bg); z-index: 200; }
+.splash { position: fixed; inset: 0; display: grid; place-items: center; align-content: center; gap: var(--sp-4); background: var(--bg); z-index: 200; }
 .splash__mark { width: 88px; height: 88px; animation: pm-pulse 1.2s var(--ease) infinite alternate; }
+.splash .wordmark { font-size: 1.6rem; }
 @keyframes pm-pulse { from { transform: scale(0.94); opacity: 0.75; } to { transform: scale(1.04); opacity: 1; } }
 
 /* ============ Avatars ============ */
@@ -48,7 +101,6 @@
 .pg-row__ava { width: 30px; height: 30px; flex: none; }
 .ffr-chip__ava { width: 24px; height: 24px; }
 .rm-player__ava.avatar-img { width: 32px; height: 32px; background: transparent; }
-.rm-load__emoji { display: flex; align-items: center; justify-content: center; }
 .rm-load__ava { width: 84px; height: 84px; }
 .match-card__mark { width: 62%; height: 62%; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25)); }
 .match-card__back { background: linear-gradient(135deg, #1a2250, #0b1030) !important; }
@@ -129,11 +181,6 @@ body.auth-open { background: var(--bg); }
 .btn-google { background: #fff; color: #1f1f1f; border-color: #dadce0; }
 .btn-google:hover { background: #f7f8fa; }
 .btn-google__g { display: inline-flex; }
-.btn.is-busy { position: relative; color: transparent !important; }
-.btn.is-busy::after {
-  content: ''; position: absolute; width: 20px; height: 20px; border-radius: 50%;
-  border: 3px solid rgba(255, 255, 255, 0.5); border-top-color: #fff; animation: pm-spin 0.8s linear infinite;
-}
 @keyframes pm-spin { to { transform: rotate(360deg); } }
 
 /* Cancel / back link and guest play */
@@ -365,9 +412,17 @@ body.auth-open #app { display: none; }
 .edit-profile { display: flex; flex-direction: column; gap: var(--sp-3); }
 .edit-profile__ava { position: relative; width: 112px; height: 112px; margin: 0 auto; border-radius: 50%; padding: 4px; background: var(--brand-gradient-mark); }
 .edit-profile__img { width: 100%; height: 100%; background: var(--surface); }
-.edit-profile__photo { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--sp-2); }
-.edit-profile__photo[hidden] { display: none; }
-.edit-profile__photo-hint { flex-basis: 100%; text-align: center; margin: 0; }
+.edit-profile__hint { text-align: center; margin: 0; }
+/* The Photo tab of the character picker. */
+.look-photo { display: flex; flex-direction: column; align-items: center; gap: var(--sp-3); margin: var(--sp-4) 0 var(--sp-2); text-align: center; }
+.look-photo[hidden] { display: none; }
+.look-photo__lead { margin: 0; font-weight: 700; }
+.look-photo__actions { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--sp-2); }
+.look-photo .details__note { margin: 0; }
+/* While a photo uploads, the dots circle the picture at the preview's size. */
+.look-preview__loader { --pm-size: 140px; }
+.look-preview__loader .pm-loader__center { inset: 10%; }
+.look-preview__name--busy { color: var(--muted); font-size: var(--fs-md); }
 /* Photos are squares of a real face: fill the circle instead of floating like the characters. */
 .avatar-img--photo { object-fit: cover; border-radius: 50%; }
 .edit-profile__badge { position: absolute; right: 0; bottom: 0; width: 34px; height: 34px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: var(--accent-text); border: 3px solid var(--surface); }

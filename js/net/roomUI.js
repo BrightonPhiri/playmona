@@ -132,23 +132,15 @@ window.FF = window.FF || {};
       opts = opts || {};
       FF.ui.clear(main);
 
-      var stage = FF.ui.div('rm-load__stage');
-      var emoji = FF.ui.div('rm-load__emoji');
       var castImg = FF.Avatars.img(LOAD_CAST[0], 'rm-load__ava');
-      emoji.appendChild(castImg);
-      stage.appendChild(FF.ui.div('rm-load__ring'));
-      stage.appendChild(FF.ui.div('rm-load__ring rm-load__ring--slow'));
-      stage.appendChild(emoji);
-
-      var dots = FF.ui.div('rm-load__dots');
-      for (var d = 0; d < 4; d++) dots.appendChild(FF.ui.div('rm-load__dot'));
+      var stage = FF.UI.loader({ size: 'xl', center: castImg, className: 'rm-load__stage' });
 
       var status = FF.ui.div('rm-load__status', (opts.messages && opts.messages[0]) || 'Connecting…');
+      status.setAttribute('role', 'status');
 
       var box = FF.ui.div('rm-load');
       box.appendChild(stage);
       box.appendChild(status);
-      box.appendChild(dots);
 
       main.appendChild(panel([title(opts.title || FF.t('gettingReady', 'Getting ready')), box]));
 

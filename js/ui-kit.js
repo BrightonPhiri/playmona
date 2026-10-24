@@ -27,8 +27,58 @@ window.FF = window.FF || {};
     return el;
   }
 
+  // The seven dots of the PlayMona logo, in the order they sit around the "P":
+  // up the left side (pink, orange, green, blue), then down the right (cyan, orange, purple).
+  var LOGO_DOTS = ['#ff2f6d', '#ffa51f', '#2ec84b', '#1e9bff', '#19c3f0', '#ff8a1f', '#8b3cf7'];
+
   FF.UI = {
     uid: uid,
+    LOGO_DOTS: LOGO_DOTS,
+
+    /* ---------- Loader: the logo's seven dots chasing round a circle ----------
+       opts: { size: 'sm' | 'md' | 'lg' | 'xl' (default 'md'), center: node shown in the
+       middle (a photo, an avatar), label: text for screen readers (makes it a status) }. */
+    loader: function (opts) {
+      opts = opts || {};
+      var box = FF.ui.span('pm-loader pm-loader--' + (opts.size || 'md') + (opts.center ? ' pm-loader--ring' : '') + (opts.className ? ' ' + opts.className : ''));
+      if (opts.label) {
+        box.setAttribute('role', 'status');
+        box.setAttribute('aria-label', opts.label);
+      } else {
+        box.setAttribute('aria-hidden', 'true');
+      }
+      LOGO_DOTS.forEach(function (color, i) {
+        var dot = FF.ui.span('pm-loader__dot');
+        dot.style.setProperty('--i', i);
+        dot.style.setProperty('--c', color);
+        box.appendChild(dot);
+      });
+      if (opts.center) {
+        var mid = FF.ui.span('pm-loader__center');
+        mid.appendChild(opts.center);
+        box.appendChild(mid);
+      }
+      return box;
+    },
+
+    /* A loader with a line of text, for a panel that is waiting on the network. */
+    loading: function (text, opts) {
+      opts = opts || {};
+      var wrap = FF.ui.div('pm-loading' + (opts.compact ? ' pm-loading--compact' : '') + (opts.className ? ' ' + opts.className : ''));
+      wrap.setAttribute('role', 'status');
+      wrap.appendChild(FF.UI.loader({ size: opts.size || (opts.compact ? 'sm' : 'md') }));
+      wrap.appendChild(FF.ui.span('pm-loading__text', text || FF.t('loading', 'Loading…')));
+      return wrap;
+    },
+
+    /* Shows a button as busy (the dots replace its label) or back to normal. */
+    busy: function (button, on) {
+      if (!button) return;
+      button.disabled = !!on;
+      button.classList.toggle('is-busy', !!on);
+      if (on) button.setAttribute('aria-busy', 'true');
+      else button.removeAttribute('aria-busy');
+    },
 
     /* ---------- Screen-reader announcements ---------- */
     announce: function (msg) {

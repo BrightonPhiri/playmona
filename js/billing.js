@@ -196,7 +196,7 @@ window.FF = window.FF || {};
     /* Opens an order's invoice in a window, with a Download PDF button. */
     openInvoice: function (orderId) {
       var body = el('div', { class: 'invoice-dialog' });
-      body.appendChild(el('p', { class: 'bill-loading' }, t('loading', 'Loading…')));
+      body.appendChild(FF.UI.loading(t('loadingInvoice', 'Getting your invoice…')));
       var dlg = FF.UI.dialog({
         title: t('invoice', 'Invoice'), body: body, wide: true, className: 'invoice-dialog-wrap',
         actions: [

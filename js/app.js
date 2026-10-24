@@ -113,7 +113,8 @@ window.FF = window.FF || {};
     _splash: function () {
       FF.ui.clear(document.body);
       var s = FF.ui.el('div', { class: 'splash', id: 'splash', role: 'status', 'aria-label': t('loading', 'Loading') });
-      s.appendChild(FF.Brand.logo('splash__mark', true));
+      s.appendChild(FF.UI.loader({ size: 'lg' }));
+      if (FF.AuthUI && FF.AuthUI.wordmark) s.appendChild(FF.AuthUI.wordmark());
       document.body.appendChild(s);
     },
 
@@ -1966,62 +1967,11 @@ window.FF = window.FF || {};
       pick.appendChild(badge);
       body.appendChild(pick);
 
-      // Profile photo: saved straight away (the file is already on the server).
-      var hadPhoto = FF.Avatars.isPhoto(p.avatar);
       function showAvatar(value) {
         img.src = FF.Avatars.url(value);
         img.classList.toggle('avatar-img--photo', FF.Avatars.isPhoto(value));
       }
-      function savedAvatar(value, message) {
-        return FF.Auth.updateProfile({ avatar: value }).then(function () {
-          if (FF.Track && FF.Track.seen) FF.Track.seen();   // the admin player list shows the new picture
-          chosen = value;
-          showAvatar(value);
-          drawPhotoRow();
-          FF.App.buildShell();
-          FF.UI.toast(message, { type: 'success' });
-        });
-      }
-      var photoRow = FF.ui.div('edit-profile__photo');
-      function drawPhotoRow() {
-        FF.ui.clear(photoRow);
-        if (!FF.Photo || !FF.Photo.available()) { photoRow.hidden = true; return; }
-        photoRow.hidden = false;
-        var isPhoto = FF.Avatars.isPhoto(chosen);
-        var up = FF.UI.button(isPhoto ? t('profileChangePhoto', 'Change photo') : t('profileUploadPhoto', 'Upload photo'), {
-          class: '', icon: 'image',
-          onClick: function () {
-            FF.Photo.choose(function (file) {
-              up.disabled = true;
-              up.setAttribute('aria-busy', 'true');
-              FF.Photo.upload(file).then(function (value) {
-                hadPhoto = false;   // the server already replaced the old file
-                return savedAvatar(value, t('photoSaved', 'Photo saved'));
-              }).catch(function (e) {
-                up.disabled = false;
-                up.removeAttribute('aria-busy');
-                FF.UI.toast(e.message, { type: 'error' });
-              });
-            });
-          }
-        });
-        photoRow.appendChild(up);
-        if (isPhoto) {
-          photoRow.appendChild(FF.UI.button(t('profileRemovePhoto', 'Remove photo'), {
-            class: 'btn-ghost', icon: 'trash',
-            onClick: function () {
-              var character = FF.Avatars.fallback(chosen);
-              FF.Photo.remove();
-              hadPhoto = false;
-              savedAvatar(character, t('photoRemoved', 'Photo removed. Tap your picture to choose a character.'))
-                .catch(function (e) { FF.UI.toast(e.message, { type: 'error' }); });
-            }
-          }));
-        }
-        photoRow.appendChild(FF.ui.el('p', { class: 'field__hint edit-profile__photo-hint' }, t('photoHint', 'Other players see your photo. Use a photo of yourself, and nothing rude.')));
-      }
-      drawPhotoRow();
-      body.appendChild(photoRow);
+      body.appendChild(FF.ui.el('p', { class: 'field__hint edit-profile__hint' }, t('pictureHint', 'Tap your picture to pick a character or add a photo.')));
       function field(label, value, max, hint) {
         var id = FF.UI.uid('f');
         var wrap = FF.ui.div('field');
@@ -2056,8 +2006,9 @@ window.FF = window.FF || {};
               if (!ok) { user.error(t('usernameTaken', 'That username is taken. Try another.')); return; }
               var patchP = { displayName: name.input.value, avatar: chosen };
               if (user) patchP.username = user.input.value;
+              // Swapping a saved photo for a character: the photo file goes.
+              var hadPhoto = FF.Avatars.isPhoto((FF.Auth.profile() || {}).avatar);
               return FF.Auth.updateProfile(patchP).then(function () {
-                // Swapped the photo for a character: the photo file goes.
                 if (hadPhoto && !FF.Avatars.isPhoto(chosen) && FF.Photo) FF.Photo.remove();
                 api.close();
                 FF.UI.toast(t('profileSaved', 'Profile saved'), { type: 'success' });

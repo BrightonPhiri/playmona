@@ -98,14 +98,18 @@ window.FF = window.FF || {};
       });
     },
 
-    /* Shrinks and uploads. Resolves with the avatar value to save in the profile. */
-    upload: function (file) {
-      return this.shrink(file).then(function (blob) {
-        return send('/avatar', blob, blob.type);
-      }).then(function (data) {
+    /* Uploads a picture made by shrink(). Resolves with the avatar value to save in the profile. */
+    send: function (blob) {
+      return send('/avatar', blob, blob.type).then(function (data) {
         if (!FF.Avatars.isPhoto(data.avatar)) throw new Error(t('photoDown', 'The photo could not be saved. Please try again.'));
         return data.avatar;
       });
+    },
+
+    /* Shrinks and uploads in one go. */
+    upload: function (file) {
+      var self = this;
+      return this.shrink(file).then(function (blob) { return self.send(blob); });
     },
 
     /* The player went back to a character: delete the file on the server (best effort). */

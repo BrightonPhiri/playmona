@@ -242,7 +242,7 @@ window.FF = window.FF || {};
       if (!online()) { target.hidden = !!opts.hideWhenEmpty; return; }
       var body = opts.body || target;
       FF.ui.clear(body);
-      body.appendChild(FF.ui.el('p', { class: 'bill-loading' }, t('loading', 'Loading…')));
+      body.appendChild(FF.UI.loading(t('loadingPayments', 'Loading your payments…'), { compact: true }));
       this.me().then(function (data) {
         FF.ui.clear(body);
         var orders = (data.orders || []).filter(function (o) { return o.status === 'paid' || o.status === 'pending'; });

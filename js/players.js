@@ -273,8 +273,10 @@ window.FF = window.FF || {};
       reader.readAsDataURL(file);
     },
 
-    /* Avatar picker sheet: the character set, filterable, plus an optional
-       photo. opts: { kind: 'player'|'team'|'profile', onDone(avatarId), current, title } */
+    /* Avatar picker sheet: the character set, filterable, and a Photo tab.
+       opts: { kind: 'player'|'team'|'profile', onDone(avatarId), current, title }.
+       A profile photo is uploaded (js/photo.js) and saved to the account straight
+       away; saved players' and teams' photos stay on this device. */
     pickLook: function (id, opts) {
       opts = opts || {};
       var isTeam = opts.kind === 'team';
@@ -295,14 +297,26 @@ window.FF = window.FF || {};
 
       var body = FF.ui.div('look-picker');
       var preview = FF.ui.div('look-preview');
+      var uploading = false;
       function refreshPreview() {
         FF.ui.clear(preview);
         var cur = live();
         preview.appendChild(FF.Players.avatarEl(cur, 'look-preview__face'));
         if (cur.name) preview.appendChild(FF.ui.div('look-preview__name', cur.name));
       }
+      // While a photo uploads: the new picture inside a ring of turning logo dots.
+      function showUploading(src) {
+        FF.ui.clear(preview);
+        var im = FF.ui.el('img', { src: src, alt: '' });
+        preview.appendChild(FF.UI.loader({ size: 'xl', center: im, className: 'look-preview__loader', label: FF.t('photoUploading', 'Uploading your photo') }));
+        preview.appendChild(FF.ui.div('look-preview__name look-preview__name--busy', FF.t('photoUploadingDots', 'Uploading your photo…')));
+      }
       refreshPreview();
       body.appendChild(preview);
+      function hasPhoto() {
+        var cur = live();
+        return isProfile ? FF.Avatars.isPhoto(chosen) : !!(cur && cur.photo);
+      }
 
       var grid = FF.ui.el('div', { class: 'avatar-grid', role: 'radiogroup', 'aria-label': FF.t('characters', 'Characters') });
       function pick(aid) {
@@ -318,7 +332,12 @@ window.FF = window.FF || {};
         });
         refreshPreview();
       }
+      var photoPanel = FF.ui.div('look-photo');
       function renderGrid(group) {
+        var photoTab = group === 'photo';
+        grid.hidden = photoTab;
+        photoPanel.hidden = !photoTab;
+        if (photoTab) { renderPhoto(); return; }
         FF.ui.clear(grid);
         FF.Avatars.all().filter(function (a) { return group === 'all' || a.group === group; }).forEach(function (a) {
           var on = a.id === chosen && !live().photo;
@@ -332,47 +351,111 @@ window.FF = window.FF || {};
           grid.appendChild(b);
         });
       }
-      body.appendChild(FF.UI.segmented({
-        label: FF.t('characterType', 'Character type'), value: 'all', compact: true,
-        options: [
-          { label: FF.t('all', 'All'), value: 'all' },
-          { label: FF.t('people', 'People'), value: 'people' },
-          { label: FF.t('animals', 'Animals'), value: 'animals' },
-          { label: FF.t('fantasy', 'Fantasy'), value: 'fantasy' }
-        ],
-        onChange: function (v) { renderGrid(v); }
-      }));
-      renderGrid('all');
-      body.appendChild(grid);
+      /* ----- The Photo tab ----- */
+      // Profile photos are uploaded: they need a real account on playmona.com.
+      var canUpload = !isProfile || (FF.Photo && FF.Photo.available());
 
-      if (!isProfile) {
-        var file = FF.ui.el('input', { type: 'file', accept: 'image/*', hidden: true, 'aria-hidden': 'true', tabindex: -1 });
-        file.addEventListener('change', function () {
-          var picked = file.files && file.files[0];
-          file.value = '';
-          if (!picked) return;
+      function savedProfile(value, message) {
+        return FF.Auth.updateProfile({ avatar: value }).then(function () {
+          if (FF.Track && FF.Track.seen) FF.Track.seen();   // the admin player list shows the new picture
+          chosen = value;
+          if (FF.App && FF.App.buildShell) FF.App.buildShell();
+          if (message) FF.UI.toast(message, { type: 'success' });
+        });
+      }
+
+      function usePhoto(picked) {
+        if (!isProfile) {
           FF.Players.readPhotoFile(picked, function (data) {
             if (!data) { FF.UI.toast(FF.t('photoFailed', 'That picture could not be used.'), { type: 'error' }); return; }
             if (isTeam) FF.Teams.setPhoto(id, data);
             else FF.Players.setPhoto(id, data);
             refreshPreview();
+            renderPhoto();
           });
+          return;
+        }
+        uploading = true;
+        renderPhoto();
+        FF.Photo.shrink(picked).then(function (blob) {
+          var url = URL.createObjectURL(blob);
+          showUploading(url);
+          return FF.Photo.send(blob).then(function (value) {
+            URL.revokeObjectURL(url);
+            return savedProfile(value, FF.t('photoSaved', 'Photo saved'));
+          }, function (e) { URL.revokeObjectURL(url); throw e; });
+        }).catch(function (e) {
+          FF.UI.toast(e.message, { type: 'error' });
+        }).then(function () {
+          uploading = false;
+          if (!preview.isConnected) return;
+          refreshPreview();
+          renderPhoto();
         });
-        body.appendChild(file);
-        var photoRow = FF.ui.div('look-photo-row');
-        photoRow.appendChild(FF.UI.button(FF.t('uploadPhoto', 'Use a photo instead'), { class: 'btn-sm', icon: 'image', onClick: function () { file.click(); } }));
-        if (live().photo) {
-          photoRow.appendChild(FF.UI.button(FF.t('removePhoto', 'Remove photo'), {
-            class: 'btn-sm btn-ghost', icon: 'trash',
-            onClick: function () {
-              if (isTeam) FF.Teams.setPhoto(id, null); else FF.Players.setPhoto(id, null);
-              refreshPreview();
-            }
+      }
+
+      function removePhoto() {
+        if (!isProfile) {
+          if (isTeam) FF.Teams.setPhoto(id, null); else FF.Players.setPhoto(id, null);
+          refreshPreview();
+          renderPhoto();
+          return;
+        }
+        var character = FF.Avatars.fallback(chosen);
+        FF.Photo.remove();
+        savedProfile(character, FF.t('photoRemovedPick', 'Photo removed. Pick a character, or add another photo.')).then(function () {
+          refreshPreview();
+          renderPhoto();
+        }, function (e) { FF.UI.toast(e.message, { type: 'error' }); });
+      }
+
+      function renderPhoto() {
+        FF.ui.clear(photoPanel);
+        if (!canUpload) {
+          photoPanel.appendChild(FF.ui.el('p', { class: 'look-photo__lead' }, FF.Auth && FF.Auth.isGuest && FF.Auth.isGuest()
+            ? FF.t('photoNeedsAccount', 'Create a free account to use a photo of yourself.')
+            : FF.t('photoNeedsSite', 'Adding a photo needs your account on playmona.com.')));
+          return;
+        }
+        var has = hasPhoto();
+        photoPanel.appendChild(FF.ui.el('p', { class: 'look-photo__lead' }, has
+          ? FF.t('photoLeadHas', 'This photo is used instead of a character.')
+          : FF.t('photoLead', 'Use a photo instead of a character.')));
+        var row = FF.ui.div('look-photo__actions');
+        var choose = FF.UI.button(has ? FF.t('choosePhotoAgain', 'Choose another photo') : FF.t('choosePhoto', 'Choose a photo'), {
+          class: 'btn-primary', icon: 'image',
+          onClick: function () { if (!uploading && FF.Photo) FF.Photo.choose(usePhoto); }
+        });
+        row.appendChild(choose);
+        if (has) {
+          row.appendChild(FF.UI.button(FF.t('removePhoto', 'Remove photo'), {
+            class: 'btn-ghost', icon: 'trash',
+            onClick: function () { if (!uploading) removePhoto(); }
           }));
         }
-        body.appendChild(photoRow);
-        body.appendChild(FF.ui.el('p', { class: 'details__note' }, FF.t('photoPrivacy', 'Photos stay on this device. They are never uploaded or shared.')));
+        if (uploading) Array.prototype.forEach.call(row.querySelectorAll('button'), function (b) { b.disabled = true; });
+        if (uploading) FF.UI.busy(choose, true);
+        photoPanel.appendChild(row);
+        photoPanel.appendChild(FF.ui.el('p', { class: 'details__note' }, isProfile
+          ? FF.t('photoHint', 'Other players see your photo. Use a photo of yourself, and nothing rude.')
+          : FF.t('photoPrivacy', 'Photos stay on this device. They are never uploaded or shared.')));
       }
+
+      var startTab = hasPhoto() ? 'photo' : 'all';
+      body.appendChild(FF.UI.segmented({
+        label: FF.t('characterType', 'Character type'), value: startTab, compact: true,
+        options: [
+          { label: FF.t('all', 'All'), value: 'all' },
+          { label: FF.t('people', 'People'), value: 'people' },
+          { label: FF.t('animals', 'Animals'), value: 'animals' },
+          { label: FF.t('fantasy', 'Fantasy'), value: 'fantasy' },
+          { label: FF.t('photoTab', 'Photo'), value: 'photo', icon: 'image' }
+        ],
+        onChange: function (v) { renderGrid(v); }
+      }));
+      body.appendChild(grid);
+      body.appendChild(photoPanel);
+      renderGrid(startTab);
 
       sheet = FF.UI.sheet({
         title: opts.title || (isTeam ? FF.t('teamPicture', 'Team picture') : FF.t('chooseCharacter', 'Choose a character')),

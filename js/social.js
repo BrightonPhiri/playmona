@@ -332,8 +332,7 @@ window.FF = window.FF || {};
   }
 
   function loadingRow() {
-    var l = FF.ui.el('p', { class: 'social-loading', role: 'status' }, t('loading', 'Loading…'));
-    return l;
+    return FF.UI.loading(t('loading', 'Loading…'));
   }
 
   var Views = {

@@ -62,7 +62,7 @@ window.FF = window.FF || {};
     if (sub) c.appendChild(el('p', { class: 'admin-card__sub' }, sub));
     return c;
   }
-  function loading(target) { target.appendChild(el('p', { class: 'admin-loading' }, 'Loading…')); }
+  function loading(target) { target.appendChild(FF.UI.loading('Loading…')); }
   function failed(target, e) {
     FF.ui.clear(target);
     var msg = (e && e.code === 'PERMISSION_DENIED') || /permission/i.test(e && e.message)
