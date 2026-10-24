@@ -141,6 +141,8 @@ window.FF = window.FF || {};
       isLastRound: function (n, total) { return FF.Race.isLastRound(n, total); },
       over: function (n) { return FF.Race.over(n); },
       beginRound: function (n) { FF.Race.beginRound(n); },
+      /* What this round shows, for people watching. */
+      describe: function (screen, answer) { FF.Race.describe(screen, answer); },
 
       /* Hold the options until the round's shared open instant, so every
          device can answer from the same moment. */

@@ -183,7 +183,8 @@ window.FF = window.FF || {};
         players: cur.players,
         rounds: cur.rounds,
         scores: FF.Race && FF.Race.scores ? FF.Race.scores(cur.rounds) : {},
-        screen: FF.Race && FF.Race.screen ? FF.Race.screen() : null,
+        // Only the game this device is playing now (never one that just ended).
+        screen: FF.Race && FF.Race.running && FF.Race.running() ? FF.Race.screen() : null,
         voice: cur.voice,
         delisted: FF.Broadcast.delisted(),
         roomName: FF.Room.displayName(meta, cur.players),

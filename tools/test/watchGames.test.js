@@ -32,3 +32,17 @@ test('every flag question also sends its flag to people watching', function () {
   const sent = (src.match(/flagImage: /g) || []).length;
   assert(flags > 0 && sent === flags, flags + ' flag questions, ' + sent + ' send the flag');
 });
+
+test('games that call race.describe get it from a helper that has it', function () {
+  const dir = path.join(ROOT, 'js/games');
+  fs.readdirSync(dir).filter(function (f) { return /\.js$/.test(f); }).forEach(function (f) {
+    const src = fs.readFileSync(path.join(dir, f), 'utf8');
+    if (!/[^.]race\.describe\(|state\.race\.describe\(/.test(src)) return;
+    const usesForGame = /FF\.Race\.forGame\(/.test(src);
+    const helper = /function raceFor\(/.test(src);
+    if (helper) assert(/describe: function \(screen, answer\) \{ (return )?FF\.Race\.describe\(/.test(src), f + ': its own race helper passes describe through');
+    else assert(usesForGame, f + ': race comes from FF.Race.forGame, which has describe');
+  });
+  const race = fs.readFileSync(path.join(ROOT, 'js/net/race.js'), 'utf8');
+  assert(/describe: function \(screen, answer\) \{ return self\.describe\(screen, answer\); \}/.test(race), 'forGame passes describe through');
+});

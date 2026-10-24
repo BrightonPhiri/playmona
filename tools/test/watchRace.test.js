@@ -116,3 +116,21 @@ test('race screen: only known picture kinds pass, and big drawings are dropped',
   assertEqual(A.Race.screen().screen.image, undefined, 'unknown kind dropped');
   done(A, B);
 });
+
+test('race screen: a new game starts with no question from the last one', async function () {
+  const { A, B } = await twoInARoom();
+  A.Race.describe(QUESTION, 0);
+  A.Race.end();
+  A.Race.begin('trueOrFalse', { rounds: 3 });
+  await A.Race.beginRound(0);
+  assertEqual(A.Race.screen(), null, 'nothing shown until the new game says what round 1 is');
+  done(A, B);
+});
+
+test('race screen: ending a game clears its question', async function () {
+  const { A, B } = await twoInARoom();
+  A.Race.describe(QUESTION, 0);
+  A.Race.end();
+  assertEqual(A.Race.screen(), null);
+  done(A, B);
+});

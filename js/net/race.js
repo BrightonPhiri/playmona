@@ -301,6 +301,7 @@ window.FF = window.FF || {};
       };
       lastSession = null;
       session.lastRound = null;
+      described = null;   // a new game: nothing from the last one on screen
       if (offRounds) offRounds();
       offRounds = FF.Room.on('rounds', evaluate);
     },
@@ -570,6 +571,7 @@ window.FF = window.FF || {};
       lastSession = session;
       session = null;
       settleHandlers.length = 0;
+      described = null;
       FF.Random.unseed();
     }
   };
