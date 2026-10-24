@@ -53,6 +53,15 @@ class App
         return $this->make('photos', fn () => new Photos((string) ($this->config->get('uploads.avatars_dir') ?: Photos::defaultDir())));
     }
 
+    /** Watch live: the public list and viewer limits. The list is cached in a temp folder. */
+    public function live(): Live
+    {
+        return $this->make('live', fn () => new Live(
+            $this->rtdb(),
+            (string) ($this->config->get('cache_dir') ?: sys_get_temp_dir() . '/playmona-live')
+        ));
+    }
+
     public function payments(): Payments
     {
         return $this->make('payments', fn () => new Payments(
@@ -105,6 +114,10 @@ class Routes
         if ($m === 'POST' && $p === '/avatar/remove') return $this->removeAvatar($req);
         if ($m === 'POST' && $p === '/admin/avatar/remove') return $this->adminRemoveAvatar($req);
         if ($m === 'GET' && $p === '/admin/visitors') return $this->adminVisitors($req);
+        if ($m === 'GET' && $p === '/live') return Response::json($this->app->live()->list(nowMs()));
+        if ($m === 'GET' && preg_match('#^/live/([A-Za-z0-9]{1,16})$#', $p, $mm)) {
+            return Response::json($this->app->live()->room($mm[1], nowMs(), ($req->query['open'] ?? '') === '1'));
+        }
 
         throw new HttpError(404, 'Not found.', 'not-found');
     }

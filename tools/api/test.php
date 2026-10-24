@@ -103,6 +103,7 @@ function world(bool $oldPrices = true): array
     $gateway = new FakeGateway();
     $config = new Config([
         'site_url' => 'https://playmona.test',
+        'cache_dir' => sys_get_temp_dir() . '/playmona-test-live-' . bin2hex(random_bytes(4)),
         'firebase' => ['project_id' => 'play-mona'],
         'linkwa' => ['signing_secret' => 'whsec'],
         'premium_games' => ['imposter' => ['name' => 'Imposter', 'cents' => 199]],
@@ -828,6 +829,143 @@ test('admins remove a player photo and the player gets a character back; others 
     eq('unicorn', $w['rtdb']->data['users/cara/profile/avatar']);
 });
 }
+
+echo "\nWatch live\n";
+
+/** Broadcast documents as the host's device writes them (js/net/broadcast.js). */
+function liveBroadcast(array $over = []): array
+{
+    return array_replace([
+        'v' => 1, 'name' => 'Friday quiz', 'public' => true, 'status' => 'playing', 'mode' => 'players',
+        'game' => ['id' => 'guessFlag', 'name' => 'World Flags', 'category' => 'world'],
+        'round' => ['n' => 4, 'total' => 10, 'opensAt' => 1, 'screen' => null, 'answer' => null],
+        'players' => [
+            'u1' => ['name' => 'Ana', 'avatar' => 'fox', 'score' => 300],
+            'u2' => ['name' => 'Ben', 'avatar' => 'owl', 'score' => 100],
+        ],
+        'results' => null,
+        'updatedAt' => 1_000_000,
+    ], $over);
+}
+function liveWorld(): array
+{
+    $rtdb = new MemoryRtdb();
+    $dir = sys_get_temp_dir() . '/playmona-test-live-' . bin2hex(random_bytes(4));
+    return ['rtdb' => $rtdb, 'live' => new \PlayMona\Live($rtdb, $dir), 'dir' => $dir];
+}
+const LIVE_NOW = 1_010_000;
+
+test('live: only fresh public rooms are listed, busiest first', function () {
+    $w = liveWorld();
+    $w['rtdb']->data['broadcasts'] = [
+        'AAAAAAAA' => liveBroadcast(['name' => 'Two watching']),
+        'BBBBBBBB' => liveBroadcast(['name' => 'Five watching']),
+        'CCCCCCCC' => liveBroadcast(['name' => 'Private', 'public' => false]),
+        'DDDDDDDD' => liveBroadcast(['name' => 'Gone quiet', 'updatedAt' => LIVE_NOW - 46_000]),
+    ];
+    $w['rtdb']->data['watchers'] = [
+        'AAAAAAAA' => ['v1' => 1, 'v2' => 2],
+        'BBBBBBBB' => ['v1' => 1, 'v2' => 2, 'v3' => 3, 'v4' => 4, 'v5' => 5],
+        'CCCCCCCC' => ['v9' => 1],
+    ];
+    $list = $w['live']->list(LIVE_NOW);
+    eq(['BBBBBBBB', 'AAAAAAAA'], array_column($list['rooms'], 'code'));
+    eq(5, $list['rooms'][0]['viewers']);
+    eq(5, $list['rooms'][0]['round'], 'question 5 (round n 4 + 1)');
+    eq(10, $list['rooms'][0]['total']);
+    eq('World Flags', $list['rooms'][0]['game']['name']);
+    eq([['name' => 'Ana', 'avatar' => 'fox'], ['name' => 'Ben', 'avatar' => 'owl']], $list['rooms'][0]['players']);
+    eq(8, $list['viewers'], 'everyone watching a live room, private ones included');
+    eq(['room' => 20, 'site' => 50], $list['limits']);
+});
+
+test('live: a private room opens by its watch code but is never listed', function () {
+    $w = liveWorld();
+    $w['rtdb']->data['broadcasts'] = ['CCCCCCCC' => liveBroadcast(['public' => false])];
+    eq([], $w['live']->list(LIVE_NOW)['rooms']);
+    $one = $w['live']->room('CCCCCCCC', LIVE_NOW, false);
+    eq('CCCCCCCC', $one['room']['code']);
+    eq(false, $one['full']);
+});
+
+test('live: a stale or missing broadcast is not live', function () {
+    $w = liveWorld();
+    $w['rtdb']->data['broadcasts'] = ['STALECDE' => liveBroadcast(['updatedAt' => LIVE_NOW - 46_000])];
+    throwsHttp(404, fn () => $w['live']->room('STALECDE', LIVE_NOW, false));
+    throwsHttp(404, fn () => $w['live']->room('NOPENOPE', LIVE_NOW, false));
+    throwsHttp(404, fn () => $w['live']->room('bad', LIVE_NOW, false));
+});
+
+test('live: full when the room or the site is at its limit', function () {
+    $w = liveWorld();
+    $w['rtdb']->data['config/site/watch'] = ['room' => 2, 'site' => 3];
+    $w['rtdb']->data['broadcasts'] = ['AAAAAAAA' => liveBroadcast(), 'BBBBBBBB' => liveBroadcast()];
+    $w['rtdb']->data['watchers'] = ['AAAAAAAA' => ['v1' => 1, 'v2' => 2]];
+    $a = $w['live']->room('AAAAAAAA', LIVE_NOW, false);
+    eq(true, $a['full']);
+    eq('room', $a['reason']);
+    eq(false, $w['live']->room('BBBBBBBB', LIVE_NOW, false)['full'], 'one more fits the site');
+    $w['rtdb']->data['watchers']['BBBBBBBB'] = ['v3' => 1];
+    $b = $w['live']->room('BBBBBBBB', LIVE_NOW, false);
+    eq(true, $b['full']);
+    eq('site', $b['reason']);
+    eq(3, $b['siteViewers']);
+});
+
+test('live: limits come from config/site/watch, defaults 20 and 50', function () {
+    $w = liveWorld();
+    eq(['room' => 20, 'site' => 50], $w['live']->limits());
+    $w['rtdb']->data['config/site/watch'] = ['room' => 200, 'site' => 5000];
+    eq(['room' => 200, 'site' => 5000], $w['live']->limits());
+    $w['rtdb']->data['config/site/watch'] = ['room' => 0, 'site' => 'lots'];
+    eq(['room' => 20, 'site' => 50], $w['live']->limits(), 'bad values fall back');
+});
+
+test('live: opening a watch view counts a watcher once, not when full', function () {
+    $w = liveWorld();
+    $w['rtdb']->data['config/site/watch'] = ['room' => 1, 'site' => 50];
+    $w['rtdb']->data['broadcasts'] = ['AAAAAAAA' => liveBroadcast(), 'BBBBBBBB' => liveBroadcast()];
+    $w['rtdb']->data['watchers'] = ['BBBBBBBB' => ['v1' => 1]];
+    $day = gmdate('Y-m-d', intdiv(LIVE_NOW, 1000));
+    $w['live']->room('AAAAAAAA', LIVE_NOW, true);
+    eq(1, $w['rtdb']->data["stats/days/$day/watchers"]);
+    eq(1, $w['rtdb']->data['stats/totals/watchers']);
+    $w['live']->room('AAAAAAAA', LIVE_NOW, false);
+    eq(1, $w['rtdb']->data['stats/totals/watchers'], 'looking without opening does not count');
+    $w['live']->room('BBBBBBBB', LIVE_NOW, true);
+    eq(1, $w['rtdb']->data['stats/totals/watchers'], 'a full room does not count');
+});
+
+test('live: no room code or photo of a hidden player leaks into the reply', function () {
+    $w = liveWorld();
+    $w['rtdb']->data['watchRooms'] = ['AAAAAAAA' => 'K7P2QX'];
+    $w['rtdb']->data['broadcasts'] = ['AAAAAAAA' => liveBroadcast([
+        // Ben hid his photo: the host's device already sent his character.
+        'players' => ['u1' => ['name' => 'Ana', 'avatar' => 'photo:0123456789abcdef-01234567.webp'], 'u2' => ['name' => 'Ben', 'avatar' => 'owl']],
+    ])];
+    $json = json_encode([$w['live']->list(LIVE_NOW), $w['live']->room('AAAAAAAA', LIVE_NOW, false)]);
+    eq(false, str_contains($json, 'K7P2QX'), 'no room code');
+    eq(1, substr_count($json, 'photo:') / 2, 'only the photo the player allowed (once per reply)');
+});
+
+test('live: the list is cached for ten seconds', function () {
+    $w = liveWorld();
+    $w['rtdb']->data['broadcasts'] = ['AAAAAAAA' => liveBroadcast(['updatedAt' => LIVE_NOW])];
+    eq(1, count($w['live']->list(LIVE_NOW)['rooms']));
+    $w['rtdb']->data['broadcasts'] = [];
+    eq(1, count($w['live']->list(LIVE_NOW + 5_000)['rooms']), 'still the cached list');
+    eq(0, count($w['live']->list(LIVE_NOW + 11_000)['rooms']), 'read again after ten seconds');
+});
+
+test('live: the routes answer /live and /live/<code>', function () {
+    $w = world();
+    $w['rtdb']->data['broadcasts'] = ['AAAAAAAA' => liveBroadcast(['updatedAt' => \PlayMona\nowMs()])];
+    $list = $w['routes']->handle(req('GET', '/live'));
+    eq(200, $list->status);
+    eq('AAAAAAAA', $list->body['rooms'][0]['code']);
+    eq(200, $w['routes']->handle(req('GET', '/live/AAAAAAAA'))->status);
+    eq(404, $w['routes']->handle(req('GET', '/live/ZZZZZZZZ'))->status);
+});
 
 echo "\n" . ($GLOBALS['count'] - $GLOBALS['failures']) . '/' . $GLOBALS['count'] . " passed\n";
 exit($GLOBALS['failures'] ? 1 : 0);
