@@ -6,7 +6,9 @@ checkout page (image_url) and the Plus page shows it on each plan card.
   assets/images/plus/plus_day.jpg ... plus_lifetime.jpg  (800 x 800)
 
 Prices are left out on purpose: admins can change them, the pictures stay right.
-To use your own art, save it over these files with the same names (square works best).
+These are the old placeholder pictures. The site now uses hand-made art in
+assets/images/plans/<plan id>.jpg (800 x 800). To change one, give the new file a new
+name (and update the code): browsers and Cloudflare keep pictures for 30 days.
 
 Usage:  python tools/gen-plan-images.py
 """

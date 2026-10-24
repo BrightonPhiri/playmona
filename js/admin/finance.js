@@ -269,10 +269,10 @@ window.FF = window.FF || {};
     var imgId = 'plan-img-' + p.id;
     var preview = el('img', { class: 'plan-edit__preview', src: p.imageUrl, alt: 'Picture for ' + p.label, width: 160, height: 160 });
     var image = el('input', { class: 'input field__input', id: imgId, type: 'text', spellcheck: 'false',
-      placeholder: '/assets/images/plus/' + p.id + '.jpg', value: p.customImage ? p.image : '' });
+      placeholder: '/assets/images/plans/' + p.id + '.jpg', value: p.customImage ? p.image : '' });
     image.addEventListener('change', function () {
       var v = image.value.trim();
-      preview.src = v || '/assets/images/plus/' + p.id + '.jpg';
+      preview.src = v || '/assets/images/plans/' + p.id + '.jpg';
     });
     body.appendChild(el('div', { class: 'field' }, [
       el('label', { class: 'field__label', for: imgId }, 'Picture'),
@@ -327,6 +327,16 @@ window.FF = window.FF || {};
     if (o.status === 'paid') actions.unshift({ label: 'Download PDF', icon: 'download', primary: true, keepOpen: true, onClick: function () { B().downloadInvoice(o.id); } });
     actions.push({ label: 'Close' });
     FF.UI.dialog({ title: o.invoiceNo ? 'Invoice ' + o.invoiceNo : 'Order', body: body, wide: true, actions: actions });
+    // A failed order: show why Linkwa refused it (saved by the server when checkout failed).
+    if (o.status === 'failed') {
+      B().api('GET', '/orders/' + encodeURIComponent(o.id)).then(function (d) {
+        var why = d.order && d.order.problem;
+        if (!why) return;
+        facts.appendChild(el('dt', {}, 'Why it failed'));
+        facts.appendChild(el('dd', {}, why));
+      }).catch(function () {});
+      return;
+    }
     if (o.status !== 'paid') return;
     K().loading(inv);
     B().api('GET', '/orders/' + encodeURIComponent(o.id)).then(function (d) {

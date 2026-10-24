@@ -226,6 +226,18 @@ class Payments
         return $this->db->one('SELECT * FROM orders WHERE id = ?', [$id]);
     }
 
+    /** Why Linkwa could not make a checkout for this order (admins only), or null. */
+    public function problem(string $orderId): ?string
+    {
+        $event = $this->db->one(
+            "SELECT payload FROM payment_events WHERE order_id = ? AND outcome = 'link-error' ORDER BY created_at DESC LIMIT 1",
+            [$orderId]
+        );
+        if (!$event) return null;
+        $payload = json_decode((string) $event['payload'], true);
+        return is_array($payload) && isset($payload['error']) ? (string) $payload['error'] : null;
+    }
+
     /** What the app may see about one of its own orders. */
     public static function publicOrder(array $order): array
     {

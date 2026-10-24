@@ -116,7 +116,7 @@ class Catalog
                 'lifetime' => $lifetime,
                 'enabled' => (bool) ($saved['enabled'] ?? true),
                 'best' => (bool) ($saved['best'] ?? ($plan['best'] ?? false)),
-                'image' => (string) ($saved['image'] ?? '/assets/images/plus/' . $id . '.jpg'),
+                'image' => (string) ($saved['image'] ?? '/assets/images/plans/' . $id . '.jpg'),
                 'customImage' => isset($saved['image']),
                 'defaultCents' => $plan['cents'],
             ];

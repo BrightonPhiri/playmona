@@ -125,7 +125,7 @@ window.FF = window.FF || {};
     { id: 'plus_month', cents: 499, days: 30 },
     { id: 'plus_year', cents: 4999, days: 365, best: true },
     { id: 'plus_lifetime', cents: 9999, days: LIFETIME_DAYS, lifetime: true }
-  ].map(function (p) { p.image = '/assets/images/plus/' + p.id + '.jpg'; return p; });
+  ].map(function (p) { p.image = '/assets/images/plans/' + p.id + '.jpg'; return p; });
 
   function planLabel(p) {
     return {

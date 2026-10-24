@@ -125,6 +125,8 @@ class Linkwa implements PaymentGateway
         );
         if ($status !== 200 || !is_array($data)) {
             $message = is_array($data) ? (string) ($data['message'] ?? '') : '';
+            // A 422 says which field Linkwa did not like in "errors".
+            if (is_array($data) && !empty($data['errors'])) $message .= ' ' . substr((string) json_encode($data['errors']), 0, 500);
             throw new \RuntimeException("Linkwa $method $path failed ($status) $message");
         }
         return $data;

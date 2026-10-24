@@ -211,6 +211,32 @@ test('when Linkwa is down the order is marked failed and the player sees 502', f
     throwsHttp(502, fn () => $w['pay']->checkout($alice, 'plus_week'));
     eq('failed', $w['db']->one('SELECT status FROM orders')['status']);
 });
+test('admins see why a checkout failed; the player does not', function () {
+    $w = world();
+    $w['gw']->down = true;
+    $w['rtdb']->data['admins/boss'] = true;
+    eq(502, $w['routes']->handle(req('POST', '/checkout', ['token' => idToken(), 'json' => ['product' => 'plus_week']]))->status);
+    $id = $w['db']->one('SELECT id FROM orders')['id'];
+    $mine = $w['routes']->handle(req('GET', "/orders/$id", ['token' => idToken()]))->body['order'];
+    eq(false, array_key_exists('problem', $mine), 'player view');
+    eq('gateway down', $w['routes']->handle(req('GET', "/orders/$id", ['token' => idToken(['sub' => 'boss'])]))->body['order']['problem']);
+});
+test('a Linkwa validation error keeps which field was refused', function () {
+    $http = new class extends PlayMona\HttpClient {
+        public function request(string $method, string $url, array $headers = [], ?string $body = null, int $timeout = 20): array
+        {
+            return [422, ['message' => 'Validation failed.', 'errors' => ['image_url' => ['Could not download the image.']]], ''];
+        }
+    };
+    $lw = new PlayMona\Linkwa('https://sandbox.linkwa.co.zw/api/v1/third-party', 'k', $http);
+    try {
+        $lw->createLink(['id' => 'o_1', 'amount_cents' => 299, 'currency' => 'USD'], 'Plus', 'https://playmona.test/r');
+        throw new Exception('expected an error');
+    } catch (RuntimeException $e) {
+        eq(true, str_contains($e->getMessage(), '(422) Validation failed.') && str_contains($e->getMessage(), 'Could not download the image.'), $e->getMessage());
+    }
+    eq('sandbox', $lw->mode());
+});
 
 echo "\nConfirming payments\n";
 
@@ -321,7 +347,7 @@ test('health, catalog and 404', function () {
     eq(200, $r->handle(req('GET', '/health'))->status);
     $items = $r->handle(req('GET', '/catalog'))->body['items'];
     eq(['plus_day', 'plus_week', 'plus_month', 'plus_year', 'plus_lifetime', 'game_imposter'], array_column($items, 'id'));
-    eq('https://playmona.test/assets/images/plus/plus_day.jpg', $items[0]['imageUrl']);
+    eq('https://playmona.test/assets/images/plans/plus_day.jpg', $items[0]['imageUrl']);
     eq(404, $r->handle(req('GET', '/nope'))->status);
 });
 test('checkout needs a sign-in; works with one', function () {
@@ -647,12 +673,12 @@ test('five plans at the standard prices, lifetime is 100 years and the year is b
     eq(Catalog::LIFETIME_DAYS, $items['plus_lifetime']['days']);
     eq(true, $items['plus_lifetime']['lifetime']);
     eq(true, $items['plus_year']['best']);
-    eq('/assets/images/plus/plus_week.jpg', $items['plus_week']['image']);
+    eq('/assets/images/plans/plus_week.jpg', $items['plus_week']['image']);
 });
 test('checkout sends the plan picture to Linkwa as a full address', function () use ($alice) {
     $w = world(false);
     $w['pay']->checkout($alice, 'plus_month');
-    eq('https://playmona.test/assets/images/plus/plus_month.jpg', $w['gw']->links['link1']['image']);
+    eq('https://playmona.test/assets/images/plans/plus_month.jpg', $w['gw']->links['link1']['image']);
     eq(499, $w['gw']->links['link1']['amount_cents']);
     $w['pay']->checkout($alice, 'game_imposter');
     eq(null, $w['gw']->links['link2']['image'], 'no picture set for the game');
@@ -695,7 +721,7 @@ test('admins change prices, take plans off sale and change pictures; others cann
     eq(false, $res->body['plans'][3]['best']);
     eq(true, $res->body['plans'][3]['customImage']);
     $res = $save(['id' => 'plus_year', 'image' => '']);
-    eq('https://playmona.test/assets/images/plus/plus_year.jpg', $res->body['plans'][3]['imageUrl']);
+    eq('https://playmona.test/assets/images/plans/plus_year.jpg', $res->body['plans'][3]['imageUrl']);
     eq(349, $res->body['plans'][1]['cents'], 'other plans keep their changes');
 });
 test('lifetime Plus lasts 100 years and says so on the invoice', function () use ($alice) {

@@ -219,8 +219,10 @@ class Routes
     private function order(Request $req, string $id): Response
     {
         [$order, $asAdmin] = $this->viewableOrder($req, $id);
+        $view = $asAdmin ? Finance::adminOrder($order) : Payments::publicOrder($order);
+        if ($asAdmin && $order['status'] === 'failed') $view['problem'] = $this->app->payments()->problem($order['id']);
         return Response::json([
-            'order' => $asAdmin ? Finance::adminOrder($order) : Payments::publicOrder($order),
+            'order' => $view,
             'invoice' => $order['status'] === 'paid' ? $this->invoiceData($order) : null,
         ]);
     }

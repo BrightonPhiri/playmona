@@ -79,7 +79,9 @@ sees it first. Access is recorded in MariaDB and copied to Firebase `/entitlemen
    `v-add-cron-job user '*/10' '*' '*' '*' '*' 'php8.3 /home/user/web/playmona.com/public_html/api/cron.php'`
 6. In Linkwa, set the webhook to `https://playmona.com/api/linkwa/webhook` (Growth plan).
 
-**Sandbox to live:** change `linkwa.api_base` and `linkwa.api_key` in the server's `config.php`.
+**Sandbox to live:** change `linkwa.api_base` (sandbox `https://sandbox.linkwa.co.zw/api/v1/third-party`,
+live `https://linkwa.co.zw/api/v1/third-party`) and `linkwa.api_key` in the server's `config.php`.
+The old sandbox address on laravel.cloud no longer works (Cloudflare error 1016 since 2026-10-24).
 Then turn on Site, Payments in the admin portal so players see PlayMona Plus.
 
 **Tests:** `php tools/api/test.php` (also runs before every deploy).

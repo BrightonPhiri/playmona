@@ -26,7 +26,7 @@ return [
 
     'linkwa' => [
         // Sandbox while testing; the live address once real payments start.
-        'api_base' => 'https://linkwa-linkwa-staging-sandbox-lf00iz.laravel.cloud/api/v1/third-party',
+        'api_base' => 'https://sandbox.linkwa.co.zw/api/v1/third-party', // live: https://linkwa.co.zw/api/v1/third-party
         'api_key' => '',
         // Webhook signing secret from the Linkwa dashboard (webhook URL: https://playmona.com/api/linkwa/webhook).
         'signing_secret' => '',
