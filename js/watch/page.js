@@ -136,8 +136,19 @@ window.FF = window.FF || {};
           if (!gone) tr.set(mine, tr.serverNow()).catch(function () {});
         }, opts.heartbeatMs || 30000);
         parts.push(function () { offB(); offW(); clearInterval(staleCheck); clearInterval(checkIn); });
-      }).catch(function () {
-        if (!gone) finish(t('watchFailed', 'This game could not be opened.'), t('watchFailedText', 'Check your connection and try again.'));
+      }).catch(function (e) {
+        if (gone) return;
+        if (e && e.code === 'anon-disabled') {
+          // The project does not allow watching without an account yet: a signed-in player can still watch.
+          teardown();
+          FF.ui.clear(main);
+          var box = message(t('signInToWatch', 'Sign in to watch this game'), t('signInToWatchText', 'Watching without an account isn\u2019t available yet. Sign in to PlayMona, then open the link again.'));
+          box.appendChild(FF.ui.el('a', { class: 'btn btn-primary', href: 'play' }, t('signIn', 'Sign in')));
+          main.appendChild(box);
+          stopped = true;
+          return;
+        }
+        finish(t('watchFailed', 'This game could not be opened.'), t('watchFailedText', 'Check your connection and try again.'));
       });
     }
 

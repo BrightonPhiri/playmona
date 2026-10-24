@@ -196,3 +196,13 @@ test('watch page: viewers check in so the count only includes people still here'
   assert(later > first, 'the entry is refreshed');
   page.destroy();
 });
+
+test('watch page: when watching without an account is switched off, it says to sign in', async function () {
+  const bus = makeBus();
+  const { FF, main } = boot(bus);
+  FF.Transport.open = function () { return Promise.reject(Object.assign(new Error('off'), { code: 'anon-disabled' })); };
+  const page = FF.WatchPage.start({ root: main, pathname: '/watch/' + CODE, fetch: reply(200, { full: false }) });
+  await tick(40);
+  assert(/Sign in to watch this game/.test(text(main)), 'asks to sign in');
+  page.destroy();
+});

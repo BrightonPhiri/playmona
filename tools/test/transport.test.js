@@ -166,3 +166,50 @@ test('Transport.open picks the dev transport in dev rooms mode', async function 
   const t = await FF.Transport.open('rooms/ABC234');
   assert(t && typeof t.watch === 'function', 'a transport');
 });
+
+/* ---------- Signing in for rooms and watching ---------- */
+function fakeAuth(opts) {
+  return {
+    currentUser: opts.current || null,
+    anonCalls: 0,
+    onAuthStateChanged: function (cb) {
+      if (opts.restoreAfter != null) setTimeout(function () { cb(opts.restored || null); }, opts.restoreAfter);
+      return function () {};
+    },
+    signInAnonymously: function () {
+      this.anonCalls++;
+      if (opts.anonError) return Promise.reject(Object.assign(new Error('nope'), { code: opts.anonError }));
+      return Promise.resolve({ user: { uid: 'anon1', isAnonymous: true } });
+    }
+  };
+}
+
+test('sign-in: a signed-in account restored a moment after loading is used, not an anonymous one', async function () {
+  const FF = loadFF(['js/core.js', 'js/net/firebaseTransport.js']);
+  const auth = fakeAuth({ restoreAfter: 20, restored: { uid: 'brighton', isAnonymous: false } });
+  const user = await FF.Net.signInForRoom(auth);
+  assertEqual(user.uid, 'brighton');
+  assertEqual(auth.anonCalls, 0, 'no anonymous sign-in');
+});
+
+test('sign-in: someone signed out gets a quiet anonymous sign-in', async function () {
+  const FF = loadFF(['js/core.js', 'js/net/firebaseTransport.js']);
+  const auth = fakeAuth({ restoreAfter: 5, restored: null });
+  const user = await FF.Net.signInForRoom(auth);
+  assertEqual(user.uid, 'anon1');
+  assertEqual(auth.anonCalls, 1);
+});
+
+test('sign-in: an account already there is used straight away', async function () {
+  const FF = loadFF(['js/core.js', 'js/net/firebaseTransport.js']);
+  const auth = fakeAuth({ current: { uid: 'ana', isAnonymous: false } });
+  assertEqual((await FF.Net.signInForRoom(auth)).uid, 'ana');
+});
+
+test('sign-in: anonymous sign-in switched off says so clearly', async function () {
+  const FF = loadFF(['js/core.js', 'js/net/firebaseTransport.js']);
+  const auth = fakeAuth({ restoreAfter: 5, restored: null, anonError: 'auth/admin-restricted-operation' });
+  let err = null;
+  try { await FF.Net.signInForRoom(auth); } catch (e) { err = e; }
+  assertEqual(err && err.code, 'anon-disabled');
+});

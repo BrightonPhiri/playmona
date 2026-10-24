@@ -68,6 +68,34 @@ window.FF = window.FF || {};
     return !!(c && c.apiKey && c.databaseURL && String(c.apiKey).indexOf('AIza') === 0);
   }
 
+  /* The account to use for rooms and watching. Right after a page loads,
+     Firebase restores a signed-in player a moment later, so wait for that
+     first; only someone really signed out gets a quiet anonymous sign-in.
+     If the project has anonymous sign-in switched off, the error says so. */
+  function signInForRoom(auth) {
+    var ready = auth.currentUser ? Promise.resolve(auth.currentUser) : new Promise(function (resolve) {
+      var done = false;
+      var off = auth.onAuthStateChanged(function (u) {
+        if (done) return;
+        done = true;
+        if (typeof off === 'function') off();
+        resolve(u || null);
+      });
+      // Never wait forever for a restore that does not come.
+      setTimeout(function () { if (!done) { done = true; resolve(auth.currentUser || null); } }, 4000);
+    });
+    return ready.then(function (user) {
+      if (user) return user;
+      return auth.signInAnonymously().then(function (cred) { return cred.user; }, function (e) {
+        var code = e && e.code;
+        if (code === 'auth/admin-restricted-operation' || code === 'auth/operation-not-allowed') {
+          throw Object.assign(new Error('Watching without an account is not switched on yet.'), { code: 'anon-disabled' });
+        }
+        throw e;
+      });
+    });
+  }
+
   function firebaseTransport(opts) {
     opts = opts || {};
     // '' is the database root (used by watching); only a missing root gets the default.
@@ -79,11 +107,9 @@ window.FF = window.FF || {};
 
     return ensureFirebase().then(function (firebase) {
       // Signed-in players use their account; otherwise an anonymous session.
-      var current = firebase.auth().currentUser;
-      var signIn = current ? Promise.resolve({ user: current }) : firebase.auth().signInAnonymously();
-      return signIn.then(function (cred) {
+      return signInForRoom(firebase.auth()).then(function (user) {
         var db = firebase.database();
-        var uid = cred.user.uid;
+        var uid = user.uid;
 
         // Align to server time so round timers agree across devices.
         db.ref('.info/serverTimeOffset').on('value', function (snap) {
@@ -152,6 +178,7 @@ window.FF = window.FF || {};
   FF.Net.devMode = devMode;
   FF.Net.firebase = firebaseTransport;
   FF.Net.ensureFirebase = ensureFirebase;
+  FF.Net.signInForRoom = signInForRoom;
   FF.Net.sdkConfigured = function () {
     var c = FF.FirebaseConfig;
     return !!(c && c.apiKey && c.databaseURL && String(c.apiKey).indexOf('AIza') === 0);
