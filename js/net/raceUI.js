@@ -101,6 +101,12 @@ window.FF = window.FF || {};
        opts: { payload, answerText, isLast, onNext } */
     result: function (root, opts) {
       opts = opts || {};
+      // Joining a game already under way: rounds the others finished go by
+      // without their result screens, until the live round is reached.
+      if (FF.Race && FF.Race.catchingUp && FF.Race.catchingUp()) {
+        setTimeout(function () { (opts.onNext || function () {})(); }, 0);
+        return;
+      }
       var payload = opts.payload || {};
       FF.ui.clear(root);
 

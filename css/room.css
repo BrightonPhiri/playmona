@@ -190,3 +190,11 @@ ol.results__leaderboard, ul.player-list, ul.achievement-grid, ul.team-col__membe
 }
 .rm-viewers[hidden] { display: none; }
 .rm-viewers svg { width: 16px; height: 16px; color: var(--brand-pink); }
+
+/* A game is being played: join it */
+.rm-ingame {
+  display: flex; flex-direction: column; align-items: center; gap: var(--sp-2); text-align: center;
+  background: var(--surface); border: 2px solid var(--accent); border-radius: var(--r-lg);
+  padding: var(--sp-5) var(--sp-4); box-shadow: var(--shadow-1);
+}
+.rm-ingame .rm-subtitle { margin: 0; }

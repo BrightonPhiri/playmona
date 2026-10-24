@@ -109,7 +109,7 @@ window.FF = window.FF || {};
       var p = players[uid] || {};
       return [
         uid, p.name || '', p.avatar || '', p.color || '',
-        p.teamId || '', p.joinedAt || 0, playerIsOnline(p, now)
+        p.teamId || '', p.joinedAt || 0, playerIsOnline(p, now), p.leftGame || ''
       ].join('|');
     }).join('~');
   }
@@ -533,6 +533,7 @@ window.FF = window.FF || {};
     startGame: function (gameId, settings) {
       if (!state) return Promise.reject(new Error('Not in a room.'));
       if (!state.isHost) return Promise.reject(new Error('Only the room host can start a game.'));
+      if (this.gameRunningWithoutMe()) return Promise.reject(new Error('A game is still being played. Join it, or wait for it to end.'));
       var transport = state.transport;
       var payload = {
         seed: FF.Random.newSeed(),
@@ -587,6 +588,23 @@ window.FF = window.FF || {};
     setAway: function (away) {
       if (!state) return Promise.resolve();
       return state.transport.update('players/' + state.uid, { away: !!away || isHidden() }).catch(function () {});
+    },
+
+    /* A game is being played in this room by someone other than this device:
+       it is running, and another player here has not left it. (When everyone
+       has left a game, it no longer counts and a new one can start.) */
+    gameRunningWithoutMe: function () {
+      if (!state || !state.meta || state.meta.status !== 'playing' || !state.meta.gameId) return false;
+      var startAt = state.meta.startAt;
+      return this.racePlayers().some(function (p) {
+        return p.uid !== state.uid && p.online && !(startAt != null && p.leftGame === startAt);
+      });
+    },
+
+    /* Back into the running game after leaving it: rounds wait for this player again. */
+    rejoinGame: function () {
+      if (!state) return Promise.resolve();
+      return state.transport.update('players/' + state.uid, { leftGame: null, away: isHidden() }).catch(function () {});
     },
 
     /* This player stopped playing the running game but stays in the room.

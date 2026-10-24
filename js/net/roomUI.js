@@ -905,7 +905,12 @@ window.FF = window.FF || {};
           if (wPanel) children.push(wPanel);
         }
 
-        if (s.isHost) {
+        // A game is being played without this device (it stepped out, or just
+        // arrived): offer to join it. The host cannot start another one meanwhile.
+        var running = FF.Room.gameRunningWithoutMe && FF.Room.gameRunningWithoutMe() ? runningPanel(s) : null;
+        if (running) {
+          children.push(running);
+        } else if (s.isHost) {
           var def = chosen ? FF.Games.get(chosen) : null;
           if (self._pickingGame || !def) {
             children.push(FF.ui.el('h2', { class: 'rm-subtitle', id: 'rm-pick-title' }, FF.t('pickAGame', 'Pick a game')));
@@ -997,6 +1002,20 @@ window.FF = window.FF || {};
         }
       }
 
+      // "A game is on": join it where everyone is now.
+      function runningPanel(s) {
+        var def = FF.Games.get(s.meta.gameId);
+        var box = FF.ui.el('section', { class: 'rm-ingame', 'aria-live': 'polite' });
+        box.appendChild(FF.ui.el('h2', { class: 'rm-subtitle' }, FF.t('gameOnNow', '{name} is being played', { name: def ? def.name : FF.t('aGame', 'A game') })));
+        box.appendChild(FF.ui.el('p', { class: 'rm-hint' }, FF.t('joinGameHint', 'Join in and play from the question everyone is on now.')));
+        box.appendChild(FF.UI.button(FF.t('joinTheGame', 'Join the game'), {
+          class: 'btn-lg btn-primary', icon: 'play',
+          onClick: function () { FF.Audio.play('select'); self.rejoinGame(main); }
+        }));
+        if (s.isHost) box.appendChild(FF.ui.el('p', { class: 'rm-hint' }, FF.t('newGameAfter', 'You can start a new game when this one ends.')));
+        return box;
+      }
+
       // The chosen game, with a button to pick another.
       function pickedCard(def, onChange) {
         var cat = (FF.Categories && FF.Categories[def.category]) || { name: def.category, color: '#8b5cf6' };
@@ -1013,7 +1032,7 @@ window.FF = window.FF || {};
       }
 
       // Redraw when something on screen changed: not on every write.
-      function metaKey(m) { m = m || {}; return [m.hostUid, m.name, m.mode, m.public, m.watching, m.watchCode, FF.Room.current() && FF.Room.current().isHost].join('|'); }
+      function metaKey(m) { m = m || {}; return [m.hostUid, m.name, m.mode, m.status, m.public, m.watching, m.watchCode, FF.Room.current() && FF.Room.current().isHost].join('|'); }
       var lastMeta = metaKey(cur.meta);
       onScreen(FF.Room.on('players', render));
       onScreen(FF.Room.on('meta', function (meta) {
@@ -1073,6 +1092,15 @@ window.FF = window.FF || {};
 
     /* Everyone counts down to the same instant and starts together. A device
        that arrives late (startAt already past) just launches straight away. */
+    /* Back into the game being played, at the round everyone is on. */
+    rejoinGame: function (main) {
+      var s = FF.Room.current();
+      if (!s || !s.meta || s.meta.status !== 'playing') return;
+      this._lastStartAt = null;
+      this._starting = null;
+      this.startWhenReady(main, s.meta);
+    },
+
     startWhenReady: function (main, meta) {
       var s = FF.Room.current();
       if (!s) return;
@@ -1103,6 +1131,12 @@ window.FF = window.FF || {};
         });
       }
 
+      // Arriving after the game began (joined late, or came back): skip the
+      // rounds already over and count as playing again.
+      if (startAt && serverNow() - startAt > 3000) {
+        if (FF.Race && FF.Race.rejoinNext) FF.Race.rejoinNext();
+        if (FF.Room.rejoinGame) FF.Room.rejoinGame();
+      }
       if (!startAt || serverNow() >= startAt) { launch(); return; }
 
       resetScreen('countdown');

@@ -280,3 +280,48 @@ test('room screens: the Public switch follows the room itself, not the broadcast
   assertEqual(sws[1].getAttribute('aria-checked'), 'false', 'watching is off');
   host.FF.Room.leave();
 });
+
+/* ---------- Leaving a game and joining back ---------- */
+test('room screens: while others play, the host gets Join the game instead of the game picker', async function () {
+  const bus = makeBus();
+  const host = phone(bus, 'Ana'), guest = phone(bus, 'Ben');
+  stubBroadcast(host.FF); stubBroadcast(guest.FF);
+  const room = await host.FF.Room.create({ dev: true });
+  await guest.FF.Room.join(room.code, {}, { dev: true });
+  await host.FF.Room.startGame('familyQuiz', {});
+  await host.FF.Room.setMeta({ startAt: Date.now() - 60000 });   // under way for a minute
+  await tick(20);
+  await host.FF.Room.markLeftGame(host.FF.Room.current().meta.startAt);   // the host stepped out
+  host.FF.RoomUI._lastStartAt = String(Date.now() - 60000) + ':familyQuiz';
+  host.FF.RoomUI.showLobby(host.main);
+  await tick(30);
+  const panelEl = find(host.main, 'rm-ingame');
+  assert(panelEl && /Join the game/.test(text(panelEl)), 'join panel shown');
+  assert(!find(host.main, 'rm-games'), 'no game picker while the game is on');
+  assert(!/Start /.test(text(host.main).replace(/Starting/g, '')), 'no start button');
+
+  const join = find(panelEl, 'btn-primary');
+  join.dispatch('click');
+  await tick(30);
+  assert(host.FF.launched.indexOf('familyQuiz') !== -1, 'back in the game');
+  const me = await host.FF.Room.current().transport.get('players/' + host.FF.Room.current().uid);
+  assert(!('leftGame' in me), 'counts as playing again');
+  host.FF.Room.leave(); guest.FF.Room.leave();
+});
+
+test('room screens: joining a room mid-game catches up instead of starting from round one', async function () {
+  const bus = makeBus();
+  const host = phone(bus, 'Ana'), late = phone(bus, 'Cal');
+  stubBroadcast(host.FF); stubBroadcast(late.FF);
+  const room = await host.FF.Room.create({ dev: true });
+  await host.FF.Room.startGame('familyQuiz', {});
+  await host.FF.Room.setMeta({ startAt: Date.now() - 60000 });
+  await late.FF.Room.join(room.code, {}, { dev: true });
+  late.FF.RoomUI.showLobby(late.main);
+  await tick(40);
+  assert(late.FF.launched.indexOf('familyQuiz') !== -1, 'goes straight into the game');
+  late.FF.Race.begin('familyQuiz', { rounds: 5 });
+  assertEqual(late.FF.Race.catchingUp(), true, 'set to skip finished rounds');
+  late.FF.Race.end();
+  host.FF.Room.leave(); late.FF.Room.leave();
+});

@@ -17,6 +17,9 @@ window.FF = window.FF || {};
   var LEAD_MS = 1200;
 
   var session = null;         // { gameId, rounds, timerMs, pointsFor, index, settled }
+  // Set just before a player joins a game already under way: the next game
+  // started skips the rounds that are already over (see catchingUp).
+  var rejoinPending = false;
   // Kept after end() so the final results screen can still derive scores;
   // scoring needs the game's pointsFor, and the session is gone by then.
   var lastSession = null;
@@ -301,6 +304,8 @@ window.FF = window.FF || {};
       };
       lastSession = null;
       session.lastRound = null;
+      session.catchUp = rejoinPending;
+      rejoinPending = false;
       described = null;   // a new game: nothing from the last one on screen
       if (offRounds) offRounds();
       offRounds = FF.Room.on('rounds', evaluate);
@@ -318,6 +323,11 @@ window.FF = window.FF || {};
       if (described && described.n !== n) described = null;
 
       FF.Random.seed(FF.Random.roundSeed(r.meta.seed, session.gameId, n));
+      // Catching up ends at the first round nobody has finished yet.
+      if (session.catchUp) {
+        var already = (r.rounds || {})[n];
+        if (!(already && already.winner != null)) session.catchUp = false;
+      }
 
       // The first device here schedules when the round OPENS - a moment in
       // the near future, not now - and everyone else reads that same
@@ -361,6 +371,12 @@ window.FF = window.FF || {};
         if (i !== -1) screenListeners.splice(i, 1);
       };
     },
+
+    /* The next game this device starts is one already under way. */
+    rejoinNext: function () { rejoinPending = true; },
+
+    /* True while a rejoining player is passing rounds the others already finished. */
+    catchingUp: function () { return !!(session && session.catchUp); },
 
     /* How many rounds the current (or last) game plans, or null. */
     planned: function () {
