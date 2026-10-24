@@ -139,9 +139,12 @@ window.FF = window.FF || {};
       update: function (path, obj) {
         var current = readPath(path);
         var merged = (current && typeof current === 'object') ? current : {};
-        // Like Firebase, a null in an update removes that child.
+        // Like Firebase, a null in an update removes that child, and a key with
+        // slashes ('players/u1') changes only that deeper child.
         Object.keys(obj || {}).forEach(function (k) {
-          if (obj[k] === null) delete merged[k]; else merged[k] = obj[k];
+          if (k.indexOf('/') !== -1) plant(merged, splitPath(k), obj[k] === undefined ? null : obj[k]);
+          else if (obj[k] === null) delete merged[k];
+          else merged[k] = obj[k];
         });
         writePath(path, merged);
         return Promise.resolve();

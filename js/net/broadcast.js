@@ -154,6 +154,33 @@ window.FF = window.FF || {};
     return (typeof n === 'number' && n > 0 && n < 200) ? n : null;
   }
 
+  /* What changed between two broadcasts, as Firebase update() paths. Players,
+     the round and the game go one level deeper, so one player's tick or the
+     revealed answer is sent on its own (the picture is not sent again). */
+  var DEEP = { players: true, round: true, game: true };
+  function isObj(v) { return !!v && typeof v === 'object' && !Array.isArray(v); }
+  function keysOf(a, b) {
+    var out = Object.keys(a || {});
+    Object.keys(b || {}).forEach(function (k) { if (out.indexOf(k) === -1) out.push(k); });
+    return out;
+  }
+  function diff(a, b) {
+    var out = {};
+    keysOf(a, b).forEach(function (k) {
+      if (k === 'updatedAt') return;
+      var x = a[k], y = b[k];
+      if (JSON.stringify(x) === JSON.stringify(y)) return;
+      if (DEEP[k] && isObj(x) && isObj(y)) {
+        keysOf(x, y).forEach(function (c) {
+          if (JSON.stringify(x[c]) !== JSON.stringify(y[c])) out[k + '/' + c] = y[c] === undefined ? null : y[c];
+        });
+      } else {
+        out[k] = y === undefined ? null : y;
+      }
+    });
+    return out;
+  }
+
   function schedule(force) {
     if (force) lastJson = null;
     if (timer) return;
@@ -196,12 +223,23 @@ window.FF = window.FF || {};
       var json = JSON.stringify(Object.assign({}, doc, { updatedAt: 0 }));
       var due = Date.now() - lastPublish >= HEARTBEAT_MS - 50;
       if (json === lastJson && code === lastCode && !due) return;
+      var prev = (code === lastCode && lastJson) ? JSON.parse(lastJson) : null;
       lastJson = json;
       lastCode = code;
       lastPublish = Date.now();
-      doc.updatedAt = stamp(t);
-      return t.set('broadcasts/' + code, doc);
-    }).catch(function (e) { if (window.console) console.warn('[FF.Broadcast]', e && e.message); });
+      if (!prev) {
+        // First write under this code: the whole broadcast.
+        doc.updatedAt = stamp(t);
+        return t.set('broadcasts/' + code, doc);
+      }
+      // After that, only what changed (and the time, so viewers know the room is alive).
+      var patch = diff(prev, JSON.parse(json));
+      patch.updatedAt = stamp(t);
+      return t.update('broadcasts/' + code, patch);
+    }).catch(function (e) {
+      lastJson = null;   // send the whole broadcast next time
+      if (window.console) console.warn('[FF.Broadcast]', e && e.message);
+    });
   }
 
   function watchViewers() {

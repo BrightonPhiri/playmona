@@ -297,3 +297,42 @@ test('broadcast: viewers who stopped checking in are not counted', async functio
   assertEqual(seen, 1);
   A.Room.leave();
 });
+
+test('broadcast: after the first write only what changed is sent', async function () {
+  const bus = makeBus();
+  const A = phone(bus, 'Ana');
+  const calls = [];
+  const dev2 = A.Transport.dev;
+  A.Transport.dev = function (o) {
+    const t = dev2(o);
+    if (o && o.root === '') {
+      const set = t.set, update = t.update;
+      t.set = function (p) { calls.push(['set', p]); return set.apply(t, arguments); };
+      t.update = function (p, v) { calls.push(['update', p, Object.keys(v).sort().join(',')]); return update.apply(t, arguments); };
+    }
+    return t;
+  };
+  await A.Room.create({ dev: true, name: 'First' });
+  await tick(80);
+  const code = onlyBroadcast(bus).code;
+  assert(calls.some(function (c) { return c[0] === 'set' && c[1] === 'broadcasts/' + code; }), 'first write is the whole broadcast');
+  calls.length = 0;
+  await A.Room.rename('Second');
+  await tick(600);
+  const writes = calls.filter(function (c) { return c[1].indexOf('broadcasts/') === 0; });
+  assertEqual(writes.length, 1, 'one write');
+  assertEqual(writes[0][0], 'update', 'an update, not a full rewrite');
+  assertEqual(writes[0][2], 'name,updatedAt', 'only the name changed');
+  const doc = onlyBroadcast(bus).doc;
+  assertEqual(doc.name, 'Second');
+  assert(Object.keys(doc.players).length === 1 && doc.status === 'lobby', 'the rest is untouched');
+  A.Room.leave();
+});
+
+test('dev transport: an update with a path key changes only that child', async function () {
+  const FF = loadFF(['js/core.js', 'js/net/transport.js']);
+  const t = FF.Transport.dev({ bus: makeBus(), root: '' });
+  await t.set('b/X', { players: { u1: { name: 'A', score: 1 }, u2: { name: 'B', score: 2 } }, name: 'n' });
+  await t.update('b/X', { 'players/u1': { name: 'A', score: 5 }, 'players/u2': null });
+  assertEqual(JSON.stringify(await t.get('b/X')), JSON.stringify({ players: { u1: { name: 'A', score: 5 } }, name: 'n' }));
+});
