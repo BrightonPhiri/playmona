@@ -8,6 +8,10 @@
    writes stats/days/<UTC day>/visitors/<id> = the first page seen:
    'l' landing, 'a' app, 'p' privacy notice. The database rules let
    anyone add an id once and nobody read the list but admins.
+
+   It also sends the same id and page to /api/visit. The server adds
+   the country (from Cloudflare) and a shortened IP address, which
+   the admin portal shows in the Visitors details.
    ============================================================ */
 (function () {
   'use strict';
@@ -32,20 +36,33 @@
   }
 
   function count() {
-    var cfg = window.FF && window.FF.FirebaseConfig;
-    if (!cfg || !cfg.databaseURL || !window.fetch || window.location.protocol === 'file:') return;
+    if (!window.fetch || window.location.protocol === 'file:') return;
     if (/^(localhost|127\.0\.0\.1|\[::1\])$/.test(window.location.hostname)) return;   // not while developing
     var today = new Date().toISOString().slice(0, 10);
-    if (get('visitDay') === today) return;
     var id = get('visitorId');
     if (typeof id !== 'string' || !/^[a-f0-9]{24}$/.test(id)) { id = randomId(); set('visitorId', id); }
-    var url = cfg.databaseURL.replace(/\/$/, '') + '/stats/days/' + today + '/visitors/' + id + '.json';
-    fetch(url, { method: 'PUT', body: JSON.stringify(page()), keepalive: true })
-      .then(function (r) {
-        // 200: counted. 401: already counted today (another tab, or the rules refused it).
-        if (r.ok || r.status === 401) set('visitDay', today);
+    var where = page();
+
+    var cfg = window.FF && window.FF.FirebaseConfig;
+    if (cfg && cfg.databaseURL && get('visitDay') !== today) {
+      var url = cfg.databaseURL.replace(/\/$/, '') + '/stats/days/' + today + '/visitors/' + id + '.json';
+      fetch(url, { method: 'PUT', body: JSON.stringify(where), keepalive: true })
+        .then(function (r) {
+          // 200: counted. 401: already counted today (another tab, or the rules refused it).
+          if (r.ok || r.status === 401) set('visitDay', today);
+        })
+        .catch(function () {});
+    }
+
+    if (get('visitApiDay') !== today) {
+      fetch('/api/visit', {
+        method: 'POST', keepalive: true,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: id, page: where })
       })
-      .catch(function () {});
+        .then(function (r) { if (r.ok) set('visitApiDay', today); })
+        .catch(function () {});
+    }
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', count);

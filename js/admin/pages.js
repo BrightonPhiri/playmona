@@ -117,9 +117,17 @@ window.FF = window.FF || {};
   function activeOn(days, k) { return Object.keys((days[k] || {}).active || {}).length; }
   function visitorsOn(days, k) { return Object.keys((days[k] || {}).visitors || {}).length; }
 
-  function tile(label, value, prev, note) {
-    var t = el('div', { class: 'kpi-tile' });
-    t.appendChild(el('span', { class: 'kpi-tile__label' }, label));
+  /* A stat tile. With onOpen it becomes a button that opens the details. */
+  function tile(label, value, prev, note, onOpen) {
+    var t = onOpen
+      ? el('button', { type: 'button', class: 'kpi-tile kpi-tile--link', 'aria-haspopup': 'dialog', title: 'Show details' })
+      : el('div', { class: 'kpi-tile' });
+    var top = el('span', { class: 'kpi-tile__label' }, label);
+    if (onOpen) {
+      top.appendChild(icon('chevron-right'));
+      t.addEventListener('click', onOpen);
+    }
+    t.appendChild(top);
     t.appendChild(el('strong', { class: 'kpi-tile__value' }, FF.AdminCharts.compact(value || 0)));
     if (prev != null) {
       var delta;
@@ -161,6 +169,12 @@ window.FF = window.FF || {};
 
   var state = { range: 7, userSort: 'lastSeen', userKind: 'accounts' };
 
+  // Shared with js/admin/details.js.
+  FF.AdminKit = {
+    el: el, icon: icon, card: card, tile: tile, loading: loading, failed: failed,
+    shortDate: shortDate, longDate: longDate, ago: ago, num: num, catName: catName, gameName: gameName
+  };
+
   FF.AdminPages = {
     /* ================= Overview ================= */
     overview: function (main) {
@@ -190,18 +204,22 @@ window.FF = window.FF || {};
           var now = summarise(days, keys), prev = summarise(days, prevKeys);
           FF.ui.clear(body);
 
+          // What the detail windows need (js/admin/details.js).
+          var ctx = { range: n, keys: keys, prevKeys: prevKeys, days: days, now: now, prev: prev };
+          var open = function (kind) { return function () { FF.AdminDetails.open(kind, ctx); }; };
+
           var tiles = el('div', { class: 'kpi-grid' });
-          tiles.appendChild(tile('Visitors', now.visitorCount, prev.visitorCount, 'Devices that opened PlayMona, played or not'));
-          tiles.appendChild(tile('Active players', now.active, prev.active, num(now.activeAccounts) + ' with accounts, ' + num(now.activeGuests) + ' guests'));
-          tiles.appendChild(tile('Games played', now.plays, prev.plays, num(now.onlinePlays) + ' online, ' + num(now.guestPlays) + ' by guests'));
-          tiles.appendChild(tile('New sign-ups', now.signups, prev.signups));
-          tiles.appendChild(tile('App installs', now.installs, prev.installs));
-          tiles.appendChild(tile('Rooms created', now.rooms, prev.rooms));
+          tiles.appendChild(tile('Visitors', now.visitorCount, prev.visitorCount, 'Devices that opened PlayMona, played or not', open('visitors')));
+          tiles.appendChild(tile('Active players', now.active, prev.active, num(now.activeAccounts) + ' with accounts, ' + num(now.activeGuests) + ' guests', open('active')));
+          tiles.appendChild(tile('Games played', now.plays, prev.plays, num(now.onlinePlays) + ' online, ' + num(now.guestPlays) + ' by guests', open('games')));
+          tiles.appendChild(tile('New sign-ups', now.signups, prev.signups, null, open('signups')));
+          tiles.appendChild(tile('App installs', now.installs, prev.installs, null, open('installs')));
+          tiles.appendChild(tile('Rooms created', now.rooms, prev.rooms, null, open('rooms')));
           body.appendChild(tiles);
 
           var all = card('All time');
           var allRow = el('div', { class: 'kpi-grid kpi-grid--quiet' });
-          allRow.appendChild(tile('Registered players', players));
+          allRow.appendChild(tile('Registered players', players, null, 'Open the player list', function () { window.location.hash = 'users'; }));
           allRow.appendChild(tile('Games played', totals.plays || 0));
           allRow.appendChild(tile('Online games', totals.onlinePlays || 0));
           allRow.appendChild(tile('App installs', totals.installs || 0));

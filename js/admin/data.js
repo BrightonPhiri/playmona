@@ -182,6 +182,38 @@ window.FF = window.FF || {};
     },
     saveSite: function (site) { return this.set('config/site', site); },
 
-    rooms: function () { return this.get('rooms').then(function (v) { return v || {}; }); }
+    rooms: function () { return this.get('rooms').then(function (v) { return v || {}; }); },
+
+    /* Visitor countries and shortened IPs, from the PlayMona server (api/lib/Visits.php).
+       opts: { view: 'list' | 'countries', country: 'ZM' | 'unknown' }.
+       Device-only accounts have no server, so this rejects with code 'local'. */
+    visitorDetails: function (from, to, opts) {
+      opts = opts || {};
+      if (mode !== 'firebase') {
+        var e = new Error('No server while developing');
+        e.code = 'local';
+        return Promise.reject(e);
+      }
+      var q = 'from=' + encodeURIComponent(from) + '&to=' + encodeURIComponent(to);
+      if (opts.view) q += '&view=' + encodeURIComponent(opts.view);
+      if (opts.country) q += '&country=' + encodeURIComponent(opts.country);
+      return FF.Net.ensureFirebase().then(function (firebase) {
+        return firebaseUser(firebase).then(function (u) {
+          if (!u) throw new Error('Signed out');
+          return u.getIdToken();
+        });
+      }).then(function (token) {
+        return fetch('/api/admin/visitors?' + q, { headers: { Authorization: 'Bearer ' + token }, cache: 'no-store' });
+      }).then(function (res) {
+        return res.json().catch(function () { return {}; }).then(function (data) {
+          if (!res.ok) {
+            var err = new Error(data.message || 'The server said ' + res.status);
+            err.code = data.error || 'http-' + res.status;
+            throw err;
+          }
+          return data;
+        });
+      });
+    }
   };
 })();

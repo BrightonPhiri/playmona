@@ -40,6 +40,7 @@ class App
 
     public function catalog(): Catalog { return $this->make('catalog', fn () => new Catalog((array) $this->config->get('premium_games', []))); }
     public function store(): Store { return $this->make('store', fn () => new Store($this->db(), $this->rtdb())); }
+    public function visits(): Visits { return $this->make('visits', fn () => new Visits($this->db())); }
 
     public function payments(): Payments
     {
@@ -81,6 +82,8 @@ class Routes
         if ($m === 'POST' && $p === '/linkwa/webhook') return $this->webhook($req);
         if ($m === 'POST' && $p === '/admin/grant') return $this->adminGrant($req);
         if ($m === 'GET' && $p === '/admin/access') return $this->adminAccess($req);
+        if ($m === 'POST' && $p === '/visit') return $this->visit($req);
+        if ($m === 'GET' && $p === '/admin/visitors') return $this->adminVisitors($req);
 
         throw new HttpError(404, 'Not found.', 'not-found');
     }
@@ -194,6 +197,31 @@ class Routes
         $this->app->db()->transaction(fn () => $store->grant($uid, $grant, 'admin', null, $admin->uid, $note));
         $store->sync($uid);
         return Response::json(['access' => $store->get($uid)]);
+    }
+
+    /** js/visit.js, once a day per device. No sign-in. */
+    private function visit(Request $req): Response
+    {
+        $body = $req->json();
+        $this->app->visits()->record(
+            (string) ($body['id'] ?? ''),
+            (string) ($body['page'] ?? 'l'),
+            $req->clientIp(),
+            $req->header('cf-ipcountry')
+        );
+        return Response::json(['ok' => true]);
+    }
+
+    private function adminVisitors(Request $req): Response
+    {
+        $this->admin($req);
+        $q = $req->query;
+        return Response::json($this->app->visits()->report(
+            (string) ($q['from'] ?? ''),
+            (string) ($q['to'] ?? ''),
+            isset($q['view']) ? (string) $q['view'] : null,
+            isset($q['country']) ? (string) $q['country'] : null
+        ));
     }
 
     private function adminAccess(Request $req): Response

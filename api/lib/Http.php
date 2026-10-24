@@ -46,7 +46,8 @@ class Request
         public readonly string $path,
         public readonly array $query = [],
         public readonly string $rawBody = '',
-        public readonly array $headers = []
+        public readonly array $headers = [],
+        public readonly string $remoteAddr = ''
     ) {}
 
     public static function fromGlobals(): self
@@ -67,11 +68,22 @@ class Request
             rtrim($path, '/') ?: '/',
             $_GET,
             (string) file_get_contents('php://input'),
-            $headers
+            $headers,
+            (string) ($_SERVER['REMOTE_ADDR'] ?? '')
         );
     }
 
     public function header(string $name): ?string { return $this->headers[strtolower($name)] ?? null; }
+
+    /**
+     * The visitor's address. The site is behind Cloudflare, so the connection comes
+     * from a Cloudflare server and the visitor's own address is in CF-Connecting-IP.
+     */
+    public function clientIp(): string
+    {
+        $cf = trim((string) $this->header('cf-connecting-ip'));
+        return filter_var($cf, FILTER_VALIDATE_IP) ? $cf : $this->remoteAddr;
+    }
 
     public function bearer(): ?string
     {

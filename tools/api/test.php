@@ -146,7 +146,7 @@ function req(string $method, string $path, array $opts = []): Request
 {
     $headers = $opts['headers'] ?? [];
     if (isset($opts['token'])) $headers['authorization'] = 'Bearer ' . $opts['token'];
-    return new Request($method, $path, $opts['query'] ?? [], isset($opts['json']) ? json_encode($opts['json']) : ($opts['raw'] ?? ''), $headers);
+    return new Request($method, $path, $opts['query'] ?? [], isset($opts['json']) ? json_encode($opts['json']) : ($opts['raw'] ?? ''), $headers, $opts['ip'] ?? '');
 }
 
 $alice = new AuthUser('alice', 'password', 'a@example.com', 'Alice');
@@ -373,6 +373,93 @@ test('errors inside a route become a plain 500 without details', function () {
     $res = $w['routes']->handle(req('GET', '/me', ['token' => idToken()]));
     eq(500, $res->status);
     eq('server', $res->body['error']);
+});
+
+/* ---------- Visitors ---------- */
+test('visits: IPs are shortened and countries come from Cloudflare', function () {
+    eq('41.216.x.x', PlayMona\Visits::maskIp('41.216.88.7'));
+    eq('2c0f:fe38:2101::/48', PlayMona\Visits::maskIp('2c0f:fe38:2101:a::1'));
+    eq(null, PlayMona\Visits::maskIp('not an ip'));
+    eq('ZM', PlayMona\Visits::country('zm'));
+    eq(null, PlayMona\Visits::country('XX'), 'XX is unknown');
+    eq('T1', PlayMona\Visits::country('T1'), 'Tor');
+    eq(null, PlayMona\Visits::country(''));
+
+    $w = world();
+    $id = str_repeat('ab', 12);
+    $res = $w['routes']->handle(req('POST', '/visit', ['json' => ['id' => $id, 'page' => 'a'], 'ip' => '172.68.1.1',
+        'headers' => ['cf-connecting-ip' => '41.216.88.7', 'cf-ipcountry' => 'ZM']]));
+    eq(200, $res->status);
+    $row = $w['db']->one('SELECT * FROM visits');
+    eq('41.216.x.x', $row['ip_masked'], 'the visitor address, not Cloudflare\'s');
+    eq('ZM', $row['country']);
+    eq('a', $row['page']);
+    $raw = $w['db']->one("SELECT COUNT(*) AS n FROM visits WHERE ip_masked LIKE '%88.7%'");
+    eq(0, (int) $raw['n'], 'the full address is never stored');
+
+    // Without Cloudflare (local), the connection address is used.
+    $w['routes']->handle(req('POST', '/visit', ['json' => ['id' => str_repeat('cd', 12)], 'ip' => '10.1.2.3']));
+    eq('10.1.x.x', $w['db']->one("SELECT ip_masked FROM visits WHERE visitor_id = ?", [str_repeat('cd', 12)])['ip_masked']);
+    eq(400, $w['routes']->handle(req('POST', '/visit', ['json' => ['id' => 'nope']]))->status);
+});
+
+test('visits: once per device per day, first page kept', function () {
+    $w = world();
+    $v = $w['app']->visits();
+    $id = str_repeat('ef', 12);
+    $day = strtotime('2026-10-24 09:00:00 UTC') * 1000;
+    eq(true, $v->record($id, 'l', '41.216.1.1', 'ZM', $day));
+    eq(false, $v->record($id, 'a', '41.216.1.1', 'ZM', $day + 3600000), 'second visit the same day is ignored');
+    eq(true, $v->record($id, 'a', '41.216.1.1', 'ZM', $day + 86400000), 'next day counts again');
+    $r = $v->report('2026-10-24', '2026-10-25');
+    eq(1, $r['total']);
+    eq('list', $r['view']);
+    eq(2, $r['visitors'][0]['days']);
+    eq('l', $r['visitors'][0]['firstPage']);
+    eq(true, $r['visitors'][0]['reachedApp']);
+    eq('efefef', $r['visitors'][0]['id'], 'only a short id goes to the browser');
+});
+
+test('visits: many visitors are grouped by country; one country can still be listed', function () {
+    $w = world();
+    $v = $w['app']->visits();
+    $t = strtotime('2026-10-24 12:00:00 UTC') * 1000;
+    for ($i = 0; $i < PlayMona\Visits::LIST_LIMIT + 5; $i++) {
+        $v->record(str_pad(dechex($i), 24, '0', STR_PAD_LEFT), $i % 3 ? 'l' : 'a', '41.216.0.' . ($i % 250), $i < 70 ? 'ZM' : ($i < 100 ? 'ZA' : null), $t + $i);
+    }
+    $r = $v->report('2026-10-24', '2026-10-24');
+    eq(105, $r['total']);
+    eq('countries', $r['view']);
+    eq(false, isset($r['visitors']));
+    eq(['ZM', 70], [$r['countries'][0]['country'], $r['countries'][0]['visitors']]);
+    eq(['ZA', 30], [$r['countries'][1]['country'], $r['countries'][1]['visitors']]);
+    eq([null, 5], [$r['countries'][2]['country'], $r['countries'][2]['visitors']], 'unknown country');
+    eq(24, $r['countries'][0]['reachedApp']);
+
+    $zm = $v->report('2026-10-24', '2026-10-24', null, 'zm');
+    eq('list', $zm['view']);
+    eq(70, count($zm['visitors']));
+    eq('ZM', $zm['country']);
+    eq(5, count($v->report('2026-10-24', '2026-10-24', null, 'unknown')['visitors']));
+    eq('list', $v->report('2026-10-24', '2026-10-24', 'list')['view'], 'admins can ask for the list anyway');
+    throwsHttp(400, fn () => $v->report('yesterday', '2026-10-24'));
+});
+
+test('visits: admins only, and old rows are pruned', function () {
+    $w = world();
+    eq(401, $w['routes']->handle(req('GET', '/admin/visitors', ['query' => ['from' => '2026-10-01', 'to' => '2026-10-24']]))->status);
+    eq(403, $w['routes']->handle(req('GET', '/admin/visitors', ['token' => idToken(), 'query' => ['from' => '2026-10-01', 'to' => '2026-10-24']]))->status);
+    $w['rtdb']->data['admins/user1'] = true;
+    $ok = $w['routes']->handle(req('GET', '/admin/visitors', ['token' => idToken(), 'query' => ['from' => '2026-10-01', 'to' => '2026-10-24']]));
+    eq(200, $ok->status);
+    eq(0, $ok->body['total']);
+
+    $v = $w['app']->visits();
+    $now = strtotime('2026-10-24 12:00:00 UTC') * 1000;
+    $v->record(str_repeat('a', 24), 'l', '1.2.3.4', null, $now - 400 * 86400000);
+    $v->record(str_repeat('b', 24), 'l', '1.2.3.4', null, $now - 10 * 86400000);
+    eq(1, $v->prune($now));
+    eq(1, (int) $w['db']->one('SELECT COUNT(*) AS n FROM visits')['n']);
 });
 
 echo "\n" . ($GLOBALS['count'] - $GLOBALS['failures']) . '/' . $GLOBALS['count'] . " passed\n";

@@ -39,3 +39,11 @@ try {
 } catch (Throwable $e) {
     fwrite(STDERR, 'Sync failed: ' . $e->getMessage() . "\n");
 }
+
+// Visitor details older than about 13 months.
+try {
+    $pruned = $app->visits()->prune();
+    if ($pruned) echo "Removed $pruned old visit row(s).\n";
+} catch (Throwable $e) {
+    fwrite(STDERR, 'Visit cleanup failed: ' . $e->getMessage() . "\n");
+}

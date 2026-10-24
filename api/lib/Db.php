@@ -114,7 +114,19 @@ class Db
             note VARCHAR(200) NULL,
             created_at BIGINT NOT NULL
         )$engine");
+        // One row per device per UTC day (see Visits). ip_masked is already shortened.
+        $this->pdo->exec("CREATE TABLE IF NOT EXISTS visits (
+            day CHAR(10) NOT NULL,
+            visitor_id CHAR(24) NOT NULL,
+            page CHAR(1) NOT NULL,
+            ip_masked VARCHAR(40) NULL,
+            country CHAR(2) NULL,
+            created_at BIGINT NOT NULL,
+            PRIMARY KEY (day, visitor_id)
+        )$engine");
         foreach ([
+            'CREATE INDEX visits_country ON visits (day, country)',
+            'CREATE INDEX visits_visitor ON visits (visitor_id, day)',
             'CREATE INDEX orders_uid ON orders (uid, created_at)',
             'CREATE INDEX orders_status ON orders (status, created_at)',
             'CREATE INDEX grants_uid ON grants (uid, created_at)',
