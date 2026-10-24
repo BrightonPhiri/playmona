@@ -151,3 +151,50 @@ test('rooms: a room code is read from a QR link or a typed code', function () {
   assertEqual(A.Room.codeFromText('https://example.com/'), null);
   assertEqual(A.Room.codeFromText('hello world'), null);
 });
+
+test('game length: the number of questions and the clock come from the room', async function () {
+  const bus = makeBus();
+  const A = phone(bus, 'Ana');
+  assertEqual(A.Race.plan(10, 50), 10, 'offline: the game keeps its own number');
+  await A.Room.create({ dev: true });
+  await A.Room.startGame('familyQuiz', { questions: 7 });
+  await tick();
+  assertEqual(A.Race.plan(10, 50), 7, 'host chose 7 questions');
+  assertEqual(A.Race.plan(10, 5), 5, 'never more than the questions available');
+  await A.Room.startGame('familyQuiz', { clock: 300 });
+  await tick();
+  assertEqual(A.Race.plan(10, 50), 50, 'clock only: questions keep coming until time is up');
+  await A.Room.startGame('familyQuiz', {});
+  await tick();
+  assertEqual(A.Race.plan(10, 50), 10, 'neither: the game’s usual number');
+  A.Room.leave();
+});
+
+test('game clock: every phone ends after the same round when time is up', async function () {
+  const bus = makeBus();
+  const A = phone(bus, 'Ana'), B = phone(bus, 'Ben');
+  const room = await A.Room.create({ dev: true });
+  await B.Room.join(room.code, {}, { dev: true });
+  await A.Room.startGame('familyQuiz', { clock: 60 });
+  // Fast-forward: the game started over a minute ago.
+  await A.Room.setMeta({ startAt: Date.now() - 61000 });
+  await tick(20);
+
+  const got = { A: null, B: null };
+  [['A', A], ['B', B]].forEach(function (pair) {
+    pair[1].Race.begin('familyQuiz', { rounds: 200 });
+    pair[1].Race.onSettle(function (p) { got[pair[0]] = p; });
+  });
+  await A.Race.beginRound(0);
+  await B.Race.beginRound(0);
+  await tick(1300);                       // the round opens
+  await A.Race.submit(1, true, 900);      // Ana answers first, correctly
+  await tick(60);
+
+  assert(got.A && got.B, 'both phones settled the round');
+  assertEqual(got.A.timeUp, true, 'Ana: time is up');
+  assertEqual(got.B.timeUp, true, 'Ben: the same answer');
+  assert(A.Race.isLastRound(0, 200) && B.Race.isLastRound(0, 200), 'it was the last round on both');
+  assert(A.Race.over(1) && B.Race.over(1), 'no round 2 for anyone');
+  A.Race.end(); B.Race.end(); A.Room.leave(); B.Room.leave();
+});

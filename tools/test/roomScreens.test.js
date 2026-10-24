@@ -49,7 +49,7 @@ function phone(bus, name) {
   FF.Audio = { play: function () {} };
   FF.Games = { get: function (id) { return { id: id, name: 'Family quiz', category: 'quiz', description: '' }; } };
   FF.Categories = { quiz: { name: 'Quiz', color: '#8b5cf6' } };
-  FF.SettingsUI = { duration: function () { return sb.document.createElement('div'); } };
+  FF.SettingsUI = { duration: function () { return sb.document.createElement('div'); }, count: function () { return sb.document.createElement('div'); } };
   FF.launched = [];
   FF.GameFlow = { launch: function (id) { FF.launched.push(id); } };
   // A voice chat that only counts its listeners.

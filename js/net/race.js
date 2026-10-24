@@ -26,6 +26,22 @@ window.FF = window.FF || {};
 
   function room() { return FF.Room ? FF.Room.current() : null; }
 
+  /* ---------- Game length: number of questions and/or a game clock ----------
+     The host picks them in the lobby (meta.settings.questions / .clock, in
+     seconds). The game ends after that many questions, or after the round
+     that is in progress when the clock runs out, whichever comes first. */
+  var UNTIL_TIME_UP = 200;   // rounds to plan when only the clock limits the game
+  function roomSettings() {
+    var r = room();
+    return (r && r.meta && r.meta.settings) || {};
+  }
+  function clockDeadline() {
+    var r = room();
+    var secs = Number(roomSettings().clock) || 0;
+    if (!r || !r.meta || !r.meta.startAt || secs <= 0) return null;
+    return r.meta.startAt + secs * 1000;
+  }
+
   function emitSettle(payload) {
     settleHandlers.slice().forEach(function (fn) {
       try { fn(payload); } catch (e) { if (window.console) console.error('[FF.Race]', e); }
@@ -75,13 +91,29 @@ window.FF = window.FF || {};
       ? r.transport.get('rounds/' + n + '/answers/' + winnerId)
       : Promise.resolve(null);
 
-    answerP.catch(function () { return null; }).then(function (answer) {
+    // With a game clock, the first device to settle this round records
+    // whether time is up; everyone reads that one answer, so every phone
+    // ends the game after the same round.
+    var deadline = clockDeadline();
+    var lastP = !deadline ? Promise.resolve(false) : r.transport.transaction('rounds/' + n + '/last', function (current) {
+      return current == null ? (r.transport.serverNow() >= deadline) : undefined;
+    }).then(function () {
+      return r.transport.get('rounds/' + n + '/last');
+    }).catch(function () {
+      return r.transport.serverNow() >= deadline;
+    });
+
+    Promise.all([answerP.catch(function () { return null; }), lastP]).then(function (both) {
+      var answer = both[0];
+      var last = both[1] === true;
+      if (last && session && session.index === n) session.lastRound = n;
       emitSettle({
         winnerId: winnerId || null,
         winnerName: winnerId ? nameOf(winnerId) : null,
         correct: winnerId === r.uid,
         points: answer ? scoreFor(answer) : 0,
-        reason: reason
+        reason: reason,
+        timeUp: last
       });
     });
   }
@@ -153,6 +185,61 @@ window.FF = window.FF || {};
     /* True once begin() has opened a race session for a game. */
     running: function () { return !!(session && room()); },
 
+    /* How many rounds to play. fallback is the game's usual number;
+       available caps it so questions are not repeated. Offline the game's
+       own number is returned unchanged. */
+    plan: function (fallback, available) {
+      if (!this.active()) return fallback;
+      var s = roomSettings();
+      var cap = available > 0 ? available : UNTIL_TIME_UP;
+      var n = fallback;
+      if (Number(s.questions) > 0) n = Number(s.questions);
+      else if (Number(s.clock) > 0) n = UNTIL_TIME_UP;
+      return Math.max(1, Math.min(n, cap));
+    },
+
+    /* The game clock ran out (this device's reading). Settle-based games use
+       the shared per-round answer instead; see isLastRound. */
+    timeUp: function () {
+      var r = room();
+      var d = clockDeadline();
+      return !!(r && d && r.transport.serverNow() >= d);
+    },
+
+    /* Milliseconds left on the game clock, or null without one. */
+    clockLeft: function () {
+      var r = room();
+      var d = clockDeadline();
+      if (!r || !d) return null;
+      return Math.max(0, d - r.transport.serverNow());
+    },
+
+    /* Round n (0-based) is the game's last: the planned count is reached,
+       or the clock ran out while it was being played. */
+    isLastRound: function (n, total) {
+      var s = session || lastSession;
+      return (n + 1) >= total || !!(s && s.lastRound === n);
+    },
+
+    /* The game is over before round n (0-based) starts. */
+    over: function (n) {
+      var s = session || lastSession;
+      return !!(s && s.lastRound != null && n > s.lastRound);
+    },
+
+    /* "Round 3 of 10", with the time left when there is a game clock. */
+    roundText: function (n, total) {
+      var left = this.active() ? this.clockLeft() : null;
+      var unbounded = total >= UNTIL_TIME_UP;
+      var base = unbounded
+        ? FF.t('roundN', 'Round {n}', { n: n })
+        : FF.t('roundOf', 'Round {n} of {total}', { n: n, total: total });
+      if (left == null) return base;
+      var secs = Math.ceil(left / 1000);
+      var clock = Math.floor(secs / 60) + ':' + ('0' + (secs % 60)).slice(-2);
+      return base + ' \u00b7 ' + FF.t('timeLeftShort', '{time} left', { time: clock });
+    },
+
     begin: function (gameId, opts) {
       opts = opts || {};
       var r = room();
@@ -172,6 +259,7 @@ window.FF = window.FF || {};
         claiming: false
       };
       lastSession = null;
+      session.lastRound = null;
       if (offRounds) offRounds();
       offRounds = FF.Room.on('rounds', evaluate);
     },
@@ -348,6 +436,10 @@ window.FF = window.FF || {};
         onSettle: function (cb) { return self.onSettle(cb); },
 
         /* The shared result screen every racing game uses. */
+        plan: function (fallback, available) { return self.plan(fallback, available); },
+        isLastRound: function (n, total) { return self.isLastRound(n, total); },
+        over: function (n) { return self.over(n); },
+
         showResult: function (payload, o) {
           o = o || {};
           self.syncScoring();

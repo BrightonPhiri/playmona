@@ -159,3 +159,9 @@ ol.results__leaderboard, ul.player-list, ul.achievement-grid, ul.team-col__membe
 .rm-picked__cat { font-size: var(--fs-sm); font-weight: 700; color: var(--muted); }
 .rm-picked__desc { margin: var(--sp-1) 0 0; color: var(--muted); font-size: var(--fs-sm); }
 .rm-picked > .btn { grid-column: 1 / -1; }
+
+/* How long the game runs, in one sentence under the settings */
+.rm-length-summary {
+  margin: var(--sp-2) 0 0; padding: var(--sp-2) var(--sp-3); border-radius: var(--r-sm);
+  background: var(--accent-soft); color: var(--text); font-weight: 600; font-size: var(--fs-sm);
+}

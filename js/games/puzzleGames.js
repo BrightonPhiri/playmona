@@ -801,13 +801,14 @@ window.FF = window.FF || {};
       var bag = new api.random.Bag(riddles);
 
       // ---- Race support. Offline this stays null and nothing changes. ----
+      if (FF.Race && FF.Race.active && FF.Race.active()) rounds = FF.Race.plan(rounds, riddles.length);
       var race = FF.Race ? FF.Race.forGame(api, {
         rounds: rounds,
         optionSelector: '.riddle-opt'
       }) : null;
 
       function playRound() {
-        if (round >= rounds) {
+        if (round >= rounds || (race && race.over(round))) {
           if (race) race.end();
           finish(api);
           return;
@@ -820,8 +821,11 @@ window.FF = window.FF || {};
           scorer = list.filter(function (sc) { return sc.id === me.uid; })[0] || list[0];
         }
         round++;
-        var label = FF.t('roundOf', 'Round {n} of {total}', { n: round, total: rounds });
-        renderRiddleRound(api, scorer, bag.next(), label, playRound, race, round >= rounds);
+        var label = race ? FF.Race.roundText(round, rounds) : FF.t('roundOf', 'Round {n} of {total}', { n: round, total: rounds });
+        var played = round - 1;
+        // Online the last round is only known once it settles (game clock).
+        renderRiddleRound(api, scorer, bag.next(), label, playRound, race,
+          race ? function () { return race.isLastRound(played, rounds); } : round >= rounds);
       }
       playRound();
     }
@@ -882,7 +886,7 @@ window.FF = window.FF || {};
         api.shell.hideTimer();
         race.showResult(payload, {
           answerText: item.options[ansIdx],
-          isLast: !!isLast,
+          isLast: typeof isLast === 'function' ? isLast() : !!isLast,
           onNext: function () { onDone(); }
         });
       });

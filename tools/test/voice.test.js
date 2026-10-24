@@ -137,3 +137,47 @@ test('voice: a blocked microphone is reported with code "blocked"', async functi
   assertEqual(caught.code, 'blocked');
   assertEqual(a.FF.Voice.isActive(), false);
 });
+
+test('voice: everyone talking at once is highlighted, including you', async function () {
+  const db = makeDb();
+  const a = player(db, 'aaa');
+  const b = player(db, 'bbb');
+  const sb = a.FF.__sandbox;
+  // A fake audio context: each stream carries a loudness level we control.
+  let gumCalled = false, ctxMade = null;
+  const mic = { level: 0.001, getTracks: () => [{ enabled: true, stop() {} }], getAudioTracks: () => [{ enabled: true }] };
+  sb.navigator.mediaDevices.getUserMedia = function () { gumCalled = true; return Promise.resolve(mic); };
+  sb.AudioContext = function () {
+    ctxMade = gumCalled ? 'after' : 'before';
+    this.state = 'running';
+    this.close = function () {};
+    this.createMediaStreamSource = function (stream) {
+      return { connect: function (an) { an.stream = stream; }, disconnect: function () {} };
+    };
+    this.createAnalyser = function () {
+      return { fftSize: 0, getFloatTimeDomainData: function (buf) { buf.fill(this.stream ? this.stream.level : 0); } };
+    };
+  };
+  sb.Float32Array = Float32Array;
+  sb.document.addEventListener = function () {};
+  sb.document.removeEventListener = function () {};
+
+  await a.FF.Voice.join();
+  await b.FF.Voice.join();
+  for (let i = 0; i < 5; i++) await settle();
+  assertEqual(ctxMade, 'before', 'the meter is made during the tap, before the microphone answers');
+
+  // Ben's audio arrives on Ana's phone.
+  const benVoice = { level: 0.001 };
+  a.pcs[0].ontrack({ streams: [benVoice] });
+  await new Promise(r => setTimeout(r, 400));   // learn the quiet room
+  mic.level = 0.2; benVoice.level = 0.15;      // both talk
+  await new Promise(r => setTimeout(r, 400));
+  assert(a.FF.Voice.isSpeaking(), 'Ana sees herself speaking');
+  assert(a.FF.Voice.isSpeaking('bbb'), 'Ana sees Ben speaking at the same time');
+
+  a.FF.Voice.setMute(true);
+  await new Promise(r => setTimeout(r, 900));
+  assert(!a.FF.Voice.isSpeaking(), 'muted means not speaking');
+  a.FF.Voice.leave(); b.FF.Voice.leave();
+});

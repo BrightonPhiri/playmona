@@ -266,6 +266,10 @@
               ".write": "auth != null && !data.exists()",
               ".validate": "newData.isString()"
             },
+            "last": {
+              ".write": "auth != null && !data.exists()",
+              ".validate": "newData.isBoolean()"
+            },
             "answers": {
               "$uid": {
                 ".write": "auth != null && $uid === auth.uid && !data.exists()",

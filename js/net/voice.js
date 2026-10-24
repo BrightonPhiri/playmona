@@ -29,7 +29,10 @@ window.FF = window.FF || {};
     vadInterval: null,
     peers: {},              // uid -> { pc, audio, speaking, connected, pending }
     seenSignals: {},        // signal id -> true, so each message is handled once
-    remoteSpeaking: {},     // uid -> boolean
+    remoteSpeaking: {},     // uid -> boolean (heard here OR reported by them)
+    remoteFlag: {},         // uid -> what their own phone reports (via the room)
+    remoteHeard: {},        // uid -> what this phone hears in their audio
+    meters: {},             // uid ('me' for this phone) -> level meter
     unsubs: [],
     listeners: { change: [], speaking: [], error: [] }
   };
@@ -60,58 +63,123 @@ window.FF = window.FF || {};
     return r ? r.uid : null;
   }
 
-  /* ---------------- VAD (Voice Activity Detection) ---------------- */
-  function startVAD(stream) {
-    stopVAD();
+  /* ---------------- Who is speaking ----------------
+     Every voice gets a level meter on this phone: your own microphone, and
+     each other player's audio as it arrives. So everyone you can hear lights
+     up at once, without waiting for their phone to report it (an iPhone that
+     could not start its own meter used to never show as speaking).
+
+     The audio context must be created during the tap that joins voice chat:
+     iPhones keep a context made later paused, and a paused meter hears
+     nothing. A later tap resumes it if needed. */
+  var LOCAL = 'me';
+
+  function ensureAudioContext() {
+    if (state.audioContext) return state.audioContext;
+    var AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return null;
+    try { state.audioContext = new AudioCtx(); } catch (e) { return null; }
+    resumeAudio();
+    return state.audioContext;
+  }
+
+  function resumeAudio() {
+    var ctx = state.audioContext;
+    if (!ctx || ctx.state !== 'suspended') return;
+    try { ctx.resume().catch(function () {}); } catch (e) {}
+    // Still paused (no tap yet): try again on the next tap anywhere.
+    if (!resumeAudio.armed) {
+      resumeAudio.armed = true;
+      var retry = function () {
+        resumeAudio.armed = false;
+        document.removeEventListener('pointerdown', retry, true);
+        document.removeEventListener('keydown', retry, true);
+        if (state.audioContext && state.audioContext.state === 'suspended') {
+          try { state.audioContext.resume().catch(function () {}); } catch (e) {}
+        }
+      };
+      document.addEventListener('pointerdown', retry, true);
+      document.addEventListener('keydown', retry, true);
+    }
+  }
+
+  function addMeter(key, stream) {
+    removeMeter(key);
+    var ctx = ensureAudioContext();
+    if (!ctx || !stream) return;
     try {
-      var AudioCtx = window.AudioContext || window.webkitAudioContext;
-      if (!AudioCtx) return;
-      var ctx = new AudioCtx();
-      if (ctx.state === 'suspended') {
-        ctx.resume().catch(function () {});
-      }
       var source = ctx.createMediaStreamSource(stream);
       var analyser = ctx.createAnalyser();
-      analyser.fftSize = 256;
+      analyser.fftSize = 1024;
       source.connect(analyser);
-
-      state.audioContext = ctx;
-      state.analyser = analyser;
-
-      var dataArray = new Uint8Array(analyser.frequencyBinCount);
-      var speakingCount = 0;
-      var silenceCount = 0;
-
-      state.vadInterval = setInterval(function () {
-        if (!state.active || state.muted) {
-          if (state.speaking) setSpeaking(false);
-          return;
-        }
-        analyser.getByteFrequencyData(dataArray);
-        var sum = 0;
-        for (var i = 0; i < dataArray.length; i++) sum += dataArray[i];
-        var avg = sum / dataArray.length;
-
-        // Threshold for human speech activity
-        if (avg > 18) {
-          speakingCount++;
-          silenceCount = 0;
-          if (speakingCount >= 2 && !state.speaking) {
-            setSpeaking(true);
-          }
-        } else {
-          silenceCount++;
-          if (silenceCount >= 4) {
-            speakingCount = 0;
-            if (state.speaking) {
-              setSpeaking(false);
-            }
-          }
-        }
-      }, 100);
+      state.meters[key] = {
+        source: source, analyser: analyser,
+        buf: analyser.getFloatTimeDomainData ? new Float32Array(analyser.fftSize) : new Uint8Array(analyser.fftSize),
+        floor: 0, on: false, above: 0, below: 0
+      };
     } catch (e) {
-      if (window.console) console.warn('[FF.Voice] VAD initialization failed:', e);
+      if (window.console) console.warn('[FF.Voice] Could not measure', key, e);
     }
+  }
+
+  function removeMeter(key) {
+    var m = state.meters[key];
+    if (!m) return;
+    try { m.source.disconnect(); } catch (e) {}
+    delete state.meters[key];
+  }
+
+  // Loudness of the last few milliseconds (RMS, 0..1).
+  function levelOf(m) {
+    var buf = m.buf, sum = 0, i, v;
+    if (buf instanceof Float32Array) {
+      m.analyser.getFloatTimeDomainData(buf);
+      for (i = 0; i < buf.length; i++) sum += buf[i] * buf[i];
+    } else {
+      m.analyser.getByteTimeDomainData(buf);
+      for (i = 0; i < buf.length; i++) { v = (buf[i] - 128) / 128; sum += v * v; }
+    }
+    return Math.sqrt(sum / buf.length);
+  }
+
+  /* Speech is louder than the room's background: the threshold follows a
+     slowly-learnt noise floor, so quiet and loud microphones both work. */
+  function updateMeter(m, level) {
+    // The floor drops at once in quiet moments and creeps up slowly, capped
+    // so a long sentence or a noisy room never hides real speech.
+    m.floor = m.floor ? (level < m.floor ? level : Math.min(0.04, m.floor + (level - m.floor) * 0.005)) : Math.min(0.04, level);
+    var threshold = Math.max(0.012, m.floor * 2.5);
+    if (level > threshold) {
+      m.above++; m.below = 0;
+      if (!m.on && m.above >= 2) { m.on = true; return true; }
+    } else {
+      m.below++; m.above = 0;
+      if (m.on && m.below >= 6) { m.on = false; return true; }
+    }
+    return false;
+  }
+
+  function startVAD(stream) {
+    // Keep the audio context made during the tap; only restart the loop.
+    if (state.vadInterval) { clearInterval(state.vadInterval); state.vadInterval = null; }
+    addMeter(LOCAL, stream);
+    state.vadInterval = setInterval(function () {
+      Object.keys(state.meters).forEach(function (key) {
+        var m = state.meters[key];
+        var silent = key === LOCAL && (!state.active || state.muted);
+        if (!updateMeter(m, silent ? 0 : levelOf(m))) return;
+        if (key === LOCAL) setSpeaking(m.on);
+        else { state.remoteHeard[key] = m.on; refreshRemote(key); }
+      });
+    }, 100);
+  }
+
+  // A player shows as speaking if this phone hears them OR their phone says so.
+  function refreshRemote(uid) {
+    var now = !!(state.remoteHeard[uid] || state.remoteFlag[uid]);
+    if (!!state.remoteSpeaking[uid] === now) return;
+    state.remoteSpeaking[uid] = now;
+    emit('speaking', { uid: uid, speaking: now, local: false });
   }
 
   function setSpeaking(speaking) {
@@ -132,6 +200,7 @@ window.FF = window.FF || {};
       clearInterval(state.vadInterval);
       state.vadInterval = null;
     }
+    Object.keys(state.meters).forEach(removeMeter);
     if (state.audioContext) {
       try { state.audioContext.close(); } catch (e) {}
       state.audioContext = null;
@@ -213,6 +282,7 @@ window.FF = window.FF || {};
       if (ev.streams && ev.streams[0]) {
         audio.srcObject = ev.streams[0];
         playVoice(audio);
+        addMeter(targetUid, ev.streams[0]);   // light them up when this phone hears them
       }
     };
 
@@ -258,7 +328,10 @@ window.FF = window.FF || {};
       if (p.pc) { p.pc.close(); }
     } catch (e) {}
     delete state.peers[uid];
+    removeMeter(uid);
     delete state.remoteSpeaking[uid];
+    delete state.remoteFlag[uid];
+    delete state.remoteHeard[uid];
     emit('speaking', { uid: uid, speaking: false, local: false });
     notifyChange();
   }
@@ -355,12 +428,9 @@ window.FF = window.FF || {};
       if (uid === myUid) return;
       var p = voiceData[uid];
       if (p && p.joined) {
-        // Track remote speaking state
-        var isSpeaking = !!p.speaking;
-        if (state.remoteSpeaking[uid] !== isSpeaking) {
-          state.remoteSpeaking[uid] = isSpeaking;
-          emit('speaking', { uid: uid, speaking: isSpeaking, local: false });
-        }
+        // What their phone reports; combined with what this phone hears.
+        state.remoteFlag[uid] = !!p.speaking && !p.muted;
+        refreshRemote(uid);
 
         // Establish connection if not already created.
         // Deterministic offerer: lower UID initiates offer.
@@ -429,6 +499,9 @@ window.FF = window.FF || {};
       }
       if (state.active) return Promise.resolve();
 
+      // Now, inside the tap that joins: see "Who is speaking" above.
+      ensureAudioContext();
+
       return navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
@@ -477,6 +550,7 @@ window.FF = window.FF || {};
         return state;
       }).catch(function (err) {
         state.active = false;
+        stopVAD();
         var name = (err && err.name) || '';
         var code = /NotAllowed|PermissionDenied|Security/.test(name) ? 'blocked'
           : /NotFound|DevicesNotFound|Overconstrained/.test(name) ? 'nomic'
@@ -508,6 +582,8 @@ window.FF = window.FF || {};
       Object.keys(state.peers).forEach(function (uid) { closePeer(uid); });
       state.peers = {};
       state.remoteSpeaking = {};
+      state.remoteFlag = {};
+      state.remoteHeard = {};
 
       if (state.localStream) {
         state.localStream.getTracks().forEach(function (t) { try { t.stop(); } catch (e) {} });

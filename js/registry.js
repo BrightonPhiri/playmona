@@ -100,7 +100,7 @@ window.FF = window.FF || {};
       const allowOff = !!opts.allowOff;
       if (currentSeconds == null || isNaN(currentSeconds)) currentSeconds = allowOff ? 0 : 60;
       const wrap = FF.ui.div('duration-picker');
-      const presets = allowOff
+      const presets = opts.presets || (allowOff
         ? [
             { label: 'Off', value: 0 },
             { label: '10s', value: 10 },
@@ -118,8 +118,9 @@ window.FF = window.FF || {};
             { label: '3m', value: 180 },
             { label: '5m', value: 300 },
             { label: '10m', value: 600 }
-          ];
+          ]);
       const segWrap = FF.ui.div('seg');
+      if (opts.label) segWrap.setAttribute('aria-label', opts.label);
       let minInput, secInput, custom;
 
       function apply(total) {
@@ -131,7 +132,7 @@ window.FF = window.FF || {};
         FF.ui.$$('.seg__btn', segWrap).forEach(function (b) {
           b.classList.toggle('active', parseInt(b.dataset.secs, 10) === total);
         });
-        if (custom) custom.classList.toggle('is-off', allowOff && total === 0);
+        if (custom) custom.classList.toggle('is-off', allowOff && total === 0 && !opts.alwaysCustom);
         if (minInput) minInput.value = Math.floor(total / 60);
         if (secInput) secInput.value = total % 60;
       }
@@ -146,7 +147,7 @@ window.FF = window.FF || {};
       wrap.appendChild(segWrap);
 
       custom = FF.ui.div('duration-picker__custom');
-      custom.appendChild(FF.ui.span('duration-picker__label', 'Custom:'));
+      custom.appendChild(FF.ui.span('duration-picker__label', FF.t('customColon', 'Custom:')));
       minInput = FF.ui.el('input', {
         type: 'number', class: 'num-input', min: 0, max: 60,
         value: Math.floor(currentSeconds / 60), 'aria-label': 'Minutes',
@@ -172,6 +173,55 @@ window.FF = window.FF || {};
       wrap.appendChild(custom);
 
       apply(currentSeconds);
+      return wrap;
+    },
+
+    /* A number with quick choices and a Custom box, in the duration picker's
+       style. opts: { presets: [{ label, value }], min, max, unit, label }.
+       A preset value of 0 means "the game's usual number". */
+    count: function (current, onChange, opts) {
+      opts = opts || {};
+      const min = opts.min || 1;
+      const max = opts.max || 100;
+      current = Number(current) || 0;
+      const wrap = FF.ui.div('duration-picker');
+      const segWrap = FF.ui.div('seg');
+      if (opts.label) segWrap.setAttribute('aria-label', opts.label);
+      let input = null;
+
+      function apply(v, fromInput) {
+        v = Math.round(Number(v) || 0);
+        if (v !== 0) v = Math.max(min, Math.min(max, v));
+        current = v;
+        if (onChange) onChange(v);
+        FF.ui.$$('.seg__btn', segWrap).forEach(function (b) {
+          b.classList.toggle('active', parseInt(b.dataset.value, 10) === v);
+        });
+        if (input && !fromInput) input.value = v > 0 ? v : '';
+      }
+
+      (opts.presets || []).forEach(function (p) {
+        segWrap.appendChild(FF.ui.button(p.label, {
+          class: 'seg__btn',
+          dataset: { value: p.value },
+          onClick: function () { apply(p.value); }
+        }));
+      });
+      wrap.appendChild(segWrap);
+
+      const custom = FF.ui.div('duration-picker__custom');
+      custom.appendChild(FF.ui.span('duration-picker__label', FF.t('customColon', 'Custom:')));
+      input = FF.ui.el('input', {
+        type: 'number', class: 'num-input', min: min, max: max, inputmode: 'numeric',
+        value: current > 0 ? current : '', placeholder: String(opts.placeholder || ''),
+        'aria-label': opts.label ? opts.label + ', ' + FF.t('custom', 'custom') : FF.t('custom', 'Custom'),
+        oninput: function () { if (input.value !== '') apply(input.value, true); }
+      });
+      custom.appendChild(input);
+      if (opts.unit) custom.appendChild(FF.ui.span('', opts.unit));
+      wrap.appendChild(custom);
+
+      apply(current);
       return wrap;
     }
   };
@@ -306,6 +356,7 @@ window.FF = window.FF || {};
           const chip = FF.ui.el('div', {
             class: 'score-chip' + (isActive ? ' active' : '') + (lb[0] && lb[0].id === e.id && pts > 0 ? ' leader' : '') + (isSpk ? ' speaking' : ''),
             role: 'listitem',
+            dataset: { uid: e.id },
             style: { '--chip-color': e.color || '#8b5cf6' },
             'aria-label': e.name + ', ' + FF.t('pointsN', '{n} points', { n: FF.util.formatNumber(pts) }) + (isActive ? ', ' + FF.t('theirTurn', 'their turn') : '')
           });

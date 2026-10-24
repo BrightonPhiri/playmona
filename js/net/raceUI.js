@@ -128,6 +128,10 @@ window.FF = window.FF || {};
         wrap.appendChild(FF.ui.div('ffr-points', FF.t('plusPoints', '+{n} points', { n: FF.util.formatNumber(payload.points) })));
       }
 
+      if (payload.timeUp) {
+        wrap.appendChild(FF.ui.div('ffr-timeup', FF.t('timeUpLast', 'Time\u2019s up! That was the last question.')));
+      }
+
       if (opts.answerText != null && opts.answerText !== '') {
         wrap.appendChild(FF.ui.div('ffr-answer', FF.t('answerWas', 'The answer was {answer}.', { answer: opts.answerText })));
       }

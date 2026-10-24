@@ -91,6 +91,7 @@ window.FF = window.FF || {};
       var me = FF.Room.current();
       var mine = players.filter(function (p) { return p.id === me.uid; });
       players = mine.length ? mine : players.slice(0, 1);
+      roundsPerPlayer = FF.Race.plan(roundsPerPlayer, 0);
 
       FF.Race.begin(api.def.id, {
         rounds: roundsPerPlayer,
@@ -150,7 +151,8 @@ window.FF = window.FF || {};
     }
 
     function runRounds(player, roundNumber, times) {
-      if (roundNumber >= roundsPerPlayer) { finalize(player, times); return; }
+      // Online, a game clock ends the taps once it runs out.
+      if (roundNumber >= roundsPerPlayer || (racing && roundNumber > 0 && FF.Race.timeUp())) { finalize(player, times); return; }
       runRound(player, roundNumber, times, function () {
         runRounds(player, roundNumber + 1, times);
       });
@@ -165,7 +167,7 @@ window.FF = window.FF || {};
 
       var wrap = api.ui.div('rt-wrap');
       var who = api.ui.div('qt-who', [FF.Players.avatarEl(player, 'who-ava'), player.name]);
-      var roundLabel = api.ui.div('qt-round', 'Round ' + (roundNumber + 1) + ' of ' + roundsPerPlayer);
+      var roundLabel = api.ui.div('qt-round', racing ? FF.Race.roundText(roundNumber + 1, roundsPerPlayer) : 'Round ' + (roundNumber + 1) + ' of ' + roundsPerPlayer);
       var prompt = api.ui.div('qt-prompt', 'GET READY...');
       var pad = api.ui.button('Wait', { class: 'qt-pad', ariaLabel: 'Tap button', onClick: onTap });
 
@@ -362,6 +364,7 @@ window.FF = window.FF || {};
       var me = FF.Room.current();
       var mine = players.filter(function (p) { return p.id === me.uid; });
       players = mine.length ? mine : players.slice(0, 1);
+      roundsPerPlayer = FF.Race.plan(roundsPerPlayer, 0);
 
       FF.Race.begin(api.def.id, {
         rounds: roundsPerPlayer,
@@ -416,7 +419,7 @@ window.FF = window.FF || {};
     }
 
     function runRounds(player, roundNumber) {
-      if (roundNumber >= roundsPerPlayer) { finalize(player); return; }
+      if (roundNumber >= roundsPerPlayer || (racing && roundNumber > 0 && FF.Race.timeUp())) { finalize(player); return; }
       // Seed the round so every device gets the same word and ink colour.
       if (racing) FF.Race.beginRound(roundNumber);
       runRound(player, roundNumber, function () { runRounds(player, roundNumber + 1); });
@@ -444,7 +447,7 @@ window.FF = window.FF || {};
       api.ui.clear(root);
 
       var wrap = api.ui.div('rt-wrap');
-      var who = api.ui.div('cr-who', [FF.Players.avatarEl(player, 'who-ava'), player.name + ' · ' + FF.t('roundOf', 'Round {n} of {total}', { n: roundNumber + 1, total: roundsPerPlayer })]);
+      var who = api.ui.div('cr-who', [FF.Players.avatarEl(player, 'who-ava'), player.name + ' · ' + (racing ? FF.Race.roundText(roundNumber + 1, roundsPerPlayer) : FF.t('roundOf', 'Round {n} of {total}', { n: roundNumber + 1, total: roundsPerPlayer }))]);
       var word = api.ui.div('cr-word', round.word.name);
       word.style.color = round.ink.css;
       var question = api.ui.div('cr-question', 'What colour is the text?');

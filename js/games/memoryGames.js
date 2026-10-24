@@ -338,13 +338,16 @@ window.FF = window.FF || {};
       wrap.appendChild(stage);
       root.appendChild(wrap);
 
-      if (api.config.timer > 0) {
+      // Offline the time limit is for the whole game. In a room it is the time
+      // to answer each round (the race handles it), so it must not end the game.
+      if (api.config.timer > 0 && !(FF.Race && FF.Race.active && FF.Race.active())) {
         api.shell.setTimer(api.config.timer, function () { finish(); });
       }
 
       var revealTimer = null;
 
       // ---- Race support. Offline this is all inert. ----
+      if (FF.Race && FF.Race.active && FF.Race.active()) ROUNDS = FF.Race.plan(ROUNDS, 0);
       var race = FF.Race ? FF.Race.forGame(api, {
         rounds: ROUNDS,
         optionSelector: '.wm-opt'
@@ -373,7 +376,7 @@ window.FF = window.FF || {};
 
       function nextRound() {
         round++;
-        if (round > ROUNDS) {
+        if (round > ROUNDS || (race && race.over(round - 1))) {
           finish();
           return;
         }
@@ -388,7 +391,7 @@ window.FF = window.FF || {};
         if (wrap.parentNode !== root) { api.ui.clear(root); root.appendChild(wrap); }
         api.ui.clear(stage);
         status.textContent = race
-          ? ('Round ' + round + ' of ' + ROUNDS + ' — everyone, memorise the emoji!')
+          ? (FF.Race.roundText(round, ROUNDS) + ' — everyone, memorise the emoji!')
           : ('Round ' + round + ' of ' + ROUNDS + ' — ' + currentScorer().name + ', memorise the emoji!');
         api.shell.updateScores(currentScorer().id);
 
@@ -518,7 +521,7 @@ window.FF = window.FF || {};
               answered = true;
               race.showResult(payload, {
                 answerText: missing,
-                isLast: round >= ROUNDS,
+                isLast: race.isLastRound(round - 1, ROUNDS),
                 onNext: function () { nextRound(); }
               });
             });

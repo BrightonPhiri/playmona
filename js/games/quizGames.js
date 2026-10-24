@@ -88,7 +88,10 @@ window.FF = window.FF || {};
   // so naming one player would be wrong on every other device.
   function turnChip(entity, roundText) { return FF.GameUI.turnBar(entity, roundText); }
 
-  function roundLabel(n, total) { return FF.t('roundOf', 'Round {n} of {total}', { n: n, total: total }); }
+  function roundLabel(n, total) {
+    if (FF.Race && FF.Race.active && FF.Race.active()) return FF.Race.roundText(n, total);
+    return FF.t('roundOf', 'Round {n} of {total}', { n: n, total: total });
+  }
 
   function correctLine(pts, streak) {
     return FF.GameUI.feedback('good', FF.GameUI.correctText(pts) + (streak ? ' ' + FF.t('streakBonus', 'Streak bonus!') : ''));
@@ -135,6 +138,8 @@ window.FF = window.FF || {};
     });
 
     return {
+      isLastRound: function (n, total) { return FF.Race.isLastRound(n, total); },
+      over: function (n) { return FF.Race.over(n); },
       beginRound: function (n) { FF.Race.beginRound(n); },
 
       /* Hold the options until the round's shared open instant, so every
@@ -262,7 +267,7 @@ window.FF = window.FF || {};
 
       const pool = difficultyPool(data.questions, api.config.difficulty);
       const bag = new api.random.Bag(pool);
-      const ROUNDS = 10;
+      const ROUNDS = FF.Race ? FF.Race.plan(10, pool.length) : 10;
 
       let round = 0;
       let correctTotal = 0;
@@ -276,14 +281,16 @@ window.FF = window.FF || {};
         answeredTotal++;
         race.showResult(payload, {
           answerText: currentQ ? currentQ.options[currentQ.answer] : null,
-          isLast: (round + 1) >= ROUNDS,
-          onNext: function () { round++; nextRound(); }
+          isLast: race.isLastRound(round, ROUNDS),
+          // nextRound moves to the next round itself (this used to add one
+          // more, so online Family Quiz skipped every other question).
+          onNext: function () { nextRound(); }
         });
       }) : null;
 
       function nextRound() {
         round++;
-        if (round >= ROUNDS) {
+        if (round >= ROUNDS || (race && race.over(round))) {
           const achievements = [];
           let brainBox = false;
           for (const id in perCorrect) {
@@ -403,7 +410,7 @@ window.FF = window.FF || {};
       }
 
       const bag = new api.random.Bag(data.trueFalse);
-      const ROUNDS = 8;
+      const ROUNDS = FF.Race ? FF.Race.plan(8, data.trueFalse.length) : 8;
 
       let round = 0;
       let correctTotal = 0;
@@ -417,14 +424,14 @@ window.FF = window.FF || {};
         answeredTotal++;
         race.showResult(payload, {
           answerText: currentItem ? (currentItem.answer ? 'TRUE' : 'FALSE') : null,
-          isLast: (round + 1) >= ROUNDS,
+          isLast: race.isLastRound(round, ROUNDS),
           onNext: function () { nextRound(); }
         });
       }) : null;
 
       function nextRound() {
         round++;
-        if (round >= ROUNDS) {
+        if (round >= ROUNDS || (race && race.over(round))) {
           if (offSettle) offSettle();
           if (race) race.end();
           finishGame(api, { quizCorrect: correctTotal, quizAnswered: answeredTotal });
@@ -780,7 +787,7 @@ window.FF = window.FF || {};
 
       const items = data.guessWho.slice();
       const bag = new api.random.Bag(items);
-      const TOTAL = Math.min(6, items.length);
+      const TOTAL = FF.Race ? FF.Race.plan(Math.min(6, items.length), items.length) : Math.min(6, items.length);
       const cluePoints = [0, 300, 200, 100, 50];
 
       let round = 0;
@@ -796,14 +803,14 @@ window.FF = window.FF || {};
         answeredTotal++;
         race.showResult(payload, {
           answerText: currentAnswerText,
-          isLast: (round + 1) >= TOTAL,
+          isLast: race.isLastRound(round, TOTAL),
           onNext: function () { nextRound(); }
         });
       }) : null;
 
       function nextRound() {
         round++;
-        if (round >= TOTAL) {
+        if (round >= TOTAL || (race && race.over(round))) {
           if (offSettle) offSettle();
           if (race) race.end();
           finishGame(api, { quizCorrect: correctTotal, quizAnswered: answeredTotal });
@@ -967,7 +974,7 @@ window.FF = window.FF || {};
         return;
       }
 
-      const TOTAL = Math.min(8, valid.length);
+      const TOTAL = FF.Race ? FF.Race.plan(Math.min(8, valid.length), valid.length) : Math.min(8, valid.length);
       const bag = new api.random.Bag(valid);
 
       let round = 0;
@@ -981,14 +988,14 @@ window.FF = window.FF || {};
         answeredTotal++;
         race.showResult(payload, {
           answerText: currentP ? currentP.options[currentP.answer] : null,
-          isLast: (round + 1) >= TOTAL,
+          isLast: race.isLastRound(round, TOTAL),
           onNext: function () { nextRound(); }
         });
       }) : null;
 
       function nextRound() {
         round++;
-        if (round >= TOTAL) {
+        if (round >= TOTAL || (race && race.over(round))) {
           if (offSettle) offSettle();
           if (race) race.end();
           finishGame(api, { quizCorrect: correctTotal, quizAnswered: answeredTotal });

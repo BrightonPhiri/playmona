@@ -147,6 +147,7 @@ window.FF = window.FF || {};
   function runVisualGame(api, spec) {
     var items = spec.items;
     var rounds = Math.min(spec.rounds || ROUNDS, items.length);
+    if (FF.Race && FF.Race.active && FF.Race.active()) rounds = FF.Race.plan(rounds, items.length);
     var scorers = (api.config.scorers && api.config.scorers.length) ? api.config.scorers : api.config.players;
     var bag = api.random.Bag(items);
     var roundIndex = 0;
@@ -178,7 +179,7 @@ window.FF = window.FF || {};
         FF.RaceUI.result(api.shell.root, {
           payload: payload,
           answerText: currentCorrectName,
-          isLast: roundIndex >= rounds - 1,
+          isLast: FF.Race.isLastRound(roundIndex, rounds),
           onNext: function () { roundIndex++; nextRound(); }
         });
       });
@@ -245,7 +246,7 @@ window.FF = window.FF || {};
 
     function nextRound() {
       if (finished) return;
-      if (roundIndex >= rounds) { finish(); return; }
+      if (roundIndex >= rounds || (racing && FF.Race.over(roundIndex))) { finish(); return; }
       if (racing) FF.Race.beginRound(roundIndex);
 
       var active = scorers[roundIndex % scorers.length];
@@ -262,7 +263,7 @@ window.FF = window.FF || {};
       // Round + turn header. In a room nobody takes turns - everyone races
       // the same question (FF.GameUI.turnBar handles that).
       wrap.appendChild(FF.GameUI.turnBar(api.config.mode !== 'solo' ? active : null,
-        FF.t('roundOf', 'Round {n} of {total}', { n: roundIndex + 1, total: rounds })));
+        racing ? FF.Race.roundText(roundIndex + 1, rounds) : FF.t('roundOf', 'Round {n} of {total}', { n: roundIndex + 1, total: rounds })));
 
       var startTime = Date.now();
       var answered = false;

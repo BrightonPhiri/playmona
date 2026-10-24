@@ -196,6 +196,8 @@ const rules = {
           "$index": {
             startedAt: { ".write": "auth != null && !data.exists()" },
             winner: { ".write": "auth != null && !data.exists()", ".validate": "newData.isString()" },
+            // Game clock: whether time ran out by the end of this round (written once).
+            last: { ".write": "auth != null && !data.exists()", ".validate": "newData.isBoolean()" },
             answers: {
               "$uid": {
                 ".write": "auth != null && $uid === auth.uid && !data.exists()",

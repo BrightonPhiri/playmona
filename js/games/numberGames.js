@@ -162,7 +162,7 @@ window.FF = window.FF || {};
 
   // Round, whose turn and streak, above every question.
   function topBar(api, state, active, showZero) {
-    var bar = FF.GameUI.turnBar(active, FF.t('roundOf', 'Round {n} of {total}', { n: state.round + 1, total: state.total }));
+    var bar = FF.GameUI.turnBar(active, state.race ? FF.Race.roundText(state.round + 1, state.total) : FF.t('roundOf', 'Round {n} of {total}', { n: state.round + 1, total: state.total }));
     var rec = api.scoring.record(active.id);
     var streak = rec ? rec.streak : 0;
     if (streak > 0 || showZero) bar.appendChild(FF.GameUI.pill(FF.t('streakN', 'Streak {n}', { n: streak }), 'flame'));
@@ -186,6 +186,7 @@ window.FF = window.FF || {};
       race: FF.Race ? FF.Race.forGame(api, { rounds: 10, optionSelector: '.nc-option' }) : null,
       offSettle: null
     };
+    if (state.race) state.total = state.race.plan(10, 0);
     api.audio.play('roundStart');
     renderNumberChallenge(api, state);
   }
@@ -249,7 +250,7 @@ window.FF = window.FF || {};
         api.shell.hideTimer();
         state.race.showResult(payload, {
           answerText: String(q.answer),
-          isLast: (state.round + 1) >= state.total,
+          isLast: state.race.isLastRound(state.round, state.total),
           onNext: function () { nextNumberChallenge(api, state); }
         });
       });
@@ -328,7 +329,7 @@ window.FF = window.FF || {};
 
   function nextNumberChallenge(api, state) {
     state.round++;
-    if (state.round >= state.total) {
+    if (state.round >= state.total || (state.race && state.race.over(state.round))) {
       finishNumberChallenge(api, state);
     } else {
       renderNumberChallenge(api, state);

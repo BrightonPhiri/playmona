@@ -57,6 +57,7 @@ window.FF = window.FF || {};
       if (racing && FF.Room && FF.Room.current()) {
         FF.Random.seed(FF.Random.roundSeed(FF.Room.current().meta.seed, api.def.id, 'deck'));
       }
+      if (racing) totalRounds = FF.Race.plan(totalRounds, data.questions.length);
       var questions = api.util.shuffle(data.questions.slice()).slice(0, totalRounds);
       var race = FF.Race ? FF.Race.forGame(api, {
         rounds: totalRounds,
@@ -172,7 +173,7 @@ window.FF = window.FF || {};
         race.onSettle(function (payload) {
           api.shell.hideTimer();
           var q = questions[currentIndex];
-          var isLast = currentIndex >= questions.length - 1;
+          var isLast = race.isLastRound(currentIndex, questions.length);
           race.showResult(payload, {
             answerText: q && q.options ? q.options[q.answer] : null,
             isLast: isLast,

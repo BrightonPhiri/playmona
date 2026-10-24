@@ -62,6 +62,24 @@ window.FF = window.FF || {};
     return list;
   }
 
+  /* Speaking highlight on every player chip on screen (lobby, countdown and
+     the game's score bar), for everyone talking at once, you included. */
+  if (FF.Voice && FF.Voice.on) {
+    FF.Voice.on('speaking', function (ev) {
+      if (!ev || !ev.uid || !document.querySelectorAll) return;
+      var on = !!ev.speaking;
+      Array.prototype.forEach.call(document.querySelectorAll('[data-uid="' + ev.uid + '"]'), function (chip) {
+        if (chip.classList.contains('rm-player')) {
+          chip.classList.toggle('rm-player--speaking', on);
+          var ava = chip.querySelector('.rm-player__ava');
+          if (ava) ava.classList.toggle('rm-player__ava--speaking', on);
+        } else if (chip.classList.contains('score-chip')) {
+          chip.classList.toggle('speaking', on);
+        }
+      });
+    });
+  }
+
   /* Listeners that belong to the screen on show. Each screen switch removes
      them, so an old lobby can never redraw itself over the countdown, a game
      or the results (voice listeners used to pile up and do exactly that). */
@@ -90,6 +108,29 @@ window.FF = window.FF || {};
       class: cls || 'btn-lg', icon: 'qr-scan',
       onClick: function () { FF.QRScan.open(onCode); }
     });
+  }
+
+  /* "5 min", "2 min 30 s", "45 s" */
+  function spanText(secs) {
+    secs = Math.round(secs || 0);
+    var m = Math.floor(secs / 60), s = secs % 60;
+    if (!m) return FF.t('nSec', '{n} s', { n: s });
+    return s ? FF.t('nMinSec', '{m} min {s} s', { m: m, s: s }) : FF.t('nMin', '{n} min', { n: m });
+  }
+
+  /* One plain sentence about how long the game runs and the time to answer. */
+  function lengthSummary(set) {
+    set = set || {};
+    var q = Number(set.questions) || 0, clock = Number(set.clock) || 0, timer = Number(set.timer) || 0;
+    var ends;
+    if (q && clock) ends = FF.t('endsQorClock', 'Ends after {q} questions or {time}, whichever comes first.', { q: q, time: spanText(clock) });
+    else if (q) ends = FF.t('endsQ', 'Ends after {q} questions.', { q: q });
+    else if (clock) ends = FF.t('endsClock', 'Questions keep coming until the {time} clock runs out.', { time: spanText(clock) });
+    else ends = FF.t('endsUsual', 'Plays the game\u2019s usual number of questions.');
+    var answer = timer
+      ? FF.t('answerIn', '{time} to answer each question.', { time: spanText(timer) })
+      : FF.t('answerNoLimit', 'No time limit on answers.');
+    return ends + ' ' + answer;
   }
 
   function renameRoom(onDone) {
@@ -586,8 +627,9 @@ window.FF = window.FF || {};
       if (!self._roomSettings) {
         self._roomSettings = {
           difficulty: (FF.Settings && FF.Settings.get('difficulty')) || 'normal',
-          length: (FF.Settings && FF.Settings.get('length')) || 'normal',
-          timer: FF.Settings ? FF.Settings.get('timer') : 20
+          timer: FF.Settings ? FF.Settings.get('timer') : 20,
+          questions: 0,   // 0 = the game's usual number
+          clock: 0        // seconds; 0 = no game clock
         };
       }
       var rs = self._roomSettings;
@@ -747,8 +789,36 @@ window.FF = window.FF || {};
           children.push(pickedCard(def, function () { self._pickingGame = true; FF.Audio.play('click'); render(); }));
           var opts = FF.ui.el('section', { class: 'settings-section', id: 'rm-settings' });
           opts.appendChild(settingRow(FF.t('difficulty', 'Difficulty'), segs([['Easy', 'easy'], ['Normal', 'normal'], ['Hard', 'hard']], 'difficulty', FF.t('difficulty', 'Difficulty'))));
-          opts.appendChild(settingRow(FF.t('gameLength', 'Game length'), segs([['Quick', 'quick'], ['Short', 'short'], ['Normal', 'normal'], ['Long', 'long']], 'length', FF.t('gameLength', 'Game length'))));
-          opts.appendChild(settingRow(FF.t('timeLimit', 'Time limit'), FF.SettingsUI.duration(rs.timer, function (v) { rs.timer = v; }, { allowOff: true })));
+          // How long the game runs: a number of questions, a game clock, or
+          // both (it ends at whichever comes first). Presets plus Custom.
+          var summary = FF.ui.el('p', { class: 'rm-length-summary', 'aria-live': 'polite' }, lengthSummary(rs));
+          var resum = function () { summary.textContent = lengthSummary(rs); };
+          opts.appendChild(settingRow(FF.t('timeToAnswer', 'Time to answer'), FF.SettingsUI.duration(rs.timer, function (v) { rs.timer = v; resum(); }, {
+            allowOff: true, alwaysCustom: true, label: FF.t('timeToAnswer', 'Time to answer'),
+            presets: [
+              { label: FF.t('noLimit', 'No limit'), value: 0 },
+              { label: '10s', value: 10 }, { label: '20s', value: 20 },
+              { label: '30s', value: 30 }, { label: '1m', value: 60 }
+            ]
+          })));
+          opts.appendChild(settingRow(FF.t('numQuestions', 'Number of questions'), FF.SettingsUI.count(rs.questions, function (v) { rs.questions = v; resum(); }, {
+            label: FF.t('numQuestions', 'Number of questions'), min: 1, max: 100,
+            unit: FF.t('questionsUnit', 'questions'), placeholder: 12,
+            presets: [
+              { label: FF.t('usual', 'Usual'), value: 0 },
+              { label: '5', value: 5 }, { label: '10', value: 10 },
+              { label: '15', value: 15 }, { label: '20', value: 20 }
+            ]
+          })));
+          opts.appendChild(settingRow(FF.t('gameClock', 'Game clock'), FF.SettingsUI.duration(rs.clock, function (v) { rs.clock = v; resum(); }, {
+            allowOff: true, alwaysCustom: true, label: FF.t('gameClock', 'Game clock'),
+            presets: [
+              { label: FF.t('off', 'Off'), value: 0 },
+              { label: '2m', value: 120 }, { label: '5m', value: 300 },
+              { label: '10m', value: 600 }, { label: '15m', value: 900 }
+            ]
+          })));
+          opts.appendChild(summary);
           children.push(FF.ui.el('h2', { class: 'rm-subtitle' }, FF.t('settingsForAll', 'Settings for everyone')));
           children.push(opts);
           children.push(FF.UI.button(def ? FF.t('startName', 'Start {name}', { name: def.name }) : FF.t('startGame', 'Start game'), {
@@ -758,8 +828,9 @@ window.FF = window.FF || {};
               FF.Audio.play('roundStart');
               FF.Room.startGame(chosen, {
                 difficulty: rs.difficulty,
-                length: rs.length,
-                timer: rs.timer
+                timer: rs.timer,
+                questions: rs.questions || 0,
+                clock: rs.clock || 0
               }).then(function () {
                 if (FF.Access) FF.Access.usePlay(chosen);   // the host's free play, for limited games
               }).catch(function (err) {
@@ -909,6 +980,7 @@ window.FF = window.FF || {};
           FF.ui.el('h1', { class: 'rm-count__game' }, def ? def.name : FF.t('getReady', 'Get ready')),
           num,
           FF.ui.div('rm-hint', FF.t('startsTogether', 'Everyone starts together at zero.')),
+          FF.ui.div('rm-hint', lengthSummary(meta.settings)),
           playerChips(FF.Room.presentPlayers(), s.uid)
         ]);
         wrap.classList.add('rm-count');
