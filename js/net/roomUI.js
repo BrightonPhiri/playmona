@@ -78,18 +78,19 @@ window.FF = window.FF || {};
 
     var ctrlRow = FF.ui.div('rm-row');
     if (!FF.Voice.isActive()) {
+      var joinVoice = function () {
+        joinBtn.disabled = true;
+        FF.Voice.join().then(function () {
+          FF.Audio.play('select');
+          renderFn();
+        }).catch(function (err) {
+          joinBtn.disabled = false;
+          // Mic blocked, missing or busy: show how to fix it here.
+          FF.MicHelp.handle(err, joinVoice);
+        });
+      };
       var joinBtn = FF.UI.button(FF.t('joinVoice', 'Join voice chat'), {
-        class: 'btn-primary', icon: 'mic',
-        onClick: function () {
-          joinBtn.disabled = true;
-          FF.Voice.join().then(function () {
-            FF.Audio.play('select');
-            renderFn();
-          }).catch(function (err) {
-            joinBtn.disabled = false;
-            FF.UI.toast((err && err.message) || FF.t('voiceFailed', 'Could not join voice chat.'), { type: 'error' });
-          });
-        }
+        class: 'btn-primary', icon: 'mic', onClick: joinVoice
       });
       ctrlRow.appendChild(joinBtn);
       vWrap.appendChild(ctrlRow);

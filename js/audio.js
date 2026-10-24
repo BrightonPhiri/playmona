@@ -133,11 +133,11 @@ window.FF = window.FF || {};
        Plays on a loop at the Music volume setting while someone is in the app, signed in or as a
        guest (FF.App calls startAppMusic / stopAppMusic). Browsers only allow
        sound after a tap: if the first try is refused, the next tap starts it.
-       It drops lower during a game or a voice chat, and pauses while the tab
-       is hidden. To add a song, put the file in assets/music/ and its path in
+       It drops lower during a game, stops while a voice chat is on (so
+       players hear each other), and pauses while the tab is hidden. To add a song, put the file in assets/music/ and its path in
        PLAYLIST; songs play in order and the list repeats. */
     PLAYLIST: ['assets/music/One_World_One_Game.mp3'],
-    DUCK_SHARE: 0.4,    // during a game or a voice chat, this share of the music volume
+    DUCK_SHARE: 0.4,    // during a game, this share of the music volume
     _music: null,       // { el, gain, target }
     _musicOn: false,    // the app is open
     _musicBlocked: false,
@@ -156,8 +156,10 @@ window.FF = window.FF || {};
 
     musicPlaying: function () { return !!(this._music && !this._music.el.paused); },
 
+    _inVoice: function () { return !!(FF.Voice && FF.Voice.isActive && FF.Voice.isActive()); },
+
     _playMusic: function () {
-      if (!this._musicOn || !this.musicEnabled || this._musicHidden || !this.PLAYLIST.length) return;
+      if (!this._musicOn || !this.musicEnabled || this._musicHidden || this._inVoice() || !this.PLAYLIST.length) return;
       var m = this._musicPlayer();
       if (!m) return;
       var self = this;
@@ -168,7 +170,7 @@ window.FF = window.FF || {};
       try { p = m.el.play(); } catch (e) { p = Promise.reject(e); }
       Promise.resolve(p).then(function () {
         self._musicBlocked = false;
-        if (!self._musicOn || !self.musicEnabled || self._musicHidden) { m.el.pause(); return; }
+        if (!self._musicOn || !self.musicEnabled || self._musicHidden || self._inVoice()) { m.el.pause(); return; }
         self._fadeMusic(self._musicTarget(), 2);
       }, function (e) {
         // Refused for want of a tap: try again on the next one. Other errors
@@ -185,10 +187,9 @@ window.FF = window.FF || {};
       this._fadeMusic(0, fast ? 0.15 : 0.6, function () { m.el.pause(); });
     },
 
-    // Quieter during a game or a voice chat; back up on the menus.
+    // Quieter during a game; back up on the menus.
     _musicTarget: function () {
-      var duck = document.body.classList.contains('game-active') ||
-        !!(FF.Voice && FF.Voice.isActive && FF.Voice.isActive());
+      var duck = document.body.classList.contains('game-active');
       return (duck ? this.DUCK_SHARE : 1) * this.musicVolume;
     },
 
@@ -284,7 +285,16 @@ window.FF = window.FF || {};
         new MutationObserver(function () { self._duckMusic(); })
           .observe(document.body, { attributes: true, attributeFilter: ['class'] });
       }
-      if (FF.Voice && FF.Voice.on) FF.Voice.on('change', function () { self._duckMusic(); });
+      // Joining voice chat stops the music; leaving it brings the music back.
+      if (FF.Voice && FF.Voice.on) {
+        var wasInVoice = self._inVoice();
+        FF.Voice.on('change', function (s) {
+          var inVoice = !!(s && s.active);
+          if (inVoice === wasInVoice) return;
+          wasInVoice = inVoice;
+          if (inVoice) self._pauseMusic(); else self._playMusic();
+        });
+      }
       document.addEventListener('visibilitychange', function () {
         self._musicHidden = document.hidden;
         if (document.hidden) self._pauseMusic(true); else self._playMusic();

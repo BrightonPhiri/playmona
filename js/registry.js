@@ -212,11 +212,14 @@ window.FF = window.FF || {};
         voiceBtn.setAttribute('aria-label', label);
         voiceBtn.title = label;
       };
+      const joinVoice = function () {
+        FF.Voice.join().then(syncVoiceBtn).catch(function (e) {
+          FF.MicHelp.handle(e, joinVoice);
+        });
+      };
       voiceBtn.addEventListener('click', function () {
         if (!FF.Voice.isActive()) {
-          FF.Voice.join().then(syncVoiceBtn).catch(function (e) {
-            FF.UI.toast((e && e.message) || FF.t('micBlocked', 'Microphone access blocked.'), { type: 'error' });
-          });
+          joinVoice();
         } else {
           FF.Voice.toggleMute();
           syncVoiceBtn();

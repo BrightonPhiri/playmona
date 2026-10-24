@@ -141,13 +141,58 @@ window.FF = window.FF || {};
   }
 
   /* ---------------- WebRTC Peer Connection ---------------- */
+
+  /* Firebase saves only an object's own fields. A browser's RTCSessionDescription
+     keeps type and sdp on its prototype, so saving it as-is stored an offer with
+     no sdp: the other side could never answer and no audio flowed (the speaking
+     light still worked, because it travels through the room, not the call). */
+  function plainDesc(d) {
+    return d ? { type: d.type, sdp: d.sdp } : null;
+  }
+
+  // Remote voices play through <audio> elements kept in the page (iOS Safari is
+  // more reliable with attached elements than with detached ones).
+  function audioHost() {
+    var host = document.getElementById('ff-voice-audio');
+    if (!host) {
+      host = document.createElement('div');
+      host.id = 'ff-voice-audio';
+      host.hidden = true;
+      document.body.appendChild(host);
+    }
+    return host;
+  }
+
+  // If the browser refuses to start a voice without a tap, the next tap starts it.
+  var blockedAudio = [];
+  function playVoice(audio) {
+    var p;
+    try { p = audio.play(); } catch (e) { p = Promise.reject(e); }
+    Promise.resolve(p).catch(function (e) {
+      if (e && e.name === 'NotAllowedError' && blockedAudio.indexOf(audio) === -1) {
+        blockedAudio.push(audio);
+        document.addEventListener('pointerdown', retryBlockedAudio, true);
+        document.addEventListener('keydown', retryBlockedAudio, true);
+      }
+    });
+  }
+  function retryBlockedAudio() {
+    document.removeEventListener('pointerdown', retryBlockedAudio, true);
+    document.removeEventListener('keydown', retryBlockedAudio, true);
+    var list = blockedAudio;
+    blockedAudio = [];
+    list.forEach(function (a) { if (a.srcObject) playVoice(a); });
+  }
+
   function createPeer(targetUid, isOfferer) {
     if (state.peers[targetUid]) return state.peers[targetUid];
 
     var pc = new RTCPeerConnection({ iceServers: STUN_SERVERS });
-    var audio = new Audio();
+    var audio = document.createElement('audio');
     audio.autoplay = true;
+    audio.setAttribute('playsinline', '');
     audio.muted = state.deafened;
+    audioHost().appendChild(audio);
 
     var peerRecord = {
       pc: pc,
@@ -167,7 +212,7 @@ window.FF = window.FF || {};
     pc.ontrack = function (ev) {
       if (ev.streams && ev.streams[0]) {
         audio.srcObject = ev.streams[0];
-        audio.play().catch(function () {});
+        playVoice(audio);
       }
     };
 
@@ -190,7 +235,7 @@ window.FF = window.FF || {};
         .then(function () {
           sendSignal(targetUid, {
             type: 'offer',
-            sdp: pc.localDescription
+            sdp: plainDesc(pc.localDescription)
           });
         })
         .catch(function (e) {
@@ -205,7 +250,11 @@ window.FF = window.FF || {};
     var p = state.peers[uid];
     if (!p) return;
     try {
-      if (p.audio) { p.audio.srcObject = null; p.audio.pause(); }
+      if (p.audio) {
+        p.audio.pause();
+        p.audio.srcObject = null;
+        if (p.audio.parentNode) p.audio.parentNode.removeChild(p.audio);
+      }
       if (p.pc) { p.pc.close(); }
     } catch (e) {}
     delete state.peers[uid];
@@ -266,13 +315,18 @@ window.FF = window.FF || {};
     var myUid = getMyUid();
     if (!myUid || senderUid === myUid) return;
 
+    if ((data.type === 'offer' || data.type === 'answer') && !(data.sdp && data.sdp.sdp)) {
+      if (window.console) console.warn('[FF.Voice] Ignored an empty ' + data.type + ' from', senderUid);
+      return;
+    }
+
     if (data.type === 'offer') {
       var peer = createPeer(senderUid, false);
       peer.pc.setRemoteDescription(new RTCSessionDescription(data.sdp))
         .then(function () { flushCandidates(peer); return peer.pc.createAnswer(); })
         .then(function (answer) { return peer.pc.setLocalDescription(answer); })
         .then(function () {
-          sendSignal(senderUid, { type: 'answer', sdp: peer.pc.localDescription });
+          sendSignal(senderUid, { type: 'answer', sdp: plainDesc(peer.pc.localDescription) });
         })
         .catch(function (e) {
           if (window.console) console.error('[FF.Voice] Error handling offer:', e);
@@ -423,11 +477,18 @@ window.FF = window.FF || {};
         return state;
       }).catch(function (err) {
         state.active = false;
-        var msg = (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError')
-          ? FF.t('micBlocked', 'Microphone access blocked. Check browser permissions.')
-          : (err.message || 'Microphone could not be accessed.');
-        emit('error', new Error(msg));
-        throw new Error(msg);
+        var name = (err && err.name) || '';
+        var code = /NotAllowed|PermissionDenied|Security/.test(name) ? 'blocked'
+          : /NotFound|DevicesNotFound|Overconstrained/.test(name) ? 'nomic'
+          : /NotReadable|TrackStart|Abort/.test(name) ? 'busy' : 'other';
+        var msg = code === 'blocked' ? FF.t('micBlocked', 'Microphone access blocked. Check browser permissions.')
+          : code === 'nomic' ? FF.t('micNone', 'No microphone was found on this device.')
+          : code === 'busy' ? FF.t('micBusy', 'Another app is using the microphone.')
+          : ((err && err.message) || 'Microphone could not be accessed.');
+        var out = new Error(msg);
+        out.code = code;
+        emit('error', out);
+        throw out;
       });
     },
 
