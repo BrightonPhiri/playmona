@@ -193,7 +193,11 @@ window.FF = window.FF || {};
       this.resetLibrary();
       this.buildShell();
       if (!this._navReady) { FF.Nav.init(); this._navReady = true; }
+      // A refresh comes back to the page this tab was on (read before Home overwrites it).
+      // Links below (challenge, room invite, back from a payment) still win: they run after.
+      var last = this._lastView();
       this.render('home');
+      if (last) FF.Nav.go(last.view, last.params);
       if (FF.Plus) {
         FF.Plus.init();
         FF.Plus.handleReturn();   // back from a Linkwa checkout
@@ -514,6 +518,26 @@ window.FF = window.FF || {};
       this._syncNav();
     },
 
+    /* The page this tab is on, kept for a refresh. sessionStorage is per tab and
+       survives a reload, so a new visit still opens on Home. */
+    _rememberView: function (view, params) {
+      try {
+        sessionStorage.setItem('playmona:lastView', JSON.stringify({ uid: this._uid, view: view, params: params || {} }));
+      } catch (e) {}
+    },
+
+    _lastView: function () {
+      this._mountExtraViews();   // Daily, Challenges and Plus pages live in other modules
+      try {
+        var last = JSON.parse(sessionStorage.getItem('playmona:lastView') || 'null');
+        if (!last || last.uid !== this._uid || typeof last.view !== 'string' || last.view === 'home') return null;
+        // A received challenge only lives in memory, so go to the challenges list instead.
+        if (last.view === 'challenge') return { view: 'challenges', params: {} };
+        if (!this.views[last.view]) return null;
+        return { view: last.view, params: (last.params && typeof last.params === 'object') ? last.params : {} };
+      } catch (e) { return null; }
+    },
+
     _navTo: function (view, params) {
       FF.Audio.play('select');
       FF.Nav.replace(view, params || {});
@@ -556,6 +580,7 @@ window.FF = window.FF || {};
       if (view === 'online' && !onlineEnabled()) view = 'home';
       this._currentView = view;
       this._currentParams = params;
+      this._rememberView(view, params);
       var main = this.root();
       if (!main) return;
       FF.ui.clear(main);
