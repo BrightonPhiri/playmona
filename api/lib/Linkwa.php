@@ -6,8 +6,11 @@ namespace PlayMona;
 /** What the payment code needs from Linkwa. The tests swap in a fake. */
 interface PaymentGateway
 {
-    /** Returns ['checkout_url' => ..., 'link_id' => ..., 'short_url' => ...]. */
-    public function createLink(array $order, string $name, string $returnUrl): array;
+    /**
+     * $imageUrl is a picture of what is being bought, shown on the checkout page.
+     * Returns ['checkout_url' => ..., 'link_id' => ..., 'short_url' => ...].
+     */
+    public function createLink(array $order, string $name, string $returnUrl, ?string $imageUrl = null): array;
 
     /** Returns Linkwa's status reply: status, amount, currency_code, short_url, payment_reference. */
     public function status(string $shortUrl, string $reference): array;
@@ -34,16 +37,18 @@ class Linkwa implements PaymentGateway
         private HttpClient $http = new HttpClient()
     ) {}
 
-    public function createLink(array $order, string $name, string $returnUrl): array
+    public function createLink(array $order, string $name, string $returnUrl, ?string $imageUrl = null): array
     {
-        $data = $this->call('POST', '/payment-links', [
+        $body = [
             'amount' => round($order['amount_cents'] / 100, 2),
             'currency_code' => $order['currency'],
             'payment_link_name' => $name,
             'description' => 'PlayMona order ' . $order['id'],
             'return_url' => $returnUrl,
             'stock' => 1,
-        ]);
+        ];
+        if ($imageUrl) $body['image_url'] = $imageUrl;
+        $data = $this->call('POST', '/payment-links', $body);
         // The sandbox replies with "product"; older docs say "payment_link".
         $link = $data['product'] ?? $data['payment_link'] ?? null;
         if (!is_array($link) || empty($link['checkout_url'])) {

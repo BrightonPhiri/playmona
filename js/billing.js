@@ -256,9 +256,11 @@ window.FF = window.FF || {};
     productName: function (id) {
       if (Billing._names[id]) return Billing._names[id];
       var known = {
+        plus_day: t('plusDayName', 'PlayMona Plus: 1 day'),
         plus_week: t('plusWeekName', 'PlayMona Plus: 1 week'),
         plus_month: t('plusMonthName', 'PlayMona Plus: 1 month'),
-        plus_year: t('plusYearName', 'PlayMona Plus: 1 year')
+        plus_year: t('plusYearName', 'PlayMona Plus: 1 year'),
+        plus_lifetime: t('plusLifetimeName', 'PlayMona Plus: lifetime')
       };
       return known[id] || (/^game_/.test(id) ? t('unlockGame', 'Unlock {game}', { game: id.slice(5) }) : id);
     },

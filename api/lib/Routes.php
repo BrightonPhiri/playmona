@@ -38,7 +38,13 @@ class App
         ));
     }
 
-    public function catalog(): Catalog { return $this->make('catalog', fn () => new Catalog((array) $this->config->get('premium_games', []))); }
+    public function catalog(): Catalog
+    {
+        return $this->make('catalog', fn () => new Catalog(
+            (array) $this->config->get('premium_games', []),
+            Catalog::loadPlanSettings($this->db())
+        ));
+    }
     public function store(): Store { return $this->make('store', fn () => new Store($this->db(), $this->rtdb())); }
     public function visits(): Visits { return $this->make('visits', fn () => new Visits($this->db())); }
     public function finance(): Finance { return $this->make('finance', fn () => new Finance($this->db())); }
@@ -75,7 +81,7 @@ class Routes
         $p = $req->path;
 
         if ($m === 'GET' && $p === '/health') return $this->health();
-        if ($m === 'GET' && $p === '/catalog') return Response::json(['items' => array_values($this->app->catalog()->all())]);
+        if ($m === 'GET' && $p === '/catalog') return $this->publicCatalog();
         if ($m === 'POST' && $p === '/checkout') return $this->checkout($req);
         if ($m === 'GET' && $p === '/checkout/return') return $this->checkoutReturn($req);
         if ($m === 'GET' && preg_match('#^/orders/([A-Za-z0-9_]+)$#', $p, $mm)) return $this->order($req, $mm[1]);
@@ -86,6 +92,8 @@ class Routes
         if ($m === 'GET' && $p === '/admin/access') return $this->adminAccess($req);
         if ($m === 'POST' && $p === '/admin/revoke') return $this->adminRevoke($req);
         if ($m === 'POST' && $p === '/admin/reset-own') return $this->adminResetOwn($req);
+        if ($m === 'GET' && $p === '/admin/plans') return $this->adminPlans($req);
+        if ($m === 'POST' && $p === '/admin/plans') return $this->adminSavePlan($req);
         if ($m === 'GET' && $p === '/admin/finance/summary') return $this->financeSummary($req);
         if ($m === 'GET' && $p === '/admin/finance/orders') return $this->financeOrders($req);
         if ($m === 'POST' && $p === '/visit') return $this->visit($req);
@@ -112,6 +120,42 @@ class Routes
         $user = $this->user($req);
         if ($this->app->rtdb()->get('admins/' . $user->uid) !== true) throw new HttpError(403, 'Admins only.', 'not-admin');
         return $user;
+    }
+
+    /** What is on sale, for the Plus page. Pictures as full addresses so they work anywhere. */
+    private function publicCatalog(): Response
+    {
+        $site = (string) $this->app->config->require('site_url');
+        $items = [];
+        foreach ($this->app->catalog()->forSale() as $item) {
+            unset($item['customImage'], $item['defaultCents'], $item['enabled']);
+            $item['imageUrl'] = Catalog::imageUrl($item['image'] ?? null, $site);
+            $items[] = $item;
+        }
+        return Response::json(['items' => $items]);
+    }
+
+    /** Every Plus plan, on sale or not, for the admin portal. */
+    private function adminPlans(Request $req): Response
+    {
+        $this->admin($req);
+        $site = (string) $this->app->config->require('site_url');
+        $plans = [];
+        foreach ($this->app->catalog()->all() as $item) {
+            if ($item['kind'] !== 'plus') continue;
+            $item['imageUrl'] = Catalog::imageUrl($item['image'], $site);
+            $plans[] = $item;
+        }
+        return Response::json(['plans' => $plans, 'minCents' => Catalog::MIN_CENTS, 'maxCents' => Catalog::MAX_CENTS]);
+    }
+
+    private function adminSavePlan(Request $req): Response
+    {
+        $admin = $this->admin($req);
+        $body = $req->json();
+        $change = array_intersect_key($body, array_flip(['cents', 'enabled', 'best', 'image']));
+        $this->app->catalog()->savePlan($this->app->db(), (string) ($body['id'] ?? ''), $change, $admin->uid);
+        return $this->adminPlans($req);
     }
 
     private function checkout(Request $req): Response

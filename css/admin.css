@@ -203,3 +203,16 @@
 .admin-share__bar { display: block; height: 100%; background: var(--chart-1); border-radius: 4px; }
 .admin-share__pct { font-variant-numeric: tabular-nums; font-size: var(--fs-xs); font-weight: 700; color: var(--muted); min-width: 2.5em; text-align: right; }
 .admin-mono { font-family: ui-monospace, Consolas, monospace; font-size: var(--fs-xs); }
+
+/* Finances > Plus plans */
+.plan-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.plan-row { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-2) 0; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.plan-row:last-child { border-bottom: 0; }
+.plan-row__img { width: 56px; height: 56px; border-radius: var(--r-sm); object-fit: cover; background: var(--surface-3); flex: none; }
+.plan-row__img.is-broken { visibility: hidden; }
+.plan-row__text { display: flex; flex-direction: column; flex: 1 1 12rem; min-width: 0; }
+.plan-row__text span { color: var(--muted); font-size: var(--fs-sm); }
+.plan-row.is-off .plan-row__img { opacity: 0.45; }
+.plan-row.is-off .plan-row__text strong { color: var(--muted); }
+.plan-edit { display: flex; flex-direction: column; gap: var(--sp-4); }
+.plan-edit__preview { width: 160px; height: 160px; border-radius: var(--r-md); object-fit: cover; background: var(--surface-3); }

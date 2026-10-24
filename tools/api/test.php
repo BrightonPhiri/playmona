@@ -63,11 +63,11 @@ class FakeGateway implements PaymentGateway
     public bool $down = false;
     private int $n = 0;
 
-    public function createLink(array $order, string $name, string $returnUrl): array
+    public function createLink(array $order, string $name, string $returnUrl, ?string $imageUrl = null): array
     {
         if ($this->down) throw new RuntimeException('gateway down');
         $this->n++;
-        $this->links['link' . $this->n] = $order + ['return' => $returnUrl, 'name' => $name];
+        $this->links['link' . $this->n] = $order + ['return' => $returnUrl, 'name' => $name, 'image' => $imageUrl];
         return ['checkout_url' => 'https://sandbox.test/pay/s' . $this->n, 'link_id' => 'link' . $this->n, 'short_url' => 's' . $this->n];
     }
 
@@ -90,10 +90,15 @@ class FakeGateway implements PaymentGateway
 }
 
 /* ---------- a test world ---------- */
-function world(): array
+function world(bool $oldPrices = true): array
 {
     $db = new Db('sqlite::memory:');
     $db->migrate();
+    // Most tests were written when a week was $1 and a month $3, so those prices are
+    // saved the way an admin would save them (this also covers reading saved prices).
+    if ($oldPrices) {
+        $db->run("INSERT INTO settings (name, value, updated_at) VALUES ('plans', ?, 0)", [json_encode(['plus_week' => ['cents' => 100], 'plus_month' => ['cents' => 300]])]);
+    }
     $rtdb = new MemoryRtdb();
     $gateway = new FakeGateway();
     $config = new Config([
@@ -314,7 +319,8 @@ test('health, catalog and 404', function () {
     $r = world()['routes'];
     eq(200, $r->handle(req('GET', '/health'))->status);
     $items = $r->handle(req('GET', '/catalog'))->body['items'];
-    eq(['plus_week', 'plus_month', 'plus_year', 'game_imposter'], array_column($items, 'id'));
+    eq(['plus_day', 'plus_week', 'plus_month', 'plus_year', 'plus_lifetime', 'game_imposter'], array_column($items, 'id'));
+    eq('https://playmona.test/assets/images/plus/plus_day.jpg', $items[0]['imageUrl']);
     eq(404, $r->handle(req('GET', '/nope'))->status);
 });
 test('checkout needs a sign-in; works with one', function () {
@@ -627,6 +633,76 @@ test('finances count live money only, and the order list filters and searches', 
     $none = $w['routes']->handle(req('GET', '/admin/finance/orders', ['token' => idToken(), 'query' => ['mode' => 'live', 'q' => '100%_!']]))->body;
     eq(0, $none['total']);
     eq(403, $w['routes']->handle(req('GET', '/admin/finance/summary', ['token' => idToken(['sub' => 'mallory'])]))->status);
+});
+
+echo "\nPlus plans\n";
+
+test('five plans at the standard prices, lifetime is 100 years and the year is best value', function () {
+    $items = (new Catalog())->all();
+    eq(['plus_day' => 99, 'plus_week' => 299, 'plus_month' => 499, 'plus_year' => 4999, 'plus_lifetime' => 9999], array_map(fn ($i) => $i['cents'], $items));
+    eq(Catalog::LIFETIME_DAYS, $items['plus_lifetime']['days']);
+    eq(true, $items['plus_lifetime']['lifetime']);
+    eq(true, $items['plus_year']['best']);
+    eq('/assets/images/plus/plus_week.jpg', $items['plus_week']['image']);
+});
+test('checkout sends the plan picture to Linkwa as a full address', function () use ($alice) {
+    $w = world(false);
+    $w['pay']->checkout($alice, 'plus_month');
+    eq('https://playmona.test/assets/images/plus/plus_month.jpg', $w['gw']->links['link1']['image']);
+    eq(499, $w['gw']->links['link1']['amount_cents']);
+    $w['pay']->checkout($alice, 'game_imposter');
+    eq(null, $w['gw']->links['link2']['image'], 'no picture set for the game');
+});
+test('admins change prices, take plans off sale and change pictures; others cannot', function () use ($alice) {
+    $w = world(false);
+    $r = $w['routes'];
+    $save = fn (array $body, string $sub = 'user1') => $r->handle(req('POST', '/admin/plans', ['token' => idToken(['sub' => $sub]), 'json' => $body]));
+    eq(403, $save(['id' => 'plus_week', 'cents' => 1])->status);
+    eq(403, $r->handle(req('GET', '/admin/plans', ['token' => idToken()]))->status);
+    $w['rtdb']->data['admins/user1'] = true;
+
+    $res = $save(['id' => 'plus_week', 'cents' => 349]);
+    eq(200, $res->status);
+    eq(349, $res->body['plans'][1]['cents']);
+    eq(5, count($res->body['plans']));
+    foreach ([['cents' => 5], ['cents' => 100001], ['cents' => 'abc'], ['cents' => 2.5]] as $bad) eq(400, $save(['id' => 'plus_week'] + $bad)->status);
+    eq(404, $save(['id' => 'plus_forever', 'cents' => 100])->status);
+
+    // A fresh request (new App) sees the saved price, and checkout charges it.
+    $w2 = ['app' => new App($w['app']->config, ['db' => $w['db'], 'rtdb' => $w['rtdb'], 'gateway' => $w['gw'], 'auth' => $w['app']->auth()])];
+    eq(349, $w2['app']->catalog()->find('plus_week')['cents']);
+    $o = $w2['app']->payments()->checkout($alice, 'plus_week');
+    eq(349, (int) $w2['app']->payments()->order($o['order'])['amount_cents']);
+
+    // Off sale: hidden from the Plus page and cannot be bought, but still known for old orders.
+    eq(200, $save(['id' => 'plus_day', 'enabled' => false])->status);
+    $fresh = new Routes(new App($w['app']->config, ['db' => $w['db'], 'rtdb' => $w['rtdb'], 'gateway' => $w['gw'], 'auth' => $w['app']->auth()]));
+    $ids = array_column($fresh->handle(req('GET', '/catalog'))->body['items'], 'id');
+    eq(false, in_array('plus_day', $ids, true));
+    eq(404, $fresh->handle(req('POST', '/checkout', ['token' => idToken(), 'json' => ['product' => 'plus_day']]))->status);
+    eq('PlayMona Plus: 1 day', $w['app']->catalog()->find('plus_day')['name']);
+
+    // Pictures: site files or https only; empty puts the standard one back.
+    eq(400, $save(['id' => 'plus_year', 'image' => 'javascript:alert(1)'])->status);
+    eq(400, $save(['id' => 'plus_year', 'image' => '/assets/../api/config.php'])->status);
+    eq(400, $save(['id' => 'plus_year', 'image' => 'http://example.com/a.jpg'])->status);
+    $res = $save(['id' => 'plus_year', 'image' => 'https://cdn.example.com/plans/year.png', 'best' => false]);
+    eq('https://cdn.example.com/plans/year.png', $res->body['plans'][3]['imageUrl']);
+    eq(false, $res->body['plans'][3]['best']);
+    eq(true, $res->body['plans'][3]['customImage']);
+    $res = $save(['id' => 'plus_year', 'image' => '']);
+    eq('https://playmona.test/assets/images/plus/plus_year.jpg', $res->body['plans'][3]['imageUrl']);
+    eq(349, $res->body['plans'][1]['cents'], 'other plans keep their changes');
+});
+test('lifetime Plus lasts 100 years and says so on the invoice', function () use ($alice) {
+    $w = world(false);
+    $order = buy($w, $alice, 'plus_lifetime');
+    $years = ($w['store']->get('alice')['plusUntil'] - PlayMona\nowMs()) / 86400000 / 365;
+    eq(true, $years > 99.9, 'about 100 years, got ' . $years);
+    $inv = PlayMona\Invoice::data($order, $w['app']->catalog()->find('plus_lifetime'), []);
+    eq('PlayMona Plus: lifetime', $inv['lines'][0]['description']);
+    eq(true, str_contains($inv['lines'][0]['detail'], 'for life'));
+    eq(9999, $inv['totalCents']);
 });
 
 echo "\n" . ($GLOBALS['count'] - $GLOBALS['failures']) . '/' . $GLOBALS['count'] . " passed\n";

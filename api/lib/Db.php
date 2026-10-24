@@ -129,6 +129,12 @@ class Db
             name VARCHAR(32) NOT NULL PRIMARY KEY,
             value INTEGER NOT NULL
         )$engine");
+        // Settings admins change in the portal (Plus plan prices), as JSON.
+        $this->pdo->exec("CREATE TABLE IF NOT EXISTS settings (
+            name VARCHAR(40) NOT NULL PRIMARY KEY,
+            value TEXT NOT NULL,
+            updated_at BIGINT NOT NULL
+        )$engine");
         // Columns added after the first release. Each fails harmlessly once it exists.
         foreach ([
             'ALTER TABLE orders ADD COLUMN mode VARCHAR(8) NULL',

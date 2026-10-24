@@ -32,7 +32,7 @@ class Payments
     {
         if ($user->isAnonymous()) throw new HttpError(403, 'Create a free account to buy.', 'needs-account');
         $product = $this->catalog->find($productId);
-        if (!$product) throw new HttpError(404, 'That item is not for sale.', 'no-product');
+        if (!$product || !$product['enabled']) throw new HttpError(404, 'That item is not for sale.', 'no-product');
 
         $recent = $this->db->one('SELECT COUNT(*) AS n FROM orders WHERE uid = ? AND created_at > ?', [$user->uid, nowMs() - 3600000]);
         if ((int) $recent['n'] >= self::MAX_ORDERS_PER_HOUR) {
@@ -60,7 +60,7 @@ class Payments
 
         $returnUrl = rtrim($origin ?? $this->siteUrl, '/') . '/api/checkout/return?order=' . $order['id'];
         try {
-            $link = $this->gateway->createLink($order, $product['name'], $returnUrl);
+            $link = $this->gateway->createLink($order, $product['name'], $returnUrl, Catalog::imageUrl($product['image'] ?? null, $this->siteUrl));
         } catch (\Throwable $e) {
             $this->db->run("UPDATE orders SET status = 'failed', last_status = 'LINK_ERROR' WHERE id = ?", [$order['id']]);
             $this->log($order['id'], 'checkout', 'link-error', ['error' => $e->getMessage()]);

@@ -572,7 +572,7 @@ window.FF = window.FF || {};
         }));
         box.appendChild(maint);
 
-        var pay = card('Payments', 'PlayMona Plus and paid games, through Linkwa. Admins always see the Plus page, so you can test before turning this on.');
+        var pay = card('Payments', 'PlayMona Plus and paid games, through Linkwa. Admins always see the Plus page, so you can test before turning this on. Plan prices and pictures are on the Finances page.');
         pay.appendChild(FF.UI.switchRow({
           label: 'Show PlayMona Plus to players',
           description: 'Adds PlayMona Plus to every account menu. Turn on once live Linkwa payments are set up on the server.',

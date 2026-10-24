@@ -198,13 +198,24 @@
 .plus-status__text span, .plus-status__games { color: var(--muted); }
 .plus-status__games { margin: 0; }
 
-.plus-plans { display: grid; gap: var(--sp-3); grid-template-columns: 1fr; margin-bottom: var(--sp-4); }
-@media (min-width: 640px) { .plus-plans { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+/* Five plans: one per row on small phones, 2 on large phones, 3 + 2 on tablets, 5 across on wide screens. */
+.plus-plans { display: grid; gap: var(--sp-4) var(--sp-3); grid-template-columns: 1fr; margin-bottom: var(--sp-4); }
+@media (min-width: 440px) { .plus-plans { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 700px) { .plus-plans { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 1000px) {
+  .plus-plans { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .plus-plans .plus-plan { padding: var(--sp-4); }
+  .plus-plans .plus-plan__price { font-size: var(--fs-3xl); }
+}
 .plus-plan {
   position: relative; display: flex; flex-direction: column; gap: var(--sp-1); padding: var(--sp-5);
   border-radius: var(--r-lg); background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-1);
 }
 .plus-plan--best { border: 2px solid var(--accent); }
+.plus-plan__img {
+  display: block; width: 100%; height: auto; aspect-ratio: 1; object-fit: cover;
+  border-radius: var(--r-md); margin-bottom: var(--sp-2); background: var(--brand-navy);
+}
 .plus-plan__badge {
   position: absolute; top: calc(-1 * var(--sp-3)); right: var(--sp-4); padding: 4px 10px; border-radius: var(--r-pill);
   font-size: var(--fs-xs); font-weight: 800; background: var(--accent); color: var(--accent-text);
@@ -213,4 +224,12 @@
 .plus-plan__price { font-family: var(--font-display); font-size: var(--fs-4xl); font-weight: 600; line-height: 1.1; margin: 0; font-variant-numeric: tabular-nums; }
 .plus-plan__note { color: var(--muted); font-size: var(--fs-sm); margin: 0 0 var(--sp-3); }
 .plus-plan .btn { margin-top: auto; }
+@media (max-width: 439px) {
+  /* Small phones: picture on the left so five plans do not need a long scroll. */
+  .plus-plan { display: grid; grid-template-columns: 96px minmax(0, 1fr); column-gap: var(--sp-3); row-gap: 2px; align-items: center; padding: var(--sp-4); }
+  .plus-plan__img { grid-row: span 3; margin: 0; align-self: start; }
+  .plus-plan__price { font-size: var(--fs-3xl); }
+  .plus-plan__note { margin: 0; }
+  .plus-plan .btn { grid-column: 1 / -1; margin-top: var(--sp-3); }
+}
 .plus-admin-note { color: var(--muted); font-size: var(--fs-sm); text-align: center; }

@@ -23,8 +23,10 @@ class Invoice
     public static function data(array $order, ?array $product, array $seller, string $timezone = 'Africa/Harare'): array
     {
         $name = $product['name'] ?? $order['product'];
-        if (($product['kind'] ?? '') === 'plus') {
-            $detail = $product['days'] . ' days of PlayMona Plus. Paid once; it does not renew by itself.';
+        if (($product['kind'] ?? '') === 'plus' && !empty($product['lifetime'])) {
+            $detail = 'PlayMona Plus for life. Paid once; nothing more to pay.';
+        } elseif (($product['kind'] ?? '') === 'plus') {
+            $detail = $product['days'] . ($product['days'] === 1 ? ' day' : ' days') . ' of PlayMona Plus. Paid once; it does not renew by itself.';
         } elseif (($product['kind'] ?? '') === 'game') {
             $detail = 'Yours to keep on every device you sign in on.';
         } else {

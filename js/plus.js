@@ -116,12 +116,50 @@ window.FF = window.FF || {};
     } catch (e) { return new Date(ms).toDateString(); }
   }
 
-  // Prices are set on the server; these are only for drawing the page before it answers.
+  // Prices are set on the server (admins change them in the portal). These standard
+  // plans only draw the page until /api/catalog answers, or when it cannot.
+  var LIFETIME_DAYS = 36500;
   var PLANS = [
-    { id: 'plus_week', cents: 100, days: 7, label: function () { return t('plusWeek', '1 week'); } },
-    { id: 'plus_month', cents: 300, days: 30, label: function () { return t('plusMonth', '1 month'); } },
-    { id: 'plus_year', cents: 2500, days: 365, label: function () { return t('plusYear', '1 year'); }, best: true }
-  ];
+    { id: 'plus_day', cents: 99, days: 1 },
+    { id: 'plus_week', cents: 299, days: 7 },
+    { id: 'plus_month', cents: 499, days: 30 },
+    { id: 'plus_year', cents: 4999, days: 365, best: true },
+    { id: 'plus_lifetime', cents: 9999, days: LIFETIME_DAYS, lifetime: true }
+  ].map(function (p) { p.image = '/assets/images/plus/' + p.id + '.jpg'; return p; });
+
+  function planLabel(p) {
+    return {
+      plus_day: t('plusDay', '1 day'), plus_week: t('plusWeek', '1 week'), plus_month: t('plusMonth', '1 month'),
+      plus_year: t('plusYear', '1 year'), plus_lifetime: t('plusLifetime', 'Lifetime')
+    }[p.id] || p.label || p.name;
+  }
+
+  function planNote(p) {
+    if (p.lifetime) return t('plusForever', 'Pay once, keep it forever');
+    if (p.days <= 1) return t('plusOneDay', '24 hours of everything');
+    if (p.days <= 7) return t('plusOneOff', 'One payment');
+    return t('plusPerWeek', 'About {price} a week', { price: money(Math.round(p.cents / (p.days / 7))) });
+  }
+
+  // Plans on sale, from the server. Resolves with the standard plans if it cannot answer.
+  var catalogPromise = null;
+  function loadPlans() {
+    if (!catalogPromise) {
+      catalogPromise = fetch('/api/catalog', { cache: 'no-store' }).then(function (r) {
+        if (!r.ok) throw new Error('catalog ' + r.status);
+        return r.json();
+      }).then(function (data) {
+        var plans = (data.items || []).filter(function (it) { return it.kind === 'plus'; });
+        if (FF.Billing) {
+          var names = {};
+          (data.items || []).forEach(function (it) { names[it.id] = it.name; });
+          FF.Billing.setProductNames(names);
+        }
+        return plans;
+      }).catch(function () { catalogPromise = null; return PLANS; });
+    }
+    return catalogPromise;
+  }
 
   FF.Plus = {
     init: function () {
@@ -137,6 +175,8 @@ window.FF = window.FF || {};
 
     access: function () { return access; },
     hasPlus: function () { return access.plusUntil > Date.now(); },
+    // Lifetime Plus is stored as 100 years; anything past 50 years from now is "for life".
+    isLifetime: function () { return access.plusUntil > Date.now() + 50 * 365 * 86400000; },
     ownsGame: function (id) { return this.hasPlus() || !!access.games[id]; },
     isAdmin: function () { return isAdmin; },
 
@@ -244,7 +284,10 @@ window.FF = window.FF || {};
           var row = FF.ui.div('plus-status__row');
           row.appendChild(FF.Icons.icon(on ? 'check-circle' : 'crown', null, 'plus-status__icon' + (on ? ' is-on' : '')));
           var words = FF.ui.div('plus-status__text');
-          if (on) {
+          if (on && FF.Plus.isLifetime()) {
+            words.appendChild(FF.ui.el('strong', {}, t('plusLifetimeOn', 'Plus is yours for life')));
+            words.appendChild(FF.ui.el('span', {}, t('plusLifetimeSub', 'Nothing more to pay. Thank you for supporting PlayMona!')));
+          } else if (on) {
             var days = Math.ceil((access.plusUntil - Date.now()) / 86400000);
             words.appendChild(FF.ui.el('strong', {}, t('plusActive', 'Plus is on')));
             words.appendChild(FF.ui.el('span', {}, t('plusUntil', 'Until {date} ({n} days left). Buying again adds more time.', { date: dateText(access.plusUntil), n: days })));
@@ -264,24 +307,46 @@ window.FF = window.FF || {};
         drawStatus();
         off = FF.Plus.onChange(drawStatus);
 
-        // Plans
-        main.appendChild(FF.App.sectionHead(t('plusChoose', 'Choose your time')));
+        // Plans (hidden once the player has Plus for life: there is nothing more to buy)
+        var plansHead = FF.App.sectionHead(t('plusChoose', 'Choose your time'));
+        main.appendChild(plansHead);
         var grid = FF.ui.div('plus-plans');
-        PLANS.forEach(function (p) {
-          var card = FF.ui.el('section', { class: 'plus-plan' + (p.best ? ' plus-plan--best' : '') });
-          if (p.best) card.appendChild(FF.ui.span('plus-plan__badge', t('bestValue', 'Best value')));
-          card.appendChild(FF.ui.el('h2', { class: 'plus-plan__name' }, p.label()));
-          card.appendChild(FF.ui.el('p', { class: 'plus-plan__price' }, money(p.cents)));
-          var perWeek = Math.round(p.cents / (p.days / 7));
-          card.appendChild(FF.ui.el('p', { class: 'plus-plan__note' }, p.days === 7 ? t('plusOneOff', 'One payment') : t('plusPerWeek', 'About {price} a week', { price: money(perWeek) })));
-          var btn = FF.UI.button(t('buyFor', 'Buy for {price}', { price: money(p.cents) }), {
-            class: 'btn-primary btn-block',
-            onClick: function () { FF.Plus.buy(p.id, btn); }
-          });
-          card.appendChild(btn);
-          grid.appendChild(card);
-        });
         main.appendChild(grid);
+        function drawPlans(plans) {
+          FF.ui.clear(grid);
+          var life = FF.Plus.isLifetime();
+          plansHead.hidden = life;
+          grid.hidden = life;
+          plans.forEach(function (p) {
+            var card = FF.ui.el('section', { class: 'plus-plan' + (p.best ? ' plus-plan--best' : '') + (p.lifetime ? ' plus-plan--lifetime' : '') });
+            if (p.best) card.appendChild(FF.ui.span('plus-plan__badge', t('bestValue', 'Best value')));
+            if (p.imageUrl || p.image) {
+              var img = FF.ui.el('img', { class: 'plus-plan__img', src: p.imageUrl || p.image, alt: '', loading: 'lazy', decoding: 'async', width: 800, height: 800 });
+              img.addEventListener('error', function () { img.remove(); });
+              card.appendChild(img);
+            }
+            card.appendChild(FF.ui.el('h2', { class: 'plus-plan__name' }, planLabel(p)));
+            card.appendChild(FF.ui.el('p', { class: 'plus-plan__price' }, money(p.cents)));
+            card.appendChild(FF.ui.el('p', { class: 'plus-plan__note' }, planNote(p)));
+            var btn = FF.UI.button(t('buyFor', 'Buy for {price}', { price: money(p.cents) }), {
+              class: 'btn-primary btn-block',
+              onClick: function () { FF.Plus.buy(p.id, btn); }
+            });
+            card.appendChild(btn);
+            grid.appendChild(card);
+          });
+        }
+        var shownPlans = PLANS;
+        drawPlans(shownPlans);
+        loadPlans().then(function (plans) {
+          if (!grid.isConnected || plans === PLANS) return;
+          shownPlans = plans;
+          drawPlans(plans);
+        });
+        var offPlans = FF.Plus.onChange(function () {
+          if (!grid.isConnected) { offPlans(); return; }
+          if (grid.hidden !== FF.Plus.isLifetime()) drawPlans(shownPlans);
+        });
 
         // How paying works
         var how = FF.ui.el('section', { class: 'social-card' });

@@ -35,7 +35,7 @@ class Store
     {
         if ($grant['kind'] === 'plus') {
             $days = (int) $grant['days'];
-            if ($days < 1 || $days > 3660) throw new HttpError(400, 'Days must be between 1 and 3660.', 'bad-days');
+            if ($days < 1 || $days > Catalog::LIFETIME_DAYS) throw new HttpError(400, 'Days must be between 1 and ' . Catalog::LIFETIME_DAYS . ' (lifetime).', 'bad-days');
         } elseif ($grant['kind'] !== 'game' || !preg_match('/^[A-Za-z0-9_-]{1,40}$/', (string) ($grant['game'] ?? ''))) {
             throw new \InvalidArgumentException('Unknown grant kind.');
         }

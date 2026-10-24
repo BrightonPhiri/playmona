@@ -1,7 +1,8 @@
 /* ============================================================
    PLAYMONA — admin/finance.js
    - The Finances page: money taken through Linkwa, with test
-     (sandbox) payments kept apart from real ones, and every order.
+     (sandbox) payments kept apart from real ones, every order, and
+     the Plus plans (price, on sale, best value badge, picture).
    - The Premium window (from Players or an order): give Plus or a
      game, remove what an admin gave, and on your own account
      remove everything so payments can be tested again.
@@ -18,6 +19,10 @@ window.FF = window.FF || {};
   function el(tag, attrs, kids) { return FF.ui.el(tag, attrs, kids); }
 
   var state = { mode: 'live', status: 'all', q: '', page: 1 };
+  var LIFETIME_MS = 50 * 365 * 86400000;   // Plus past this is lifetime (stored as 100 years)
+
+  function isLifetimeUntil(ms) { return ms > Date.now() + LIFETIME_MS; }
+  function plusDaysText(days) { return days >= 36500 ? 'Plus: lifetime' : 'Plus: ' + days + (days === 1 ? ' day' : ' days'); }
   var premiumGames = null;   // from /api/catalog
 
   function head(title, sub, actions) {
@@ -135,6 +140,8 @@ window.FF = window.FF || {};
       top.appendChild(prod);
     }).catch(function (e) { failed(top, e); });
 
+    main.appendChild(plansCard());
+
     // Orders
     var ordersCard = K().card('Orders', 'Every checkout. Open one to see its invoice.');
     var tools = el('div', { class: 'admin-tools' });
@@ -202,6 +209,99 @@ window.FF = window.FF || {};
     list();
   }
 
+  /* ================= Plus plans ================= */
+  function plansCard() {
+    var card = K().card('Plus plans', 'What players can buy on the Plus page. A new price applies to the next checkout. The picture also shows on Linkwa\'s payment page.');
+    var box = el('div', {});
+    card.appendChild(box);
+    function draw(data) {
+      FF.ui.clear(box);
+      var list = el('ul', { class: 'plan-list' });
+      data.plans.forEach(function (p) {
+        var li = el('li', { class: 'plan-row' + (p.enabled ? '' : ' is-off') });
+        var img = el('img', { class: 'plan-row__img', src: p.imageUrl, alt: '', loading: 'lazy', width: 56, height: 56 });
+        img.addEventListener('error', function () { img.classList.add('is-broken'); });
+        li.appendChild(img);
+        var w = el('div', { class: 'plan-row__text' });
+        w.appendChild(el('strong', {}, p.label + ' · ' + B().money(p.cents)));
+        var bits = [p.lifetime ? 'Never runs out' : p.days + (p.days === 1 ? ' day' : ' days')];
+        if (p.cents !== p.defaultCents) bits.push('standard price ' + B().money(p.defaultCents));
+        if (p.customImage) bits.push('own picture');
+        w.appendChild(el('span', {}, bits.join(' · ')));
+        li.appendChild(w);
+        var badges = el('span', { class: 'bill-badges' });
+        badges.appendChild(el('span', { class: 'bill-badge ' + (p.enabled ? 'bill-badge--paid' : 'bill-badge--test') }, p.enabled ? 'On sale' : 'Off sale'));
+        if (p.best) badges.appendChild(el('span', { class: 'bill-badge bill-badge--pending' }, 'Best value'));
+        li.appendChild(badges);
+        li.appendChild(FF.UI.button('Edit', { class: 'btn-sm btn-ghost', icon: 'pencil', onClick: function () { editPlan(p, data, draw); } }));
+        list.appendChild(li);
+      });
+      box.appendChild(list);
+    }
+    K().loading(box);
+    B().api('GET', '/admin/plans').then(draw).catch(function (e) { failed(box, e); });
+    return card;
+  }
+
+  /* The edit window for one plan: price, on sale, best value badge and picture. */
+  function editPlan(p, data, redraw) {
+    var form = { enabled: p.enabled, best: p.best };
+    var body = el('div', { class: 'admin-detail plan-edit' });
+
+    var priceId = 'plan-price-' + p.id;
+    var price = el('input', { class: 'input field__input', id: priceId, type: 'number', inputmode: 'decimal', step: '0.01',
+      min: (data.minCents / 100).toFixed(2), max: (data.maxCents / 100).toFixed(2), value: (p.cents / 100).toFixed(2) });
+    body.appendChild(el('div', { class: 'field' }, [
+      el('label', { class: 'field__label', for: priceId }, 'Price in US dollars'),
+      price,
+      el('span', { class: 'field__hint' }, 'Standard price ' + B().money(p.defaultCents) + '. Players who already started paying keep the price they saw.')
+    ]));
+
+    body.appendChild(FF.UI.switchRow({
+      label: 'On sale', description: 'Off hides this plan from the Plus page. Past payments and invoices are not affected.',
+      checked: form.enabled, onChange: function (on) { form.enabled = on; }
+    }));
+    body.appendChild(FF.UI.switchRow({
+      label: 'Best value badge', description: 'Highlights this plan on the Plus page.',
+      checked: form.best, onChange: function (on) { form.best = on; }
+    }));
+
+    var imgId = 'plan-img-' + p.id;
+    var preview = el('img', { class: 'plan-edit__preview', src: p.imageUrl, alt: 'Picture for ' + p.label, width: 160, height: 160 });
+    var image = el('input', { class: 'input field__input', id: imgId, type: 'text', spellcheck: 'false',
+      placeholder: '/assets/images/plus/' + p.id + '.jpg', value: p.customImage ? p.image : '' });
+    image.addEventListener('change', function () {
+      var v = image.value.trim();
+      preview.src = v || '/assets/images/plus/' + p.id + '.jpg';
+    });
+    body.appendChild(el('div', { class: 'field' }, [
+      el('label', { class: 'field__label', for: imgId }, 'Picture'),
+      preview,
+      image,
+      el('span', { class: 'field__hint' }, 'Leave empty for the standard picture. Otherwise a file on the site (/assets/…) or an https:// address ending in .jpg, .png or .webp. Square pictures work best.')
+    ]));
+
+    var dlg = FF.UI.dialog({
+      title: 'Edit plan: ' + p.label, body: body,
+      actions: [
+        { label: 'Save', icon: 'check', primary: true, keepOpen: true, onClick: function () {
+          var cents = Math.round(parseFloat(price.value) * 100);
+          if (!isFinite(cents) || cents < data.minCents || cents > data.maxCents) {
+            FF.UI.toast('Enter a price between ' + B().money(data.minCents) + ' and ' + B().money(data.maxCents) + '.', { type: 'error' });
+            price.focus();
+            return;
+          }
+          B().api('POST', '/admin/plans', { id: p.id, cents: cents, enabled: form.enabled, best: form.best, image: image.value.trim() }).then(function (fresh) {
+            FF.UI.toast('Saved', { type: 'success' });
+            dlg.close();
+            redraw(fresh);
+          }).catch(function (e) { FF.UI.toast(e.message, { type: 'error' }); });
+        } },
+        { label: 'Cancel' }
+      ]
+    });
+  }
+
   /* An order's details, its invoice and a link to the buyer's premium. */
   function openOrder(o) {
     var body = el('div', { class: 'admin-detail' });
@@ -253,13 +353,14 @@ window.FF = window.FF || {};
       FF.ui.clear(body);
       var a = info.access || {};
       var plusOn = a.plusUntil > Date.now();
+      var forLife = isLifetimeUntil(a.plusUntil);
 
       // What they have now
       var now = el('section', { class: 'admin-detail__section' });
       now.appendChild(el('h3', { class: 'admin-detail__title' }, 'What they have now'));
       var row = el('div', { class: 'prem-access' });
       row.appendChild(el('span', { class: 'bill-badge ' + (plusOn ? 'bill-badge--paid' : 'bill-badge--test') },
-        plusOn ? 'Plus until ' + B().date(a.plusUntil) : 'No Plus'));
+        forLife ? 'Plus for life' : plusOn ? 'Plus until ' + B().date(a.plusUntil) : 'No Plus'));
       Object.keys(a.games || {}).forEach(function (g) { row.appendChild(el('span', { class: 'bill-badge bill-badge--paid' }, K().gameName(g))); });
       now.appendChild(row);
       body.appendChild(now);
@@ -270,8 +371,9 @@ window.FF = window.FF || {};
       give.appendChild(el('p', { class: 'admin-card__sub' }, 'Plus time adds to what they already have. Write why, for example "Quiz night prize" or "Tester".'));
       var form = el('div', { class: 'prem-grant' });
       var whatOpts = [
-        { value: 'plus:7', label: 'Plus: 1 week' }, { value: 'plus:30', label: 'Plus: 1 month' },
-        { value: 'plus:365', label: 'Plus: 1 year' }, { value: 'plus:custom', label: 'Plus: other number of days' }
+        { value: 'plus:1', label: 'Plus: 1 day' }, { value: 'plus:7', label: 'Plus: 1 week' },
+        { value: 'plus:30', label: 'Plus: 1 month' }, { value: 'plus:365', label: 'Plus: 1 year' },
+        { value: 'plus:36500', label: 'Plus: lifetime' }, { value: 'plus:custom', label: 'Plus: other number of days' }
       ];
       (premiumGames || []).forEach(function (g) { whatOpts.push({ value: 'game:' + g.id, label: 'Unlock ' + g.name }); });
       var what = el('select', { class: 'input admin-select', 'aria-label': 'What to give' });
@@ -313,7 +415,7 @@ window.FF = window.FF || {};
         info.grants.forEach(function (g) {
           var li = el('li', { class: g.revokedAt ? 'is-revoked' : '' });
           var w = el('div', { class: 'prem-what' });
-          w.appendChild(el('strong', {}, g.kind === 'plus' ? 'Plus: ' + g.days + ' days' : 'Unlock ' + K().gameName(g.game)));
+          w.appendChild(el('strong', {}, g.kind === 'plus' ? plusDaysText(g.days) : 'Unlock ' + K().gameName(g.game)));
           var src = g.source === 'purchase' ? 'Paid' : 'Given by an admin';
           w.appendChild(el('span', {}, src + ' · ' + B().date(g.createdAt) + (g.note ? ' · ' + g.note : '') + (g.revokedAt ? ' · Removed ' + B().date(g.revokedAt) : '')));
           li.appendChild(w);
@@ -323,7 +425,7 @@ window.FF = window.FF || {};
                 title: 'Remove this premium?',
                 body: g.source === 'purchase'
                   ? 'This takes away premium you paid for on your own account, so you can test buying again. The payment stays in Finances.'
-                  : 'They lose ' + (g.kind === 'plus' ? 'these ' + g.days + ' days of Plus' : 'this game') + ' straight away.',
+                  : 'They lose ' + (g.kind === 'plus' ? (g.days >= 36500 ? 'lifetime Plus' : 'these ' + g.days + ' days of Plus') : 'this game') + ' straight away.',
                 confirmLabel: 'Remove', danger: true,
                 onConfirm: function () {
                   B().api('POST', '/admin/revoke', { grantId: g.id }).then(function (fresh) {
