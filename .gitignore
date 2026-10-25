@@ -23,3 +23,7 @@ uploads/
 
 # Full-quality song files; the app plays the smaller copies in assets/music/
 assets/music/originals/
+
+# Raw generated art (Codex PNGs, about 2.5 MB each). tools/process-game-art.py
+# writes the compressed copies the app ships into assets/images/.
+assets/playmona_assets/
