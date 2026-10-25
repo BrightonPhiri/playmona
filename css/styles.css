@@ -1233,3 +1233,37 @@ body.reader-open { overflow: hidden; }
 .reader__body .doc-summary { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); padding: var(--sp-2) var(--sp-5) var(--sp-4); margin-top: var(--sp-6); }
 .reader__body .doc-summary h2 { margin-top: var(--sp-3); font-size: var(--fs-lg); }
 .reader__body .btn { margin-top: var(--sp-4); }
+
+/* ============ Quick play picker ============ */
+.qp__lead { margin: 0; }
+.qp__picks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--sp-2); }
+.qp-pick {
+  display: flex; align-items: center; gap: var(--sp-3); width: 100%;
+  padding: var(--sp-2); text-align: left; color: var(--text);
+  background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-md);
+  transition: transform var(--dur) var(--ease), border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+.qp-pick:hover { border-color: var(--card-color, var(--accent)); box-shadow: var(--shadow-1); }
+.qp-pick:active { transform: scale(0.98); }
+.qp-pick:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+.qp-pick__art {
+  flex: none; width: 72px; aspect-ratio: 4 / 3; border-radius: var(--r-sm);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 1.6rem; color: rgba(255, 255, 255, 0.92);
+  background-color: var(--art-ink);
+  background-image: var(--art, none), var(--wash, linear-gradient(160deg, var(--card-color, var(--accent-vivid)) 0%, var(--art-ink) 100%));
+  background-size: cover; background-position: center;
+}
+.qp-pick__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.qp-pick__name { font-weight: 700; font-size: var(--fs-md); line-height: 1.25; }
+.qp-pick__meta { color: var(--muted); font-size: var(--fs-sm); }
+.qp__game { display: flex; align-items: center; gap: var(--sp-3); }
+.qp__game .qp-pick__art { width: 96px; }
+.qp__desc { margin: 0; }
+@media (min-width: 640px) {
+  .qp__picks { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--sp-3); }
+  .qp-pick { flex-direction: column; align-items: stretch; height: 100%; padding: 0; overflow: hidden; gap: 0; border-radius: var(--r-md); }
+  .qp-pick__art { width: 100%; border-radius: 0; font-size: 2.2rem; }
+  .qp-pick__text { padding: var(--sp-2) var(--sp-3) var(--sp-3); }
+  .qp-pick:hover { transform: translateY(-2px); }
+}

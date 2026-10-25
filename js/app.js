@@ -2272,11 +2272,103 @@ window.FF = window.FF || {};
     },
 
     /* ================= Quick play / demo ================= */
+    quickPlayPool: function () {
+      return FF.Games.all().filter(function (g) { return g.id !== 'drawingChallenge' && FF.Access.canPlay(g.id); });
+    },
+
+    // Five random games to choose from, then difficulty, length and timer.
     quickPlay: function () {
-      var pool = FF.Games.all().filter(function (g) { return g.id !== 'drawingChallenge' && FF.Access.canPlay(g.id); });
-      var def = FF.util.pick(pool);
-      FF.Audio.play('roundStart');
-      FF.GameFlow.launch(def.id, { skipIntro: true });
+      var pool = FF.App.quickPlayPool();
+      if (!pool.length) return;
+      var cfg = { difficulty: FF.Settings.get('difficulty'), length: FF.Settings.get('length'), timer: FF.Settings.get('timer') };
+      var picks = [];
+      var chosen = null;
+      var dlg = FF.UI.dialog({ title: t('quickPlay', 'Quick play'), wide: true, className: 'qp-dialog', body: FF.ui.div('qp') });
+      var root = dlg.body.firstChild;
+      var title = dlg.box.querySelector('.ff-dialog__title');
+
+      function deal() { picks = FF.util.shuffle(pool.slice()).slice(0, 5); }
+
+      function foot(buttons) {
+        var f = FF.ui.div('ff-dialog__actions');
+        buttons.forEach(function (b) { f.appendChild(b); });
+        return f;
+      }
+
+      function choose() {
+        chosen = null;
+        title.textContent = t('quickPlay', 'Quick play');
+        FF.ui.clear(root);
+        root.appendChild(FF.ui.el('p', { class: 'qp__lead' }, t('qpPickLead', 'Pick one of these five games.')));
+        var list = FF.ui.el('ul', { class: 'qp__picks' });
+        picks.forEach(function (def) {
+          var cat = FF.Categories.meta(def.category);
+          var li = FF.ui.el('li', {});
+          var b = FF.ui.el('button', {
+            type: 'button', class: 'qp-pick',
+            dataset: { game: def.id },
+            style: { '--card-color': cat.color, '--art': FF.Assets.artUrl('covers', def.id), '--wash': FF.Assets.wash(def.category) },
+            onclick: function () { FF.Audio.play('select'); chosen = def; configure(); }
+          });
+          var art = FF.ui.span('qp-pick__art');
+          if (!FF.Assets.has('covers', def.id)) art.appendChild(icon(FF.Icons.game[def.id] || cat.iconKey, def.icon));
+          b.appendChild(art);
+          var txt = FF.ui.span('qp-pick__text');
+          txt.appendChild(FF.ui.span('qp-pick__name', def.name));
+          txt.appendChild(FF.ui.span('qp-pick__meta', cat.name + ' · ' + t('minShort', '{n} min', { n: def.duration || 5 })));
+          b.appendChild(txt);
+          li.appendChild(b);
+          list.appendChild(li);
+        });
+        root.appendChild(list);
+        root.appendChild(foot([
+          FF.UI.button(t('qpShuffle', 'Show five others'), { icon: 'shuffle', onClick: function () { FF.Audio.play('click'); deal(); choose(); } })
+        ]));
+        if (FF.Nav.modality === 'keyboard') FF.Nav.focus(list.querySelector('button'));
+      }
+
+      function configure() {
+        var def = chosen;
+        var cat = FF.Categories.meta(def.category);
+        title.textContent = def.name;
+        FF.ui.clear(root);
+        var head = FF.ui.div('qp__game');
+        var art = FF.ui.span('qp-pick__art');
+        art.style.setProperty('--card-color', cat.color);
+        art.style.setProperty('--art', FF.Assets.artUrl('covers', def.id));
+        art.style.setProperty('--wash', FF.Assets.wash(def.category));
+        if (!FF.Assets.has('covers', def.id)) art.appendChild(icon(FF.Icons.game[def.id] || cat.iconKey, def.icon));
+        head.appendChild(art);
+        head.appendChild(FF.ui.el('p', { class: 'qp__desc' }, def.description));
+        root.appendChild(head);
+
+        root.appendChild(FF.UI.settingRow(t('difficulty', 'Difficulty'), FF.UI.segmented({
+          label: t('difficulty', 'Difficulty'), value: cfg.difficulty,
+          options: [{ label: t('easy', 'Easy'), value: 'easy' }, { label: t('normal', 'Normal'), value: 'normal' }, { label: t('hard', 'Hard'), value: 'hard' }],
+          onChange: function (v) { cfg.difficulty = v; }
+        })));
+        root.appendChild(FF.UI.settingRow(t('gameLength', 'Game length'), FF.UI.segmented({
+          label: t('gameLength', 'Game length'), value: cfg.length,
+          options: [{ label: t('lenQuick', 'Quick'), value: 'quick' }, { label: t('lenShort', 'Short'), value: 'short' }, { label: t('lenNormal', 'Normal'), value: 'normal' }, { label: t('lenLong', 'Long'), value: 'long' }],
+          onChange: function (v) { cfg.length = v; }
+        })));
+        root.appendChild(FF.UI.settingRow(t('timeLimit', 'Time limit'), FF.SettingsUI.duration(cfg.timer, function (s) { cfg.timer = s; }, { allowOff: true }), t('timeLimitDesc', 'Off means no countdown.')));
+
+        root.appendChild(foot([
+          FF.UI.button(t('qpOtherGame', 'Pick another game'), { icon: 'arrow-left', onClick: function () { FF.Audio.play('click'); choose(); } }),
+          FF.UI.button(t('play', 'Play'), { class: 'btn-primary', icon: 'play', onClick: function () {
+            FF.Settings.set('timer', cfg.timer);
+            dlg.close();
+            if (FF.Players.get().length < FF.Games.minPlayers(def)) FF.Players.ensureCount(FF.Games.minPlayers(def));
+            FF.Audio.play('roundStart');
+            FF.GameFlow.launch(def.id, { skipIntro: true, difficulty: cfg.difficulty, length: cfg.length, timer: cfg.timer });
+          } })
+        ]));
+        if (FF.Nav.modality === 'keyboard') FF.Nav.focusFirst(root);
+      }
+
+      deal();
+      choose();
     },
 
     quickRound: function () {
@@ -2297,7 +2389,11 @@ window.FF = window.FF || {};
       }));
       FF.UI.toast(t('demoStarted', 'Sample players are on. Starting a game…'));
       clearTimeout(this._demoTimer);
-      this._demoTimer = setTimeout(function () { if (FF.Players.isTemporary()) FF.App.quickPlay(); }, 700);
+      this._demoTimer = setTimeout(function () {
+        if (!FF.Players.isTemporary()) return;
+        FF.Audio.play('roundStart');
+        FF.GameFlow.launch(FF.util.pick(FF.App.quickPlayPool()).id, { skipIntro: true });
+      }, 700);
     },
 
     endDemo: function () {
