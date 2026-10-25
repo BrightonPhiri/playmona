@@ -1,0 +1,103 @@
+{
+  "game": "guessAnimal",
+  "prompts": "docs/art/guessAnimal-prompts.md",
+  "source": "assets/playmona_assets/guess-animal",
+  "ids": [
+    "lion",
+    "tiger",
+    "leopard",
+    "cheetah",
+    "snow-leopard",
+    "brown-bear",
+    "polar-bear",
+    "giant-panda",
+    "gorilla",
+    "chimpanzee",
+    "orangutan",
+    "ring-tailed-lemur",
+    "elephant",
+    "giraffe",
+    "zebra",
+    "hippopotamus",
+    "rhinoceros",
+    "meerkat",
+    "horse",
+    "cow",
+    "pig",
+    "sheep",
+    "goat",
+    "camel",
+    "wolf",
+    "fox",
+    "deer",
+    "raccoon",
+    "squirrel",
+    "hedgehog",
+    "sloth",
+    "otter",
+    "dog",
+    "cat",
+    "rabbit",
+    "kangaroo",
+    "koala",
+    "platypus",
+    "eagle",
+    "owl",
+    "parrot",
+    "penguin",
+    "flamingo",
+    "peacock",
+    "toucan",
+    "ostrich",
+    "hummingbird",
+    "crocodile",
+    "snake",
+    "turtle",
+    "chameleon",
+    "frog",
+    "shark",
+    "dolphin",
+    "whale",
+    "octopus",
+    "seal",
+    "jellyfish",
+    "clownfish",
+    "seahorse",
+    "butterfly",
+    "bee",
+    "ant",
+    "ladybug"
+  ],
+  "sets": [
+    {
+      "name": "photos",
+      "from": "photos/{id}.png",
+      "to": "assets/images/games/guessAnimal/{id}.webp",
+      "size": [
+        720,
+        720
+      ],
+      "max_kb": 110
+    },
+    {
+      "name": "closeups",
+      "from": "closeups/{id}.png",
+      "to": "assets/images/games/guessAnimal/{id}-closeup.webp",
+      "size": [
+        720,
+        720
+      ],
+      "max_kb": 110
+    }
+  ],
+  "focus": {},
+  "cover": {
+    "from": "cover.png",
+    "to": "assets/images/covers/guessAnimal.webp",
+    "size": [
+      1086,
+      1448
+    ],
+    "max_kb": 240
+  }
+}

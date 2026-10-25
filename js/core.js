@@ -251,6 +251,8 @@ window.FF = window.FF || {};
           return out;
         },
         remaining: function () { return pool.length; },
+        // The item next() will give, without taking it (null before a refill).
+        peek: function () { return pool.length ? pool[pool.length - 1] : null; },
         reset: refill
       };
     }

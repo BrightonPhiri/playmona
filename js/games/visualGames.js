@@ -64,10 +64,12 @@ window.FF = window.FF || {};
     container.appendChild(factBox);
 
     function showFact() {
+      if (opts.onReveal) FF.safe(opts.onReveal);
       FF.ui.clear(factBox);
       if (opts.factLines && opts.factLines.length) {
         factBox.appendChild(FF.Icons.icon('lightbulb'));
         var lines = FF.ui.div('ffv-fact__lines');
+        if (opts.factTag) lines.appendChild(FF.ui.span('ffv-fact__tag', opts.factTag));
         opts.factLines.forEach(function (line) {
           lines.appendChild(FF.ui.el('p', { class: 'ffv-fact-line' }, String(line).replace(/^💡\s*/, '')));
         });
@@ -282,6 +284,8 @@ window.FF = window.FF || {};
         correctName: q.correctName,
         options: q.options,
         factLines: q.factLines,
+        factTag: q.factTag,
+        onReveal: q.onReveal,
         onAnswer: function (correct) {
           if (answered) return;
           if (racing) {
@@ -299,6 +303,11 @@ window.FF = window.FF || {};
       });
 
       api.shell.root.appendChild(wrap);
+
+      // Fetch the next round's picture while this one is played.
+      if (spec.preload && roundIndex + 1 < rounds && bag.peek()) {
+        FF.safe(function () { spec.preload(bag.peek(), api.config.difficulty); });
+      }
 
       function openRound() {
         startTime = Date.now();
@@ -420,11 +429,70 @@ window.FF = window.FF || {};
     }
   });
 
-  /* ================= 3. Guess the Animal ================= */
+  /* ================= 3. Guess the Animal =================
+     Wildlife photos (js/data/animals.js). Difficulty changes the game:
+       easy    full photo, wrong answers from other kinds of animal
+       normal  full photo, two wrong answers that look alike
+       hard    a close-up and three lookalikes; the full photo is the reveal */
+  var ANIMAL_ART = 'assets/images/games/guessAnimal/';
+
+  function animalSrc(item, closeup) {
+    return ANIMAL_ART + item.id + (closeup ? '-closeup' : '') + '.webp';
+  }
+
+  function animalOptions(item, animals, difficulty) {
+    var near = (FF.data.animalNearGroups || {})[item.group] || [];
+    var others = animals.filter(function (a) { return a !== item; });
+    var same = others.filter(function (a) { return a.group === item.group; });
+    var close = others.filter(function (a) { return near.indexOf(a.group) !== -1; });
+    var far = others.filter(function (a) { return a.group !== item.group && near.indexOf(a.group) === -1; });
+    var alike = difficulty === 'hard' ? 3 : (difficulty === 'easy' ? 0 : 2);
+    var picks = FF.util.sample(same, alike);
+    if (picks.length < alike) picks = picks.concat(FF.util.sample(close, alike - picks.length));
+    var rest = (alike ? others : far).filter(function (a) { return picks.indexOf(a) === -1; });
+    picks = picks.concat(FF.util.sample(rest, 3 - picks.length));
+    return FF.util.shuffle([item.name].concat(picks.map(function (a) { return a.name; })));
+  }
+
+  // Read by tools/test/animalArt.test.js.
+  FF.AnimalGame = { src: animalSrc, options: animalOptions };
+
+  function preloadImage(src) {
+    var img = new Image();
+    img.decoding = 'async';
+    img.src = src;
+  }
+
+  // The photo in a frame that shimmers until it loads. On hard, the full
+  // photo waits underneath and fades in when the answer is shown.
+  function animalPhoto(api, item, closeup) {
+    var frame = FF.ui.div('ffv-photo' + (closeup ? ' ffv-photo--closeup' : ''));
+    function loaded(img) {
+      if (img.complete && img.naturalWidth) img.classList.add('is-loaded');
+      else img.addEventListener('load', function () { img.classList.add('is-loaded'); });
+    }
+    var main = api.assets.img({ src: animalSrc(item, closeup), alt: FF.t('pictureToGuess', 'Picture to guess'), cls: 'ffv-photo__img' });
+    main.decoding = 'async';
+    frame.appendChild(main);
+    loaded(main);
+    var full = null;
+    if (closeup) {
+      full = api.assets.img({ src: animalSrc(item, false), cls: 'ffv-photo__img ffv-photo__full' });
+      full.alt = '';
+      full.setAttribute('aria-hidden', 'true');
+      frame.appendChild(full);
+      loaded(full);
+    }
+    return {
+      el: frame,
+      reveal: function () { if (full) frame.classList.add('is-revealed'); }
+    };
+  }
+
   FF.registerGame({
     id: 'guessAnimal',
     name: 'Guess the Animal',
-    description: 'Name the animal from its picture.',
+    description: 'Name the animal from a wildlife photo.',
     category: 'visual',
     icon: '🐾',
     players: [1, 8],
@@ -434,30 +502,33 @@ window.FF = window.FF || {};
     modes: ['solo', 'turn', 'team'],
     defaultMode: 'turn',
     howToPlay: [
-      'Look at the animal illustration.',
-      'Choose which animal it is.',
-      'Correct answers earn points — be quick for a bonus!',
+      'Look at the wildlife photo.',
+      'Pick the right animal from four choices.',
+      'On hard you only see a close-up, and the choices look alike.',
+      'Answer within 3 seconds for a speed bonus.',
       'Most points wins.'
     ],
     start: function (api) {
-      var vis = getVisual();
-      var animals = vis ? vis.animals : null;
-      if (!animals || !animals.length) { showMissingData(api, 'animal'); return; }
-      var names = animals.map(function (a) { return a.name; });
+      var animals = (FF.data && FF.data.animals && FF.data.animals.length) ? FF.data.animals : null;
+      if (!animals) { showMissingData(api, 'animal'); return; }
       runVisualGame(api, {
         items: animals,
         rounds: ROUNDS,
-        build: function (item) {
-          var factLines = [];
-          if (item.category) factLines.push('' + item.category);
-          if (item.fact) factLines.push('' + item.fact);
+        preload: function (item, difficulty) {
+          preloadImage(animalSrc(item, difficulty === 'hard'));
+        },
+        build: function (item, difficulty) {
+          var closeup = difficulty === 'hard';
+          var photo = animalPhoto(api, item, closeup);
           return {
-            imageDOM: illustrationImage(api, item.svg, FF.t('pictureToGuess', 'Picture to guess')),
-            image: { svg: item.svg },
+            imageDOM: photo.el,
+            image: { src: animalSrc(item, closeup) },
             promptText: FF.t('whatAnimal', 'What animal is this?'),
             correctName: item.name,
-            options: makeOptions(item.name, names),
-            factLines: factLines
+            options: animalOptions(item, animals, difficulty),
+            factTag: FF.t('kind' + item.kind, item.kind),
+            factLines: [item.fact],
+            onReveal: photo.reveal
           };
         }
       });
