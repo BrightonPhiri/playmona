@@ -10,12 +10,12 @@ const { loadFF, test, assert, assertEqual } = require('./harness');
 const ROOT = path.join(__dirname, '..', '..');
 
 function load() {
-  const FF = loadFF(['js/core.js', 'js/data/memoryDecks.js']);
+  const FF = loadFF(['js/core.js', 'js/storage.js', 'js/data/memoryDecks.js']);
   const sb = FF.__sandbox;
   FF.registerGame = function () {};
-  // fitGrid is private to the game file; expose it for this test only.
+  // fitGrid and mmSurpriseDeck are private to the game file; expose them for this test only.
   const src = fs.readFileSync(path.join(ROOT, 'js/games/memoryGames.js'), 'utf8')
-    .replace(/\}\)\(\);\s*$/, 'FF.__fitGrid = fitGrid;\n})();');
+    .replace(/\}\)\(\);\s*$/, 'FF.__fitGrid = fitGrid;\nFF.__surpriseDeck = mmSurpriseDeck;\n})();');
   vm.runInContext(src, sb, { filename: 'memoryGames.js' });
   return FF;
 }
@@ -71,4 +71,17 @@ test('the board always fits the space it is given', function () {
       });
     });
   });
+});
+
+test('every board gets a surprise deck or the mix, never the same twice in a row', function () {
+  const FF = load();
+  const seen = {};
+  let last = null;
+  for (let i = 0; i < 400; i++) {
+    const id = FF.__surpriseDeck();
+    assert(id !== last, 'deck ' + JSON.stringify(id) + ' is not repeated');
+    seen[id] = true;
+    last = id;
+  }
+  assertEqual(Object.keys(seen).length, FF.MemoryDecks.length + 1, 'all 8 decks and the mix come up');
 });

@@ -86,7 +86,8 @@ window.FF = window.FF || {};
            render(item)  -> the node shown on the card's face
            label(item)   -> the name read out once the card is face up
            boards        -> how many boards to play (default 1)
-           colour        -> a colour token that tints the card faces */
+           theme()       -> { title, colour } for the board just dealt (optional):
+                            the title heads the board, the colour token tints the card faces */
   function runMatch(api, opts) {
     var root = api.shell.root;
     var scorers = scorersFor(api);
@@ -99,7 +100,6 @@ window.FF = window.FF || {};
     if (timed) FF.GameLength.manual();
 
     var wrap = api.ui.div('match-wrap');
-    if (opts.colour) wrap.style.setProperty('--deck', 'var(' + opts.colour + ')');
     var header = api.ui.div('match-header');
     var who = api.ui.div('match-who');
     var stats = api.ui.div('match-stats');
@@ -134,6 +134,7 @@ window.FF = window.FF || {};
     var turnIdx = 0;
     var ended = false;
     var toastTimer = null;
+    var theme = {};
 
     function currentScorer() { return scorers[turnIdx % scorers.length]; }
     function shown() { return wrap.isConnected; }
@@ -145,6 +146,7 @@ window.FF = window.FF || {};
       var boardText = boards > 1 && boards < (FF.GameLength ? FF.GameLength.UNBOUNDED : Infinity)
         ? FF.t('mmBoardOf', 'Board {n} of {total}', { n: boardNo, total: boards })
         : (boardNo > 1 ? FF.t('mmBoardN', 'Board {n}', { n: boardNo }) : null);
+      boardText = [theme.title, boardText].filter(Boolean).join(' · ') || null;
       if (many || racing) who.appendChild(FF.GameUI.turnBar(currentScorer(), boardText));
       else who.appendChild(FF.GameUI.pill(boardText || FF.t('mmFindPairs', 'Find the pairs'), 'cards', 'turn'));
       api.shell.updateScores(many ? currentScorer().id : undefined);
@@ -287,6 +289,9 @@ window.FF = window.FF || {};
     function deal() {
       boardNo++;
       items = opts.deal();
+      theme = (opts.theme && opts.theme()) || {};
+      if (theme.colour) wrap.style.setProperty('--deck', 'var(' + theme.colour + ')');
+      else wrap.style.removeProperty('--deck');
       matched = 0;
       first = -1;
       var order = [];
@@ -427,74 +432,34 @@ window.FF = window.FF || {};
     return FF.ui.span('match-emoji', card.emoji);
   }
 
-  /* Choose a deck before a local game. Tapping a deck starts it. */
-  function mmDeckPicker(api, onPick) {
-    var t = FF.t;
-    var root = api.shell.root;
-    FF.ui.clear(root);
-    api.shell.hideTimer();
-    if (FF.GameLength) FF.GameLength.pause();
+  /* A surprise deck for each board: one of the decks or a mix of them all
+     (''), never the same as the board before, even across games. */
+  function mmSurpriseDeck() {
     var last = FF.Storage.get(MM_DECK_KEY, null);   // null before the first game
-    var decks = FF.MemoryDecks || [];
-
-    var stage = FF.GameUI.stage({ wide: true, className: 'mm-pick' });
-    stage.appendChild(FF.GameUI.kicker(t('mmPickKicker', 'Memory Match')));
-    stage.appendChild(FF.GameUI.prompt(t('mmPickTitle', 'Pick a deck'), 'xl'));
-
-    var mixSample = [['animals', 10], ['food', 0], ['vehicles', 9]].map(function (x) {
-      var d = mmDeck(x[0]);
-      return d ? mmCard(d.cards[x[1]]) : null;
-    }).filter(Boolean);
-    var options = [{ id: '', name: t('mmMix', 'Mix it up'), sub: t('mmMixSub', 'A bit of everything'), colour: '--accent-vivid', sample: mixSample }];
-    decks.forEach(function (d) {
-      options.push({
-        id: d.id,
-        name: t('mmDeck_' + d.id, d.name),
-        sub: t('mmNCards', '{n} pictures', { n: d.cards.length }),
-        colour: d.colour,
-        sample: [d.cards[0], d.cards[2], d.cards[1]].map(mmCard)
-      });
-    });
-
-    var grid = FF.ui.el('div', { class: 'mm-decks', role: 'group', 'aria-label': t('mmDecks', 'Decks') });
-    options.forEach(function (o) {
-      var b = FF.ui.el('button', { type: 'button', class: 'mm-deck' + (o.id === last ? ' is-last' : '') });
-      b.style.setProperty('--deck', 'var(' + o.colour + ')');
-      var art = FF.ui.span('mm-deck__art');
-      art.setAttribute('aria-hidden', 'true');
-      o.sample.forEach(function (card) {
-        var s = FF.ui.span('mm-deck__card');
-        s.appendChild(mmFace(card));
-        art.appendChild(s);
-      });
-      b.appendChild(art);
-      var txt = FF.ui.span('mm-deck__text');
-      txt.appendChild(FF.ui.span('mm-deck__name', o.name));
-      txt.appendChild(FF.ui.span('mm-deck__sub', o.id === last ? t('mmLastPlayed', 'Last played') : o.sub));
-      b.appendChild(txt);
-      b.addEventListener('click', function () {
-        FF.Storage.set(MM_DECK_KEY, o.id);
-        if (FF.GameLength) FF.GameLength.resume();
-        FF.Audio.play('roundStart');
-        FF.ui.clear(root);
-        onPick(o.id);
-      });
-      grid.appendChild(b);
-    });
-    stage.appendChild(grid);
-    root.appendChild(stage);
-    FF.Nav.focusFirst(stage);
+    var ids = (FF.MemoryDecks || []).map(function (d) { return d.id; }).concat(['']);
+    var fresh = ids.filter(function (id) { return id !== last; });
+    var id = fresh[Math.floor(Math.random() * fresh.length)];
+    FF.Storage.set(MM_DECK_KEY, id);
+    return id;
   }
 
-  function mmPlay(api, deckId) {
+  function mmPlay(api) {
     var pairs = MM_PAIRS[api.config.difficulty] || MM_PAIRS.normal;
-    var deck = mmDeck(deckId);
     var timed = !!(FF.GameLength && FF.GameLength.timed(api.config));
+    var deck = null;
     runMatch(api, {
       // Longer games and a game clock deal fresh boards; Normal is one board.
       boards: timed ? FF.GameLength.UNBOUNDED : (FF.GameLength ? FF.GameLength.rounds(api, 1, 0) : 1),
-      colour: deck ? deck.colour : null,
-      deal: function () { return mmDeal(deckId, pairs); },
+      deal: function () {
+        var id = mmSurpriseDeck();
+        deck = mmDeck(id);
+        return mmDeal(id, pairs);
+      },
+      theme: function () {
+        return deck
+          ? { title: FF.t('mmDeck_' + deck.id, deck.name), colour: deck.colour }
+          : { title: FF.t('mmMix', 'A bit of everything') };
+      },
       render: mmFace,
       label: function (card) { return card.name; }
     });
@@ -506,7 +471,7 @@ window.FF = window.FF || {};
     name: 'Memory Match',
     // The wide banner shows the glowing pair of foxes in the middle of the cover.
     coverFocus: 'center 46%',
-    description: 'Pick a deck of cute pictures, flip the cards and find every pair.',
+    description: 'Flip cute pictures and find every pair. Which deck will you get?',
     category: 'memory',
     icon: '🃏',
     players: [1, 8],
@@ -516,15 +481,12 @@ window.FF = window.FF || {};
     modes: ['solo', 'turn'],
     defaultMode: 'turn',
     howToPlay: [
-      'Pick a deck: animals, food, characters and more, or mix them up.',
+      'Every board is a surprise deck: animals, food, characters and more, or a mix.',
       'Flip two cards. If they match, you score and go again.',
       'If not, they flip back and the next player goes.',
       'Find every pair to win. Hard mode has 30 cards.'
     ],
-    start: function (api) {
-      if (FF.Race && FF.Race.active && FF.Race.active()) { mmPlay(api, ''); return; }
-      mmDeckPicker(api, function (deckId) { mmPlay(api, deckId); });
-    }
+    start: function (api) { mmPlay(api); }
   });
 
   /* ============================================================

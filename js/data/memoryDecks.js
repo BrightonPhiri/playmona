@@ -5,7 +5,8 @@
    the sheets in tools/art/memoryMatch.json (docs/art/memoryMatch-prompts.md)
    by tools/cut-art-sheets.py. Until a picture exists the card shows
    its emoji, so ids must stay unique across all decks.
-   colour: a decoration colour token for the deck's tile.
+   Each board deals a surprise deck (or a mix); name heads the board
+   and colour (a decoration token) tints the card faces.
    ============================================================ */
 window.FF = window.FF || {};
 
