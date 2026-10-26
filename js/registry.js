@@ -461,6 +461,8 @@ window.FF = window.FF || {};
         FF.Access.explain(id);
         return;
       }
+      // Word games share the big word bank: start fetching it while the intro shows.
+      if (def.category === 'words' && FF.Words) FF.Words.load();
       const config = this.buildConfig(def, overrides);
       this.current = { def: def, config: config };
 

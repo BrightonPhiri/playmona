@@ -2,10 +2,14 @@
    Lists the optional artwork that actually exists so the app never
    requests a missing file (each miss was a 404 on every render).
    Run after adding or removing art:  node tools/gen-asset-manifest.js
+   Each entry is a short fingerprint of the file. The app adds it to the
+   image address, so a redrawn picture shows at once instead of waiting
+   out the 30-day image cache in browsers and Cloudflare.
 */
 'use strict';
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 const ROOT = path.join(__dirname, '..');
 const FOLDERS = ['covers', 'categories', 'ui'];
@@ -16,7 +20,8 @@ FOLDERS.forEach(function (folder) {
   out[folder] = {};
   if (!fs.existsSync(dir)) return;
   fs.readdirSync(dir).filter(function (f) { return /\.webp$/i.test(f); }).sort().forEach(function (f) {
-    out[folder][f.replace(/\.webp$/i, '')] = 1;
+    const hash = crypto.createHash('sha1').update(fs.readFileSync(path.join(dir, f))).digest('hex').slice(0, 8);
+    out[folder][f.replace(/\.webp$/i, '')] = hash;
   });
 });
 

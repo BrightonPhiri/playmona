@@ -2,36 +2,36 @@
 window.FF = window.FF || {};
 FF.AssetManifest = {
   "covers": {
-    "brainBattle": 1,
-    "familyQuiz": 1,
-    "guessAnimal": 1,
-    "guessWho": 1,
-    "letterRush": 1,
-    "miniCrossword": 1,
-    "pictureQuiz": 1,
-    "trueOrFalse": 1,
-    "wordChain": 1,
-    "wordScramble": 1
+    "brainBattle": "138a01ea",
+    "familyQuiz": "616e5f0e",
+    "guessAnimal": "ff4053a8",
+    "guessWho": "06291604",
+    "letterRush": "b0eb5db2",
+    "miniCrossword": "ca1c3143",
+    "pictureQuiz": "ccce77b0",
+    "trueOrFalse": "5e43f26f",
+    "wordChain": "89246988",
+    "wordScramble": "4a450fcf"
   },
   "categories": {
-    "cat-creative": 1,
-    "cat-memory": 1,
-    "cat-numbers": 1,
-    "cat-party": 1,
-    "cat-quiz": 1,
-    "cat-reaction": 1,
-    "cat-visual": 1,
-    "cat-words": 1,
-    "cat-world": 1
+    "cat-creative": "8d461eed",
+    "cat-memory": "6194eb0f",
+    "cat-numbers": "adba44a0",
+    "cat-party": "446b9905",
+    "cat-quiz": "8780879f",
+    "cat-reaction": "2c2e4c06",
+    "cat-visual": "7b318a28",
+    "cat-words": "1e299018",
+    "cat-world": "c00e58f7"
   },
   "ui": {
-    "app-bg": 1,
-    "bg-islands-sm": 1,
-    "bg-islands": 1,
-    "bg-knowledge-sm": 1,
-    "bg-knowledge": 1,
-    "gamenight": 1,
-    "hero-cosmic-sm": 1,
-    "hero-cosmic": 1
+    "app-bg": "4b07946d",
+    "bg-islands-sm": "043c0891",
+    "bg-islands": "213508e0",
+    "bg-knowledge-sm": "124caa11",
+    "bg-knowledge": "c04fdafc",
+    "gamenight": "d1c01f7a",
+    "hero-cosmic-sm": "4a814525",
+    "hero-cosmic": "370d1bdb"
   }
 };

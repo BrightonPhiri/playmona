@@ -154,6 +154,25 @@ into `assets/playmona_assets/<game>/` (git-ignored), then cropped and compressed
 `python tools/process-game-art.py <gameId>` using `tools/art/<gameId>.json`. Covers are
 3:4 (1086×1448); cards show the middle band, and the wide details banner shows a
 thin slice, so a game can set `coverFocus: 'center 32%'` to place its subject there.
+The manifest stores a fingerprint of each picture and `FF.Assets.artPath` adds it to
+the address (`?v=…`), so a redrawn cover can keep its file name and still show at once.
+
+### Word bank (`FF.Words`, js/words.js)
+
+Every word game shares one bank of about 113,000 English words (SCOWL, British and
+American spellings, rude words removed), in `js/data/lexicon.js`. It loads on demand:
+`FF.Words.load()` returns a promise (the game flow starts it when a word game opens).
+Tiers: 1 everyday, 2 common, 3 known, 4 rare. Deal and show answers from tiers 1–2;
+accept any tier when a player types a word.
+
+- `FF.Words.isWord(w)`, `tier(w)`, `isQuiet(w)` (real but rude-sounding: accept, never show)
+- `FF.Words.wordsFrom(letters, { min, maxTier })`: every word those letters make
+- `FF.Words.random({ min, max, maxTier, test })` and `rack({ length, minWords, maxWords, ... })`
+  (follow the room's seeded random, so every device deals the same)
+- `FF.Words.define(w)`: meaning from the Free Dictionary API, or null offline
+
+`FF.data.words.isWord` (Word Chain, Word Builder) also checks the bank once it has
+loaded. To rebuild the bank, see the header of `tools/gen-lexicon.js`.
 
 ### Scoring (`api.scoring`)
 

@@ -146,7 +146,8 @@ window.FF = window.FF || {};
     'lock': '<rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/><path d="M12 14.5v2"/>',
     'power': '<path d="M12 3v8"/><path d="M6.3 6.8a8 8 0 1 0 11.4 0"/>',
     'megaphone': '<path d="M3 10v4a1 1 0 0 0 1 1h3l7 4V5L7 9H4a1 1 0 0 0-1 1Z"/><path d="M18 9a4 4 0 0 1 0 6"/><path d="M7 15l1.5 5h3L10 16"/>',
-    'download': '<path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M4 20h16"/>'
+    'download': '<path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M4 20h16"/>',
+    'backspace': '<path d="M8.5 5H19a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H8.5L3 12l5.5-7Z"/><path d="M11.5 9.5l5 5M16.5 9.5l-5 5"/>'
   };
   Object.keys(extra).forEach(function (k) {
     if (FF.Icons.custom[k] == null) FF.Icons.custom[k] = ico(extra[k]);

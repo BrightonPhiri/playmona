@@ -1,0 +1,20 @@
+{
+  "game": "letterRush",
+  "prompts": "docs/art/letterRush-prompts.md",
+  "source": "assets/playmona_assets/letter-rush",
+  "ids": [],
+  "sets": [],
+  "cover": {
+    "from": "cover.png",
+    "to": "assets/images/covers/letterRush.webp",
+    "size": [
+      1086,
+      1448
+    ],
+    "max_kb": 240,
+    "focus": [
+      0.5,
+      0.5
+    ]
+  }
+}

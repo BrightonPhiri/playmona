@@ -61,9 +61,12 @@ window.FF = window.FF || {};
     svgUri: svgToDataUri,
 
     // Optional UI artwork. Missing files are fine: CSS falls back to a
-    // category colour wash so the hub never looks broken.
+    // category colour wash so the hub never looks broken. The manifest's
+    // fingerprint goes on the address, so redrawn art beats the image cache.
     artPath: function (folder, id) {
-      return 'assets/images/' + folder + '/' + id + '.webp';
+      var m = FF.AssetManifest;
+      var v = m && m[folder] && m[folder][id];
+      return 'assets/images/' + folder + '/' + id + '.webp' + (typeof v === 'string' ? '?v=' + v : '');
     },
     // Absolute url() so CSS custom properties in css/styles.css do not
     // resolve against the stylesheet folder (css/assets/images/...).
