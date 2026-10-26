@@ -432,8 +432,9 @@ window.FF = window.FF || {};
   /* ================= 3. Guess the Animal =================
      Wildlife photos (js/data/animals.js). Difficulty changes the game:
        easy    full photo, wrong answers from other kinds of animal
-       normal  full photo, two wrong answers that look alike
-       hard    a close-up and three lookalikes; the full photo is the reveal */
+       normal  a close-up and two wrong answers that look alike
+       hard    a blurred close-up and three lookalikes
+     On normal and hard the full photo fades in as the reveal. */
   var ANIMAL_ART = 'assets/images/games/guessAnimal/';
 
   function animalSrc(item, closeup) {
@@ -463,10 +464,10 @@ window.FF = window.FF || {};
     img.src = src;
   }
 
-  // The photo in a frame that shimmers until it loads. On hard, the full
-  // photo waits underneath and fades in when the answer is shown.
-  function animalPhoto(api, item, closeup) {
-    var frame = FF.ui.div('ffv-photo' + (closeup ? ' ffv-photo--closeup' : ''));
+  // The photo in a frame that shimmers until it loads. With a close-up, the
+  // full photo waits on top and fades in when the answer is shown.
+  function animalPhoto(api, item, closeup, blurred) {
+    var frame = FF.ui.div('ffv-photo' + (closeup ? ' ffv-photo--closeup' : '') + (blurred ? ' ffv-photo--blur' : ''));
     function loaded(img) {
       if (img.complete && img.naturalWidth) img.classList.add('is-loaded');
       else img.addEventListener('load', function () { img.classList.add('is-loaded'); });
@@ -505,7 +506,7 @@ window.FF = window.FF || {};
     howToPlay: [
       'Look at the wildlife photo.',
       'Pick the right animal from four choices.',
-      'On hard you only see a close-up, and the choices look alike.',
+      'On normal you see a close-up. On hard it is blurred too, and the choices look alike.',
       'Answer within 3 seconds for a speed bonus.',
       'Most points wins.'
     ],
@@ -516,11 +517,11 @@ window.FF = window.FF || {};
         items: animals,
         rounds: ROUNDS,
         preload: function (item, difficulty) {
-          preloadImage(animalSrc(item, difficulty === 'hard'));
+          preloadImage(animalSrc(item, difficulty !== 'easy'));
         },
         build: function (item, difficulty) {
-          var closeup = difficulty === 'hard';
-          var photo = animalPhoto(api, item, closeup);
+          var closeup = difficulty !== 'easy';
+          var photo = animalPhoto(api, item, closeup, difficulty === 'hard');
           return {
             imageDOM: photo.el,
             image: { src: animalSrc(item, closeup) },

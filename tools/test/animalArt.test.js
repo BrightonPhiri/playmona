@@ -84,10 +84,13 @@ test('each difficulty gives four different choices including the answer', functi
   });
 });
 
-test('hard mode shows the close-up and keeps the answer out of the alt text', function () {
+test('normal shows the close-up, hard blurs it, and the alt text keeps the answer out', function () {
   const src = fs.readFileSync(path.join(ROOT, 'js/games/visualGames.js'), 'utf8');
   const game = src.slice(src.indexOf("id: 'guessAnimal'"), src.indexOf('4. Guess the Food'));
-  assert(/var closeup = difficulty === 'hard'/.test(game), 'hard uses the close-up');
+  assert(/var closeup = difficulty !== 'easy'/.test(game), 'normal and hard use the close-up');
+  assert(/animalPhoto\(api, item, closeup, difficulty === 'hard'\)/.test(game), 'only hard is blurred');
+  const css = fs.readFileSync(path.join(ROOT, 'css/games.css'), 'utf8');
+  assert(/\.ffv-photo--blur \.ffv-photo__img:not\(\.ffv-photo__full\) \{ filter: blur\(/.test(css), 'the reveal photo is never blurred');
   assert(/image: \{ src: animalSrc\(item, closeup\) \}/.test(game), 'watchers see the same picture');
   assert(!/alt: [^,]*item\.name/.test(src), 'alt text never names the animal');
 });

@@ -582,6 +582,7 @@ button.wm-opt.wrong { background: var(--danger-soft); border-color: var(--danger
   opacity: 0; transition: opacity var(--dur-slow) var(--ease);
 }
 .ffv-photo__img.is-loaded { opacity: 1; }
+.ffv-photo--blur .ffv-photo__img:not(.ffv-photo__full) { filter: blur(8px); transform: scale(1.08); }
 .ffv-photo .ffv-photo__full { opacity: 0; transform: scale(1.12); transition: opacity 600ms var(--ease), transform 900ms var(--ease); }
 .ffv-photo.is-revealed .ffv-photo__full.is-loaded { opacity: 1; transform: none; }
 .ffv-photo .asset-fallback-text { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--muted); }
