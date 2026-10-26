@@ -149,6 +149,12 @@ games with inline `style` objects or hex colours**, and never inject
 `css/tokens.css`. After changing colours, run `node tools/contrast-check.js`.
 After adding cover or category art, run `node tools/gen-asset-manifest.js`.
 
+Game art is generated in Codex from a prompt pack (`docs/art/<gameId>-prompts.md`)
+into `assets/playmona_assets/<game>/` (git-ignored), then cropped and compressed by
+`python tools/process-game-art.py <gameId>` using `tools/art/<gameId>.json`. Covers are
+3:4 (1086×1448); cards show the middle band, and the wide details banner shows a
+thin slice, so a game can set `coverFocus: 'center 32%'` to place its subject there.
+
 ### Scoring (`api.scoring`)
 
 - Already initialised with `api.config.scorers`. `api.scoring.record(id)` returns `{ points, correct,

@@ -607,6 +607,8 @@ window.FF = window.FF || {};
           dataset: { cat: def.category },
           style: { '--art': FF.Assets.artUrl('covers', def.id), '--wash': FF.Assets.wash(def.category), '--card-color': cat.color }
         });
+        // The wide banner shows a thin slice of a tall cover; coverFocus says where.
+        if (def.coverFocus) hero.style.setProperty('--art-pos', def.coverFocus);
         hero.appendChild(FF.UI.iconButton('arrow-left', t('back', 'Back'), function () { flow.exitToHome(); }, 'icon-btn--glass details__close'));
         const heroInner = FF.ui.div('');
         const ic = FF.ui.div('details__icon');

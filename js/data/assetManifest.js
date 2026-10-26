@@ -4,6 +4,7 @@ FF.AssetManifest = {
   "covers": {
     "brainBattle": 1,
     "familyQuiz": 1,
+    "guessAnimal": 1,
     "guessWho": 1,
     "letterRush": 1,
     "miniCrossword": 1,
