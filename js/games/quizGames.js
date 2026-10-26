@@ -1,7 +1,7 @@
 /* ============================================================
    PLAYMONA — quizGames.js
-   Five quiz / visual games:
-     familyQuiz, trueOrFalse, brainBattle, guessWho, pictureQuiz
+   Four quiz / visual games:
+     trueOrFalse, brainBattle, guessWho, pictureQuiz (Quiz Mix is in quizMix.js)
    Classic script (no ES modules) so the app runs from file://
    ============================================================ */
 window.FF = window.FF || {};
@@ -88,10 +88,7 @@ window.FF = window.FF || {};
   // so naming one player would be wrong on every other device.
   function turnChip(entity, roundText) { return FF.GameUI.turnBar(entity, roundText); }
 
-  function roundLabel(n, total) {
-    if (FF.Race && FF.Race.active && FF.Race.active()) return FF.Race.roundText(n, total);
-    return FF.t('roundOf', 'Round {n} of {total}', { n: n, total: total });
-  }
+  function roundLabel(n, total) { return FF.GameLength.roundText(n, total); }
 
   function correctLine(pts, streak) {
     return FF.GameUI.feedback('good', FF.GameUI.correctText(pts) + (streak ? ' ' + FF.t('streakBonus', 'Streak bonus!') : ''));
@@ -235,153 +232,6 @@ window.FF = window.FF || {};
   }
 
   /* ============================================================
-     1. QUIZ MIX — 10 turn-based multiple-choice rounds
-     ============================================================ */
-  FF.registerGame({
-    id: 'familyQuiz',
-    featured: true,
-    name: 'Quiz Mix',
-    icon: '🧠',
-    category: 'quiz',
-    players: [1, 8],
-    difficulty: 'Easy',
-    duration: 6,
-    tags: ['quick', 'everyone'],
-    modes: ['solo', 'turn', 'team'],
-    defaultMode: 'turn',
-    description: 'Answer 10 fun multiple-choice questions. Be quick and build a streak!',
-    howToPlay: [
-      'Take turns answering quiz questions.',
-      'Pick the correct answer from 4 choices.',
-      'Answer fast for a speed bonus, and 3 correct in a row earns extra points.',
-      'The player with the most points after 10 rounds wins.'
-    ],
-    start: function (api) {
-      const data = getQuiz();
-      if (!data || !notEmpty(data.questions)) {
-        friendlyExit(api, 'Add some multiple-choice questions to js/data/quiz.js first.');
-        return;
-      }
-      if (!scorerList(api.config).length) {
-        friendlyExit(api, 'No players were found for this game.');
-        return;
-      }
-
-      const pool = difficultyPool(data.questions, api.config.difficulty);
-      const bag = new api.random.Bag(pool);
-      const ROUNDS = FF.Race ? FF.Race.plan(10, pool.length) : 10;
-
-      let round = 0;
-      let correctTotal = 0;
-      let answeredTotal = 0;
-      const perCorrect = {};
-      let currentQ = null;
-
-      const race = raceFor(api, { rounds: ROUNDS, optionSelector: '.quiz-option' });
-      const offSettle = race ? race.onSettle(function (payload) {
-        if (payload.winnerId) correctTotal++;
-        answeredTotal++;
-        race.showResult(payload, {
-          answerText: currentQ ? currentQ.options[currentQ.answer] : null,
-          isLast: race.isLastRound(round, ROUNDS),
-          // nextRound moves to the next round itself (this used to add one
-          // more, so online Family Quiz skipped every other question).
-          onNext: function () { nextRound(); }
-        });
-      }) : null;
-
-      function nextRound() {
-        round++;
-        if (round >= ROUNDS || (race && race.over(round))) {
-          const achievements = [];
-          let brainBox = false;
-          for (const id in perCorrect) {
-            if (Object.prototype.hasOwnProperty.call(perCorrect, id) && perCorrect[id] >= 10) brainBox = true;
-          }
-          if (brainBox) achievements.push('brainBox');
-          if (offSettle) offSettle();
-          if (race) race.end();
-          finishGame(api, { quizCorrect: correctTotal, quizAnswered: answeredTotal, achievements: achievements });
-        } else {
-          renderRound();
-        }
-      }
-
-      function renderRound() {
-        if (race) race.beginRound(round);
-        const entity = activeScorer(api.config, round);
-        const q = bag.next();
-        currentQ = q;
-        const startTime = Date.now();
-
-        api.shell.updateScores(entity ? entity.id : null);
-        FF.ui.clear(api.shell.root);
-
-        const wrap = cardWrap();
-        wrap.appendChild(turnChip(entity, roundLabel(round + 1, ROUNDS)));
-        if (q.category) wrap.appendChild(FF.GameUI.kicker(q.category));
-        wrap.appendChild(FF.GameUI.prompt(q.q));
-        // For people watching (the answer is shared after the round).
-        if (race) race.describe({ kind: 'choice', text: q.q, options: q.options }, q.answer);
-
-        const optEls = [];
-        const group = optionGroup(wrap);
-        q.options.forEach(function (opt, i) {
-          const b = optionBtn(opt, function () { onAnswer(i); }, i);
-          optEls.push(b);
-          group.appendChild(b);
-        });
-
-        api.shell.root.appendChild(wrap);
-        if (race) race.gate();
-        FF.Nav.focusFirst(api.shell.root);
-
-        function onAnswer(idx) {
-          const elapsed = (Date.now() - startTime) / 1000;
-          const correct = idx === q.answer;
-
-          if (race) {
-            // The race decides the round; a wrong answer only locks
-            // this device out while everyone else keeps playing.
-            race.submit(idx, correct, Date.now() - startTime);
-            return;
-          }
-
-          for (let i = 0; i < optEls.length; i++) {
-            optEls[i].disabled = true;
-            if (i === q.answer) markOption(optEls[i], 'correct');
-            else markOption(optEls[i], 'dim');
-          }
-          if (!correct) markOption(optEls[idx], 'wrong');
-
-          answeredTotal++;
-          if (correct) {
-            const res = awardCorrect(api, entity.id, elapsed);
-            correctTotal++;
-            perCorrect[entity.id] = (perCorrect[entity.id] || 0) + 1;
-            api.audio.play('correct');
-            if (res.streak) api.audio.play('streak');
-            wrap.appendChild(correctLine(res.pts, res.streak));
-          } else {
-            awardWrong(api, entity.id);
-            api.audio.play('wrong');
-            wrap.appendChild(wrongLine());
-          }
-
-          if (q.explanation) wrap.appendChild(tipLine(q.explanation));
-          const nextBtn = FF.Advance.button(FF.t('next', 'Next'), function () { FF.Audio.play('click'); nextRound(); }, { class: 'btn-lg' });
-          wrap.appendChild(nextBtn);
-
-          api.shell.updateScores(entity.id);
-          FF.Nav.focus(nextBtn);
-        }
-      }
-
-      renderRound();
-    }
-  });
-
-  /* ============================================================
      2. TRUE OR FALSE — 8 fast turn-based rounds
      ============================================================ */
   FF.registerGame({
@@ -414,7 +264,7 @@ window.FF = window.FF || {};
       }
 
       const bag = new api.random.Bag(data.trueFalse);
-      const ROUNDS = FF.Race ? FF.Race.plan(8, data.trueFalse.length) : 8;
+      const ROUNDS = FF.GameLength.rounds(api, 8, data.trueFalse.length);
 
       let round = 0;
       let correctTotal = 0;
@@ -793,7 +643,7 @@ window.FF = window.FF || {};
 
       const items = data.guessWho.slice();
       const bag = new api.random.Bag(items);
-      const TOTAL = FF.Race ? FF.Race.plan(Math.min(6, items.length), items.length) : Math.min(6, items.length);
+      const TOTAL = FF.GameLength.rounds(api, Math.min(6, items.length), items.length);
       const cluePoints = [0, 300, 200, 100, 50];
 
       let round = 0;
@@ -982,7 +832,7 @@ window.FF = window.FF || {};
         return;
       }
 
-      const TOTAL = FF.Race ? FF.Race.plan(Math.min(8, valid.length), valid.length) : Math.min(8, valid.length);
+      const TOTAL = FF.GameLength.rounds(api, Math.min(8, valid.length), valid.length);
       const bag = new api.random.Bag(valid);
 
       let round = 0;

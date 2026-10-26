@@ -53,7 +53,7 @@ window.FF = window.FF || {};
 
     var bag = new api.random.Bag(items);
     var list = scorers(api);
-    var promptsPer = opts.promptsPerPlayer || 2;
+    var promptsPer = FF.GameLength.rounds(api, opts.promptsPerPlayer || 2, 0);
     var totalRounds = list.length * promptsPer;
     var roundIdx = 0;
     var ended = false;
@@ -546,7 +546,8 @@ window.FF = window.FF || {};
       var list = scorers(api);
       var bag = new api.random.Bag(p.pictionary);
       var turnIdx = 0;
-      var totalRounds = list.length;
+      // One drawing turn each, more on Long or while a game clock runs.
+      var totalRounds = list.length * FF.GameLength.rounds(api, 1, 0);
       var ended = false;
 
       function finish() {

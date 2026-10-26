@@ -148,8 +148,7 @@ window.FF = window.FF || {};
   /* ================= Turn-based visual game engine ================= */
   function runVisualGame(api, spec) {
     var items = spec.items;
-    var rounds = Math.min(spec.rounds || ROUNDS, items.length);
-    if (FF.Race && FF.Race.active && FF.Race.active()) rounds = FF.Race.plan(rounds, items.length);
+    var rounds = FF.GameLength.rounds(api, Math.min(spec.rounds || ROUNDS, items.length), items.length);
     var scorers = (api.config.scorers && api.config.scorers.length) ? api.config.scorers : api.config.players;
     var bag = api.random.Bag(items);
     var roundIndex = 0;
@@ -265,7 +264,7 @@ window.FF = window.FF || {};
       // Round + turn header. In a room nobody takes turns - everyone races
       // the same question (FF.GameUI.turnBar handles that).
       wrap.appendChild(FF.GameUI.turnBar(api.config.mode !== 'solo' ? active : null,
-        racing ? FF.Race.roundText(roundIndex + 1, rounds) : FF.t('roundOf', 'Round {n} of {total}', { n: roundIndex + 1, total: rounds })));
+        FF.GameLength.roundText(roundIndex + 1, rounds)));
 
       var startTime = Date.now();
       var answered = false;

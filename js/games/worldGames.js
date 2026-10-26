@@ -170,8 +170,7 @@ window.FF = window.FF || {};
     var pool = allCountries();
     if (pool.length < 4) { showMissingData(api); return; }
 
-    var roundCount = opts.rounds || 8;
-    if (FF.Race && FF.Race.active && FF.Race.active()) roundCount = FF.Race.plan(roundCount, 0);
+    var roundCount = FF.GameLength.rounds(api, opts.rounds || 8, 0);
     var order = scorers.slice();
     if (api.config.randomOrder && order.length > 1) order = FF.util.shuffle(order);
 
@@ -243,7 +242,7 @@ window.FF = window.FF || {};
       var wrap = FF.GameUI.stage({ className: 'wld-wrap' });
 
       // In a room nobody takes turns - everyone races the same question.
-      wrap.appendChild(FF.GameUI.turnBar(scorer, racing ? FF.Race.roundText(roundIndex + 1, roundCount) : FF.t('roundOf', 'Round {n} of {total}', { n: roundIndex + 1, total: roundCount })));
+      wrap.appendChild(FF.GameUI.turnBar(scorer, FF.GameLength.roundText(roundIndex + 1, roundCount)));
 
       wrap.appendChild(FF.GameUI.prompt(currentQuestion.promptTitle || ''));
       if (racing) {

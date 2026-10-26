@@ -23,6 +23,7 @@ window.FF = window.FF || {};
       randomOrder: true,
       randomQuestions: true,
       displaySeconds: 60,
+      gameClock: 0,          // seconds; 0 = play the usual number of rounds
       autoAdvanceMs: 2000
     },
     get: function (key) { return FF.Storage.get(key, this.defaults[key]); },
@@ -436,6 +437,7 @@ window.FF = window.FF || {};
         difficulty: overrides.difficulty || FF.Settings.get('difficulty'),
         length: overrides.length || FF.Settings.get('length'),
         timer: overrides.timer != null ? overrides.timer : FF.Settings.get('timer'),
+        clock: overrides.clock || 0,   // game clock in seconds (FF.GameLength)
         sound: FF.Settings.get('sound'),
         music: FF.Settings.get('music'),
         animations: FF.Settings.get('animations') && !FF.Settings.get('reduceMotion'),
@@ -493,6 +495,9 @@ window.FF = window.FF || {};
       config.variation = config.variation || 'standard';
       if (config.displaySeconds == null) config.displaySeconds = FF.Settings.get('displaySeconds') || 60;
       if (config.timer == null) config.timer = FF.Settings.get('timer');
+      // Only the setup screen applies the saved game clock, so the daily
+      // challenge and other one-tap launches keep their usual length.
+      if (!config.clock) config.clock = FF.Settings.get('gameClock') || 0;
 
       const minP = FF.Games.minPlayers(def);
       const maxP = FF.Games.maxPlayers(def);
@@ -582,6 +587,7 @@ window.FF = window.FF || {};
           difficulty: config.difficulty,
           length: config.length,
           timer: config.timer,
+          clock: config.clock,
           variation: config.variation,
           displaySeconds: config.displaySeconds,
           tournament: config.tournament,
@@ -611,7 +617,12 @@ window.FF = window.FF || {};
         });
         // The wide banner shows a thin slice of a tall cover; coverFocus says where.
         if (def.coverFocus) hero.style.setProperty('--art-pos', def.coverFocus);
-        hero.appendChild(FF.UI.iconButton('arrow-left', t('back', 'Back'), function () { flow.exitToHome(); }, 'icon-btn--glass details__close'));
+        // A labelled pill reads better over cover art than a bare arrow.
+        const back = FF.ui.el('button', { type: 'button', class: 'details__back' });
+        back.appendChild(FF.Icons.icon('arrow-left'));
+        back.appendChild(FF.ui.span('details__back-label', t('back', 'Back')));
+        back.addEventListener('click', function () { FF.Audio.play('click'); flow.exitToHome(); });
+        hero.appendChild(back);
         const heroInner = FF.ui.div('');
         const ic = FF.ui.div('details__icon');
         ic.appendChild(FF.Icons.icon(FF.Icons.game[def.id] || cat.iconKey, def.icon));
@@ -711,21 +722,29 @@ window.FF = window.FF || {};
             options: [{ label: t('easy', 'Easy'), value: 'easy' }, { label: t('normal', 'Normal'), value: 'normal' }, { label: t('hard', 'Hard'), value: 'hard' }],
             onChange: function (v) { config.difficulty = v; }
           })));
-          optBox.appendChild(FF.UI.settingRow(t('gameLength', 'Game length'), FF.UI.segmented({
-            label: t('gameLength', 'Game length'), value: config.length,
-            options: [{ label: t('lenQuick', 'Quick'), value: 'quick' }, { label: t('lenShort', 'Short'), value: 'short' }, { label: t('lenNormal', 'Normal'), value: 'normal' }, { label: t('lenLong', 'Long'), value: 'long' }],
-            onChange: function (v) { config.length = v; }
-          })));
-          optBox.appendChild(FF.UI.settingRow(t('timeLimit', 'Time limit'), FF.SettingsUI.duration(config.timer, function (s) {
+          // Rounds (Quick … Long) or a game clock: "play for 20 minutes".
+          optBox.appendChild(FF.UI.settingRow(t('gameLength', 'Game length'), FF.GameLength.picker(config, function (c) {
+            FF.Settings.set('length', c.length || 'normal');
+            FF.Settings.set('gameClock', Number(c.clock) || 0);
+            if (optSummary) optSummary.textContent = optHintText();
+          }), t('gameLengthDesc', 'With a set time, rounds keep coming until the clock runs out.')));
+          optBox.appendChild(FF.UI.settingRow(t('timePerTurn', 'Time per turn'), FF.SettingsUI.duration(config.timer, function (s) {
             config.timer = s;
             FF.Settings.set('timer', s);
+            if (optSummary) optSummary.textContent = optHintText();
           }, { allowOff: true }), t('timeLimitDesc', 'Off means no countdown.')));
         }
         optBox.appendChild(FF.UI.switchRow({ label: t('soundEffects', 'Sound effects'), checked: !!config.sound, onChange: function (on) { config.sound = on; } }));
-        const optHint = config.variation === 'display'
-          ? t('styleTV', 'TV display')
-          : [t('diff_' + config.difficulty, config.difficulty), config.timer ? FF.util.formatTime(config.timer) : t('noTimer', 'No timer')].join(' · ');
-        body.appendChild(disclosure('sliders', t('options', 'Options'), optHint, ui.optionsOpen, function (o) { ui.optionsOpen = o; }, optBox));
+        function optHintText() {
+          return config.variation === 'display'
+            ? t('styleTV', 'TV display')
+            : [t('diff_' + config.difficulty, String(config.difficulty).charAt(0).toUpperCase() + String(config.difficulty).slice(1)), FF.GameLength.summary(config), config.timer ? FF.util.formatTime(config.timer) : t('noTimer', 'No timer')].join(' · ');
+        }
+        var optSummary = null;
+        const optHint = optHintText();
+        const optSection = disclosure('sliders', t('options', 'Options'), optHint, ui.optionsOpen, function (o) { ui.optionsOpen = o; }, optBox);
+        optSummary = optSection.querySelector('.disclosure__hint');
+        body.appendChild(optSection);
 
         page.appendChild(body);
 
@@ -789,6 +808,10 @@ window.FF = window.FF || {};
       const shell = buildShell(def, config, api);
       api.shell = shell;
       this.current.shell = shell;
+      if (FF.GameLength) {
+        FF.GameLength.stop();
+        if (FF.GameLength.timed(config)) FF.GameLength.start(this.current);
+      }
 
       shell.updateScores();
 
@@ -920,6 +943,12 @@ window.FF = window.FF || {};
       const cur = this.current;
       if (!cur) return;
       results = results || {};
+      if (FF.GameLength) FF.GameLength.stop();
+      // Once only: a game clock can end a game whose own code ends it again later.
+      if (!(cur.config.room && FF.Room && FF.Room.current())) {
+        if (cur.ended) return;
+        cur.ended = true;
+      }
       if (cur.config.variation === 'display') {
         FF.Stats.recordGamePlayed(cur.def.id, cur.def.name, cur.def.category);
         FF.Recents.add(cur.def.id, cur.def.name);
@@ -1159,6 +1188,7 @@ window.FF = window.FF || {};
         return;
       }
       if (FF.Advance) FF.Advance.pauseAll();
+      if (FF.GameLength) FF.GameLength.pause();
       if (cur.shell && cur.shell.timer && cur.shell.timer.isRunning()) cur.shell.timer.pause();
       this._overlay({
         icon: 'pause',
@@ -1191,6 +1221,7 @@ window.FF = window.FF || {};
         if (!this.current.shell.timer.isFinished() && this.current.shell.timer.remaining > 0) this.current.shell.timer.resume();
       }
       if (FF.Advance) FF.Advance.resumeAll();
+      if (FF.GameLength) FF.GameLength.resume();
     },
 
     restart: function () {
@@ -1210,6 +1241,7 @@ window.FF = window.FF || {};
         difficulty: c.difficulty,
         length: c.length,
         timer: c.timer,
+        clock: c.clock,
         tournament: c.tournament,
         round: c.round,
         onEnd: c.onEnd,
@@ -1235,6 +1267,7 @@ window.FF = window.FF || {};
       // running because the round clock is shared with other devices.
       if (cur && !(cur.config && cur.config.room)) {
         if (FF.Advance) FF.Advance.pauseAll();
+        if (FF.GameLength) FF.GameLength.pause();
         if (cur.shell && cur.shell.timer && cur.shell.timer.isRunning()) cur.shell.timer.pause();
       }
       this._overlay({
@@ -1250,6 +1283,7 @@ window.FF = window.FF || {};
 
     close: function (view) {
       if (FF.Advance) FF.Advance.cancelAll();
+      if (FF.GameLength) FF.GameLength.stop();
       // Leaving an online game early: stop following its rounds, and tell the
       // room so nobody's round waits for this player.
       const leaving = this.current;

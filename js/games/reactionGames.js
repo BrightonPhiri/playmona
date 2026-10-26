@@ -77,7 +77,7 @@ window.FF = window.FF || {};
     }
 
     var bonus = difficultyBonus(api.config.difficulty);
-    var roundsPerPlayer = 3;
+    var roundsPerPlayer = FF.GameLength.rounds(api, 3, 0);
     var players = scorers.slice();
     if (api.config.randomOrder) players = api.util.shuffle(players);
 
@@ -91,7 +91,6 @@ window.FF = window.FF || {};
       var me = FF.Room.current();
       var mine = players.filter(function (p) { return p.id === me.uid; });
       players = mine.length ? mine : players.slice(0, 1);
-      roundsPerPlayer = FF.Race.plan(roundsPerPlayer, 0);
 
       FF.Race.begin(api.def.id, {
         rounds: roundsPerPlayer,
@@ -348,7 +347,7 @@ window.FF = window.FF || {};
 
     var difficulty = api.config.difficulty || 'normal';
     var bonus = difficultyBonus(difficulty);
-    var roundsPerPlayer = 8;
+    var roundsPerPlayer = FF.GameLength.rounds(api, 8, 0);
 
     // Difficulty tuning: easy = 50% conflicting, normal = mostly
     // conflicting, hard = always conflicting + a shorter timer.
@@ -368,7 +367,6 @@ window.FF = window.FF || {};
       var me = FF.Room.current();
       var mine = players.filter(function (p) { return p.id === me.uid; });
       players = mine.length ? mine : players.slice(0, 1);
-      roundsPerPlayer = FF.Race.plan(roundsPerPlayer, 0);
 
       FF.Race.begin(api.def.id, {
         rounds: roundsPerPlayer,
@@ -451,7 +449,7 @@ window.FF = window.FF || {};
       api.ui.clear(root);
 
       var wrap = api.ui.div('rt-wrap');
-      var who = api.ui.div('cr-who', [FF.Players.avatarEl(player, 'who-ava'), player.name + ' · ' + (racing ? FF.Race.roundText(roundNumber + 1, roundsPerPlayer) : FF.t('roundOf', 'Round {n} of {total}', { n: roundNumber + 1, total: roundsPerPlayer }))]);
+      var who = api.ui.div('cr-who', [FF.Players.avatarEl(player, 'who-ava'), player.name + ' · ' + FF.GameLength.roundText(roundNumber + 1, roundsPerPlayer)]);
       var word = api.ui.div('cr-word', round.word.name);
       word.style.color = round.ink.css;
       var question = api.ui.div('cr-question', 'What colour is the text?');

@@ -62,6 +62,8 @@ window.FF = window.FF || {};
     },
 
     roundText: function (n, total) {
+      // While a game clock decides the end, the total means nothing.
+      if (FF.GameLength && (total >= FF.GameLength.UNBOUNDED || FF.GameLength.secondsLeft() != null)) total = 0;
       return total ? FF.t('qOf', 'Question {n} of {total}', { n: n, total: total }) : FF.t('qN', 'Question {n}', { n: n });
     },
 

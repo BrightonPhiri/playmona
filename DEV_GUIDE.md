@@ -157,6 +157,25 @@ thin slice, so a game can set `coverFocus: 'center 32%'` to place its subject th
 The manifest stores a fingerprint of each picture and `FF.Assets.artPath` adds it to
 the address (`?v=…`), so a redrawn cover can keep its file name and still show at once.
 
+### Game length (`FF.GameLength`, js/gameLength.js)
+
+Every game gets its round count from `FF.GameLength.rounds(api, usual, available)` and
+its round label from `FF.GameLength.roundText(n, total)`. Never read `config.length` or
+hard-code a count. Normal plays `usual`; Quick, Short and Long scale it (×0.6, ×0.8, ×1.5).
+In a room it follows the host's room settings (`FF.Race.plan`). With a game clock
+(`config.clock` seconds, set on the setup screen: 5–30 min or any number of minutes),
+it returns 200, and the clock in the game header ends the game at the next screen change
+once time is up. A game that wants to end itself (for example after everyone has had the
+same number of turns) calls `FF.GameLength.manual()` and checks `FF.GameLength.timeUp()`.
+
+### Quiz questions (`FF.QuizBank`, js/games/quizMix.js)
+
+`FF.QuizBank.all()` is the hand-written set in js/data/quiz.js plus the Open Trivia DB
+bank in js/data/quizbank.js (loaded by `FF.QuizBank.load()`), as
+`{ id, q, options, answer, topic, difficulty, explanation, tf }`. `pool(topics, difficulty)`
+filters by the 15 topics in `FF.QuizBank.TOPICS`. To rebuild the bank, see the header of
+`tools/gen-quizbank.js`.
+
 ### Word bank (`FF.Words`, js/words.js)
 
 Every word game shares one bank of about 113,000 English words (SCOWL, British and

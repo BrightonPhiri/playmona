@@ -52,12 +52,11 @@ window.FF = window.FF || {};
       }
 
       var scorers = scorerList(api.config);
-      var totalRounds = (api.config.length === 'quick') ? 6 : (api.config.length === 'long' ? 15 : 10);
+      var totalRounds = FF.GameLength.rounds(api, 10, data.questions.length);
       var racing = !!(FF.Race && FF.Race.active());
       if (racing && FF.Room && FF.Room.current()) {
         FF.Random.seed(FF.Random.roundSeed(FF.Room.current().meta.seed, api.def.id, 'deck'));
       }
-      if (racing) totalRounds = FF.Race.plan(totalRounds, data.questions.length);
       var questions = api.util.shuffle(data.questions.slice()).slice(0, totalRounds);
       var race = FF.Race ? FF.Race.forGame(api, {
         rounds: totalRounds,
@@ -229,7 +228,7 @@ window.FF = window.FF || {};
       }
 
       var scorers = scorerList(api.config);
-      var totalCards = (api.config.length === 'quick') ? 4 : (api.config.length === 'long' ? 10 : 6);
+      var totalCards = FF.GameLength.rounds(api, 6, data.whoAmI.length);
       var deck = api.util.shuffle(data.whoAmI.slice()).slice(0, totalCards);
 
       var cardIdx = 0;
@@ -410,7 +409,7 @@ window.FF = window.FF || {};
       }
 
       var scorers = scorerList(api.config);
-      var rounds = (api.config.length === 'quick') ? 3 : 5;
+      var rounds = FF.GameLength.rounds(api, 5, data.verses.length);
       var verses = api.util.shuffle(data.verses.slice()).slice(0, rounds);
 
       var verseIdx = 0;

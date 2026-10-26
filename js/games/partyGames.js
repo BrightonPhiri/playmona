@@ -128,7 +128,7 @@ window.FF = window.FF || {};
       friendlyExit(api, opts.emptyTitle, opts.emptyBody);
       return;
     }
-    var rounds = pickRounds(data, opts.roundCount);
+    var rounds = pickRounds(data, FF.GameLength.rounds(api, opts.roundCount, data.length));
     var players = api.config.players.slice();
     var animate = !!api.config.animations;
     var b = bonusMul(api.config.difficulty);
@@ -266,7 +266,7 @@ window.FF = window.FF || {};
       friendlyExit(api, 'Need at least 3 players', 'Who Is Most Likely is best with 3 or more players. Add another player and try again!');
       return;
     }
-    var rounds = pickRounds(data, 8);
+    var rounds = pickRounds(data, FF.GameLength.rounds(api, 8, data.length));
     var animate = !!api.config.animations;
     var b = bonusMul(api.config.difficulty);
     var ended = false;

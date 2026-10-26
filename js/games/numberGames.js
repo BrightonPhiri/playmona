@@ -162,7 +162,7 @@ window.FF = window.FF || {};
 
   // Round, whose turn and streak, above every question.
   function topBar(api, state, active, showZero) {
-    var bar = FF.GameUI.turnBar(active, state.race ? FF.Race.roundText(state.round + 1, state.total) : FF.t('roundOf', 'Round {n} of {total}', { n: state.round + 1, total: state.total }));
+    var bar = FF.GameUI.turnBar(active, FF.GameLength.roundText(state.round + 1, state.total));
     var rec = api.scoring.record(active.id);
     var streak = rec ? rec.streak : 0;
     if (streak > 0 || showZero) bar.appendChild(FF.GameUI.pill(FF.t('streakN', 'Streak {n}', { n: streak }), 'flame'));
@@ -186,7 +186,7 @@ window.FF = window.FF || {};
       race: FF.Race ? FF.Race.forGame(api, { rounds: 10, optionSelector: '.nc-option' }) : null,
       offSettle: null
     };
-    if (state.race) state.total = state.race.plan(10, 0);
+    state.total = FF.GameLength.rounds(api, 10, 0);
     api.audio.play('roundStart');
     renderNumberChallenge(api, state);
   }
@@ -395,7 +395,7 @@ window.FF = window.FF || {};
     if (!scorers || !scorers.length) { renderNoPlayers(api); return; }
     var state = {
       round: 0,
-      total: 8 * scorers.length,
+      total: FF.GameLength.rounds(api, 8, 0) * scorers.length,
       correct: 0,
       answered: 0,
       locked: false,

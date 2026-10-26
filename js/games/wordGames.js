@@ -355,12 +355,13 @@ window.FF = window.FF || {};
 
       var bag = new api.random.Bag(filtered);
       var items = [];
-      for (var i = 0; i < 6; i++) items.push(bag.next());
+      var count = FF.GameLength.rounds(api, 6, 0);
+      for (var i = 0; i < count; i++) items.push(bag.next());
 
       var state = {
         order: order,
         round: 0,
-        total: 6,
+        total: count,
         items: items,
         busy: false,
         ended: false
@@ -382,7 +383,7 @@ window.FF = window.FF || {};
         api.shell.setTitle(api.def.name);
 
         var wrap = FF.ui.div('panel panel--center wg-wrap');
-        wrap.appendChild(FF.ui.el('h2', {}, entityLabel(entity) + ' — Round ' + (state.round + 1) + ' of ' + state.total));
+        wrap.appendChild(FF.ui.el('h2', {}, entityLabel(entity) + ' — ' + FF.GameLength.roundText(state.round + 1, state.total)));
         wrap.appendChild(FF.ui.div('wg-scramble', scrambled.toUpperCase()));
         wrap.appendChild(FF.ui.el('p', { class: 'hint' }, 'Clue: ' + item.clue));
 
@@ -694,7 +695,7 @@ window.FF = window.FF || {};
         used: {},
         lives: {},
         round: 1,
-        maxRounds: 10,
+        maxRounds: FF.GameLength.rounds(api, 10, 0),
         dict: dictMap(),
         busy: false,
         ended: false

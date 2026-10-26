@@ -53,6 +53,11 @@ All are licensed under the **SIL Open Font License 1.1** (distributed via Google
   warranty." http://wordlist.aspell.net/
 - **List of Dirty, Naughty, Obscene, and Otherwise Bad Words** (via the `naughty-words`
   package, **CC-BY-4.0**, Shutterstock) — used at build time to keep rude words out of the word bank.
+- **Open Trivia Database** (https://opentdb.com), licensed **CC BY-SA 4.0** — the 4,500+
+  questions in `js/data/quizbank.js` used by Quiz Mix, built by `tools/gen-quizbank.js`
+  (decoded, filtered for family play, politics and celebrity gossip left out). That file is
+  shared under the same CC BY-SA 4.0 licence. The hand-written questions in `js/data/quiz.js`
+  are PlayMona's own.
 - **Common English words** in `js/data/wordlist.js` — google-10000-english (MIT, first20hours).
 - **Free Dictionary API** (https://dictionaryapi.dev, data from Wiktionary, CC BY-SA) — word
   meanings shown when a player taps a word in Letter Rush. Looked up live; nothing is stored.

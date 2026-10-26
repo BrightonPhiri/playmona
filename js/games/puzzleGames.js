@@ -667,9 +667,7 @@ window.FF = window.FF || {};
     ],
     start: function (api) {
       var list = scorers(api);
-      var rounds = 6;
-      if (api.config.length === 'quick') rounds = 4;
-      else if (api.config.length === 'long') rounds = 8;
+      var rounds = FF.GameLength.rounds(api, 6, 0);
       var round = 0;
 
       function playRound() {
@@ -698,7 +696,7 @@ window.FF = window.FF || {};
 
     var wrap = FF.GameUI.stage({ wide: true });
 
-    wrap.appendChild(FF.GameUI.turnBar(scorers(api).length > 1 ? scorer : null, FF.t('roundOf', 'Round {n} of {total}', { n: roundNum, total: totalRounds })));
+    wrap.appendChild(FF.GameUI.turnBar(scorers(api).length > 1 ? scorer : null, FF.GameLength.roundText(roundNum, totalRounds)));
 
     var prompt = api.ui.el('h2', { class: 'find-prompt gm-prompt' });
     prompt.appendChild(document.createTextNode(FF.t('findThe', 'Find the') + ' '));
@@ -794,14 +792,11 @@ window.FF = window.FF || {};
       if (!riddles || !riddles.length) { noData(api, 'No visual riddles'); return; }
 
       var list = scorers(api);
-      var rounds = 8;
-      if (api.config.length === 'quick') rounds = 5;
-      else if (api.config.length === 'long') rounds = 10;
+      var rounds = FF.GameLength.rounds(api, 8, riddles.length);
       var round = 0;
       var bag = new api.random.Bag(riddles);
 
       // ---- Race support. Offline this stays null and nothing changes. ----
-      if (FF.Race && FF.Race.active && FF.Race.active()) rounds = FF.Race.plan(rounds, riddles.length);
       var race = FF.Race ? FF.Race.forGame(api, {
         rounds: rounds,
         optionSelector: '.riddle-opt'
@@ -821,7 +816,7 @@ window.FF = window.FF || {};
           scorer = list.filter(function (sc) { return sc.id === me.uid; })[0] || list[0];
         }
         round++;
-        var label = race ? FF.Race.roundText(round, rounds) : FF.t('roundOf', 'Round {n} of {total}', { n: round, total: rounds });
+        var label = FF.GameLength.roundText(round, rounds);
         var played = round - 1;
         // Online the last round is only known once it settles (game clock).
         renderRiddleRound(api, scorer, bag.next(), label, playRound, race,

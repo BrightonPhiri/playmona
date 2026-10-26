@@ -128,3 +128,14 @@ test('newSeed produces distinct 8-character seeds', function () {
   }
   assert(Object.keys(seen).length > 190, 'seeds must be near-unique');
 });
+
+test('Bag deals every item once per pass, never sticking on the last one', function () {
+  const FF = loadFF(['js/core.js']);
+  const items = ['a', 'b', 'c', 'd'];
+  const bag = FF.Random.Bag(items);
+  const first = [bag.next(), bag.next(), bag.next(), bag.next()];
+  assertEqual(first.slice().sort(), items, 'one full pass');
+  const seen = {};
+  for (let i = 0; i < 40; i++) seen[bag.next()] = (seen[bag.next()] || 0) + 1;
+  assertEqual(Object.keys(seen).sort(), items, 'keeps cycling through everything');
+});

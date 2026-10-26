@@ -347,7 +347,7 @@ window.FF = window.FF || {};
       var revealTimer = null;
 
       // ---- Race support. Offline this is all inert. ----
-      if (FF.Race && FF.Race.active && FF.Race.active()) ROUNDS = FF.Race.plan(ROUNDS, 0);
+      ROUNDS = FF.GameLength.rounds(api, ROUNDS, 0);
       var race = FF.Race ? FF.Race.forGame(api, {
         rounds: ROUNDS,
         optionSelector: '.wm-opt'

@@ -234,16 +234,21 @@ window.FF = window.FF || {};
 
     Bag: function (items) {
       let pool = [];
+      let last;
       function refill() {
         pool = FF.util.shuffle(items.slice());
+        // Avoid the same item twice in a row across refills.
+        if (pool.length > 1 && pool[pool.length - 1] === last) {
+          const top = pool.pop();
+          pool.unshift(top);
+        }
       }
       refill();
       return {
         next: function () {
           if (!pool.length) refill();
-          // avoid the same item appearing twice in a row across refills
-          if (pool.length === 1) return pool[0];
-          return pool.pop();
+          last = pool.pop();
+          return last;
         },
         nextN: function (n) {
           const out = [];
