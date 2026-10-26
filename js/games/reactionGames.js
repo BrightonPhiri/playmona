@@ -62,6 +62,7 @@ window.FF = window.FF || {};
     players: [1, 8],
     difficulty: 'Easy',
     duration: 3,
+    coverFocus: 'center 60%',
     tags: ['quick', 'reflex'],
     modes: ['solo', 'turn'],
     defaultMode: 'turn',
