@@ -659,7 +659,10 @@ test('admin routes: grant, see what can be removed, remove, reset own', function
     eq(403, $w['routes']->handle(req('POST', '/admin/revoke', ['token' => $tok, 'json' => ['grantId' => $paid['id']]]))->status);
     $after = $w['routes']->handle(req('POST', '/admin/revoke', ['token' => $tok, 'json' => ['grantId' => $removable[0]['id']]]));
     eq(200, $after->status);
-    eq(true, $after->body['grants'][0]['revokedAt'] > 0);
+    // Look the gift up by id: on a fast machine both grants share a millisecond and
+    // the list order between them is down to their random ids.
+    $gift = array_values(array_filter($after->body['grants'], fn ($g) => $g['id'] === $removable[0]['id']))[0];
+    eq(true, $gift['revokedAt'] > 0);
     eq(403, $w['routes']->handle(req('POST', '/admin/reset-own', ['token' => idToken(['sub' => 'mallory'])]))->status);
     $own = $w['routes']->handle(req('POST', '/admin/reset-own', ['token' => $tok]));
     eq(200, $own->status);
