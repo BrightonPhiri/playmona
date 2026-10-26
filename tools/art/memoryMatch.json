@@ -1,0 +1,311 @@
+{
+  "game": "memoryMatch",
+  "prompts": "docs/art/memoryMatch-prompts.md",
+  "source": "assets/playmona_assets/memory-match",
+  "ids": [],
+  "sets": [],
+  "cover": {
+    "from": "cover.png",
+    "to": "assets/images/covers/memoryMatch.webp",
+    "size": [1086, 1448],
+    "max_kb": 240,
+    "focus": [0.5, 0.5]
+  },
+  "cards": {
+    "to": "assets/images/games/memoryMatch/{id}.webp",
+    "size": 256,
+    "max_kb": 12,
+    "cols": 4,
+    "rows": 3
+  },
+  "sheets": [
+    {
+      "file": "sheets/animals-1.png",
+      "title": "Wild animals",
+      "items": [
+        ["lion", "a lion cub with a big fluffy orange mane"],
+        ["elephant", "a baby grey elephant with its trunk raised"],
+        ["giraffe", "a young yellow giraffe with brown patches, sitting so its neck fits the cell"],
+        ["zebra", "a chubby zebra foal with bold black-and-white stripes"],
+        ["monkey", "a brown monkey with a peach-coloured face, waving"],
+        ["panda", "a round black-and-white panda sitting and hugging a bamboo stalk"],
+        ["koala", "a grey koala with big fluffy ears"],
+        ["tiger", "an orange tiger cub with black stripes"],
+        ["hippo", "a lilac-grey hippo with a wide smile"],
+        ["kangaroo", "a tan kangaroo with a joey peeking from the pouch"],
+        ["fox", "a red fox with a bushy white-tipped tail"],
+        ["bear", "a brown bear cub sitting down"]
+      ]
+    },
+    {
+      "file": "sheets/animals-2.png",
+      "title": "Farm and pets",
+      "items": [
+        ["cat", "an orange tabby kitten"],
+        ["dog", "a golden puppy with floppy ears"],
+        ["rabbit", "a light grey bunny with long pink-lined ears"],
+        ["pig", "a pink piglet with a curly tail"],
+        ["cow", "a black-and-white cow with a pink nose and a little bell"],
+        ["horse", "a chestnut pony with a dark mane"],
+        ["sheep", "a fluffy cream sheep with a dark face and legs"],
+        ["chicken", "a brown hen with a red comb"],
+        ["duck", "a bright yellow duckling"],
+        ["frog", "a bright green frog sitting up"],
+        ["owl", "a brown owl with big round eyes"],
+        ["penguin", "a black-and-white penguin with an orange beak and feet"]
+      ]
+    },
+    {
+      "file": "sheets/sea-1.png",
+      "title": "Under the sea",
+      "items": [
+        ["octopus", "a purple octopus with curling arms"],
+        ["whale", "a blue whale (no water spout)"],
+        ["dolphin", "a grey-blue dolphin leaping in an arc"],
+        ["shark", "a friendly grey shark with a goofy grin"],
+        ["clownfish", "an orange clownfish with white stripes edged in black"],
+        ["pufferfish", "a round, puffed-up yellow pufferfish with small spikes"],
+        ["seahorse", "a golden-orange seahorse with a curled tail"],
+        ["jellyfish", "a pink see-through jellyfish with wavy tentacles"],
+        ["crab", "a red crab with raised claws"],
+        ["turtle", "a green sea turtle swimming"],
+        ["starfish", "a coral-orange starfish"],
+        ["blue-tang", "a royal-blue tang fish with a yellow tail"]
+      ]
+    },
+    {
+      "file": "sheets/sea-2.png",
+      "title": "Ocean friends",
+      "items": [
+        ["seal", "a grey seal pup lying on its tummy"],
+        ["squid", "a pink-red squid"],
+        ["shrimp", "a curled pink-orange shrimp"],
+        ["oyster", "an open oyster shell holding a shiny pearl"],
+        ["seashell", "a spiral conch shell, cream with pink inside"],
+        ["coral", "a branching pink-red coral"],
+        ["stingray", "a blue-grey stingray seen from above"],
+        ["narwhal", "a light blue narwhal with a long spiral tusk"],
+        ["orca", "a black-and-white orca"],
+        ["sea-otter", "a brown sea otter floating on its back holding a shell"],
+        ["anglerfish", "a cute dark teal anglerfish with a glowing yellow lure"],
+        ["sea-urchin", "a round purple sea urchin with spines"]
+      ]
+    },
+    {
+      "file": "sheets/food-1.png",
+      "title": "Meals",
+      "items": [
+        ["pizza", "a slice of pepperoni pizza with stretchy cheese"],
+        ["burger", "a tall cheeseburger with lettuce and tomato"],
+        ["fries", "French fries in a red carton"],
+        ["hot-dog", "a hot dog with a squiggle of mustard"],
+        ["taco", "a crunchy taco with lettuce, tomato and cheese"],
+        ["sushi", "two salmon nigiri sushi pieces on a small wooden board"],
+        ["ramen", "a blue bowl of ramen noodles with an egg and chopsticks"],
+        ["spaghetti", "a plate of spaghetti with meatballs"],
+        ["sandwich", "a triangle sandwich showing ham, cheese and lettuce"],
+        ["pancakes", "a stack of pancakes with syrup and a pat of butter"],
+        ["fried-egg", "a fried egg in a small black frying pan"],
+        ["popcorn", "a red-and-white striped bucket of popcorn"]
+      ]
+    },
+    {
+      "file": "sheets/food-2.png",
+      "title": "Treats",
+      "items": [
+        ["cupcake", "a cupcake with swirly pink frosting and a cherry"],
+        ["donut", "a chocolate-glazed donut with rainbow sprinkles"],
+        ["ice-cream", "an ice cream cone with a mint scoop and a strawberry scoop"],
+        ["cake", "a slice of strawberry layer cake"],
+        ["cookie", "a chocolate chip cookie"],
+        ["lollipop", "a big rainbow swirl lollipop"],
+        ["candy-cane", "a red-and-white striped candy cane"],
+        ["croissant", "a golden croissant"],
+        ["gummy-bear", "a shiny red gummy bear"],
+        ["jelly", "a wobbly green jelly (jello) on a small plate"],
+        ["cheese", "a yellow wedge of cheese with holes"],
+        ["hot-cocoa", "a blue mug of hot cocoa topped with marshmallows"]
+      ]
+    },
+    {
+      "file": "sheets/fruit-1.png",
+      "title": "Fruit",
+      "items": [
+        ["apple", "a shiny red apple with a green leaf"],
+        ["banana", "a yellow banana"],
+        ["strawberry", "a strawberry with green leaves"],
+        ["grapes", "a bunch of purple grapes"],
+        ["watermelon", "a triangle slice of watermelon"],
+        ["pineapple", "a pineapple with a spiky green top"],
+        ["orange", "a whole orange with a leaf"],
+        ["cherries", "a pair of dark red cherries on stems"],
+        ["lemon", "a bright yellow lemon"],
+        ["peach", "a fuzzy peach with a leaf"],
+        ["pear", "a green pear"],
+        ["kiwi", "a kiwi cut in half showing the green inside"]
+      ]
+    },
+    {
+      "file": "sheets/fruit-2.png",
+      "title": "Vegetables and more",
+      "items": [
+        ["carrot", "an orange carrot with leafy top"],
+        ["broccoli", "a green broccoli floret"],
+        ["corn", "a corn cob with the husk peeled back"],
+        ["tomato", "a red tomato"],
+        ["avocado", "an avocado half with the round pit"],
+        ["eggplant", "a purple eggplant (aubergine)"],
+        ["mushroom", "a brown-capped mushroom"],
+        ["pepper", "a yellow bell pepper"],
+        ["potato", "a brown potato"],
+        ["pumpkin", "an orange pumpkin"],
+        ["coconut", "a coconut split open"],
+        ["mango", "a red-and-yellow mango"]
+      ]
+    },
+    {
+      "file": "sheets/characters-1.png",
+      "title": "Heroes and helpers",
+      "items": [
+        ["wizard", "an old wizard with a long grey beard, purple robe and starry hat"],
+        ["knight", "a knight in silver armour with a red plume and a shield"],
+        ["princess", "a princess in a pink gown with a golden tiara"],
+        ["pirate", "a pirate with an eye patch, tricorn hat and striped shirt"],
+        ["astronaut", "an astronaut in an orange spacesuit holding the helmet"],
+        ["robot", "a round blue-and-silver robot with antenna"],
+        ["alien", "a green alien with three eyes, waving"],
+        ["superhero", "an original superhero kid with a red cape, blue suit and a plain star badge (no letters)"],
+        ["ninja", "a ninja in a dark blue outfit with a red headband"],
+        ["mermaid", "a mermaid with a teal tail and long red hair"],
+        ["fairy", "a fairy in a green leaf dress with shimmering wings"],
+        ["genie", "a blue genie rising from a small golden lamp"]
+      ]
+    },
+    {
+      "file": "sheets/characters-2.png",
+      "title": "Magical friends",
+      "items": [
+        ["dragon", "a green baby dragon with small wings"],
+        ["unicorn", "a lavender unicorn with a rainbow mane and golden horn"],
+        ["ghost", "a pale mint-blue friendly ghost"],
+        ["monster", "a fuzzy orange one-eyed monster with tiny horns"],
+        ["witch", "a friendly witch with a black pointy hat riding a broom"],
+        ["viking", "a viking with a horned helmet and a big red beard"],
+        ["cowboy", "a cowboy with a brown hat and a red neckerchief"],
+        ["chef", "a chef with a tall hat holding a wooden spoon"],
+        ["king", "a king with a golden crown and a red velvet cape"],
+        ["vampire", "a cute vampire with a black cape with red lining"],
+        ["mummy", "a cute mummy wrapped in beige bandages"],
+        ["elf", "an elf in a red-and-green outfit with pointy ears"]
+      ]
+    },
+    {
+      "file": "sheets/toys-1.png",
+      "title": "Toys",
+      "items": [
+        ["teddy", "a brown teddy bear with a red bow"],
+        ["balloon", "a shiny red balloon on a string"],
+        ["yo-yo", "a blue yo-yo with its string"],
+        ["kite", "a rainbow diamond kite with a short ribbon tail"],
+        ["dice", "a pair of red dice with white dots"],
+        ["puzzle", "a green jigsaw puzzle piece"],
+        ["controller", "a purple game controller"],
+        ["magic-wand", "a magic wand with a sparkling gold star tip"],
+        ["nesting-doll", "a red nesting doll (matryoshka)"],
+        ["pinata", "a colourful donkey pinata"],
+        ["gift", "a blue gift box with a yellow ribbon bow"],
+        ["blocks", "a stack of three wooden toy blocks painted with simple shapes (no letters)"]
+      ]
+    },
+    {
+      "file": "sheets/toys-2.png",
+      "title": "Things",
+      "items": [
+        ["palette", "a wooden paint palette with blobs of paint and a brush"],
+        ["crayons", "a bundle of three crayons: red, blue and yellow"],
+        ["top-hat", "a black magician's top hat with a red band"],
+        ["crystal-ball", "a glowing purple crystal ball on a golden stand"],
+        ["magnet", "a red horseshoe magnet with silver tips"],
+        ["umbrella", "an open yellow umbrella"],
+        ["alarm-clock", "a red alarm clock with two bells (hands only, no numbers)"],
+        ["camera", "a retro teal camera"],
+        ["backpack", "an orange school backpack"],
+        ["sunglasses", "a pair of pink heart-shaped sunglasses"],
+        ["telescope", "a brass telescope on a small tripod"],
+        ["light-bulb", "a glowing yellow light bulb"]
+      ]
+    },
+    {
+      "file": "sheets/sports-1.png",
+      "title": "Sport",
+      "items": [
+        ["soccer-ball", "a black-and-white soccer ball"],
+        ["basketball", "an orange basketball"],
+        ["tennis", "a tennis racket with a yellow-green tennis ball"],
+        ["baseball", "a baseball and a wooden bat"],
+        ["rugby-ball", "a brown rugby ball (American football)"],
+        ["volleyball", "a yellow-and-blue volleyball"],
+        ["bowling", "a bowling ball and a single bowling pin"],
+        ["ping-pong", "a red table tennis paddle with a small ball"],
+        ["boxing-glove", "a blue boxing glove"],
+        ["skateboard", "a green skateboard"],
+        ["medal", "a gold medal on a blue ribbon"],
+        ["trophy", "a shiny gold trophy cup"]
+      ]
+    },
+    {
+      "file": "sheets/sports-2.png",
+      "title": "Music",
+      "items": [
+        ["guitar", "an acoustic guitar in warm wood"],
+        ["drum", "a red drum with two drumsticks"],
+        ["trumpet", "a gold trumpet"],
+        ["violin", "a violin with its bow"],
+        ["piano", "a small black grand piano"],
+        ["saxophone", "a silver saxophone"],
+        ["microphone", "a retro microphone on a short stand"],
+        ["headphones", "a pair of pink headphones"],
+        ["maracas", "a pair of colourful maracas"],
+        ["accordion", "a red accordion"],
+        ["banjo", "a banjo"],
+        ["xylophone", "a toy xylophone with rainbow bars"]
+      ]
+    },
+    {
+      "file": "sheets/vehicles-1.png",
+      "title": "Things that go",
+      "items": [
+        ["car", "a red cartoon car"],
+        ["bus", "a yellow school bus"],
+        ["fire-truck", "a red fire truck with a ladder"],
+        ["police-car", "a blue-and-white police car with lights"],
+        ["ambulance", "a white-and-red ambulance with soft grey shading"],
+        ["tractor", "a green tractor with big back wheels"],
+        ["train", "a blue steam locomotive"],
+        ["airplane", "a sky-blue airplane"],
+        ["helicopter", "an orange helicopter"],
+        ["rocket", "a red-and-silver rocket"],
+        ["sailboat", "a sailboat with a striped red-and-yellow sail"],
+        ["bicycle", "a teal bicycle"]
+      ]
+    },
+    {
+      "file": "sheets/vehicles-2.png",
+      "title": "More things that go",
+      "items": [
+        ["motorbike", "a purple motorbike"],
+        ["scooter", "a pink kick scooter"],
+        ["taxi", "a yellow taxi with a checkered stripe (no text)"],
+        ["race-car", "a green race car"],
+        ["ship", "a cruise ship with a red funnel"],
+        ["speedboat", "a speedboat"],
+        ["cable-car", "a red cable car hanging from a cable"],
+        ["ufo", "a silver flying saucer with a green glass dome"],
+        ["tram", "an orange tram"],
+        ["van", "a blue delivery van"],
+        ["canoe", "a wooden canoe with a paddle"],
+        ["hot-air-balloon", "a rainbow hot-air balloon with a basket"]
+      ]
+    }
+  ]
+}

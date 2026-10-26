@@ -46,6 +46,7 @@ const ORDER = [
   'js/data/party.js',
   'js/data/visual.js',
   'js/data/visual2.js',
+  'js/data/memoryDecks.js',
   'js/data/animals.js',
   'js/data/bible.js',
   'js/games/letterRush.js',

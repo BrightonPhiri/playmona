@@ -1,7 +1,7 @@
 /* ============================================================
    PLAYMONA — memoryGames.js
    Four memory-category games:
-   - memoryMatch        (emoji card pairs)
+   - memoryMatch        (picture decks, js/data/memoryDecks.js)
    - pictureMemory      (SVG illustration pairs)
    - whatsMissing       (spot the removed emoji)
    - rememberSequence   (repeat the coloured sequence)
@@ -63,130 +63,289 @@ window.FF = window.FF || {};
 
   /* ---------- shared card-matching engine (memoryMatch + pictureMemory) ---------- */
 
+  var MAX_CARD = 168;   // px; bigger cards only look empty
+
+  /* Columns and card size that fit n square cards into w x h without
+     scrolling. The biggest card wins; on a near tie, fewer empty slots. */
+  function fitGrid(n, w, h, gap) {
+    var best = null;
+    for (var cols = 2; cols <= n; cols++) {
+      var rows = Math.ceil(n / cols);
+      var size = Math.min((w - gap * (cols - 1)) / cols, (h - gap * (rows - 1)) / rows);
+      var empty = cols * rows - n;
+      if (!best || size > best.size + 2 || (size > best.size - 2 && empty < best.empty)) {
+        best = { cols: cols, size: size, empty: empty };
+      }
+    }
+    best.size = Math.max(36, Math.floor(Math.min(best.size, MAX_CARD)));
+    return best;
+  }
+
+  /* One or more boards of face-down pairs.
+     opts: deal()        -> the items for a new board (one per pair)
+           render(item)  -> the node shown on the card's face
+           label(item)   -> the name read out once the card is face up
+           boards        -> how many boards to play (default 1)
+           colour        -> a colour token that tints the card faces */
   function runMatch(api, opts) {
     var root = api.shell.root;
     var scorers = scorersFor(api);
-    var pairs = opts.pairs;
-
-    var items = (opts.items && opts.items.length) ? opts.items.slice(0, pairs) : [];
-    while (items.length < pairs) {
-      items.push(EMOJI[items.length % EMOJI.length]);
-    }
-
-    var deck = [];
-    items.forEach(function (it) { deck.push(it); deck.push(it); });
-    deck = api.util.shuffle(deck);
+    var many = scorers.length > 1;
+    var racing = !!(FF.Race && FF.Race.active && FF.Race.active());
+    var timed = !!(FF.GameLength && FF.GameLength.timed(api.config));
+    var boards = opts.boards || 1;
+    // "Time per turn" limits each player's turn; alone there are no turns to limit.
+    var turnSecs = many && !racing ? (api.config.timer || 0) : 0;
+    if (timed) FF.GameLength.manual();
 
     var wrap = api.ui.div('match-wrap');
+    if (opts.colour) wrap.style.setProperty('--deck', 'var(' + opts.colour + ')');
     var header = api.ui.div('match-header');
-    var turnLabel = api.ui.div('match-turn', '');
-    var status = api.ui.span('match-status', '');
-    header.appendChild(turnLabel);
-    header.appendChild(status);
+    var who = api.ui.div('match-who');
+    var stats = api.ui.div('match-stats');
+    var pairsStat = api.ui.span('match-stat');
+    var movesStat = api.ui.span('match-stat');
+    stats.appendChild(pairsStat);
+    if (!many) stats.appendChild(movesStat);
+    header.appendChild(who);
+    header.appendChild(stats);
+    var meter = api.ui.div('match-meter');
+    var meterFill = api.ui.div('match-meter__fill');
+    meter.appendChild(meterFill);
+    var board = api.ui.div('match-board');
+    var grid = api.ui.div('match-grid');
+    var toast = api.ui.div('match-toast');
+    toast.setAttribute('aria-hidden', 'true');
+    board.appendChild(grid);
+    board.appendChild(toast);
     wrap.appendChild(header);
+    wrap.appendChild(meter);
+    wrap.appendChild(board);
+    root.appendChild(wrap);
 
-    var grid = api.ui.el('div', {
-      class: 'match-grid',
-      style: { gridTemplateColumns: 'repeat(' + opts.cols + ', 1fr)' }
-    });
-    wrap.appendChild(grid);
-
+    var items = [];
+    var deck = [];       // card position -> item index
     var cards = [];
     var first = -1;
     var busy = false;
     var matched = 0;
+    var moves = 0;
+    var boardNo = 0;
     var turnIdx = 0;
     var ended = false;
+    var toastTimer = null;
 
     function currentScorer() { return scorers[turnIdx % scorers.length]; }
+    function shown() { return wrap.isConnected; }
+    function later(fn, ms) { setTimeout(function () { if (!ended && shown()) fn(); }, ms); }
+    function timeUp() { return timed && FF.GameLength.timeUp(); }
 
     function renderTurn() {
-      turnLabel.textContent = '' + currentScorer().name + "'s turn";
-      api.shell.updateScores(currentScorer().id);
+      FF.ui.clear(who);
+      var boardText = boards > 1 && boards < (FF.GameLength ? FF.GameLength.UNBOUNDED : Infinity)
+        ? FF.t('mmBoardOf', 'Board {n} of {total}', { n: boardNo, total: boards })
+        : (boardNo > 1 ? FF.t('mmBoardN', 'Board {n}', { n: boardNo }) : null);
+      if (many || racing) who.appendChild(FF.GameUI.turnBar(currentScorer(), boardText));
+      else who.appendChild(FF.GameUI.pill(boardText || FF.t('mmFindPairs', 'Find the pairs'), 'cards', 'turn'));
+      api.shell.updateScores(many ? currentScorer().id : undefined);
     }
 
-    function finishMatch() {
-      if (ended) return;
-      ended = true;
-      status.textContent = 'All pairs found! 🎉';
-      api.audio.play('winner');
-      api.shell.updateScores();
-      setTimeout(function () { api.end(buildResults(api)); }, 900);
+    function renderStats() {
+      pairsStat.textContent = FF.t('mmPairs', '{n} of {total} pairs', { n: matched, total: items.length });
+      movesStat.textContent = moves === 1 ? FF.t('mmMove', '1 move') : FF.t('mmMoves', '{n} moves', { n: moves });
+      meterFill.style.width = (items.length ? Math.round(matched / items.length * 100) : 0) + '%';
+    }
+
+    function say(text, kind) {
+      FF.UI.announce(text);
+      toast.textContent = text;
+      toast.className = 'match-toast is-on' + (kind ? ' match-toast--' + kind : '');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(function () { toast.classList.remove('is-on'); }, 1100);
+    }
+
+    function cardLabel(i) {
+      var c = cards[i];
+      var n = FF.t('mmCardN', 'Card {n}', { n: i + 1 });
+      if (!c || !c.classList.contains('flipped')) return n;
+      var name = opts.label ? opts.label(items[deck[i]]) : '';
+      return c.classList.contains('matched')
+        ? FF.t('mmCardMatched', '{card}: {name}, matched', { card: n, name: name })
+        : n + ': ' + name;
+    }
+
+    function flip(i, up) {
+      cards[i].classList.toggle('flipped', up);
+      cards[i].setAttribute('aria-label', cardLabel(i));
+    }
+
+    /* ----- Sizing: every card on screen at once, no scrolling ----- */
+    function fit() {
+      if (!shown()) { stopFit(); return; }
+      var cs = window.getComputedStyle(root);
+      var w = root.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+      var h = root.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+      var gap = w < 520 ? 6 : 10;
+      // Twice: the header can wrap once the board's width is known.
+      for (var pass = 0; pass < 2; pass++) {
+        var chrome = header.offsetHeight + meter.offsetHeight + 2 * (parseFloat(window.getComputedStyle(wrap).rowGap) || 0);
+        var g = fitGrid(deck.length, w, h - chrome, gap);
+        var gridW = g.cols * g.size + (g.cols - 1) * gap;
+        grid.style.setProperty('--mm-size', g.size + 'px');
+        grid.style.setProperty('--mm-gap', gap + 'px');
+        grid.style.width = gridW + 'px';
+        // The header lines up with the board, but never squeezes onto two lines on a phone.
+        wrap.style.width = Math.min(w, Math.max(gridW, 480)) + 'px';
+      }
+    }
+    var observer = null;
+    function stopFit() {
+      if (observer) observer.disconnect();
+      window.removeEventListener('resize', fit);
+    }
+    if (typeof ResizeObserver === 'function') {
+      observer = new ResizeObserver(function () { fit(); });
+      observer.observe(root);
+    } else {
+      window.addEventListener('resize', fit);
+    }
+
+    /* ----- Turns ----- */
+    function startTurnTimer() {
+      if (turnSecs > 0) api.shell.setTimer(turnSecs, onTurnTimeout);
+    }
+
+    function onTurnTimeout() {
+      if (ended || busy || !shown()) return;
+      if (first !== -1) { flip(first, false); first = -1; }
+      nextTurn();
+      say(FF.t('mmTurnTimeUp', 'Time’s up. {name}’s turn', { name: currentScorer().name }));
+    }
+
+    function nextTurn() {
+      turnIdx++;
+      renderTurn();
+      startTurnTimer();
     }
 
     function onCard(i) {
       if (ended || busy) return;
-      if (cards[i].classList.contains('flipped') || cards[i].classList.contains('matched')) return;
-      if (first === -1) {
-        first = i;
-        cards[i].classList.add('flipped');
-        api.audio.play('flip');
-        return;
-      }
-      cards[i].classList.add('flipped');
+      if (cards[i].classList.contains('flipped')) return;
+      flip(i, true);
       api.audio.play('flip');
-      busy = true;
-      var aIdx = first;
-      var bIdx = i;
+      if (first === -1) { first = i; return; }
+      var a = first;
+      var b = i;
       first = -1;
-      setTimeout(function () {
-        if (deck[aIdx] === deck[bIdx]) {
-          cards[aIdx].classList.add('matched');
-          cards[bIdx].classList.add('matched');
+      busy = true;
+      moves++;
+      renderStats();
+      later(function () {
+        if (deck[a] === deck[b]) {
+          cards[a].classList.add('matched');
+          cards[b].classList.add('matched');
+          cards[a].setAttribute('aria-disabled', 'true');
+          cards[b].setAttribute('aria-disabled', 'true');
+          flip(a, true);
+          flip(b, true);
           matched++;
           api.audio.play('correct');
           var pts = roundPoints(50, api.config.difficulty);
           api.scoring.add(currentScorer().id, pts, { correct: true });
-          status.textContent = currentScorer().name + ' found a match! +' + pts;
-          api.shell.updateScores(currentScorer().id);
+          renderStats();
+          renderTurn();
+          say(many
+            ? FF.t('mmMatchBy', '{name} found a pair! +{pts}', { name: currentScorer().name, pts: pts })
+            : FF.t('mmMatch', 'A pair! +{pts}', { pts: pts }), 'good');
           busy = false;
-          if (matched >= pairs) {
-            finishMatch();
-          }
-          // same player keeps their turn
+          if (matched >= items.length) boardDone();
+          else if (timeUp()) finish();
+          else startTurnTimer();   // a pair earns another go, with a fresh clock
         } else {
           api.audio.play('wrong');
-          setTimeout(function () {
-            cards[aIdx].classList.remove('flipped');
-            cards[bIdx].classList.remove('flipped');
+          api.scoring.add(currentScorer().id, 0, { wrong: true });
+          api.scoring.resetStreak(currentScorer().id);
+          cards[a].classList.add('miss');
+          cards[b].classList.add('miss');
+          later(function () {
+            cards[a].classList.remove('miss');
+            cards[b].classList.remove('miss');
+            flip(a, false);
+            flip(b, false);
             busy = false;
-            turnIdx++;
-            status.textContent = 'No match — ' + currentScorer().name + "'s turn.";
-            renderTurn();
-          }, 750);
+            if (timeUp()) { finish(); return; }
+            if (many) {
+              nextTurn();
+              say(FF.t('mmNoMatchNext', 'No match. {name}’s turn', { name: currentScorer().name }));
+            }
+          }, 800);
         }
-      }, 620);
+      }, 520);
     }
 
-    deck.forEach(function (item, i) {
-      var inner = api.ui.div('match-card__inner');
-      inner.appendChild(api.ui.div('match-card__face match-card__back', FF.ui.el('img', { class: 'match-card__mark', src: 'assets/brand/mark-256.webp', alt: '' })));
-      var front = api.ui.div('match-card__face match-card__front');
-      front.appendChild(opts.buildFront(item));
-      inner.appendChild(front);
-      var card = api.ui.el('button', {
-        class: 'match-card',
-        type: 'button',
-        tabindex: 0,
-        ariaLabel: 'Card ' + (i + 1)
-      }, inner);
-      card.addEventListener('click', function () { onCard(i); });
-      grid.appendChild(card);
-      cards.push(card);
-    });
-
-    root.appendChild(wrap);
-    renderTurn();
-    status.textContent = 'Flip two cards to find a match.';
-    if (api.config.timer > 0) {
-      api.shell.setTimer(api.config.timer, function () {
-        if (ended) return;
-        ended = true;
-        status.textContent = "Time's up!";
-        api.audio.play('roundEnd');
-        setTimeout(function () { api.end(buildResults(api)); }, 700);
+    /* ----- Boards ----- */
+    function deal() {
+      boardNo++;
+      items = opts.deal();
+      matched = 0;
+      first = -1;
+      var order = [];
+      items.forEach(function (it, k) { order.push(k); order.push(k); });
+      deck = api.util.shuffle(order);
+      FF.ui.clear(grid);
+      cards = [];
+      deck.forEach(function (k, i) {
+        var inner = api.ui.div('match-card__inner');
+        var back = api.ui.div('match-card__face match-card__back');
+        back.appendChild(FF.ui.el('img', { class: 'match-card__mark', src: 'assets/brand/mark-256.webp', alt: '', draggable: 'false' }));
+        var front = api.ui.div('match-card__face match-card__front');
+        front.appendChild(opts.render(items[k]));
+        inner.appendChild(back);
+        inner.appendChild(front);
+        var card = api.ui.el('button', { class: 'match-card', type: 'button' }, inner);
+        card.style.setProperty('--i', i);
+        card.addEventListener('click', function () { onCard(i); });
+        grid.appendChild(card);
+        cards.push(card);
+        card.setAttribute('aria-label', cardLabel(i));
       });
+      grid.classList.remove('is-dealt');
+      renderStats();
+      renderTurn();
+      fit();
+      // Cards fly in once their size is known.
+      requestAnimationFrame(function () { grid.classList.add('is-dealt'); });
+      setTimeout(function () { grid.classList.add('is-dealt'); }, 60);
+      startTurnTimer();
     }
+
+    function boardDone() {
+      if (boardNo < boards && !timeUp()) {
+        api.audio.play('roundEnd');
+        say(FF.t('mmBoardClear', 'Board cleared!'), 'good');
+        api.shell.hideTimer();
+        busy = true;
+        later(function () { busy = false; deal(); }, 1300);
+        return;
+      }
+      finish(true);
+    }
+
+    function finish(cleared) {
+      if (ended) return;
+      ended = true;
+      stopFit();
+      api.shell.hideTimer();
+      if (cleared) {
+        say(FF.t('mmAllFound', 'All pairs found!'), 'good');
+        wrap.classList.add('is-done');
+        api.audio.play('winner');
+      }
+      api.shell.updateScores();
+      setTimeout(function () { api.end(buildResults(api)); }, cleared ? 1100 : 700);
+    }
+
+    deal();
   }
 
   /* ---------- pictureMemory data helper ---------- */
@@ -214,42 +373,157 @@ window.FF = window.FF || {};
 
   /* ============================================================
      1. MEMORY MATCH
+     Picture decks from js/data/memoryDecks.js. A card shows its
+     picture once tools/cut-art-sheets.py has made it, else its emoji.
      ============================================================ */
+  var MM_PAIRS = { easy: 6, normal: 10, hard: 15 };
+  var MM_DECK_KEY = 'memoryMatch:deck';
+  var MM_ART = 'games/memoryMatch';
+  var mmRecent = [];   // card ids from recent boards, dealt last so boards look fresh
+
+  function mmHasPic(id) {
+    var m = FF.AssetManifest && FF.AssetManifest[MM_ART];
+    return !!(m && m[id]);
+  }
+
+  function mmCard(row) {
+    return { id: row[0], name: FF.t('mmCard_' + row[0].replace(/-/g, '_'), row[1]), emoji: row[2], pic: mmHasPic(row[0]) };
+  }
+
+  function mmDeck(id) {
+    var decks = FF.MemoryDecks || [];
+    for (var i = 0; i < decks.length; i++) if (decks[i].id === id) return decks[i];
+    return null;
+  }
+
+  /* n different cards from one deck, or from every deck when deckId is empty. */
+  function mmDeal(deckId, n) {
+    var pool = [];
+    (FF.MemoryDecks || []).forEach(function (d) {
+      if (deckId && d.id !== deckId) return;
+      d.cards.forEach(function (row) { pool.push(mmCard(row)); });
+    });
+    pool = FF.util.shuffle(pool);
+    pool.sort(function (a, b) { return (mmRecent.indexOf(a.id) !== -1) - (mmRecent.indexOf(b.id) !== -1); });
+    var out = [];
+    var seen = {};
+    for (var i = 0; i < pool.length && out.length < n; i++) {
+      // Two different cards must never look alike (emoji stand-ins can repeat).
+      var face = pool[i].pic ? pool[i].id : pool[i].emoji;
+      if (seen[face]) continue;
+      seen[face] = true;
+      out.push(pool[i]);
+    }
+    mmRecent = out.map(function (c) { return c.id; }).concat(mmRecent).slice(0, 60);
+    return out;
+  }
+
+  function mmFace(card) {
+    if (card.pic) {
+      return FF.ui.el('img', {
+        class: 'match-pic', src: FF.Assets.artPath(MM_ART, card.id), alt: '', draggable: 'false', decoding: 'async'
+      });
+    }
+    return FF.ui.span('match-emoji', card.emoji);
+  }
+
+  /* Choose a deck before a local game. Tapping a deck starts it. */
+  function mmDeckPicker(api, onPick) {
+    var t = FF.t;
+    var root = api.shell.root;
+    FF.ui.clear(root);
+    api.shell.hideTimer();
+    if (FF.GameLength) FF.GameLength.pause();
+    var last = FF.Storage.get(MM_DECK_KEY, null);   // null before the first game
+    var decks = FF.MemoryDecks || [];
+
+    var stage = FF.GameUI.stage({ wide: true, className: 'mm-pick' });
+    stage.appendChild(FF.GameUI.kicker(t('mmPickKicker', 'Memory Match')));
+    stage.appendChild(FF.GameUI.prompt(t('mmPickTitle', 'Pick a deck'), 'xl'));
+
+    var mixSample = [['animals', 10], ['food', 0], ['vehicles', 9]].map(function (x) {
+      var d = mmDeck(x[0]);
+      return d ? mmCard(d.cards[x[1]]) : null;
+    }).filter(Boolean);
+    var options = [{ id: '', name: t('mmMix', 'Mix it up'), sub: t('mmMixSub', 'A bit of everything'), colour: '--accent-vivid', sample: mixSample }];
+    decks.forEach(function (d) {
+      options.push({
+        id: d.id,
+        name: t('mmDeck_' + d.id, d.name),
+        sub: t('mmNCards', '{n} pictures', { n: d.cards.length }),
+        colour: d.colour,
+        sample: [d.cards[0], d.cards[2], d.cards[1]].map(mmCard)
+      });
+    });
+
+    var grid = FF.ui.el('div', { class: 'mm-decks', role: 'group', 'aria-label': t('mmDecks', 'Decks') });
+    options.forEach(function (o) {
+      var b = FF.ui.el('button', { type: 'button', class: 'mm-deck' + (o.id === last ? ' is-last' : '') });
+      b.style.setProperty('--deck', 'var(' + o.colour + ')');
+      var art = FF.ui.span('mm-deck__art');
+      art.setAttribute('aria-hidden', 'true');
+      o.sample.forEach(function (card) {
+        var s = FF.ui.span('mm-deck__card');
+        s.appendChild(mmFace(card));
+        art.appendChild(s);
+      });
+      b.appendChild(art);
+      var txt = FF.ui.span('mm-deck__text');
+      txt.appendChild(FF.ui.span('mm-deck__name', o.name));
+      txt.appendChild(FF.ui.span('mm-deck__sub', o.id === last ? t('mmLastPlayed', 'Last played') : o.sub));
+      b.appendChild(txt);
+      b.addEventListener('click', function () {
+        FF.Storage.set(MM_DECK_KEY, o.id);
+        if (FF.GameLength) FF.GameLength.resume();
+        FF.Audio.play('roundStart');
+        FF.ui.clear(root);
+        onPick(o.id);
+      });
+      grid.appendChild(b);
+    });
+    stage.appendChild(grid);
+    root.appendChild(stage);
+    FF.Nav.focusFirst(stage);
+  }
+
+  function mmPlay(api, deckId) {
+    var pairs = MM_PAIRS[api.config.difficulty] || MM_PAIRS.normal;
+    var deck = mmDeck(deckId);
+    var timed = !!(FF.GameLength && FF.GameLength.timed(api.config));
+    runMatch(api, {
+      // Longer games and a game clock deal fresh boards; Normal is one board.
+      boards: timed ? FF.GameLength.UNBOUNDED : (FF.GameLength ? FF.GameLength.rounds(api, 1, 0) : 1),
+      colour: deck ? deck.colour : null,
+      deal: function () { return mmDeal(deckId, pairs); },
+      render: mmFace,
+      label: function (card) { return card.name; }
+    });
+  }
+
   FF.registerGame({
     id: 'memoryMatch',
     featured: true,
     name: 'Memory Match',
-    description: 'Flip cards to find matching pairs and score big.',
+    // The wide banner shows the glowing pair of foxes in the middle of the cover.
+    coverFocus: 'center 46%',
+    description: 'Pick a deck of cute pictures, flip the cards and find every pair.',
     category: 'memory',
     icon: '🃏',
     players: [1, 8],
     difficulty: 'Easy',
     duration: 4,
-    tags: ['classic', 'quick'],
+    tags: ['classic', 'quick', 'kids'],
     modes: ['solo', 'turn'],
     defaultMode: 'turn',
     howToPlay: [
-      'Take turns flipping two cards.',
-      'If they match, you score and go again.',
+      'Pick a deck: animals, food, characters and more, or mix them up.',
+      'Flip two cards. If they match, you score and go again.',
       'If not, they flip back and the next player goes.',
-      'Find every pair to win.'
+      'Find every pair to win. Hard mode has 30 cards.'
     ],
     start: function (api) {
-      var d = api.config.difficulty;
-      var cfg = {
-        easy: { pairs: 6, cols: 4 },
-        normal: { pairs: 8, cols: 4 },
-        hard: { pairs: 12, cols: 6 }
-      };
-      var c = cfg[d] || cfg.normal;
-      runMatch(api, {
-        pairs: c.pairs,
-        cols: c.cols,
-        items: EMOJI.slice(),
-        buildFront: function (item) {
-          return api.ui.span('match-emoji', item);
-        }
-      });
+      if (FF.Race && FF.Race.active && FF.Race.active()) { mmPlay(api, ''); return; }
+      mmDeckPicker(api, function (deckId) { mmPlay(api, deckId); });
     }
   });
 
@@ -277,17 +551,19 @@ window.FF = window.FF || {};
     start: function (api) {
       var d = api.config.difficulty;
       var cfg = {
-        easy: { pairs: 6, cols: 4 },
-        normal: { pairs: 8, cols: 4 },
-        hard: { pairs: 10, cols: 5 }
+        easy: { pairs: 6 },
+        normal: { pairs: 8 },
+        hard: { pairs: 10 }
       };
       var c = cfg[d] || cfg.normal;
-      var items = getPictureItems(c.pairs);
       runMatch(api, {
-        pairs: c.pairs,
-        cols: c.cols,
-        items: items,
-        buildFront: function (item) {
+        deal: function () {
+          var items = getPictureItems(c.pairs);
+          while (items.length < c.pairs) items.push(EMOJI[items.length % EMOJI.length]);
+          return items;
+        },
+        label: function (item) { return typeof item === 'string' ? item : item.name; },
+        render: function (item) {
           if (typeof item === 'string') return api.ui.span('match-emoji', item);
           var face = api.assets.illustration(item.svg, 'mem-img', item.name);
           var cap = api.ui.div('mem-caption', item.name);

@@ -12,7 +12,7 @@ const path = require('path');
 const crypto = require('crypto');
 
 const ROOT = path.join(__dirname, '..');
-const FOLDERS = ['covers', 'categories', 'ui'];
+const FOLDERS = ['covers', 'categories', 'ui', 'games/memoryMatch'];
 const out = {};
 
 FOLDERS.forEach(function (folder) {

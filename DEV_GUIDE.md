@@ -157,6 +157,15 @@ thin slice, so a game can set `coverFocus: 'center 32%'` to place its subject th
 The manifest stores a fingerprint of each picture and `FF.Assets.artPath` adds it to
 the address (`?v=…`), so a redrawn cover can keep its file name and still show at once.
 
+Games that need many small pictures (Memory Match's 192 cards) have them drawn as
+sheets of 12 in a 4×3 grid, listed under `sheets` in `tools/art/<gameId>.json`.
+`python tools/cut-art-sheets.py <gameId>` removes the background (transparent, or
+white flood-filled from the edges), cuts one object per cell, saves 256 px WebP
+cards of about 10 KB, flags objects that spill into a neighbouring cell, and
+refreshes the manifest. Memory Match shows a card's emoji until its picture is in
+the manifest, so the deck ids in `js/data/memoryDecks.js` must match the sheets
+(`tools/test/memoryMatch.test.js` checks this).
+
 ### Game length (`FF.GameLength`, js/gameLength.js)
 
 Every game gets its round count from `FF.GameLength.rounds(api, usual, available)` and
