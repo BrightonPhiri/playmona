@@ -304,3 +304,28 @@ test('parallel mode with nobody scoring has no headline winner', function () {
   assertEqual(r.settled, true);
   assertEqual(r.winnerId, null);
 });
+
+test('ranked: places by time, ties share a place and the next skips', function () {
+  const FF = loadFF(['js/net/raceRules.js']);
+  const places = FF.RaceRules.placesOf(round({
+    u1: { correct: true, ms: 250 }, u2: { correct: true, ms: 210 },
+    u3: { correct: true, ms: 250 }, u4: { correct: false, ms: null }, u5: { correct: true, ms: 300 }
+  }));
+  assertEqual(places.map(function (e) { return e.uid + ':' + e.place; }).join(','), 'u2:1,u1:2,u3:2,u5:4');
+});
+
+test('ranked: settles like fastest and every correct answer scores by place', function () {
+  const FF = loadFF(['js/net/raceRules.js']);
+  const answers = { u1: { correct: true, ms: 300 }, u2: { correct: true, ms: 200 }, u3: { correct: false, ms: null } };
+  const half = FF.RaceRules.settle(round({ u1: answers.u1 }), players(3), 12000, 2000, 'ranked');
+  assertEqual(half.settled, false, 'waits for everyone');
+  const done = FF.RaceRules.settle(round(answers), players(3), 12000, 2000, 'ranked');
+  assertEqual(done.settled, true);
+  assertEqual(done.winnerId, 'u2');
+  const pts = [300, 200, 150];
+  const scores = FF.RaceRules.scores({ 0: round(answers), 1: round({ u1: { correct: true, ms: 150 }, u2: { correct: true, ms: 190 } }) },
+    players(3), function (a, place) { return pts[place - 1] || 100; }, 'ranked');
+  assertEqual(scores.u1, 200 + 300);
+  assertEqual(scores.u2, 300 + 200);
+  assertEqual(scores.u3, 0);
+});

@@ -82,6 +82,17 @@
 
   /* Answer-option markers (Kahoot-style shape + colour, never colour alone) */
   --opt-a: #e11d48; --opt-b: #2563eb; --opt-c: #ca8a04; --opt-d: #059669;
+
+  /* Quick Tap arena: always dark in both themes, like a stage. The signal
+     also changes shape and word, so it never relies on colour alone. */
+  --qt-arena: #080c26; --qt-arena-glow: #101850; --qt-arena-text: #f3f5ff; --qt-arena-muted: #aab3dc;
+  --qt-go: #2ee86b; --qt-go-glow: #5dffa0; --qt-go-deep: #0d9e44; --qt-go-ink: #03210e; --qt-go-ink-soft: #063d1b;
+  --qt-early: #5a1426; --qt-early-deep: #2a0a18; --qt-bad: #ff4d6d;
+  --qt-decoy-a: #3b82f6; --qt-decoy-a-glow: #6aa8ff; --qt-decoy-a-deep: #173d8f;
+  --qt-decoy-b: #f59e0b; --qt-decoy-b-glow: #ffd27a; --qt-decoy-b-deep: #8a4a06; --qt-decoy-b-ink: #2a1500;
+  /* Speed ratings and medals (dark text sits on all of them). */
+  --qt-lightning: #ffc83d; --qt-rocket: #7dd3fc; --qt-quick: #2ee86b; --qt-steady: #cfd6f6; --qt-sleepy: #c4b5fd;
+  --medal-gold: #ffc83d; --medal-silver: #cfd6f6; --medal-bronze: #ff9a52; --medal-ink: #0b1030;
 }
 
 /* ============ Light theme (default) ============ */

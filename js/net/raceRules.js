@@ -37,6 +37,22 @@ window.FF = window.FF || {};
       return best;
     },
 
+    /* Every correct answer in a round with its place, fastest first.
+       Equal times share a place and the next one skips (1, 1, 3), so
+       every device ranks a round the same way. Used by 'ranked' games. */
+    placesOf: function (round) {
+      var answers = answersOf(round);
+      var list = Object.keys(answers).filter(function (uid) {
+        var a = answers[uid];
+        return a && a.correct === true && a.ms != null;
+      }).map(function (uid) { return { uid: uid, ms: answers[uid].ms }; });
+      list.sort(function (a, b) { return a.ms - b.ms || (a.uid < b.uid ? -1 : 1); });
+      list.forEach(function (e, i) {
+        e.place = (i > 0 && list[i - 1].ms === e.ms) ? list[i - 1].place : i + 1;
+      });
+      return list;
+    },
+
     /* The highest-scoring answer in a round, or null. Used by parallel
        games, where everyone plays the same challenge at the same time and
        keeps their own score rather than racing for one point. */
@@ -100,7 +116,7 @@ window.FF = window.FF || {};
         return { settled: false, winnerId: null, reason: null };
       }
 
-      if (mode === 'fastest') {
+      if (mode === 'fastest' || mode === 'ranked') {
         // No slot is claimed on answer; the round ends when everyone has
         // had their go, and the quickest correct answer takes it.
         if (everyoneAnswered || timedOut) {
@@ -169,6 +185,20 @@ window.FF = window.FF || {};
             if (!Object.prototype.hasOwnProperty.call(out, uid)) out[uid] = 0;
             var v = (a.value != null) ? a.value : 0;
             out[uid] += (typeof v === 'number' && isFinite(v)) ? v : 0;
+          });
+        });
+        return out;
+      }
+
+      // Ranked games score every correct answer by its place in the round.
+      if (mode === 'ranked') {
+        var self = this;
+        Object.keys(rounds || {}).forEach(function (key) {
+          var answers = answersOf(rounds[key]);
+          self.placesOf(rounds[key]).forEach(function (e) {
+            if (!Object.prototype.hasOwnProperty.call(out, e.uid)) out[e.uid] = 0;
+            var pts = pointsFor(answers[e.uid], e.place);
+            out[e.uid] += (typeof pts === 'number' && isFinite(pts)) ? pts : 0;
           });
         });
         return out;

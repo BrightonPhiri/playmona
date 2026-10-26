@@ -21,6 +21,7 @@ window.FF = window.FF || {};
     tap:       { f: 1000, d: 0.04, type: 'square',   v: 0.10 },
     flip:      { f: 520,  d: 0.05, type: 'triangle', v: 0.08 },
     tick:      { f: 1000, d: 0.03, type: 'square',   v: 0.05 },
+    heartbeat: { f: 70,   d: 0.18, type: 'sine',     v: 0.16 },
     streak:    { f: 900,  d: 0.1,  type: 'triangle', v: 0.12, chord: [900, 1200] }
   };
 

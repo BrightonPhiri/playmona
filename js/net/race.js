@@ -155,7 +155,7 @@ window.FF = window.FF || {};
         winnerId: winnerId || null,
         winnerName: winnerId ? nameOf(winnerId) : null,
         correct: winnerId === r.uid,
-        points: answer ? scoreFor(answer) : 0,
+        points: answer ? scoreFor(answer, 1) : 0,
         reason: reason,
         timeUp: last
       });
@@ -295,9 +295,11 @@ window.FF = window.FF || {};
         pointsFor: opts.pointsFor || function () { return 100; },
         // 'first'    - first correct answer claims the winner slot
         // 'fastest'  - quickest correct answer wins once everyone has gone
+        // 'ranked'   - like 'fastest', but every correct answer scores by
+        //              its place (pointsFor(answer, place))
         // 'parallel' - everyone plays the same challenge and keeps their
         //              own score; the winner is only for the headline
-        mode: (opts.mode === 'fastest' || opts.mode === 'parallel') ? opts.mode : 'first',
+        mode: (opts.mode === 'fastest' || opts.mode === 'ranked' || opts.mode === 'parallel') ? opts.mode : 'first',
         index: 0,
         settled: false,
         claiming: false
@@ -463,7 +465,7 @@ window.FF = window.FF || {};
       return r.transport.set('rounds/' + n + '/answers/' + r.uid, record).then(function () {
         // In 'fastest' mode nobody claims on answering - the winner is
         // derived from the recorded times once the round closes.
-        if (!correct || session.mode === 'fastest' || session.mode === 'parallel') return null;
+        if (!correct || session.mode === 'fastest' || session.mode === 'ranked' || session.mode === 'parallel') return null;
         return r.transport.transaction('rounds/' + n + '/winner', function (current) {
           return current == null ? r.uid : undefined;   // first correct answer wins
         });

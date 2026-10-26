@@ -1,0 +1,9 @@
+{
+  "game": "quickTap",
+  "prompts": "docs/art/quickTap-prompts.md",
+  "source": "assets/playmona_assets/quick-tap",
+  "ids": [],
+  "sets": [],
+  "focus": {},
+  "cover": {"from": "cover.png", "to": "assets/images/covers/quickTap.webp", "size": [1086, 1448], "max_kb": 240}
+}
