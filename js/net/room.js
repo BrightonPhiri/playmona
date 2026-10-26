@@ -109,7 +109,7 @@ window.FF = window.FF || {};
       var p = players[uid] || {};
       return [
         uid, p.name || '', p.avatar || '', p.color || '',
-        p.teamId || '', p.joinedAt || 0, playerIsOnline(p, now), p.leftGame || ''
+        p.teamId || '', p.joinedAt || 0, playerIsOnline(p, now), p.leftGame || '', p.ready || ''
       ].join('|');
     }).join('~');
   }
@@ -455,6 +455,26 @@ window.FF = window.FF || {};
       return state.transport.update('meta', patch || {});
     },
 
+    /* The ready check. The host publishes the chosen game and settings as
+       meta.pick ({ id, gameId, settings }); each player marks themselves
+       ready for that pick's id, so changing the game asks everyone again. */
+    setPick: function (pick) {
+      if (!state) return Promise.reject(new Error('Not in a room.'));
+      if (!state.isHost) return Promise.reject(new Error('Only the room host can choose the game.'));
+      return state.transport.update('meta', { pick: pick || null });
+    },
+    setReady: function (pickId) {
+      if (!state) return Promise.reject(new Error('Not in a room.'));
+      return state.transport.update('players/' + state.uid, { ready: pickId || null });
+    },
+    /* True once every player here is ready for the current pick. */
+    everyoneReady: function () {
+      var pick = state && state.meta && state.meta.pick;
+      if (!pick || !pick.id) return false;
+      var here = this.presentPlayers();
+      return here.length > 0 && here.every(function (p) { return p.ready === pick.id; });
+    },
+
     /* Players in the shape FF.RaceRules expects. */
     racePlayers: function () {
       if (!state) return [];
@@ -472,7 +492,9 @@ window.FF = window.FF || {};
           joinedAt: p.joinedAt || 0,
           lastSeen: p.lastSeen == null ? null : p.lastSeen,
           away: !!p.away,
-          leftGame: p.leftGame == null ? null : p.leftGame
+          leftGame: p.leftGame == null ? null : p.leftGame,
+          // The id of the host's pick this player said ready for (see setReady).
+          ready: p.ready == null ? null : p.ready
         };
       });
     },
@@ -542,6 +564,7 @@ window.FF = window.FF || {};
         startAt: transport.serverNow() + COUNTDOWN_MS,
         endedAt: null,
         results: null,
+        pick: null,       // the ready check is done; the next game asks again
         expiresAt: transport.serverNow() + TTL_MS
       };
       if (settings) payload.settings = settings;

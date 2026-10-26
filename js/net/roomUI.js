@@ -756,7 +756,9 @@ window.FF = window.FF || {};
       // The host picks a game first; the list then folds away and the
       // settings for that game appear. "Change game" opens the list again.
       var chosen = self._lastGame || null;
-      if (self._pickingGame == null) self._pickingGame = !chosen;
+      // Back from a game: the ready check is over, so the host picks again
+      // (the last game stays chosen) and everyone else waits on step 5.
+      if (self._step === 5 && !(cur.meta && cur.meta.pick) && cur.isHost) self._step = chosen ? 4 : 3;
       if (!self._roomSettings) {
         self._roomSettings = {
           difficulty: (FF.Settings && FF.Settings.get('difficulty')) || 'normal',
@@ -778,36 +780,49 @@ window.FF = window.FF || {};
         });
       }
 
+      // Pick a game: cover cards with the name on a scrim, and a search box.
       function gameGrid(onPick) {
         var grid = FF.ui.div('rm-games');
+        var q = String(self._gameQuery || '').trim().toLowerCase();
+        var shown = 0;
         ONLINE_GAMES.forEach(function (id) {
           var def = FF.Games.get(id);
           if (!def) return;
           var cat = (FF.Categories && FF.Categories[def.category]) || { name: def.category, color: '#8b5cf6' };
+          if (q && (def.name + ' ' + (cat.name || '') + ' ' + (def.description || '')).toLowerCase().indexOf(q) === -1) return;
+          shown++;
 
           // The host needs the game (Plus games, or free plays left); everyone else joins free.
           var pay = FF.Access && FF.Access.cardBadge ? FF.Access.cardBadge(id) : null;
+          var hasArt = FF.Assets.has('covers', id);
           var card = FF.ui.el('button', {
-            class: 'rm-game' + (id === chosen ? ' rm-game--on' : '') + (pay && pay.kind === 'plus' ? ' rm-game--plus' : ''),
+            class: 'rm-game' + (hasArt ? ' rm-game--art' : '') + (id === chosen ? ' rm-game--on' : '') + (pay && pay.kind === 'plus' ? ' rm-game--plus' : ''),
             type: 'button',
             'aria-pressed': id === chosen ? 'true' : 'false',
-            'aria-label': def.name + (pay ? '. ' + pay.text : ''),
-            style: { '--rm-game-color': cat.color },
+            'aria-label': def.name + '. ' + cat.name + (pay ? '. ' + pay.text : ''),
+            style: { '--rm-game-color': cat.color, '--art': FF.Assets.artUrl('covers', id), '--wash': FF.Assets.wash(def.category) },
             onclick: function () {
               if (FF.Access && !FF.Access.canPlay(id)) { FF.Access.explain(id); return; }
               chosen = id;
               self._lastGame = id;
-              self._pickingGame = false;
-              self._showPicked = true;
               FF.Audio.play('select');
               onPick();
             }
           });
-          var gi = FF.ui.div('rm-game__icon');
-          gi.appendChild(FF.Icons.icon(FF.Icons.game[id] || cat.iconKey, def.icon || '🎮'));
-          card.appendChild(gi);
-          card.appendChild(FF.ui.div('rm-game__name', def.name));
-          card.appendChild(FF.ui.div('rm-game__cat', cat.name));
+          if (!hasArt) {
+            var gi = FF.ui.div('rm-game__icon');
+            gi.appendChild(FF.Icons.icon(FF.Icons.game[id] || cat.iconKey, def.icon || '🎮'));
+            card.appendChild(gi);
+          }
+          if (id === chosen) {
+            var tick = FF.ui.span('rm-game__tick');
+            tick.appendChild(FF.Icons.icon('check'));
+            card.appendChild(tick);
+          }
+          var label = FF.ui.div('rm-game__label');
+          label.appendChild(FF.ui.div('rm-game__name', def.name));
+          label.appendChild(FF.ui.div('rm-game__cat', cat.name));
+          card.appendChild(label);
           if (pay) {
             var tag = FF.ui.span('rm-game__pay rm-game__pay--' + pay.kind);
             tag.appendChild(FF.Icons.icon(pay.kind === 'plus' ? 'crown' : 'play'));
@@ -816,25 +831,218 @@ window.FF = window.FF || {};
           }
           grid.appendChild(card);
         });
+        if (!shown) {
+          grid.appendChild(FF.UI.emptyState({ icon: 'search', title: FF.t('noGamesFound', 'No games found'), text: FF.t('rmTryAnother', 'Try another name, like Quiz or Tap.') }));
+        }
         return grid;
+      }
+
+      function searchBox(onChange) {
+        var box = FF.ui.div('searchbox rm-search');
+        var sIcon = FF.ui.span('searchbox__icon');
+        sIcon.appendChild(FF.Icons.icon('search'));
+        box.appendChild(sIcon);
+        var input = FF.ui.el('input', {
+          type: 'search', class: 'input searchbox__input', id: 'rm-game-search',
+          placeholder: FF.t('searchPlaceholder', 'Search games'), 'aria-label': FF.t('searchGames', 'Search games'),
+          autocomplete: 'off', enterkeyhint: 'search', value: self._gameQuery || ''
+        });
+        input.addEventListener('input', function () { self._gameQuery = input.value; onChange(); });
+        box.appendChild(input);
+        var clear = FF.UI.iconButton('close', FF.t('clearSearch', 'Clear search'), function () {
+          input.value = ''; self._gameQuery = ''; onChange(); input.focus();
+        }, 'searchbox__clear');
+        clear.hidden = !self._gameQuery;
+        box.appendChild(clear);
+        return box;
+      }
+
+      var STEPS = [
+        { key: 'invite', icon: 'users-three', label: FF.t('rmStepInvite', 'Invite') },
+        { key: 'voice', icon: 'speaker', label: FF.t('rmStepVoice', 'Voice') },
+        { key: 'game', icon: 'game-controller', label: FF.t('rmStepGame', 'Game') },
+        { key: 'settings', icon: 'sliders', label: FF.t('rmStepSettings', 'Settings') },
+        { key: 'ready', icon: 'check', label: FF.t('rmStepReady', 'Ready') }
+      ];
+      if (!self._step) self._step = 1;
+
+      function goStep(n) {
+        self._step = Math.max(1, Math.min(STEPS.length, n));
+        FF.Audio.play('click');
+        render();
+        var top = main.querySelector('.rm-steps');
+        if (top && top.scrollIntoView) { try { top.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) {} }
+      }
+
+      function stepper(s, players, pick) {
+        var nav = FF.ui.el('nav', { class: 'rm-steps', 'aria-label': FF.t('rmSteps', 'Room setup') });
+        STEPS.forEach(function (st, i) {
+          var n = i + 1;
+          var done = n < self._step;
+          var btn = FF.ui.el('button', {
+            type: 'button',
+            class: 'rm-step' + (n === self._step ? ' rm-step--on' : '') + (done ? ' rm-step--done' : ''),
+            'aria-current': n === self._step ? 'step' : null,
+            'aria-label': FF.t('rmStepN', 'Step {n}: {label}', { n: n, label: st.label }),
+            onclick: function () { goStep(n); }
+          });
+          var dot = FF.ui.span('rm-step__dot');
+          if (done) dot.appendChild(FF.Icons.icon('check'));
+          else dot.appendChild(document.createTextNode(String(n)));
+          btn.appendChild(dot);
+          btn.appendChild(FF.ui.span('rm-step__label', st.label));
+          if (st.key === 'invite') btn.appendChild(FF.ui.span('rm-step__badge', String(players.length)));
+          if (st.key === 'ready' && pick) {
+            var readyCount = players.filter(function (p) { return p.ready === pick.id; }).length;
+            btn.appendChild(FF.ui.span('rm-step__badge' + (readyCount === players.length ? ' rm-step__badge--ok' : ''), readyCount + '/' + players.length));
+          }
+          nav.appendChild(btn);
+        });
+        return nav;
+      }
+
+      function stepNav(backLabel, nextLabel, onNext, opts) {
+        opts = opts || {};
+        var row = FF.ui.div('rm-stepnav');
+        if (self._step > 1) {
+          row.appendChild(FF.UI.button(backLabel || FF.t('back', 'Back'), { class: 'btn-ghost', icon: 'arrow-left', onClick: function () { goStep(self._step - 1); } }));
+        }
+        if (nextLabel) {
+          var next = FF.UI.button(nextLabel, { class: 'btn-lg btn-primary', icon: opts.icon || 'arrow-right', onClick: onNext || function () { goStep(self._step + 1); } });
+          if (opts.disabled) next.disabled = true;
+          row.appendChild(next);
+        }
+        return row;
+      }
+
+      // Who's here, with the newest arrival popping in.
+      function lobbyChips(players, myUid) {
+        var list = playerChips(players, myUid);
+        var fresh = self._fresh || {};
+        var now = Date.now();
+        Array.prototype.forEach.call(list.children || [], function (chip) {
+          var uid = chip.dataset && chip.dataset.uid;
+          if (uid && fresh[uid] && fresh[uid] > now) chip.classList.add('rm-player--joined');
+        });
+        return list;
+      }
+
+      // Toast, sound and a pop for anyone new since the last draw.
+      function noticeArrivals(s, players) {
+        if (self._seenCode !== s.code) { self._seenCode = s.code; self._seen = null; }
+        var seen = self._seen;
+        self._fresh = self._fresh || {};
+        if (!seen) {
+          self._seen = {};
+          players.forEach(function (p) { self._seen[p.uid] = true; });
+          return;
+        }
+        players.forEach(function (p) {
+          if (seen[p.uid]) return;
+          seen[p.uid] = true;
+          if (p.uid === s.uid) return;
+          // Highlighted for a moment, through any redraws in between.
+          self._fresh[p.uid] = Date.now() + 1600;
+          FF.Audio.play('streak');
+          FF.UI.toast(FF.t('rmJoined', '{name} joined the room', { name: p.name }), { type: 'success', duration: 2600 });
+          if (FF.UI.announce) FF.UI.announce(FF.t('rmJoined', '{name} joined the room', { name: p.name }));
+        });
+        // Someone who left and comes back is announced again.
+        Object.keys(seen).forEach(function (uid) {
+          if (!players.some(function (p) { return p.uid === uid; })) delete seen[uid];
+        });
+      }
+
+      function currentSettings() {
+        return { difficulty: rs.difficulty, timer: rs.timer, questions: rs.questions || 0, clock: rs.clock || 0 };
+      }
+
+      // Step 4 -> 5: tell everyone what we're playing. The same game and
+      // settings keep their id, so nobody has to tap ready twice.
+      function publishPick() {
+        var s = FF.Room.current();
+        if (!s || !chosen) return;
+        if (FF.Access && !FF.Access.canPlay(chosen)) { FF.Access.explain(chosen); return; }
+        var settings = currentSettings();
+        var old = s.meta && s.meta.pick;
+        var same = old && old.gameId === chosen && JSON.stringify(old.settings || {}) === JSON.stringify(settings);
+        var pick = same ? old : { id: FF.util.uid() + FF.util.uid(), gameId: chosen, settings: settings };
+        var p = same ? Promise.resolve() : FF.Room.setPick(pick);
+        p.then(function () {
+          // The host is ready by choosing; they can still undo it.
+          return FF.Room.setReady(pick.id);
+        }).then(function () {
+          self._step = 5;
+          FF.Audio.play('select');
+          render();
+        }).catch(function (err) {
+          self.showError(main, (err && err.message) || 'The game could not be chosen.');
+        });
+      }
+
+      // Everyone ready: the host's device starts the 10 second countdown.
+      function maybeStart(s, pick) {
+        if (!s.isHost || !pick || !FF.Room.everyoneReady()) return;
+        if (self._autoStarted === pick.id) return;
+        self._autoStarted = pick.id;
+        FF.Audio.play('roundStart');
+        FF.Room.startGame(pick.gameId, pick.settings || {}).then(function () {
+          if (FF.Access) FF.Access.usePlay(pick.gameId);   // the host's free play, for limited games
+        }).catch(function (err) {
+          self._autoStarted = null;
+          self.showError(main, (err && err.message) || 'The game could not be started.');
+        });
+      }
+
+      function readyList(players, pick, myUid) {
+        var list = FF.ui.el('ul', { class: 'rm-ready', 'aria-live': 'polite' });
+        players.forEach(function (p) {
+          var ok = !!pick && p.ready === pick.id;
+          var row = FF.ui.el('li', { class: 'rm-ready__row' + (ok ? ' rm-ready__row--ok' : '') + (p.uid === myUid ? ' rm-ready__row--me' : '') });
+          row.dataset.uid = p.uid;
+          row.appendChild(FF.Players.avatarEl(p, 'rm-ready__ava'));
+          row.appendChild(FF.ui.span('rm-ready__name', p.name + (p.uid === myUid ? ' ' + FF.t('youTag', '(you)') : '')));
+          var pill = FF.ui.span('rm-ready__pill ' + (ok ? 'rm-ready__pill--ok' : 'rm-ready__pill--no'));
+          pill.appendChild(FF.Icons.icon(ok ? 'check' : 'x'));
+          pill.appendChild(document.createTextNode(ok ? FF.t('rmReady', 'Ready') : FF.t('rmNotReady', 'Not ready')));
+          row.appendChild(pill);
+          list.appendChild(row);
+        });
+        return list;
       }
 
       function render() {
         var s = FF.Room.current();
         if (!s) return;
+        // Keep typing in the game search through a redraw.
+        var active = document.activeElement;
+        var searching = active && active.id === 'rm-game-search' ? { start: active.selectionStart, end: active.selectionEnd } : null;
         FF.ui.clear(main);
 
         var url = FF.Room.shareUrl(s.code);
         var players = FF.Room.presentPlayers();
         var roomName = FF.Room.displayName();
+        var pick = (s.meta && s.meta.pick && s.meta.pick.id) ? s.meta.pick : null;
+        var pickDef = pick ? FF.Games.get(pick.gameId) : null;
         var isSaved = FF.Room.saved.has(s.code);
         if (isSaved) FF.Room.saved.touch(s.code, { name: (s.meta && s.meta.name) || '', mode: s.meta && s.meta.mode });
+        noticeArrivals(s, players);
 
-        var qrWrap = FF.ui.div('rm-qr');
-        var qr = qrFor(url);
-        if (qr) qrWrap.appendChild(qr);
+        // A new pick from the host takes everyone else to the ready check.
+        if (pick && self._seenPick !== pick.id) {
+          var firstLook = self._seenPick === undefined;
+          self._seenPick = pick.id;
+          if (!s.isHost && !firstLook) {
+            self._step = 5;
+            FF.Audio.play('select');
+            if (pickDef) FF.UI.toast(FF.t('rmHostPicked', 'The host picked {name}. Tap Ready.', { name: pickDef.name }), { duration: 3200 });
+          } else if (!s.isHost && firstLook) {
+            self._step = 5;
+          }
+        }
+        if (!pick) self._seenPick = null;
 
-        // Room name (host can rename), save for later, and leave.
+        // Room name (host can rename), save for later, and leave: on every step.
         var head = FF.ui.div('rm-roomhead');
         var nameRow = FF.ui.div('rm-roomhead__name');
         nameRow.appendChild(FF.ui.el('h1', { class: 'page-title rm-title' }, roomName));
@@ -842,9 +1050,6 @@ window.FF = window.FF || {};
           nameRow.appendChild(FF.UI.iconButton('pencil', FF.t('renameRoom', 'Rename room'), function () { renameRoom(render); }, 'rm-roomhead__edit'));
         }
         head.appendChild(nameRow);
-        head.appendChild(FF.ui.el('p', { class: 'rm-hint' }, s.isHost
-          ? FF.t('shareCode', 'Share this code, or let others scan the QR code.')
-          : FF.t('youreIn', 'You\u2019re in!')));
         var tools = FF.ui.div('rm-row rm-roomhead__tools');
         var saveBtn = FF.UI.button(isSaved ? FF.t('savedRoom', 'Saved') : FF.t('saveRoom', 'Save room'), {
           class: isSaved ? 'btn-soft is-on' : 'btn-soft', icon: isSaved ? 'star-fill' : 'star',
@@ -866,139 +1071,184 @@ window.FF = window.FF || {};
         }));
         head.appendChild(tools);
 
-        var share = FF.ui.div('rm-share', [
-          FF.UI.button(FF.t('copyLink', 'Copy link'), {
-            icon: 'copy', onClick: function () {
-              FF.Audio.play('click');
-              if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(url).then(function () {
-                  FF.UI.toast(FF.t('linkCopied', 'Link copied'), { type: 'success' });
-                }, function () { FF.UI.toast(url); });
-              } else {
-                FF.UI.toast(url);
-              }
-            }
-          }),
-          navigator.share ? FF.UI.button(FF.t('share', 'Share'), {
-            icon: 'share', onClick: function () {
-              navigator.share({ title: 'Family Fun', url: url }).catch(function () {});
-            }
-          }) : null
-        ].filter(Boolean));
-
-        var codeBox = FF.ui.el('div', { class: 'rm-code', 'aria-label': FF.t('roomCodeIs', 'Room code {code}', { code: s.code.split('').join(' ') }) }, s.code);
-
-        var children = [
-          head,
-          codeBox,
-          share,
-          qrWrap,
-          FF.ui.el('h2', { class: 'rm-subtitle' }, FF.t('whosHere', 'Who’s here ({n} of {max})', { n: players.length, max: FF.Room.MAX_PLAYERS })),
-          playerChips(players, s.uid)
-        ];
-
-        var vPanel = voicePanel(render);
-        if (vPanel) children.push(vPanel);
-
-        if (s.isHost) {
-          var wPanel = watchPanel(render);
-          if (wPanel) children.push(wPanel);
-        }
+        var children = [head];
 
         // A game is being played without this device (it stepped out, or just
         // arrived): offer to join it. The host cannot start another one meanwhile.
         var running = FF.Room.gameRunningWithoutMe && FF.Room.gameRunningWithoutMe() ? runningPanel(s) : null;
         if (running) {
           children.push(running);
-        } else if (s.isHost) {
-          var def = chosen ? FF.Games.get(chosen) : null;
-          if (self._pickingGame || !def) {
-            children.push(FF.ui.el('h2', { class: 'rm-subtitle', id: 'rm-pick-title' }, FF.t('pickAGame', 'Pick a game')));
-            children.push(FF.ui.el('p', { class: 'rm-hint' }, FF.t('pickAGameHint', 'Tap a game to choose it. Its settings come next.')));
-            children.push(gameGrid(render));
-            if (def) {
-              children.push(FF.UI.button(FF.t('keepGame', 'Keep {name}', { name: def.name }), {
-                class: 'btn-ghost', icon: 'arrow-left',
-                onClick: function () { self._pickingGame = false; render(); }
-              }));
-            }
-            main.appendChild(panel(children.concat([FF.UI.button(FF.t('leaveRoom', 'Leave room'), {
-              class: 'btn-lg btn-danger-soft', icon: 'sign-out', onClick: function () { self.leaveRoom(main); }
-            })])));
-            FF.Nav.focusFirst(main);
-            return;
-          }
-          children.push(FF.ui.el('h2', { class: 'rm-subtitle' }, FF.t('yourGame', 'Your game')));
-          children.push(pickedCard(def, function () { self._pickingGame = true; FF.Audio.play('click'); render(); }));
-          var opts = FF.ui.el('section', { class: 'settings-section', id: 'rm-settings' });
-          opts.appendChild(settingRow(FF.t('difficulty', 'Difficulty'), segs([['Easy', 'easy'], ['Normal', 'normal'], ['Hard', 'hard']], 'difficulty', FF.t('difficulty', 'Difficulty'))));
-          // How long the game runs: a number of questions, a game clock, or
-          // both (it ends at whichever comes first). Presets plus Custom.
-          var summary = FF.ui.el('p', { class: 'rm-length-summary', 'aria-live': 'polite' }, lengthSummary(rs));
-          var resum = function () { summary.textContent = lengthSummary(rs); };
-          opts.appendChild(settingRow(FF.t('timeToAnswer', 'Time to answer'), FF.SettingsUI.duration(rs.timer, function (v) { rs.timer = v; resum(); }, {
-            allowOff: true, alwaysCustom: true, label: FF.t('timeToAnswer', 'Time to answer'),
-            presets: [
-              { label: FF.t('noLimit', 'No limit'), value: 0 },
-              { label: '10s', value: 10 }, { label: '20s', value: 20 },
-              { label: '30s', value: 30 }, { label: '1m', value: 60 }
-            ]
-          })));
-          opts.appendChild(settingRow(FF.t('numQuestions', 'Number of questions'), FF.SettingsUI.count(rs.questions, function (v) { rs.questions = v; resum(); }, {
-            label: FF.t('numQuestions', 'Number of questions'), min: 1, max: 100,
-            unit: FF.t('questionsUnit', 'questions'), placeholder: 12,
-            presets: [
-              { label: FF.t('usual', 'Usual'), value: 0 },
-              { label: '5', value: 5 }, { label: '10', value: 10 },
-              { label: '15', value: 15 }, { label: '20', value: 20 }
-            ]
-          })));
-          opts.appendChild(settingRow(FF.t('gameClock', 'Game clock'), FF.SettingsUI.duration(rs.clock, function (v) { rs.clock = v; resum(); }, {
-            allowOff: true, alwaysCustom: true, label: FF.t('gameClock', 'Game clock'),
-            presets: [
-              { label: FF.t('off', 'Off'), value: 0 },
-              { label: '2m', value: 120 }, { label: '5m', value: 300 },
-              { label: '10m', value: 600 }, { label: '15m', value: 900 }
-            ]
-          })));
-          opts.appendChild(summary);
-          children.push(FF.ui.el('h2', { class: 'rm-subtitle' }, FF.t('settingsForAll', 'Settings for everyone')));
-          children.push(opts);
-          children.push(FF.UI.button(def ? FF.t('startName', 'Start {name}', { name: def.name }) : FF.t('startGame', 'Start game'), {
-            class: 'btn-lg btn-primary', icon: 'play',
-            onClick: function () {
-              if (FF.Access && !FF.Access.canPlay(chosen)) { FF.Access.explain(chosen); return; }
-              FF.Audio.play('roundStart');
-              FF.Room.startGame(chosen, {
-                difficulty: rs.difficulty,
-                timer: rs.timer,
-                questions: rs.questions || 0,
-                clock: rs.clock || 0
-              }).then(function () {
-                if (FF.Access) FF.Access.usePlay(chosen);   // the host's free play, for limited games
-              }).catch(function (err) {
-                self.showError(main, (err && err.message) || 'The game could not be started.');
-              });
-            }
-          }));
-        } else {
-          children.push(FF.UI.emptyState({ icon: 'clock', title: FF.t('waitingHost', 'Waiting for the host'), text: FF.t('waitingHostText', 'The host is picking a game. It will start on everyone’s screen at the same time.') }));
+          children.push(FF.ui.el('h2', { class: 'rm-subtitle' }, FF.t('whosHere', 'Who’s here ({n} of {max})', { n: players.length, max: FF.Room.MAX_PLAYERS })));
+          children.push(lobbyChips(players, s.uid));
+          main.appendChild(panel(children));
+          FF.Nav.focusFirst(main);
+          return;
         }
 
-        children.push(FF.UI.button(FF.t('leaveRoom', 'Leave room'), {
-          class: 'btn-lg btn-danger-soft', icon: 'sign-out',
-          onClick: function () { self.leaveRoom(main); }
-        }));
+        children.push(stepper(s, players, pick));
+        var body = FF.ui.el('section', { class: 'rm-stepbody', 'aria-labelledby': 'rm-step-title' });
+        var stepKey = STEPS[self._step - 1].key;
+        function stepTitle(text, hint) {
+          body.appendChild(FF.ui.el('h2', { class: 'rm-steptitle', id: 'rm-step-title' }, text));
+          if (hint) body.appendChild(FF.ui.el('p', { class: 'rm-hint' }, hint));
+        }
 
-        main.appendChild(panel(children));
-        FF.Nav.focusFirst(main);
-        // Just picked a game: bring its card and the settings into view.
-        if (self._showPicked) {
-          self._showPicked = false;
-          var picked = main.querySelector('.rm-picked');
-          if (picked && picked.scrollIntoView) {
-            try { picked.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) { picked.scrollIntoView(); }
+        if (stepKey === 'invite') {
+          stepTitle(FF.t('rmInviteTitle', 'Invite your friends'), s.isHost
+            ? FF.t('shareCode', 'Share this code, or let others scan the QR code.')
+            : FF.t('youreIn', 'You’re in!'));
+          var invite = FF.ui.div('rm-invitegrid');
+          var qrWrap = FF.ui.div('rm-qr');
+          var qr = qrFor(url);
+          if (qr) qrWrap.appendChild(qr);
+          var side = FF.ui.div('rm-invitegrid__side');
+          side.appendChild(FF.ui.el('div', { class: 'rm-code', 'aria-label': FF.t('roomCodeIs', 'Room code {code}', { code: s.code.split('').join(' ') }) }, s.code));
+          side.appendChild(FF.ui.div('rm-share', [
+            FF.UI.button(FF.t('copyLink', 'Copy link'), {
+              icon: 'copy', onClick: function () {
+                FF.Audio.play('click');
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                  navigator.clipboard.writeText(url).then(function () {
+                    FF.UI.toast(FF.t('linkCopied', 'Link copied'), { type: 'success' });
+                  }, function () { FF.UI.toast(url); });
+                } else {
+                  FF.UI.toast(url);
+                }
+              }
+            }),
+            navigator.share ? FF.UI.button(FF.t('share', 'Share'), {
+              icon: 'share', onClick: function () { navigator.share({ title: 'PlayMona', url: url }).catch(function () {}); }
+            }) : null
+          ].filter(Boolean)));
+          side.appendChild(FF.ui.el('p', { class: 'rm-invite__link' }, url));
+          if (qr) invite.appendChild(qrWrap);
+          invite.appendChild(side);
+          body.appendChild(invite);
+          body.appendChild(FF.ui.el('h3', { class: 'rm-subtitle' }, FF.t('whosHere', 'Who’s here ({n} of {max})', { n: players.length, max: FF.Room.MAX_PLAYERS })));
+          body.appendChild(lobbyChips(players, s.uid));
+          if (players.length < 2) body.appendChild(FF.ui.el('p', { class: 'rm-hint rm-waitjoin' }, FF.t('rmWaitingJoin', 'Waiting for friends to join…')));
+          body.appendChild(stepNav(null, FF.t('rmNextVoice', 'Next: voice and watching')));
+        } else if (stepKey === 'voice') {
+          stepTitle(FF.t('rmVoiceTitle', 'Voice chat and watching'), FF.t('rmVoiceHint', 'Both are optional. You can skip this step.'));
+          var vPanel = voicePanel(render);
+          if (vPanel) body.appendChild(vPanel);
+          if (s.isHost) {
+            var wPanel = watchPanel(render);
+            if (wPanel) body.appendChild(wPanel);
           }
+          if (!vPanel && !(s.isHost && body.querySelector('.rm-watch'))) {
+            body.appendChild(FF.UI.emptyState({ icon: 'speaker', title: FF.t('rmNoVoice', 'Nothing to set up here'), text: FF.t('rmNoVoiceText', 'Voice chat is not available on this device.') }));
+          }
+          body.appendChild(stepNav(null, s.isHost ? FF.t('rmNextGame', 'Next: pick a game') : FF.t('next', 'Next')));
+        } else if (stepKey === 'game') {
+          if (s.isHost) {
+            stepTitle(FF.t('pickAGame', 'Pick a game'), FF.t('rmPickHint', 'Every game here is played by everyone at the same time.'));
+            var gridHolder = FF.ui.div('rm-gamesholder');
+            body.appendChild(searchBox(function () {
+              var g = gameGrid(function () { goStep(4); });
+              FF.ui.clear(gridHolder);
+              gridHolder.appendChild(g);
+              var c = body.querySelector('.searchbox__clear');
+              if (c) c.hidden = !self._gameQuery;
+            }));
+            gridHolder.appendChild(gameGrid(function () { goStep(4); }));
+            body.appendChild(gridHolder);
+            body.appendChild(stepNav(null, chosen ? FF.t('rmNextSettings', 'Next: settings') : null));
+          } else {
+            stepTitle(FF.t('rmGameTitleGuest', 'The game'), null);
+            if (pickDef) body.appendChild(pickedCard(pickDef, null));
+            else body.appendChild(FF.UI.emptyState({ icon: 'clock', title: FF.t('waitingHost', 'Waiting for the host'), text: FF.t('waitingHostText', 'The host is picking a game. It will start on everyone’s screen at the same time.') }));
+            body.appendChild(stepNav(null, FF.t('next', 'Next')));
+          }
+        } else if (stepKey === 'settings') {
+          var def = chosen ? FF.Games.get(chosen) : null;
+          if (s.isHost && !def) {
+            stepTitle(FF.t('settingsForAll', 'Settings for everyone'), FF.t('rmPickFirst', 'Pick a game first.'));
+            body.appendChild(stepNav(null, FF.t('pickAGame', 'Pick a game'), function () { goStep(3); }));
+          } else if (s.isHost) {
+            stepTitle(FF.t('settingsForAll', 'Settings for everyone'), null);
+            body.appendChild(pickedCard(def, function () { goStep(3); }));
+            var opts = FF.ui.el('section', { class: 'settings-section', id: 'rm-settings' });
+            opts.appendChild(settingRow(FF.t('difficulty', 'Difficulty'), segs([['Easy', 'easy'], ['Normal', 'normal'], ['Hard', 'hard']], 'difficulty', FF.t('difficulty', 'Difficulty'))));
+            // How long the game runs: a number of questions, a game clock, or
+            // both (it ends at whichever comes first). Presets plus Custom.
+            var summary = FF.ui.el('p', { class: 'rm-length-summary', 'aria-live': 'polite' }, lengthSummary(rs));
+            var resum = function () { summary.textContent = lengthSummary(rs); };
+            opts.appendChild(settingRow(FF.t('timeToAnswer', 'Time to answer'), FF.SettingsUI.duration(rs.timer, function (v) { rs.timer = v; resum(); }, {
+              allowOff: true, alwaysCustom: true, label: FF.t('timeToAnswer', 'Time to answer'),
+              presets: [
+                { label: FF.t('noLimit', 'No limit'), value: 0 },
+                { label: '10s', value: 10 }, { label: '20s', value: 20 },
+                { label: '30s', value: 30 }, { label: '1m', value: 60 }
+              ]
+            })));
+            opts.appendChild(settingRow(FF.t('numQuestions', 'Number of questions'), FF.SettingsUI.count(rs.questions, function (v) { rs.questions = v; resum(); }, {
+              label: FF.t('numQuestions', 'Number of questions'), min: 1, max: 100,
+              unit: FF.t('questionsUnit', 'questions'), placeholder: 12,
+              presets: [
+                { label: FF.t('usual', 'Usual'), value: 0 },
+                { label: '5', value: 5 }, { label: '10', value: 10 },
+                { label: '15', value: 15 }, { label: '20', value: 20 }
+              ]
+            })));
+            opts.appendChild(settingRow(FF.t('gameClock', 'Game clock'), FF.SettingsUI.duration(rs.clock, function (v) { rs.clock = v; resum(); }, {
+              allowOff: true, alwaysCustom: true, label: FF.t('gameClock', 'Game clock'),
+              presets: [
+                { label: FF.t('off', 'Off'), value: 0 },
+                { label: '2m', value: 120 }, { label: '5m', value: 300 },
+                { label: '10m', value: 600 }, { label: '15m', value: 900 }
+              ]
+            })));
+            opts.appendChild(summary);
+            body.appendChild(opts);
+            body.appendChild(stepNav(null, FF.t('rmNextReady', 'Next: ready check'), publishPick, { icon: 'check' }));
+          } else {
+            stepTitle(FF.t('settingsForAll', 'Settings for everyone'), FF.t('rmHostSets', 'The host chooses these.'));
+            if (pick) body.appendChild(FF.ui.el('p', { class: 'rm-length-summary' }, lengthSummary(pick.settings || {})));
+            else body.appendChild(FF.ui.el('p', { class: 'rm-hint' }, FF.t('waitingHost', 'Waiting for the host')));
+            body.appendChild(stepNav(null, FF.t('next', 'Next')));
+          }
+        } else {
+          // Step 5: everyone taps ready; when all are, the countdown starts.
+          if (!pick || !pickDef) {
+            stepTitle(FF.t('rmReadyTitle', 'Ready check'), s.isHost ? FF.t('rmPickFirst', 'Pick a game first.') : FF.t('rmWaitPick', 'The ready check starts when the host has picked a game.'));
+            if (s.isHost) body.appendChild(stepNav(null, FF.t('pickAGame', 'Pick a game'), function () { goStep(3); }));
+            else body.appendChild(stepNav(null, null));
+          } else {
+            var readyN = players.filter(function (p) { return p.ready === pick.id; }).length;
+            var all = readyN === players.length && players.length > 0;
+            stepTitle(all ? FF.t('rmAllReady', 'Everyone is ready!') : FF.t('rmReadyTitle', 'Ready check'),
+              all ? FF.t('rmStarting', 'Starting…') : FF.t('rmReadyCount', '{n} of {total} ready. The countdown starts when everyone is.', { n: readyN, total: players.length }));
+            var mini = pickedCard(pickDef, s.isHost ? function () { goStep(3); } : null);
+            mini.classList.add('rm-picked--mini');
+            body.appendChild(mini);
+            body.appendChild(FF.ui.el('p', { class: 'rm-length-summary' }, lengthSummary(pick.settings || {})));
+            body.appendChild(readyList(players, pick, s.uid));
+            var me = players.filter(function (p) { return p.uid === s.uid; })[0];
+            var amReady = !!me && me.ready === pick.id;
+            var readyBtn = FF.UI.button(amReady ? FF.t('rmImReady', 'I’m ready') : FF.t('rmTapReady', 'Tap when you’re ready'), {
+              class: 'btn-lg rm-readybtn ' + (amReady ? 'rm-readybtn--on' : 'rm-readybtn--off'),
+              icon: amReady ? 'check' : 'x',
+              onClick: function () {
+                FF.Audio.play(amReady ? 'click' : 'correct');
+                FF.Room.setReady(amReady ? null : pick.id).catch(function () {});
+              }
+            });
+            readyBtn.setAttribute('aria-pressed', amReady ? 'true' : 'false');
+            body.appendChild(readyBtn);
+            if (amReady && !all) body.appendChild(FF.ui.el('p', { class: 'rm-hint' }, FF.t('rmUndoReady', 'Tap again if you’re not ready after all.')));
+            body.appendChild(stepNav(null, null));
+            maybeStart(s, pick);
+          }
+        }
+
+        children.push(body);
+        main.appendChild(panel(children));
+        if (searching) {
+          var again = main.querySelector('#rm-game-search');
+          if (again) { again.focus(); try { again.setSelectionRange(searching.start, searching.end); } catch (e) {} }
+        } else {
+          FF.Nav.focusFirst(main);
         }
       }
 
@@ -1019,20 +1269,21 @@ window.FF = window.FF || {};
       // The chosen game, with a button to pick another.
       function pickedCard(def, onChange) {
         var cat = (FF.Categories && FF.Categories[def.category]) || { name: def.category, color: '#8b5cf6' };
-        var icon = FF.ui.div('rm-picked__icon');
-        icon.appendChild(FF.Icons.icon(FF.Icons.game[def.id] || cat.iconKey, def.icon || '\ud83c\udfae'));
+        var hasArt = FF.Assets && FF.Assets.has('covers', def.id);
+        var icon = FF.ui.el('div', { class: 'rm-picked__icon' + (hasArt ? ' rm-picked__icon--art' : ''), style: hasArt ? { '--art': FF.Assets.artUrl('covers', def.id) } : null });
+        if (!hasArt) icon.appendChild(FF.Icons.icon(FF.Icons.game[def.id] || cat.iconKey, def.icon || '\ud83c\udfae'));
         var info = FF.ui.div('rm-picked__info', [
           FF.ui.div('rm-picked__name', def.name),
           FF.ui.div('rm-picked__cat', cat.name),
           def.description ? FF.ui.el('p', { class: 'rm-picked__desc' }, def.description) : null
         ]);
-        var change = FF.UI.button(FF.t('changeGame', 'Change game'), { icon: 'arrows-left-right', onClick: onChange });
-        var card = FF.ui.el('div', { class: 'rm-picked', style: { '--rm-game-color': cat.color }, 'aria-live': 'polite' }, [icon, info, change]);
+        var change = onChange ? FF.UI.button(FF.t('changeGame', 'Change game'), { icon: 'arrows-left-right', onClick: onChange }) : null;
+        var card = FF.ui.el('div', { class: 'rm-picked', style: { '--rm-game-color': cat.color }, 'aria-live': 'polite' }, [icon, info, change].filter(Boolean));
         return card;
       }
 
       // Redraw when something on screen changed: not on every write.
-      function metaKey(m) { m = m || {}; return [m.hostUid, m.name, m.mode, m.status, m.public, m.watching, m.watchCode, FF.Room.current() && FF.Room.current().isHost].join('|'); }
+      function metaKey(m) { m = m || {}; return [m.hostUid, m.name, m.mode, m.status, m.public, m.watching, m.watchCode, m.pick && m.pick.id, FF.Room.current() && FF.Room.current().isHost].join('|'); }
       var lastMeta = metaKey(cur.meta);
       onScreen(FF.Room.on('players', render));
       onScreen(FF.Room.on('meta', function (meta) {
@@ -1070,6 +1321,9 @@ window.FF = window.FF || {};
       var s = FF.Room.current();
       function go() {
         resetScreen('friends');
+        self._step = 1;           // a new room starts at the invite step
+        self._seen = null;
+        self._gameQuery = '';
         if (FF.Voice) FF.Voice.leave();
         FF.Room.leave();
         FF.Room.clearUrlCode();
@@ -1148,9 +1402,11 @@ window.FF = window.FF || {};
         main = target || main;
         FF.ui.clear(main);
         num = FF.ui.div('rm-count__num', lastShown == null ? '' : (lastShown > 0 ? String(lastShown) : FF.t('go', 'Go!')));
+        var stage = FF.ui.div('rm-count__stage', [num]);
         var wrap = panel([
+          FF.ui.el('p', { class: 'rm-count__lead' }, FF.t('getReady', 'Get ready')),
           FF.ui.el('h1', { class: 'rm-count__game' }, def ? def.name : FF.t('getReady', 'Get ready')),
-          num,
+          stage,
           FF.ui.div('rm-hint', FF.t('startsTogether', 'Everyone starts together at zero.')),
           FF.ui.div('rm-hint', lengthSummary(meta.settings)),
           playerChips(FF.Room.presentPlayers(), s.uid)
@@ -1169,11 +1425,12 @@ window.FF = window.FF || {};
         var secs = Math.max(0, Math.ceil(left / 1000));
         if (secs !== lastShown) {
           lastShown = secs;
-          num.textContent = secs > 0 ? String(secs) : FF.t('go', 'Go!');
-          num.classList.remove('rm-count__num--pop');
-          void num.offsetWidth;              // restart the pop animation
-          num.classList.add('rm-count__num--pop');
-          if (secs > 0 && secs <= 3) FF.Audio.play('countdown');
+          // A fresh number each second, so it zooms in and fades like Quick Tap's.
+          var fresh = FF.ui.div('rm-count__num' + (secs > 0 ? '' : ' rm-count__num--go') + (secs > 0 && secs <= 3 ? ' rm-count__num--final' : ''), secs > 0 ? String(secs) : FF.t('go', 'Go!'));
+          var holder = num.parentNode;
+          if (holder) { holder.removeChild(num); holder.appendChild(fresh); }
+          num = fresh;
+          if (secs > 0) FF.Audio.play(secs <= 3 ? 'countdown' : 'tick');
         }
         // Everyone sees "Go!" for a moment before the game opens; the pause is
         // the same on every phone, so they still start together.

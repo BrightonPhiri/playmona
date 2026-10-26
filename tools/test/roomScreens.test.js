@@ -49,6 +49,7 @@ function phone(bus, name) {
   FF.Audio = { play: function () {} };
   FF.Games = { get: function (id) { return { id: id, name: 'Family quiz', category: 'quiz', description: '' }; } };
   FF.Categories = { quiz: { name: 'Quiz', color: '#8b5cf6' } };
+  FF.Assets = { has: function () { return false; }, artUrl: function () { return 'none'; }, wash: function () { return 'none'; } };
   FF.SettingsUI = { duration: function () { return sb.document.createElement('div'); }, count: function () { return sb.document.createElement('div'); } };
   FF.launched = [];
   FF.GameFlow = { launch: function (id) { FF.launched.push(id); } };
@@ -131,19 +132,34 @@ test('room screens: the lobby shows the room name, Save and Leave', async functi
   assert(!host.FF.RoomUI.busy() || find(host.main, 'mode-grid') || /Play with friends/.test(text(host.main)), 'back on Play with friends');
 });
 
-test('room screens: the host picks a game, then the list folds away and settings appear', async function () {
+test('room screens: the lobby is five steps, starting with the invite', async function () {
+  const bus = makeBus();
+  const host = phone(bus, 'Ana');
+  await host.FF.Room.create({ dev: true });
+  host.FF.RoomUI._step = undefined;
+  host.FF.RoomUI.showLobby(host.main);
+  await tick(20);
+  assertEqual(findAll(host.main, 'rm-step').length, 5, 'five steps');
+  assert(find(host.main, 'rm-code'), 'step 1 shows the room code');
+  assert(!find(host.main, 'rm-games') && !find(host.main, 'settings-section'), 'nothing else on step 1');
+  host.FF.Room.leave();
+});
+
+test('room screens: the host picks a game on step 3, then sets it up on step 4', async function () {
   const bus = makeBus();
   const host = phone(bus, 'Ana');
   await host.FF.Room.create({ dev: true });
   host.FF.RoomUI._lastGame = undefined;
-  host.FF.RoomUI._pickingGame = null;
+  host.FF.RoomUI._step = 3;
   host.FF.RoomUI.showLobby(host.main);
   await tick(20);
-  assert(find(host.main, 'rm-games'), 'the game list shows first');
+  assert(find(host.main, 'rm-games'), 'the game list shows');
+  assert(find(host.main, 'rm-search'), 'with a search box');
   assert(!find(host.main, 'settings-section'), 'no settings before a game is picked');
 
   find(host.main, 'rm-game').dispatch('click');
   await tick(20);
+  assertEqual(host.FF.RoomUI._step, 4, 'on to the settings');
   assert(!find(host.main, 'rm-games'), 'the list is hidden after picking');
   assert(find(host.main, 'rm-picked'), 'the chosen game is shown');
   assert(find(host.main, 'settings-section'), 'the settings appear');
@@ -154,6 +170,58 @@ test('room screens: the host picks a game, then the list folds away and settings
   await tick(20);
   assert(find(host.main, 'rm-games'), 'Change game shows the list again');
   host.FF.Room.leave();
+});
+
+test('room screens: everyone taps ready, then the countdown starts', async function () {
+  const bus = makeBus();
+  const host = phone(bus, 'Ana'), guest = phone(bus, 'Ben');
+  const room = await host.FF.Room.create({ dev: true });
+  await guest.FF.Room.join(room.code, {}, { dev: true });
+  host.FF.RoomUI._lastGame = 'familyQuiz';
+  host.FF.RoomUI._step = 4;
+  host.FF.RoomUI.showLobby(host.main);
+  guest.FF.RoomUI._step = 1;
+  guest.FF.RoomUI.showLobby(guest.main);
+  await tick(20);
+
+  // Step 4 -> 5 publishes the pick; the host counts as ready.
+  const next = findAll(host.main, 'btn-primary').filter(function (b) { return /ready check/.test(text(b)); })[0];
+  assert(next, 'Next: ready check');
+  next.dispatch('click');
+  await tick(40);
+  const pick = host.FF.Room.current().meta.pick;
+  assert(pick && pick.gameId === 'familyQuiz', 'pick published');
+  assertEqual(host.FF.RoomUI._step, 5, 'host on the ready check');
+  assertEqual(guest.FF.RoomUI._step, 5, 'the guest is taken to the ready check');
+
+  const rows = findAll(guest.main, 'rm-ready__row');
+  assertEqual(rows.length, 2, 'both players listed');
+  assert(findAll(guest.main, 'rm-ready__pill--ok').length === 1 && findAll(guest.main, 'rm-ready__pill--no').length === 1, 'host ready, guest not');
+  assert(/Not ready/.test(text(find(guest.main, 'rm-ready__pill--no'))), 'red Not ready label');
+  assertEqual(host.FF.Room.current().meta.status === 'playing', false, 'no countdown yet');
+
+  find(guest.main, 'rm-readybtn').dispatch('click');
+  await tick(60);
+  assertEqual(host.FF.Room.current().meta.status, 'playing', 'everyone ready: the game starts');
+  assertEqual(host.FF.Room.current().meta.gameId, 'familyQuiz');
+  assert(!host.FF.Room.current().meta.pick, 'the ready check is cleared for next time');
+  host.FF.Room.leave(); guest.FF.Room.leave();
+});
+
+test('room screens: a player who joins pops in with a notice', async function () {
+  const bus = makeBus();
+  const host = phone(bus, 'Ana'), guest = phone(bus, 'Ben');
+  const toasts = [];
+  const room = await host.FF.Room.create({ dev: true });
+  host.FF.UI.toast = function (m) { toasts.push(m); };
+  host.FF.RoomUI._step = 1;
+  host.FF.RoomUI.showLobby(host.main);
+  await tick(20);
+  await guest.FF.Room.join(room.code, {}, { dev: true });
+  await tick(40);
+  assert(toasts.some(function (m) { return /Ben joined/.test(m); }), 'a toast names who joined');
+  assert(find(host.main, 'rm-player--joined'), 'their chip pops in');
+  host.FF.Room.leave(); guest.FF.Room.leave();
 });
 
 /* ---------- Watching (phase 3): lobby controls, viewer chip, Watch live card ---------- */
@@ -193,6 +261,7 @@ test('room screens: the host sees the Watching panel; other players do not', asy
   stubBroadcast(host.FF); stubBroadcast(guest.FF);
   const room = await host.FF.Room.create({ dev: true });
   await guest.FF.Room.join(room.code, {}, { dev: true });
+  host.FF.RoomUI._step = 2; guest.FF.RoomUI._step = 2;
   host.FF.RoomUI.showLobby(host.main);
   guest.FF.RoomUI.showLobby(guest.main);
   await tick(20);
@@ -209,6 +278,7 @@ test('room screens: switching Public calls setPublic', async function () {
   const host = phone(bus, 'Ana');
   const b = stubBroadcast(host.FF);
   await host.FF.Room.create({ dev: true });
+  host.FF.RoomUI._step = 2;
   host.FF.RoomUI.showLobby(host.main);
   await tick(20);
   const sw = findAll(find(host.main, 'rm-watch'), 'switch')[0];
@@ -223,6 +293,7 @@ test('room screens: a delisted room shows the note and a disabled Public switch'
   const host = phone(bus, 'Ana');
   stubBroadcast(host.FF, { delisted: true });
   await host.FF.Room.create({ dev: true });
+  host.FF.RoomUI._step = 2;
   host.FF.RoomUI.showLobby(host.main);
   await tick(20);
   const panelEl = find(host.main, 'rm-watch');
@@ -273,6 +344,7 @@ test('room screens: the Public switch follows the room itself, not the broadcast
   await host.FF.Room.create({ dev: true });
   await host.FF.Room.setMeta({ public: true, watching: false });
   await tick(20);
+  host.FF.RoomUI._step = 2;
   host.FF.RoomUI.showLobby(host.main);
   await tick(20);
   const sws = findAll(find(host.main, 'rm-watch'), 'switch');
