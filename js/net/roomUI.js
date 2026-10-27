@@ -18,7 +18,12 @@ window.FF = window.FF || {};
     'letterRush',
     'whatsMissing',
     'numberChallenge',
-    'visualRiddle'
+    'visualRiddle',
+    // Parallel challenges (js/net/parallel.js): the same puzzle on every
+    // phone at once, each player keeps their own score.
+    'memoryMatch', 'pictureMemory', 'rememberSequence',
+    'picturePuzzle', 'spotDifference', 'hiddenObject',
+    'wordBuilder', 'bibleBooks'
     // Brain Battle is deliberately absent: its format is a personal
     // streak run per player, so there is no shared question to race for.
   ];
