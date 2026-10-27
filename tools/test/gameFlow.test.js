@@ -43,3 +43,21 @@ test('room results are matched to the game start that launched this client', fun
     startAt: 200
   }, oldGame), false);
 });
+
+test('room results list everyone who played, even with 0 points and a late heartbeat', function () {
+  const FF = loadFF(['js/core.js', 'js/registry.js']);
+  const rounds = { 0: { answers: { me: { correct: true }, crew1: { correct: false } } } };
+  FF.Race = { scores: function () { return { me: 100, crew1: 0, oldVisitor: 0 }; } };
+  FF.Room = {
+    current: function () { return { uid: 'me', meta: { mode: 'players' }, rounds: rounds }; },
+    racePlayers: function () {
+      return [
+        { uid: 'me', name: 'Me', online: true },
+        { uid: 'crew1', name: 'Tariro', online: false },     // heartbeat looked late
+        { uid: 'oldVisitor', name: 'Gone', online: false }   // in the saved room, not this game
+      ];
+    }
+  };
+  const ranked = FF.GameFlow._rankRoomScores(rounds);
+  assertEqual(ranked.map(function (r) { return r.uid + ':' + r.points; }).join(','), 'me:100,crew1:0');
+});

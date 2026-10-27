@@ -57,7 +57,10 @@ window.FF = window.FF || {};
       if (ctx.rng() < skip) return null;
       var correct = ctx.rng() < accuracy(ctx);
       var ms = answerMs(ctx, correct);
-      return { atMs: ms, answer: { choice: null, correct: correct, ms: ms } };
+      var answer = { choice: null, correct: correct, ms: ms };
+      // Bible Quiz scores a round by the answer's own value, as the phone works it out.
+      if (ctx.gameId === 'bibleQuiz') answer.value = correct ? 100 + Math.max(0, Math.round((20 - ms / 1000) * 3)) : 0;
+      return { atMs: ms, answer: answer };
     }
   });
 

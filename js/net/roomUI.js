@@ -1269,9 +1269,25 @@ window.FF = window.FF || {};
       }
 
       // Everyone ready: the host's device starts the 10 second countdown.
+      // Everyone ready: a 3 second pause (anyone can still un-ready), then the countdown.
+      var READY_PAUSE_MS = 3000;
       function maybeStart(s, pick) {
         if (!s.isHost || !pick || !FF.Room.everyoneReady()) return;
         if (shortOf(pick.gameId, FF.Room.presentPlayers())) return;
+        if (self._autoStarted === pick.id || self._readyWait === pick.id) return;
+        self._readyWait = pick.id;
+        setTimeout(function () {
+          if (self._readyWait !== pick.id) return;
+          self._readyWait = null;
+          var cur = FF.Room.current();
+          var now = cur && cur.meta && cur.meta.pick;
+          if (!cur || !cur.isHost || !now || now.id !== pick.id || !FF.Room.everyoneReady()) return;
+          if (shortOf(pick.gameId, FF.Room.presentPlayers())) return;
+          startPicked(cur, pick);
+        }, READY_PAUSE_MS);
+      }
+
+      function startPicked(s, pick) {
         if (self._autoStarted === pick.id) return;
         self._autoStarted = pick.id;
         FF.Audio.play('roundStart');
