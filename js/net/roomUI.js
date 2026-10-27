@@ -25,7 +25,9 @@ window.FF = window.FF || {};
     // phone at once, each player keeps their own score.
     'memoryMatch', 'pictureMemory', 'rememberSequence',
     'picturePuzzle', 'spotDifference', 'hiddenObject',
-    'wordBuilder', 'bibleBooks'
+    'wordBuilder', 'bibleBooks',
+    // Votes: everyone votes on their own phone, then sees the same split.
+    'wouldYouRather', 'thisOrThat', 'whoIsMostLikely'
     // Brain Battle is deliberately absent: its format is a personal
     // streak run per player, so there is no shared question to race for.
   ];
