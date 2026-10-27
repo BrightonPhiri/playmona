@@ -62,6 +62,20 @@ class App
         ));
     }
 
+    /* Players Engine, Quick Match, friends and AI providers. */
+    public function crew(): Crew { return $this->make('crew', fn () => new Crew($this->db(), $this->rtdb())); }
+    public function runner(): Runner { return $this->make('runner', fn () => new Runner($this->db(), $this->config)); }
+    public function matchmaker(): Matchmaker
+    {
+        return $this->make('matchmaker', fn () => new Matchmaker($this->db(), $this->rtdb(), $this->crew(), $this->runner()));
+    }
+    public function imposters(): Imposters
+    {
+        return $this->make('imposters', fn () => new Imposters($this->db(), $this->rtdb(), $this->matchmaker(), $this->crew(), $this->runner()));
+    }
+    public function friends(): Friends { return $this->make('friends', fn () => new Friends($this->db(), $this->rtdb(), $this->crew())); }
+    public function ai(): Ai { return $this->make('ai', fn () => new Ai($this->db(), $this->config, $this->overrides['aiHttp'] ?? new HttpClient())); }
+
     public function payments(): Payments
     {
         return $this->make('payments', fn () => new Payments(
@@ -118,6 +132,10 @@ class Routes
         if ($m === 'GET' && preg_match('#^/live/([A-Za-z0-9]{1,16})$#', $p, $mm)) {
             return Response::json($this->app->live()->room($mm[1], nowMs(), ($req->query['open'] ?? '') === '1'));
         }
+
+        $engine = new EngineRoutes($this->app, fn (Request $r) => $this->user($r), fn (Request $r) => $this->admin($r));
+        $res = $engine->route($req);
+        if ($res) return $res;
 
         throw new HttpError(404, 'Not found.', 'not-found');
     }

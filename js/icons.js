@@ -112,6 +112,7 @@ window.FF = window.FF || {};
   "spotDifference": "magnifying-glass",
   "hiddenObject": "binoculars",
   "visualRiddle": "question",
+  "imposters": "detective",
   "guessLandmark": "buildings",
   "guessAnimal": "paw-print",
   "guessFood": "fork-knife",

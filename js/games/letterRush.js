@@ -51,6 +51,15 @@ window.FF = window.FF || {};
     return word.length + (word.length === rackSize ? rackSize : 0);
   }
 
+  // The rules other code needs to deal and score a set the same way the game does
+  // (the Players Engine's Letter Rush brain). Read-only use; the game is unchanged.
+  FF.LetterRush = {
+    LEVELS: LEVELS,
+    points: points,
+    roundSeconds: function (config) { return roundSeconds({ config: config || {} }); },
+    deal: function (difficulty) { return deal({ config: { difficulty: difficulty } }); }
+  };
+
   function entities(api) {
     if (api.config.scorers && api.config.scorers.length) return api.config.scorers.slice();
     if (api.config.players && api.config.players.length) return api.config.players.slice();

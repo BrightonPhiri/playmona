@@ -30,6 +30,12 @@ if ($task === 'migrate') {
     echo "Tables are ready.\n";
     exit;
 }
+// php cron.php crew-seed [count]: tops the Players Engine up to its starting population.
+if ($task === 'crew-seed') {
+    $target = (int) ($argv[2] ?? $app->crew()->settings()['population']);
+    echo 'Created ' . $app->crew()->seed($target) . " player(s).\n";
+    exit;
+}
 
 // Orders still pending: look for them in Linkwa's statement.
 try {
@@ -53,6 +59,19 @@ try {
     if ($gone) echo "Removed $gone old watch broadcast(s).\n";
 } catch (Throwable $e) {
     fwrite(STDERR, 'Watch cleanup failed: ' . $e->getMessage() . "\n");
+}
+
+// Players Engine: seats whose lease ran out (the runner stopped), and faded friend requests.
+try {
+    $now = PlayMona\nowMs();
+    $stale = $app->crew()->sweep($now);
+    foreach ($stale as $matchId) $app->matchmaker()->endMatch($matchId, 'cancelled', $now);
+    $faded = $app->friends()->sweep($now);
+    if ($stale || $faded) echo 'Freed ' . count($stale) . " stale match(es), faded $faded request(s).\n";
+    $abandoned = $app->imposters()->sweep($now);
+    if ($abandoned) echo "Ended $abandoned abandoned Imposters match(es).\n";
+} catch (Throwable $e) {
+    fwrite(STDERR, 'Crew cleanup failed: ' . $e->getMessage() . "\n");
 }
 
 // Visitor details older than about 13 months.

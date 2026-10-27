@@ -92,6 +92,12 @@ class MemoryRtdb implements RealtimeDb
         if ($value === null) unset($node[$last]); else $node[$last] = $value;
     }
 
+    public function update(string $path, array $values): void
+    {
+        if ($this->down) throw new RuntimeException('offline');
+        foreach ($values as $key => $value) $this->set(trim($path . '/' . $key, '/'), $value);
+    }
+
     /** Firebase REST queries: orderBy a child, startAt / endAt, limitToFirst, shallow. */
     public function query(string $path, array $params): mixed
     {
@@ -101,6 +107,12 @@ class MemoryRtdb implements RealtimeDb
         if (!is_array($tree)) return null;
         if (!empty($params['shallow'])) return array_map(fn () => true, $tree);
         $by = $params['orderBy'] ?? null;
+        if ($by === '$key') {
+            $tree = array_filter($tree, fn ($k) => (!isset($params['startAt']) || strcmp((string) $k, $params['startAt']) >= 0)
+                && (!isset($params['endAt']) || strcmp((string) $k, $params['endAt']) <= 0), ARRAY_FILTER_USE_KEY);
+            ksort($tree, SORT_STRING);
+            $by = null;
+        }
         if ($by) {
             $tree = array_filter($tree, function ($v) use ($by, $params) {
                 $x = is_array($v) ? ($v[$by] ?? null) : null;
@@ -1082,6 +1094,9 @@ test('live: the routes answer /live and /live/<code>', function () {
     eq(200, $w['routes']->handle(req('GET', '/live/AAAAAAAA'))->status);
     eq(404, $w['routes']->handle(req('GET', '/live/ZZZZZZZZ'))->status);
 });
+
+require __DIR__ . '/crew.test.php';
+require __DIR__ . '/imposters.test.php';
 
 echo "\n" . ($GLOBALS['count'] - $GLOBALS['failures']) . '/' . $GLOBALS['count'] . " passed\n";
 exit($GLOBALS['failures'] ? 1 : 0);

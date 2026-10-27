@@ -61,7 +61,10 @@ const ORDER = [
   'js/games/visualGames.js',
   'js/games/puzzleGames.js',
   'js/games/worldGames.js',
-  'js/games/bibleGames.js'
+  'js/games/bibleGames.js',
+  'js/imposters/rules.js',
+  'js/imposters/client.js',
+  'js/games/imposters.js'
 ];
 
 const sandbox = {

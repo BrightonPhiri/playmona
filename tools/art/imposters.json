@@ -1,0 +1,21 @@
+{
+  "game": "imposters",
+  "prompts": "docs/art/imposters-prompts.md",
+  "source": "assets/playmona_assets/imposters",
+  "ids": [],
+  "sets": [],
+  "focus": {},
+  "cover": {
+    "from": "cover.png",
+    "to": "assets/images/covers/imposters.webp",
+    "size": [
+      1086,
+      1448
+    ],
+    "max_kb": 240,
+    "focus": [
+      0.5,
+      0.5
+    ]
+  }
+}
