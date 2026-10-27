@@ -23,6 +23,12 @@ class EngineRoutes
             $this->app->matchmaker()->touch($this->user($req)->uid, $now);
             return Response::json(['ok' => true]);
         }
+        // Live match: this player is here, and how many other people are.
+        if ($m === 'GET' && $p === '/match/online') {
+            $u = $this->user($req);
+            $this->app->matchmaker()->touch($u->uid, $now);
+            return Response::json(['players' => $this->app->matchmaker()->humansOnline($u->uid, $now)]);
+        }
         if ($m === 'POST' && $p === '/match/queue') {
             $u = $this->user($req);
             return Response::json($this->app->matchmaker()->queue($u, $this->isAdmin($u), $req->json(), $now));

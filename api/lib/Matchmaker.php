@@ -24,7 +24,7 @@ class Matchmaker
     {
         $game = $body['gameId'] ?? null;
         if ($game === 'any' || $game === '') $game = null;
-        if ($game !== null && !in_array($game, Crew::GAMES, true)) throw new HttpError(400, 'That game cannot be played online.', 'bad-game');
+        if ($game !== null && !in_array($game, Crew::ONLINE_GAMES, true)) throw new HttpError(400, 'That game cannot be played online.', 'bad-game');
         $difficulty = (string) ($body['difficulty'] ?? 'normal');
         if (!in_array($difficulty, self::DIFFICULTIES, true)) throw new HttpError(400, 'Choose easy, normal or hard.', 'bad-difficulty');
         $room = strtoupper((string) ($body['roomCode'] ?? ''));
@@ -56,7 +56,7 @@ class Matchmaker
                 return;
             }
             // The older ticket's room hosts the match; its owner keeps their difficulty.
-            $matchGame = $partner['game_id'] ?? $game ?? Crew::GAMES[random_int(0, count(Crew::GAMES) - 1)];
+            $matchGame = $partner['game_id'] ?? $game ?? Crew::ONLINE_GAMES[random_int(0, count(Crew::ONLINE_GAMES) - 1)];
             $matchId = newId('m');
             $db->run(
                 "INSERT INTO matches (id, game_id, difficulty, room_code, host_uid, crew_count, status, created_at) VALUES (?, ?, ?, ?, ?, 0, 'active', ?)",
@@ -130,6 +130,8 @@ class Matchmaker
             if (!$open) return false;
             $game = $open[random_int(0, count($open) - 1)];
         }
+        // A game crew have no brain for waits for real players only.
+        if (!in_array($game, Crew::GAMES, true)) return false;
         if (!$this->crew->allowedFor($isAdmin, $game)) return false;
         if ($now - (int) $t['created_at'] < $s['fallbackSeconds'] * 1000) return false;
         if ($s['onlyWhenNoHumans'] && $this->humansOnline($t['uid'], $now) > 0) return false;
