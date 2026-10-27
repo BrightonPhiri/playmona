@@ -87,13 +87,21 @@ window.FF = window.FF || {};
            label(item)   -> the name read out once the card is face up
            boards        -> how many boards to play (default 1)
            theme()       -> { title, colour } for the board just dealt (optional):
-                            the title heads the board, the colour token tints the card faces */
+                            the title heads the board, the colour token tints the card faces
+     In a room's parallel challenge (FF.Parallel) also:
+           player        -> this phone's player, the only one on this board
+           onDone(stats) -> called instead of ending the game: { matched, pairs, moves, cleared }
+           extra         -> a node shown above the board (everyone's progress)
+           boardTitle    -> shown after the deck's name ("Round 1 of 3")
+     Returns { start, stop }: in a challenge the cards wait for start(),
+     and stop() freezes the board and returns its stats. */
   function runMatch(api, opts) {
     var root = api.shell.root;
-    var scorers = scorersFor(api);
+    var parallel = typeof opts.onDone === 'function';
+    var scorers = parallel ? [opts.player] : scorersFor(api);
     var many = scorers.length > 1;
     var racing = !!(FF.Race && FF.Race.active && FF.Race.active());
-    var timed = !!(FF.GameLength && FF.GameLength.timed(api.config));
+    var timed = !parallel && !!(FF.GameLength && FF.GameLength.timed(api.config));
     var boards = opts.boards || 1;
     // "Time per turn" limits each player's turn; alone there are no turns to limit.
     var turnSecs = many && !racing ? (api.config.timer || 0) : 0;
@@ -118,6 +126,7 @@ window.FF = window.FF || {};
     toast.setAttribute('aria-hidden', 'true');
     board.appendChild(grid);
     board.appendChild(toast);
+    if (opts.extra) wrap.appendChild(opts.extra);
     wrap.appendChild(header);
     wrap.appendChild(meter);
     wrap.appendChild(board);
@@ -127,7 +136,7 @@ window.FF = window.FF || {};
     var deck = [];       // card position -> item index
     var cards = [];
     var first = -1;
-    var busy = false;
+    var busy = parallel;   // a challenge opens on start()
     var matched = 0;
     var moves = 0;
     var boardNo = 0;
@@ -146,7 +155,7 @@ window.FF = window.FF || {};
       var boardText = boards > 1 && boards < (FF.GameLength ? FF.GameLength.UNBOUNDED : Infinity)
         ? FF.t('mmBoardOf', 'Board {n} of {total}', { n: boardNo, total: boards })
         : (boardNo > 1 ? FF.t('mmBoardN', 'Board {n}', { n: boardNo }) : null);
-      boardText = [theme.title, boardText].filter(Boolean).join(' · ') || null;
+      boardText = [theme.title, opts.boardTitle || boardText].filter(Boolean).join(' · ') || null;
       if (many || racing) who.appendChild(FF.GameUI.turnBar(currentScorer(), boardText));
       else who.appendChild(FF.GameUI.pill(boardText || FF.t('mmFindPairs', 'Find the pairs'), 'cards', 'turn'));
       api.shell.updateScores(many ? currentScorer().id : undefined);
@@ -190,7 +199,9 @@ window.FF = window.FF || {};
       var gap = w < 520 ? 6 : 10;
       // Twice: the header can wrap once the board's width is known.
       for (var pass = 0; pass < 2; pass++) {
-        var chrome = header.offsetHeight + meter.offsetHeight + 2 * (parseFloat(window.getComputedStyle(wrap).rowGap) || 0);
+        var rowGap = parseFloat(window.getComputedStyle(wrap).rowGap) || 0;
+        var chrome = header.offsetHeight + meter.offsetHeight + 2 * rowGap +
+          (opts.extra ? opts.extra.offsetHeight + rowGap : 0);
         var g = fitGrid(deck.length, w, h - chrome, gap);
         var gridW = g.cols * g.size + (g.cols - 1) * gap;
         grid.style.setProperty('--mm-size', g.size + 'px');
@@ -208,6 +219,7 @@ window.FF = window.FF || {};
     if (typeof ResizeObserver === 'function') {
       observer = new ResizeObserver(function () { fit(); });
       observer.observe(root);
+      if (opts.extra) observer.observe(opts.extra);
     } else {
       window.addEventListener('resize', fit);
     }
@@ -253,20 +265,25 @@ window.FF = window.FF || {};
           matched++;
           api.audio.play('correct');
           var pts = roundPoints(50, api.config.difficulty);
-          api.scoring.add(currentScorer().id, pts, { correct: true });
+          // A challenge's points come from the room once the board is done.
+          if (!parallel) api.scoring.add(currentScorer().id, pts, { correct: true });
           renderStats();
           renderTurn();
-          say(many
-            ? FF.t('mmMatchBy', '{name} found a pair! +{pts}', { name: currentScorer().name, pts: pts })
-            : FF.t('mmMatch', 'A pair! +{pts}', { pts: pts }), 'good');
+          say(parallel
+            ? FF.t('mmPair', 'A pair!')
+            : (many
+              ? FF.t('mmMatchBy', '{name} found a pair! +{pts}', { name: currentScorer().name, pts: pts })
+              : FF.t('mmMatch', 'A pair! +{pts}', { pts: pts })), 'good');
           busy = false;
           if (matched >= items.length) boardDone();
           else if (timeUp()) finish();
           else startTurnTimer();   // a pair earns another go, with a fresh clock
         } else {
           api.audio.play('wrong');
-          api.scoring.add(currentScorer().id, 0, { wrong: true });
-          api.scoring.resetStreak(currentScorer().id);
+          if (!parallel) {
+            api.scoring.add(currentScorer().id, 0, { wrong: true });
+            api.scoring.resetStreak(currentScorer().id);
+          }
           cards[a].classList.add('miss');
           cards[b].classList.add('miss');
           later(function () {
@@ -346,11 +363,76 @@ window.FF = window.FF || {};
         wrap.classList.add('is-done');
         api.audio.play('winner');
       }
+      if (parallel) {
+        setTimeout(function () { opts.onDone(boardStats()); }, 900);
+        return;
+      }
       api.shell.updateScores();
       setTimeout(function () { api.end(buildResults(api)); }, cleared ? 1100 : 700);
     }
 
+    function boardStats() {
+      return { matched: matched, pairs: items.length, moves: moves, cleared: matched >= items.length };
+    }
+
     deal();
+    return {
+      start: function () { if (!ended) busy = false; },
+      stop: function () {
+        if (!ended) { ended = true; busy = true; stopFit(); }
+        return boardStats();
+      }
+    };
+  }
+
+  /* Points for one board of a room challenge: every pair counts, and a
+     cleared board adds a bonus for few flips and one for speed. */
+  function matchPoints(st, ms, limitMs, bonus) {
+    var pts = st.matched * 40;
+    if (st.pairs && st.matched >= st.pairs) {
+      pts += Math.round(150 * st.pairs / Math.max(st.moves, st.pairs));
+      pts += FF.Parallel.speedBonus(ms, limitMs, 150);
+    }
+    return Math.round(pts * (bonus || 1));
+  }
+
+  function matchDetail(a) {
+    if (a.pairs && a.matched >= a.pairs) {
+      return FF.t('mmDetailDone', '{moves} moves · {time}', { moves: a.moves || 0, time: FF.Parallel.clock(a.ms) });
+    }
+    return FF.t('mmPairs', '{n} of {total} pairs', { n: a.matched || 0, total: a.pairs || 0 });
+  }
+
+  /* A room challenge for the card-matching games: every phone gets the
+     same board each round. o: { rounds, seconds, deal, theme, render, label, watch } */
+  function matchOnline(api, o) {
+    var bonus = bonusFor(api.config.difficulty);
+    FF.Parallel.run(api, {
+      rounds: o.rounds,
+      seconds: o.seconds,
+      gate: '.match-card',
+      play: function (n, ctx) {
+        var board = runMatch(api, {
+          player: ctx.me,
+          extra: ctx.live,
+          boardTitle: ctx.roundText,
+          deal: o.deal,
+          theme: o.theme,
+          render: o.render,
+          label: o.label,
+          onDone: function (st) { ctx.done(Object.assign({ value: matchPoints(st, ctx.elapsed(), ctx.limitMs, bonus) }, st)); }
+        });
+        return {
+          start: board.start,
+          stop: function () {
+            var st = board.stop();
+            return Object.assign({ value: matchPoints(st, null, ctx.limitMs, bonus) }, st);
+          }
+        };
+      },
+      describe: function () { return { kind: 'card', text: o.watch() }; },
+      detail: matchDetail
+    });
   }
 
   /* ---------- pictureMemory data helper ---------- */
@@ -401,15 +483,16 @@ window.FF = window.FF || {};
     return null;
   }
 
-  /* n different cards from one deck, or from every deck when deckId is empty. */
-  function mmDeal(deckId, n) {
+  /* n different cards from one deck, or from every deck when deckId is empty.
+     shared: a room deal, which must not depend on this phone's recent boards. */
+  function mmDeal(deckId, n, shared) {
     var pool = [];
     (FF.MemoryDecks || []).forEach(function (d) {
       if (deckId && d.id !== deckId) return;
       d.cards.forEach(function (row) { pool.push(mmCard(row)); });
     });
     pool = FF.util.shuffle(pool);
-    pool.sort(function (a, b) { return (mmRecent.indexOf(a.id) !== -1) - (mmRecent.indexOf(b.id) !== -1); });
+    if (!shared) pool.sort(function (a, b) { return (mmRecent.indexOf(a.id) !== -1) - (mmRecent.indexOf(b.id) !== -1); });
     var out = [];
     var seen = {};
     for (var i = 0; i < pool.length && out.length < n; i++) {
@@ -443,7 +526,37 @@ window.FF = window.FF || {};
     return id;
   }
 
+  var MM_SECONDS = { easy: 75, normal: 120, hard: 180 };
+
+  /* Online: every phone gets the same surprise deck and board each round. */
+  function mmPlayOnline(api) {
+    var pairs = MM_PAIRS[api.config.difficulty] || MM_PAIRS.normal;
+    var deck = null;
+    matchOnline(api, {
+      rounds: 2,
+      seconds: MM_SECONDS[api.config.difficulty] || MM_SECONDS.normal,
+      deal: function () {
+        // Drawn from the round's seeded random numbers, so every phone agrees.
+        var ids = (FF.MemoryDecks || []).map(function (d) { return d.id; }).concat(['']);
+        var id = FF.util.pick(ids);
+        deck = mmDeck(id);
+        return mmDeal(id, pairs, true);
+      },
+      theme: function () {
+        return deck
+          ? { title: FF.t('mmDeck_' + deck.id, deck.name), colour: deck.colour }
+          : { title: FF.t('mmMix', 'A bit of everything') };
+      },
+      render: mmFace,
+      label: function (card) { return card.name; },
+      watch: function () {
+        return FF.t('mmWatch', 'Everyone is finding the same {n} pairs', { n: pairs });
+      }
+    });
+  }
+
   function mmPlay(api) {
+    if (FF.Parallel && FF.Parallel.active()) { mmPlayOnline(api); return; }
     var pairs = MM_PAIRS[api.config.difficulty] || MM_PAIRS.normal;
     var timed = !!(FF.GameLength && FF.GameLength.timed(api.config));
     var deck = null;
@@ -518,7 +631,7 @@ window.FF = window.FF || {};
         hard: { pairs: 10 }
       };
       var c = cfg[d] || cfg.normal;
-      runMatch(api, {
+      var game = {
         deal: function () {
           var items = getPictureItems(c.pairs);
           while (items.length < c.pairs) items.push(EMOJI[items.length % EMOJI.length]);
@@ -534,7 +647,17 @@ window.FF = window.FF || {};
           wrap.appendChild(cap);
           return wrap;
         }
-      });
+      };
+      if (FF.Parallel && FF.Parallel.active()) {
+        // Online: the same pictures, in the same places, on every phone.
+        matchOnline(api, Object.assign({
+          rounds: 2,
+          seconds: 45 + c.pairs * 7,
+          watch: function () { return FF.t('pmWatch', 'Everyone is matching the same {n} picture pairs', { n: c.pairs }); }
+        }, game));
+        return;
+      }
+      runMatch(api, game);
     }
   });
 
@@ -777,6 +900,150 @@ window.FF = window.FF || {};
   /* ============================================================
      4. REMEMBER THE SEQUENCE
      ============================================================ */
+  /* The coloured pad: a status line, progress dots, the tiles and a message. */
+  function rsPad(api, palette, onTile) {
+    var wrap = api.ui.div('rs-wrap');
+    var status = api.ui.div('rs-status', '');
+    var seqEl = api.ui.div('rs-seq');
+    var pad = api.ui.div('rs-pad');
+    var msg = api.ui.div('rs-msg', '');
+    wrap.appendChild(status);
+    wrap.appendChild(seqEl);
+    wrap.appendChild(pad);
+    wrap.appendChild(msg);
+    var tiles = palette.map(function (c, i) {
+      var b = api.ui.el('button', {
+        class: 'rs-tile',
+        type: 'button',
+        tabindex: 0,
+        style: { background: c.color },
+        ariaLabel: c.name
+      }, c.name);
+      b.addEventListener('click', function () { onTile(i); });
+      pad.appendChild(b);
+      return b;
+    });
+    return { wrap: wrap, status: status, seqEl: seqEl, msg: msg, tiles: tiles };
+  }
+
+  var RS_MAX_LEN = 12;
+
+  /* Online, round n plays a sequence one colour longer than the last. */
+  function rsLength(startLen, n) { return Math.min(RS_MAX_LEN, startLen + n); }
+  // Watching takes about 0.6 s a colour; repeating gets 1.5 s a colour, plus slack.
+  function rsSeconds(len) { return Math.ceil(8 + 2.1 * len); }
+
+  /* Points for one sequence in a room challenge: the whole sequence scores
+     by its length plus a bonus for a quick repeat; a slip keeps a little
+     for every colour that was right. */
+  function sequencePoints(len, got, inputMs, bonus) {
+    if (got >= len) return Math.round((bonus || 1) * (len * 20 + FF.Parallel.speedBonus(inputMs, len * 1500, len * 10)));
+    return Math.round((bonus || 1) * got * 5);
+  }
+
+  function rsPlayOnline(api, palette, startLen) {
+    var bonus = bonusFor(api.config.difficulty);
+    FF.Parallel.run(api, {
+      rounds: 6,
+      seconds: function (n) { return rsSeconds(rsLength(startLen, n)); },
+      gate: '.rs-tile',
+      play: function (n, ctx) {
+        var root = api.shell.root;
+        var len = rsLength(startLen, n);
+        var seq = [];
+        for (var i = 0; i < len; i++) seq.push(api.util.int(0, palette.length - 1));
+        var got = 0;
+        var locked = true;
+        var over = false;
+        var inputFrom = 0;
+        var inputMs = null;
+        var ui = rsPad(api, palette, onTile);
+        root.appendChild(ctx.live);
+        root.appendChild(FF.GameUI.turnBar(null, ctx.roundText));
+        root.appendChild(ui.wrap);
+        ui.status.textContent = FF.t('rsColoursN', '{n} colours', { n: len });
+        ui.msg.textContent = FF.t('rsGetReady', 'Get ready to watch');
+        progress();
+
+        function progress() {
+          api.ui.clear(ui.seqEl);
+          for (var k = 0; k < len; k++) ui.seqEl.appendChild(api.ui.div('rs-dot' + (k < got ? ' done' : '')));
+        }
+        function result() {
+          return { value: sequencePoints(len, got, inputMs, bonus), len: len, got: got };
+        }
+        function flash(k) {
+          var tile = ui.tiles[k];
+          tile.classList.add('lit');
+          setTimeout(function () { tile.classList.remove('lit'); }, 220);
+        }
+        function onTile(k) {
+          if (locked || over) return;
+          flash(k);
+          api.audio.play('tap');
+          if (k !== seq[got]) {
+            over = true;
+            api.audio.play('wrong');
+            ui.msg.textContent = FF.t('rsWas', 'The sequence was {seq}.', {
+              seq: seq.map(function (c) { return palette[c].name; }).join(' → ')
+            });
+            setTimeout(function () { ctx.done(result()); }, 1600);
+            return;
+          }
+          got++;
+          progress();
+          if (got >= len) {
+            over = true;
+            inputMs = ctx.elapsed() - inputFrom;
+            api.audio.play('correct');
+            ui.msg.textContent = FF.t('correct', 'Correct!');
+            setTimeout(function () { ctx.done(result()); }, 900);
+          }
+        }
+        // Every phone plays the same sequence from the shared open instant.
+        function reveal() {
+          var k = 0;
+          function step() {
+            if (over || !ui.wrap.isConnected) return;
+            if (k >= seq.length) {
+              setTimeout(function () {
+                if (over) return;
+                locked = false;
+                inputFrom = ctx.elapsed();
+                ui.msg.textContent = FF.t('rsYourTurn', 'Your turn: repeat the sequence!');
+              }, 350);
+              return;
+            }
+            var tile = ui.tiles[seq[k]];
+            tile.classList.add('lit');
+            api.audio.play('tap');
+            setTimeout(function () {
+              tile.classList.remove('lit');
+              k++;
+              setTimeout(step, 180);
+            }, 420);
+          }
+          setTimeout(step, 550);
+        }
+        return {
+          start: function () {
+            ui.msg.textContent = FF.t('rsWatch', 'Watch the sequence!');
+            reveal();
+          },
+          stop: function () { over = true; locked = true; return result(); }
+        };
+      },
+      describe: function (n) {
+        return { kind: 'card', text: FF.t('rsWatchRoom', 'Everyone repeats the same {n} colours', { n: rsLength(startLen, n) }) };
+      },
+      detail: function (a) {
+        return a.got >= a.len
+          ? FF.t('rsDetailAll', 'All {n} colours', { n: a.len || 0 })
+          : FF.t('rsDetailSome', '{got} of {n} colours', { got: a.got || 0, n: a.len || 0 });
+      }
+    });
+  }
+
   FF.registerGame({
     id: 'rememberSequence',
     name: 'Remember the Sequence',
@@ -801,33 +1068,16 @@ window.FF = window.FF || {};
       var diff = api.config.difficulty;
       var startLen = diff === 'easy' ? 3 : (diff === 'hard' ? 5 : 4);
       var colorCount = diff === 'easy' ? 4 : (diff === 'hard' ? 6 : 5);
-      var MAX_LEN = 12;
+      var MAX_LEN = RS_MAX_LEN;
 
       var palette = SEQUENCE_COLORS.slice(0, colorCount);
-      var wrap = api.ui.div('rs-wrap');
-      var status = api.ui.div('rs-status', '');
-      var seqEl = api.ui.div('rs-seq');
-      var pad = api.ui.div('rs-pad');
-      var msg = api.ui.div('rs-msg', '');
-      wrap.appendChild(status);
-      wrap.appendChild(seqEl);
-      wrap.appendChild(pad);
-      wrap.appendChild(msg);
-      root.appendChild(wrap);
-
-      var tiles = [];
-      palette.forEach(function (c, i) {
-        var b = api.ui.el('button', {
-          class: 'rs-tile',
-          type: 'button',
-          tabindex: 0,
-          style: { background: c.color },
-          ariaLabel: c.name
-        }, c.name);
-        b.addEventListener('click', function () { onTile(i); });
-        pad.appendChild(b);
-        tiles.push(b);
-      });
+      if (FF.Parallel && FF.Parallel.active()) { rsPlayOnline(api, palette, startLen); return; }
+      var board = rsPad(api, palette, function (i) { onTile(i); });
+      var status = board.status;
+      var seqEl = board.seqEl;
+      var msg = board.msg;
+      var tiles = board.tiles;
+      root.appendChild(board.wrap);
 
       var seq = [];
       var inputIdx = 0;

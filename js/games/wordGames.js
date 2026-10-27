@@ -248,6 +248,103 @@ window.FF = window.FF || {};
     api.audio.play('winner');
   }
 
+  /* ---------- Word Builder in a room ----------
+     Everyone gets the same letters at the same moment and builds their own
+     words (FF.Parallel); every word scores a point a letter. */
+  function longestWord(words) {
+    return (words || []).reduce(function (best, w) { return w.length > best.length ? w : best; }, '');
+  }
+
+  function wordBuilderOnline(api) {
+    var letters = null;
+    FF.Parallel.run(api, {
+      rounds: 2,
+      seconds: 75,
+      gate: '.wg-input, .wg-word-form button, .wg-done',
+      play: function (n, ctx) {
+        letters = makeLetterPool(api, 10);   // the round's seeded letters
+        var mine = [];
+        var used = {};
+        var score = 0;
+        var open = false;
+        var over = false;
+
+        var root = api.shell.root;
+        var wrap = FF.ui.div('wg-wrap');
+        wrap.appendChild(ctx.live);
+        wrap.appendChild(FF.GameUI.turnBar(null, ctx.roundText));
+        wrap.appendChild(FF.ui.el('h2', { class: 'wg-center' }, FF.t('everyonesLetters', 'Everyone\u2019s letters')));
+        wrap.appendChild(FF.GameUI.tiles(letters.map(function (ch) { return ch.toUpperCase(); })));
+
+        var form = FF.ui.div('wg-word-form');
+        var input = FF.ui.el('input', {
+          type: 'text', class: 'wg-input', placeholder: FF.t('typeAWord', 'Type a word\u2026'),
+          'aria-label': FF.t('yourWord', 'Your word'),
+          autocomplete: 'off', autocapitalize: 'off', spellcheck: 'false', maxlength: 12,
+          onkeydown: function (e) { if (e.key === 'Enter') { e.preventDefault(); add(); } }
+        });
+        form.appendChild(input);
+        form.appendChild(FF.UI.button(FF.t('addWord', 'Add word'), { icon: 'check', primary: true, class: 'btn', onClick: add }));
+        wrap.appendChild(form);
+
+        var tally = FF.ui.div('wg-sub wg-center', '');
+        var list = FF.ui.div('wg-word-list');
+        wrap.appendChild(tally);
+        wrap.appendChild(list);
+        wrap.appendChild(FF.UI.button(FF.t('imDone', 'I\u2019m done'), { icon: 'check', class: 'btn wg-done', onClick: function () {
+          if (!open || over) return;
+          over = true;
+          api.audio.play('select');
+          ctx.done(result());
+        } }));
+        root.appendChild(wrap);
+        renderList();
+
+        function result() {
+          return { value: score, words: mine.length, best: longestWord(mine) };
+        }
+
+        function renderList() {
+          tally.textContent = FF.t('wbTally', '{n} words · {pts} points', { n: mine.length, pts: score });
+          FF.ui.clear(list);
+          mine.forEach(function (w) { list.appendChild(FF.ui.span('wg-chip', w.toUpperCase())); });
+        }
+
+        function add() {
+          if (!open || over) return;
+          var word = FF.util.lettersOnly(input.value);
+          input.value = '';
+          var why = null;
+          if (word.length < 3) why = FF.t('wbTooShort', 'Too short: use at least 3 letters.');
+          else if (!canBuild(word, letters)) why = FF.t('wbOnlyLetters', 'Only use the letters shown.');
+          else if (!inDictionary(word)) why = FF.t('wbNotWord', 'That word is not in the dictionary.');
+          else if (used[word]) why = FF.t('wbHaveIt', 'You already have that word.');
+          if (why) { api.shell.toast(why, 'warning'); api.audio.play('wrong'); focusSoon(input); return; }
+          used[word] = true;
+          mine.push(word);
+          var pts = wordLengthScore(word.length);
+          score += pts;
+          api.audio.play('correct');
+          api.shell.toast('+' + pts + ' ' + word.toUpperCase(), 'correct');
+          renderList();
+          focusSoon(input);
+        }
+
+        return {
+          start: function () { open = true; focusSoon(input); },
+          stop: function () { over = true; return result(); }
+        };
+      },
+      describe: function () {
+        return { kind: 'card', text: FF.t('wbWatch', 'Make words from these letters: {letters}', { letters: (letters || []).join(' ').toUpperCase() }) };
+      },
+      detail: function (a) {
+        var line = FF.t('wbWordsN', '{n} words', { n: a.words || 0 });
+        return a.best ? line + ' \u00b7 ' + FF.t('lrBestIs', 'best: {w}', { w: String(a.best).toUpperCase() }) : line;
+      }
+    });
+  }
+
   /* ================= Game 2: Word Scramble ================= */
 
   FF.registerGame({
@@ -582,6 +679,7 @@ window.FF = window.FF || {};
     },
     start: function (api) {
       if (!hasDictionary()) { showMissingData(api, 'Word Builder'); return; }
+      if (FF.Parallel && FF.Parallel.active()) { wordBuilderOnline(api); return; }
       var players = (api.config.players && api.config.players.length) ? api.config.players.slice() : scorerEntities(api);
       if (!players.length) { showMissingData(api, 'Word Builder', 'No players were found.'); return; }
 

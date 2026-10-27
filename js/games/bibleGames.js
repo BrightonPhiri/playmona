@@ -36,6 +36,104 @@ window.FF = window.FF || {};
     return scorers.filter(function (s) { return s.id === uid; })[0] || scorers[0];
   }
 
+  /* ---------- Books of the Bible in a room ----------
+     A sprint of books per round, the same books on every phone (FF.Parallel).
+     Right answers score 80 plus 10 a streak; a finished sprint adds a speed
+     bonus, scaled by how many were right. */
+  var BOOKS_PER_SPRINT = 6;
+
+  function booksPoints(st, ms, limitMs) {
+    var speed = st.total ? FF.Parallel.speedBonus(ms, limitMs, 100) * st.right / st.total : 0;
+    return Math.round(st.points + speed);
+  }
+
+  function bibleBooksOnline(api, books) {
+    FF.Parallel.seed(api, 'books');
+    var deck = api.util.shuffle(books.slice());
+    var per = Math.min(BOOKS_PER_SPRINT, deck.length);
+    FF.Parallel.run(api, {
+      rounds: 3,
+      available: Math.floor(deck.length / per),
+      seconds: 30,
+      gate: '.gm-duo-btn',
+      play: function (n, ctx) {
+        var sprint = [];
+        for (var k = 0; k < per; k++) sprint.push(deck[(n * per + k) % deck.length]);
+        var idx = 0;
+        var st = { points: 0, right: 0, total: per };
+        var streak = 0;
+        var open = false;
+        var over = false;
+
+        var wrap = FF.GameUI.stage();
+        wrap.appendChild(ctx.live);
+        var slot = FF.ui.div('');
+        wrap.appendChild(slot);
+        api.shell.root.appendChild(wrap);
+
+        function result(ms) {
+          return { value: booksPoints(st, ms, ctx.limitMs), right: st.right, total: st.total };
+        }
+
+        function card() {
+          FF.ui.clear(slot);
+          var book = sprint[idx];
+          slot.appendChild(FF.GameUI.turnBar(null, ctx.roundText + ' \u00b7 ' + FF.t('bookOf', 'Book {n} of {total}', { n: idx + 1, total: per })));
+          var c = FF.ui.div('gm-card');
+          c.appendChild(FF.GameUI.kicker(FF.t('whichTestament', 'Which testament?')));
+          c.appendChild(FF.ui.el('h2', { class: 'gm-big' }, book.name));
+          c.appendChild(FF.GameUI.note(FF.t('chaptersN', '{n} chapters', { n: book.chapters })));
+          slot.appendChild(c);
+          var row = FF.GameUI.duo();
+          var ot = FF.GameUI.duoButton(FF.t('oldTestament', 'Old Testament'), function () { pick('OT', ot); }, 'up', 'scroll');
+          var nt = FF.GameUI.duoButton(FF.t('newTestament', 'New Testament'), function () { pick('NT', nt); }, 'down', 'book-open');
+          row.appendChild(ot);
+          row.appendChild(nt);
+          slot.appendChild(row);
+          var picked = false;
+          function pick(choice, btn) {
+            if (picked || !open || over) return;
+            picked = true;
+            var right = choice === book.testament;
+            ot.disabled = true;
+            nt.disabled = true;
+            FF.GameUI.markOption(book.testament === 'OT' ? ot : nt, 'correct');
+            if (!right) FF.GameUI.markOption(btn, 'wrong');
+            if (right) {
+              streak++;
+              st.right++;
+              st.points += 80 + streak * 10;
+              api.audio.play('correct');
+            } else {
+              streak = 0;
+              api.audio.play('wrong');
+            }
+            setTimeout(function () {
+              if (over || !slot.isConnected) return;
+              idx++;
+              if (idx < per) { card(); return; }
+              over = true;
+              ctx.done(result(ctx.elapsed()));
+            }, right ? 450 : 1000);
+          }
+        }
+        card();
+
+        return {
+          start: function () { open = true; },
+          stop: function () { over = true; return result(null); }
+        };
+      },
+      describe: function () {
+        return { kind: 'card', text: FF.t('booksWatch', 'Old or New Testament? Everyone sorts the same {n} books', { n: per }) };
+      },
+      detail: function (a) {
+        var line = FF.t('booksRight', '{c} of {n} right', { c: a.right || 0, n: a.total || 0 });
+        return a.out ? line : line + ' \u00b7 ' + FF.Parallel.clock(a.ms);
+      }
+    });
+  }
+
   /* ============================================================
      1. BIBLE QUIZ
      ============================================================ */
@@ -759,6 +857,8 @@ window.FF = window.FF || {};
         FF.GameUI.exitCard(api, FF.t('noBooks', 'Books data not loaded'));
         return;
       }
+
+      if (FF.Parallel && FF.Parallel.active()) { bibleBooksOnline(api, data.books); return; }
 
       var scorers = scorerList(api.config);
       var deck = api.util.shuffle(data.books.slice()).slice(0, 15);
