@@ -10,6 +10,8 @@ interface RealtimeDb
     public function set(string $path, mixed $value): void;
     /** A filtered read: orderBy (a child), startAt, endAt, limitToFirst, shallow. */
     public function query(string $path, array $params): mixed;
+    /** Writes several children of $path in one request (Firebase PATCH); a null value deletes. */
+    public function update(string $path, array $values): void;
 }
 
 /**
@@ -40,6 +42,15 @@ class FirebaseDb implements RealtimeDb
     {
         [$status] = $this->http->request('PUT', $this->url($path), $this->headers(), json_encode($value));
         if ($status !== 200) throw new \RuntimeException("Firebase write failed ($status).");
+    }
+
+    public function update(string $path, array $values): void
+    {
+        foreach (array_keys($values) as $key) {
+            if (!preg_match('#^[A-Za-z0-9_/-]+$#', (string) $key)) throw new InvalidArgumentException('Bad database path.');
+        }
+        [$status] = $this->http->request('PATCH', $this->url($path), $this->headers(), json_encode((object) $values));
+        if ($status !== 200) throw new RuntimeException("Firebase update failed ($status).");
     }
 
     public function query(string $path, array $params): mixed

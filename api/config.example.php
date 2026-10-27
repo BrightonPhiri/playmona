@@ -43,6 +43,22 @@ return [
     // Dates on invoices are shown in this time zone.
     'timezone' => 'Africa/Harare',
 
+    // Players Engine runner (api/crew/runner.js). Quick Match starts it when it needs it.
+    'crew' => [
+        // Any long random string (e.g. `openssl rand -hex 32`). The runner sends it back to /api/internal/crew/*.
+        'runner_secret' => '',
+        // Full path to Node 18 or later if `node` is not on the web server's PATH.
+        'node_path' => 'node',
+        // Where the runner keeps its lock, config and log (not in the web root).
+        // 'state_dir' => '/home/user/web/playmona.com/private/crew',
+    ],
+
+    // AI providers are added in the admin portal (AI). Their keys are encrypted with this key:
+    // 32 random bytes, base64 (php -r 'echo base64_encode(random_bytes(32));').
+    'ai' => [
+        'secret_key' => '',
+    ],
+
     // Games sold one at a time: id => name, price in cents and (optional) a picture for
     // Linkwa's payment page. Plus plan prices are set in the admin portal (Finances).
     'premium_games' => [
