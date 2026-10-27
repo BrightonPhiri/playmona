@@ -6,6 +6,7 @@ FF.AssetManifest = {
     "familyQuiz": "398a13de",
     "guessAnimal": "ff4053a8",
     "guessWho": "06291604",
+    "imposters": "1275cfc4",
     "letterRush": "b0eb5db2",
     "memoryMatch": "39b80ff8",
     "miniCrossword": "ca1c3143",

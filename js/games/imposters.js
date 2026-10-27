@@ -767,6 +767,7 @@ window.FF = window.FF || {};
     description: 'Everyone gets a secret, except one or two who get a different one. Nobody knows which side they are on. Give clues, talk, and vote the imposters out.',
     category: 'party',
     icon: '🕵️',
+    coverFocus: 'center 52%',
     players: [R.MIN_PLAYERS, R.MAX_PLAYERS],
     difficulty: 'Medium',
     duration: 10,
