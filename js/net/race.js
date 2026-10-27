@@ -299,7 +299,10 @@ window.FF = window.FF || {};
         //              its place (pointsFor(answer, place))
         // 'parallel' - everyone plays the same challenge and keeps their
         //              own score; the winner is only for the headline
-        mode: (opts.mode === 'fastest' || opts.mode === 'ranked' || opts.mode === 'parallel') ? opts.mode : 'first',
+        // 'vote'     - everyone votes (answer.choice) and each settled round
+        //              is scored from all the votes: pointsFor(answers, tally)
+        //              returns { uid: points }
+        mode: (opts.mode === 'fastest' || opts.mode === 'ranked' || opts.mode === 'parallel' || opts.mode === 'vote') ? opts.mode : 'first',
         index: 0,
         settled: false,
         claiming: false
@@ -465,7 +468,7 @@ window.FF = window.FF || {};
       return r.transport.set('rounds/' + n + '/answers/' + r.uid, record).then(function () {
         // In 'fastest' mode nobody claims on answering - the winner is
         // derived from the recorded times once the round closes.
-        if (!correct || session.mode === 'fastest' || session.mode === 'ranked' || session.mode === 'parallel') return null;
+        if (!correct || session.mode === 'fastest' || session.mode === 'ranked' || session.mode === 'parallel' || session.mode === 'vote') return null;
         return r.transport.transaction('rounds/' + n + '/winner', function (current) {
           return current == null ? r.uid : undefined;   // first correct answer wins
         });

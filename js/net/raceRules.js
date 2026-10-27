@@ -68,6 +68,25 @@ window.FF = window.FF || {};
       return (bestVal != null && bestVal > 0) ? best : null;
     },
 
+    /* How a vote round split: { counts: { choice: votes }, top: [the
+       choices with the most votes, as strings], max }. Used by 'vote'
+       games (the party games), which have no right answer: points follow
+       how the room voted. An answer with no choice is not a vote. */
+    tally: function (round) {
+      var answers = answersOf(round);
+      var counts = {};
+      Object.keys(answers).forEach(function (uid) {
+        var a = answers[uid];
+        if (!a || a.choice == null) return;
+        var k = String(a.choice);
+        counts[k] = (counts[k] || 0) + 1;
+      });
+      var max = 0;
+      Object.keys(counts).forEach(function (k) { if (counts[k] > max) max = counts[k]; });
+      var top = Object.keys(counts).filter(function (k) { return max > 0 && counts[k] === max; }).sort();
+      return { counts: counts, top: top, max: max };
+    },
+
     /* Decide whether a round is over.
        round   : { startedAt, answers: {uid:{choice,correct,ms}}, winner }
        players : [{uid, online}]
@@ -102,14 +121,15 @@ window.FF = window.FF || {};
       var timedOut = !!(timerMs && timerMs > 0 && round.startedAt != null &&
         (now - round.startedAt) >= timerMs);
 
-      if (mode === 'parallel') {
+      if (mode === 'parallel' || mode === 'vote') {
         // Everyone plays the whole round; it ends when all have finished
         // or the clock runs out. The 'winner' is only for the headline -
-        // in this mode every player keeps the points they earned.
+        // in this mode every player keeps the points they earned. A vote
+        // round has no winner at all.
         if (everyoneAnswered || timedOut) {
           return {
             settled: true,
-            winnerId: this.bestOf(round),
+            winnerId: mode === 'vote' ? null : this.bestOf(round),
             reason: everyoneAnswered ? 'exhausted' : 'timeout'
           };
         }
@@ -185,6 +205,26 @@ window.FF = window.FF || {};
             if (!Object.prototype.hasOwnProperty.call(out, uid)) out[uid] = 0;
             var v = (a.value != null) ? a.value : 0;
             out[uid] += (typeof v === 'number' && isFinite(v)) ? v : 0;
+          });
+        });
+        return out;
+      }
+
+      // Vote games score a round as a whole once it has settled (its winner
+      // slot is filled), because the points depend on how everyone voted:
+      // no answer can carry its own. pointsFor(answers, tally) returns
+      // { uid: points }, and may score players who did not vote (the one
+      // the room picked in Who Is Most Likely).
+      if (mode === 'vote') {
+        var rules = this;
+        Object.keys(rounds || {}).forEach(function (key) {
+          var round = rounds[key];
+          if (!round || round.winner == null) return;
+          var got = pointsFor(answersOf(round), rules.tally(round)) || {};
+          Object.keys(got).forEach(function (uid) {
+            if (!Object.prototype.hasOwnProperty.call(out, uid)) out[uid] = 0;
+            var pts = got[uid];
+            out[uid] += (typeof pts === 'number' && isFinite(pts)) ? pts : 0;
           });
         });
         return out;

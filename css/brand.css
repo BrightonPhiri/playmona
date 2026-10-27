@@ -98,6 +98,7 @@
 .pg-voter__avatar { width: 48px; height: 48px; }
 .pg-cand__avatar.avatar-img { width: 56px; height: 56px; }
 .pg-chip__ava { width: 22px; height: 22px; }
+.pg-vchip__ava { width: 22px; height: 22px; }
 .pg-row__ava { width: 30px; height: 30px; flex: none; }
 .ffr-chip__ava { width: 24px; height: 24px; }
 .rm-player__ava.avatar-img { width: 32px; height: 32px; background: transparent; }

@@ -10,7 +10,7 @@ const ROOT = path.join(__dirname, '..', '..');
 
 test('every room game describes its screen', function () {
   // Minimum number of describe calls per file (quizGames has four separate engines).
-  const files = { bibleGames: 1, worldGames: 1, visualGames: 1, quizGames: 3, quizMix: 1, reactionGames: 1, letterRush: 1, memoryGames: 1, numberGames: 1, puzzleGames: 1 };
+  const files = { bibleGames: 1, worldGames: 1, visualGames: 1, quizGames: 3, quizMix: 1, reactionGames: 1, letterRush: 1, memoryGames: 1, numberGames: 1, puzzleGames: 1, partyGames: 1 };
   Object.keys(files).forEach(function (f) {
     const src = fs.readFileSync(path.join(ROOT, 'js/games/' + f + '.js'), 'utf8');
     const n = (src.match(/Race\.describe\(|race\.describe\(/g) || []).length;

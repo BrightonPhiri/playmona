@@ -18,7 +18,9 @@ window.FF = window.FF || {};
     'letterRush',
     'whatsMissing',
     'numberChallenge',
-    'visualRiddle'
+    'visualRiddle',
+    // Votes: everyone votes on their own phone, then sees the same split.
+    'wouldYouRather', 'thisOrThat', 'whoIsMostLikely'
     // Brain Battle is deliberately absent: its format is a personal
     // streak run per player, so there is no shared question to race for.
   ];
