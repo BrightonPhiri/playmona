@@ -3,6 +3,7 @@
  * PlayMona background jobs. Run from the server's cron every 10 minutes:
  *   php /home/user/web/playmona.com/public_html/api/cron.php
  * Also: php cron.php migrate   (creates the database tables; safe to repeat)
+ *       php cron.php runner    (every minute: keeps the crew runner going)
  */
 declare(strict_types=1);
 
@@ -17,6 +18,14 @@ use PlayMona\{App, Config};
 
 $app = new App(Config::load(PlayMona\configPath()));
 $task = $argv[1] ?? 'all';
+
+// php cron.php runner, every minute: starts the crew runner (crew players and the Imposters
+// referee) when it is not running. Cron starts it, so it does not depend on the web server
+// being allowed to start programs. Cheap: it runs before the database and payment jobs.
+if ($task === 'runner') {
+    echo $app->runner()->ensure(PlayMona\nowMs()) ? "Runner started.\n" : "Runner already running (or just starting).\n";
+    exit;
+}
 
 $app->db()->migrate();
 // Older orders: test/live mode and invoice numbers (needs the gateway settings).
