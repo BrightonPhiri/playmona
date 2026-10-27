@@ -498,10 +498,10 @@ window.FF = window.FF || {};
         onClick: function () { FF.Access.gate('challenge', function () { FF.Nav.go('challenges'); }); }
       });
       card({
-        id: 'mode-match', tone: 'green', icon: 'globe', soon: true,
-        title: t('quickMatch', 'Quick match'),
-        desc: t('quickMatchDesc', 'Get matched with players or teams who are online and ready to play right now.'),
-        onClick: function () { self.showQuickMatch(main); }
+        id: 'mode-match', tone: 'green', icon: 'globe',
+        title: t('liveMatch', 'Live match'),
+        desc: t('liveMatchDesc', 'Play a live game with people who are online right now. Pick a game, or take any.'),
+        onClick: function () { FF.Access.gate('online', function () { self.showLiveMatch(main); }); }
       });
       card({
         id: 'mode-leagues', tone: 'teal', icon: 'medal', soon: true,
@@ -585,17 +585,186 @@ window.FF = window.FF || {};
       });
     },
 
-    // Quick match: placeholder until matchmaking is planned.
-    showQuickMatch: function (main) {
-      this.showComingSoon(main, {
-        icon: 'globe', tone: 'green',
-        title: FF.t('quickMatch', 'Quick match'),
-        lead: FF.t('quickMatchLead', 'Soon you will be able to play with anyone who is online, not just people you know.'),
-        planned: [
-          FF.t('findPlan1', 'Quick match: pick a game and get paired with players who are online now.'),
-          FF.t('findPlan2', 'Join a team that needs players, or fill your own team.'),
-          FF.t('findPlan3', 'See who is online and ready to play.')
-        ]
+    /* Live match: a live game with people who are online right now (js/net/liveMatch.js).
+       Pick a game or take any, then wait while the server finds players. */
+    showLiveMatch: function (main) {
+      resetScreen('live');
+      FF.ui.clear(main);
+      var self = this;
+      var lm = self._live = self._live || { gameId: 'any', difficulty: (FF.Settings && FF.Settings.get('difficulty')) || 'normal' };
+      var ready = FF.LiveMatch && FF.LiveMatch.available();
+
+      var h = hero('globe', FF.t('liveMatch', 'Live match'), FF.t('liveMatchLead', 'Play a live game with people who are online right now, each on their own phone.'));
+      h.classList.add('rm-hero--green');
+      var here = FF.ui.el('p', { class: 'lm-here', 'aria-live': 'polite' }, '');
+
+      var games = FF.ui.el('div', { class: 'lm-games', role: 'group', 'aria-labelledby': 'lm-games-title' });
+      function drawGames() {
+        FF.ui.clear(games);
+        var list = ONLINE_GAMES.map(function (id) { return FF.Games.get(id); }).filter(Boolean)
+          .sort(function (a, b) { return a.name < b.name ? -1 : 1; });
+        games.appendChild(FF.UI.chip({ label: FF.t('lmAnyGame', 'Any game'), icon: 'dice', active: lm.gameId === 'any', onClick: function () { lm.gameId = 'any'; drawGames(); } }));
+        list.forEach(function (def) {
+          games.appendChild(FF.UI.chip({
+            label: def.name, icon: FF.Icons.game[def.id] || null, active: lm.gameId === def.id,
+            onClick: function () {
+              if (FF.Access && !FF.Access.canPlay(def.id)) { FF.Access.explain(def.id); return; }
+              lm.gameId = def.id;
+              drawGames();
+            }
+          }));
+        });
+      }
+      drawGames();
+
+      var go = FF.UI.button(FF.t('lmFind', 'Find a live match'), {
+        class: 'btn-lg btn-primary', icon: 'globe',
+        onClick: function () { FF.Audio.play('select'); self.startLiveMatch(main); }
+      });
+      if (!ready) go.disabled = true;
+
+      main.appendChild(panel([
+        h,
+        here,
+        FF.ui.el('h2', { class: 'rm-subtitle', id: 'lm-games-title' }, FF.t('lmWhichGame', 'Which game?')),
+        games,
+        FF.UI.settingRow(FF.t('difficulty', 'Difficulty'), FF.UI.segmented({
+          label: FF.t('difficulty', 'Difficulty'), value: lm.difficulty,
+          options: [{ label: FF.t('easy', 'Easy'), value: 'easy' }, { label: FF.t('normal', 'Normal'), value: 'normal' }, { label: FF.t('hard', 'Hard'), value: 'hard' }],
+          onChange: function (v) { lm.difficulty = v; }
+        })),
+        go,
+        FF.ui.el('p', { class: 'rm-hint' }, ready
+          ? FF.t('lmCrewHint', 'If nobody is free to play, PlayMona players may join you instead.')
+          : FF.t('lmNoServer', 'Live match needs the PlayMona server, and this copy of the app does not have one.')),
+        backButton(function () { self.showHome(main); })
+      ]));
+
+      // Who else is here (and tell the server this player is): every 30 seconds.
+      function refresh() {
+        FF.LiveMatch.online().then(function (r) {
+          here.textContent = r.players
+            ? FF.t('lmHere', '{n} other players are looking for a live match.', { n: r.players })
+            : FF.t('lmFirst', 'Nobody else is looking right now. Start looking and they will find you.');
+        }).catch(function () { here.textContent = ''; });
+      }
+      if (ready) {
+        refresh();
+        var poll = setInterval(refresh, 30000);
+        onScreen(function () { clearInterval(poll); });
+      }
+      FF.Nav.focusFirst(main);
+    },
+
+    /* Open (or reuse) a room this player hosts, then ask the server for a match. */
+    startLiveMatch: function (main) {
+      var self = this;
+      var lm = self._live || { gameId: 'any', difficulty: 'normal' };
+      var load = self.showLoading(main, {
+        title: FF.t('liveMatch', 'Live match'),
+        messages: [FF.t('lmOpening', 'Opening your room…'), FF.t('lmAsking', 'Asking who is online…')]
+      });
+      var cur = FF.Room.current();
+      var reuse = cur && cur.isHost && ((cur.meta && cur.meta.status) || 'lobby') === 'lobby';
+      var room = reuse ? Promise.resolve() : (cur ? FF.Room.leave() : Promise.resolve()).then(function () {
+        return FF.Room.create({ mode: 'players' });
+      });
+      room.then(function () {
+        return FF.LiveMatch.find({ gameId: lm.gameId, difficulty: lm.difficulty, roomCode: FF.Room.current().code });
+      }).then(function (ticket) {
+        load.stop();
+        self.showLiveSearch(main, ticket);
+      }).catch(function (e) {
+        load.stop();
+        self.showError(main, (e && e.message) || FF.t('lmFailed', 'The search could not start.'), function () { self.showLiveMatch(main); });
+      });
+    },
+
+    /* Waiting for players: the ticket is checked every two seconds until it is matched. */
+    showLiveSearch: function (main, ticket) {
+      resetScreen('live-search');
+      FF.ui.clear(main);
+      var self = this;
+      var lm = self._live || { gameId: 'any' };
+      var def = lm.gameId !== 'any' ? FF.Games.get(lm.gameId) : null;
+      var started = Date.now() - (ticket.waitedMs || 0);
+      var finished = false;
+
+      var stage = FF.UI.loader({ size: 'xl', className: 'rm-load__stage' });
+      var status = FF.ui.el('p', { class: 'rm-load__status', role: 'status' }, FF.t('lmLooking', 'Looking for players who are online…'));
+      var clock = FF.ui.el('p', { class: 'lm-clock', 'aria-hidden': 'true' }, '0:00');
+      var cancel = FF.UI.button(FF.t('lmStop', 'Stop looking'), {
+        class: 'btn-lg btn-ghost', icon: 'close',
+        onClick: function () {
+          end();
+          FF.LiveMatch.cancel(ticket.ticket).catch(function () {});
+          FF.Room.leave().catch(function () {}).then(function () { self.showLiveMatch(main); });
+        }
+      });
+      main.appendChild(panel([
+        hero('globe', FF.t('liveMatch', 'Live match'), def ? FF.t('lmForGame', 'Game: {name}', { name: def.name }) : FF.t('lmForAny', 'Game: any')),
+        FF.ui.div('rm-load', [stage, status, clock]),
+        cancel
+      ]));
+
+      var tick = setInterval(function () {
+        var s = Math.floor((Date.now() - started) / 1000);
+        clock.textContent = Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2);
+      }, 1000);
+      var poll = setInterval(check, FF.LiveMatch.POLL_MS);
+      function end() { finished = true; clearInterval(tick); clearInterval(poll); }
+      onScreen(end);
+
+      function check() {
+        FF.LiveMatch.ticket(ticket.ticket).then(apply).catch(function (e) {
+          if (e && e.code === 'no-ticket') { end(); self.showError(main, FF.t('lmEnded', 'That search ended. Try again.'), function () { self.showLiveMatch(main); }); }
+        });
+      }
+      function apply(tk) {
+        if (finished) return;
+        if (tk.status === 'waiting') return;
+        end();
+        if (tk.status !== 'matched') { self.showError(main, FF.t('lmEnded', 'That search ended. Try again.'), function () { self.showLiveMatch(main); }); return; }
+        FF.Audio.play('streak');
+        var game = FF.Games.get(tk.gameId);
+        FF.UI.toast(FF.t('lmFound', 'Match found! {game}', { game: game ? game.name : '' }), { type: 'success', duration: 3000 });
+        if (tk.host) { self.livePick(main, tk.gameId); return; }
+        // The match is in the other player's room: move there.
+        FF.Room.leave().catch(function () {}).then(function () {
+          return FF.Room.join(tk.roomCode, {});
+        }).then(function () {
+          self._step = 5;
+          self.showLobby(main);
+        }).catch(function (e) {
+          self.showError(main, (e && e.message) || FF.t('lmJoinFailed', 'Could not join the match.'), function () { self.showLiveMatch(main); });
+        });
+      }
+      apply(ticket);
+    },
+
+    /* The match is in this player's room: pick the matched game for everyone and run the ready check. */
+    livePick: function (main, gameId) {
+      var self = this;
+      var def = FF.Games.get(gameId);
+      var lm = self._live || {};
+      self._lastGame = gameId;
+      if (!def || (FF.Access && !FF.Access.canPlay(gameId))) {
+        self._step = 3;
+        self.showLobby(main);
+        return Promise.resolve();
+      }
+      var n = FF.Room.presentPlayers().length;
+      var settings = def.room && def.room.sanitize
+        ? def.room.sanitize(Object.assign({ difficulty: lm.difficulty || 'normal' }, def.room.defaults || {}), n)
+        : { difficulty: lm.difficulty || 'normal', timer: 20, questions: 0, clock: 0 };
+      var pick = { id: FF.util.uid() + FF.util.uid(), gameId: gameId, settings: settings };
+      self._step = 5;
+      return FF.Room.setPick(pick).then(function () {
+        return FF.Room.setReady(pick.id);
+      }).then(function () {
+        self.showLobby(main);
+      }).catch(function (e) {
+        self.showError(main, (e && e.message) || FF.t('lmPickFailed', 'The game could not be picked.'), function () { self.showLiveMatch(main); });
       });
     },
 
@@ -1636,14 +1805,15 @@ window.FF = window.FF || {};
       FF.Nav.focusFirst(main);
     },
 
-    showError: function (main, message) {
+    /* back: where Back goes (Play with friends unless given). */
+    showError: function (main, message, back) {
       resetScreen('error');
       FF.ui.clear(main);
       var self = this;
       main.appendChild(panel([
         hero('alert', FF.t('oops', 'Something went wrong')),
         FF.ui.el('div', { class: 'rm-error', role: 'alert' }, message),
-        FF.UI.button(FF.t('back', 'Back'), { class: 'btn-lg btn-primary', icon: 'arrow-left', onClick: function () { self.showFriends(main); } })
+        FF.UI.button(FF.t('back', 'Back'), { class: 'btn-lg btn-primary', icon: 'arrow-left', onClick: back || function () { self.showFriends(main); } })
       ]));
       FF.Nav.focusFirst(main);
     },

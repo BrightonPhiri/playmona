@@ -303,3 +303,9 @@ ol.results__leaderboard, ul.player-list, ul.achievement-grid, ul.team-col__membe
   .rm-step__label { font-size: 10px; }
   .rm-games { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* Live match (js/net/liveMatch.js): pick a game, then wait for players. */
+.lm-here { margin: 0; min-height: 1.4em; text-align: center; font-weight: 700; color: var(--muted); }
+.lm-games { display: flex; flex-wrap: wrap; gap: var(--sp-2); justify-content: center; }
+.lm-games .chip { min-height: 44px; }
+.lm-clock { margin: 0; text-align: center; font-weight: 800; font-size: var(--fs-xl); font-variant-numeric: tabular-nums; color: var(--text); }
