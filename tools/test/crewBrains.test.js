@@ -32,10 +32,20 @@ function many(gameId, extra, n) {
 const rate = (plans) => plans.filter((p) => p && p.answer.correct).length / plans.length;
 const avgMs = (plans) => { const v = plans.filter((p) => p && p.answer.ms != null); return v.reduce((s, p) => s + p.answer.ms, 0) / v.length; };
 
-test('crew brains: every online game has a brain', function () {
-  const games = onlineGames();
+/* The games crew may be seated in (Crew::GAMES). Newer online games join once they have a brain. */
+function crewGames() {
+  const src = fs.readFileSync(path.join(__dirname, '..', '..', 'api/lib/Crew.php'), 'utf8');
+  return src.match(/public const GAMES = \[([\s\S]*?)\];/)[1].match(/'([A-Za-z]+)'/g).map((s) => s.slice(1, -1));
+}
+
+test('crew brains: every crew game is online and has a brain', function () {
+  const online = onlineGames();
+  const games = crewGames();
   assertEqual(games.length, 23);
-  games.forEach((g) => assert(B.forGame(g), 'no brain for ' + g));
+  games.forEach((g) => {
+    assert(online.indexOf(g) !== -1, g + ' is not an online game');
+    assert(B.forGame(g), 'no brain for ' + g);
+  });
 });
 
 test('crew brains: answers have exactly the fields a phone writes, and stay in time', function () {

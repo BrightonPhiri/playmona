@@ -21,6 +21,119 @@ window.FF = window.FF || {};
     return (FF.data && FF.data.bible) ? FF.data.bible : null;
   }
 
+  /* In a room every device must deal the same deck: seed the shuffle from
+     the room. Returns true when racing. */
+  function seedDeck(api) {
+    var racing = !!(FF.Race && FF.Race.active() && FF.Room && FF.Room.current());
+    if (racing) FF.Random.seed(FF.Random.roundSeed(FF.Room.current().meta.seed, api.def.id, 'deck'));
+    return racing;
+  }
+
+  // The scorer this device plays in a room (scores come from the race).
+  function myScorer(scorers) {
+    var room = FF.Room && FF.Room.current();
+    var uid = room ? room.uid : null;
+    return scorers.filter(function (s) { return s.id === uid; })[0] || scorers[0];
+  }
+
+  /* ---------- Books of the Bible in a room ----------
+     A sprint of books per round, the same books on every phone (FF.Parallel).
+     Right answers score 80 plus 10 a streak; a finished sprint adds a speed
+     bonus, scaled by how many were right. */
+  var BOOKS_PER_SPRINT = 6;
+
+  function booksPoints(st, ms, limitMs) {
+    var speed = st.total ? FF.Parallel.speedBonus(ms, limitMs, 100) * st.right / st.total : 0;
+    return Math.round(st.points + speed);
+  }
+
+  function bibleBooksOnline(api, books) {
+    FF.Parallel.seed(api, 'books');
+    var deck = api.util.shuffle(books.slice());
+    var per = Math.min(BOOKS_PER_SPRINT, deck.length);
+    FF.Parallel.run(api, {
+      rounds: 3,
+      available: Math.floor(deck.length / per),
+      seconds: 30,
+      gate: '.gm-duo-btn',
+      play: function (n, ctx) {
+        var sprint = [];
+        for (var k = 0; k < per; k++) sprint.push(deck[(n * per + k) % deck.length]);
+        var idx = 0;
+        var st = { points: 0, right: 0, total: per };
+        var streak = 0;
+        var open = false;
+        var over = false;
+
+        var wrap = FF.GameUI.stage();
+        wrap.appendChild(ctx.live);
+        var slot = FF.ui.div('');
+        wrap.appendChild(slot);
+        api.shell.root.appendChild(wrap);
+
+        function result(ms) {
+          return { value: booksPoints(st, ms, ctx.limitMs), right: st.right, total: st.total };
+        }
+
+        function card() {
+          FF.ui.clear(slot);
+          var book = sprint[idx];
+          slot.appendChild(FF.GameUI.turnBar(null, ctx.roundText + ' \u00b7 ' + FF.t('bookOf', 'Book {n} of {total}', { n: idx + 1, total: per })));
+          var c = FF.ui.div('gm-card');
+          c.appendChild(FF.GameUI.kicker(FF.t('whichTestament', 'Which testament?')));
+          c.appendChild(FF.ui.el('h2', { class: 'gm-big' }, book.name));
+          c.appendChild(FF.GameUI.note(FF.t('chaptersN', '{n} chapters', { n: book.chapters })));
+          slot.appendChild(c);
+          var row = FF.GameUI.duo();
+          var ot = FF.GameUI.duoButton(FF.t('oldTestament', 'Old Testament'), function () { pick('OT', ot); }, 'up', 'scroll');
+          var nt = FF.GameUI.duoButton(FF.t('newTestament', 'New Testament'), function () { pick('NT', nt); }, 'down', 'book-open');
+          row.appendChild(ot);
+          row.appendChild(nt);
+          slot.appendChild(row);
+          var picked = false;
+          function pick(choice, btn) {
+            if (picked || !open || over) return;
+            picked = true;
+            var right = choice === book.testament;
+            ot.disabled = true;
+            nt.disabled = true;
+            FF.GameUI.markOption(book.testament === 'OT' ? ot : nt, 'correct');
+            if (!right) FF.GameUI.markOption(btn, 'wrong');
+            if (right) {
+              streak++;
+              st.right++;
+              st.points += 80 + streak * 10;
+              api.audio.play('correct');
+            } else {
+              streak = 0;
+              api.audio.play('wrong');
+            }
+            setTimeout(function () {
+              if (over || !slot.isConnected) return;
+              idx++;
+              if (idx < per) { card(); return; }
+              over = true;
+              ctx.done(result(ctx.elapsed()));
+            }, right ? 450 : 1000);
+          }
+        }
+        card();
+
+        return {
+          start: function () { open = true; },
+          stop: function () { over = true; return result(null); }
+        };
+      },
+      describe: function () {
+        return { kind: 'card', text: FF.t('booksWatch', 'Old or New Testament? Everyone sorts the same {n} books', { n: per }) };
+      },
+      detail: function (a) {
+        var line = FF.t('booksRight', '{c} of {n} right', { c: a.right || 0, n: a.total || 0 });
+        return a.out ? line : line + ' \u00b7 ' + FF.Parallel.clock(a.ms);
+      }
+    });
+  }
+
   /* ============================================================
      1. BIBLE QUIZ
      ============================================================ */
@@ -53,10 +166,7 @@ window.FF = window.FF || {};
 
       var scorers = scorerList(api.config);
       var totalRounds = FF.GameLength.rounds(api, 10, data.questions.length);
-      var racing = !!(FF.Race && FF.Race.active());
-      if (racing && FF.Room && FF.Room.current()) {
-        FF.Random.seed(FF.Random.roundSeed(FF.Room.current().meta.seed, api.def.id, 'deck'));
-      }
+      seedDeck(api);
       var questions = api.util.shuffle(data.questions.slice()).slice(0, totalRounds);
       var race = FF.Race ? FF.Race.forGame(api, {
         rounds: totalRounds,
@@ -201,6 +311,9 @@ window.FF = window.FF || {};
   /* ============================================================
      2. WHO AM I? (BIBLE EDITION)
      ============================================================ */
+  // A new clue every 8 s, so four clues need about 32 s to read.
+  var WHO_ONLINE_MIN_SECS = 40;
+
   FF.registerGame({
     id: 'bibleWhoAmI',
     name: 'Who Am I? (Bible)',
@@ -229,25 +342,58 @@ window.FF = window.FF || {};
 
       var scorers = scorerList(api.config);
       var totalCards = FF.GameLength.rounds(api, 6, data.whoAmI.length);
+      var racing = seedDeck(api);
       var deck = api.util.shuffle(data.whoAmI.slice()).slice(0, totalCards);
+
+      // ---- Race support: everyone reads the same clues, and the first right
+      // name takes the round, worth what it was when that player guessed. ----
+      // A room's answer clock leaves time to read every clue.
+      var timerSecs = api.config.timer > 0 ? Math.max(api.config.timer, WHO_ONLINE_MIN_SECS) : 0;
+      var race = racing ? FF.Race.forGame(api, {
+        rounds: totalCards,
+        timerMs: timerSecs * 1000,
+        // 'button' gates the Another clue button too.
+        optionSelector: 'button',
+        pointsFor: function (answer) { return answer.value || 0; }
+      }) : null;
 
       var cardIdx = 0;
       var scorerIdx = 0;
       var clueLevel = 0;
       var clueTimer = null;
       var resolved = false;
+      var settled = false;
+
+      var offSettle = race ? race.onSettle(function (payload) {
+        if (settled) return;
+        settled = true;
+        resolved = true;
+        if (clueTimer) clearInterval(clueTimer);
+        api.shell.hideTimer();
+        var item = deck[cardIdx];
+        race.showResult(payload, {
+          answerText: item ? item.answer : null,
+          isLast: race.isLastRound(cardIdx, deck.length),
+          onNext: function () { cardIdx++; renderCard(); }
+        });
+      }) : null;
 
       function renderCard() {
-        if (cardIdx >= deck.length) {
+        if (cardIdx >= deck.length || (race && race.over(cardIdx))) {
+          if (offSettle) offSettle();
+          if (race) race.end();
           api.audio.play('winner');
           api.end({});
           return;
         }
 
         resolved = false;
+        settled = false;
         clueLevel = 1;
         var item = deck[cardIdx];
-        var scorer = scorers[scorerIdx % scorers.length];
+        // Seeded first, so every device builds the same choices.
+        var opening = race ? race.beginRound(cardIdx) : null;
+        var scorer = race ? myScorer(scorers) : scorers[scorerIdx % scorers.length];
         api.shell.updateScores(scorer.id);
 
         // Generate 3 random wrong options from other characters
@@ -256,12 +402,14 @@ window.FF = window.FF || {};
           .map(function (x) { return x.answer; });
         distractors = api.util.shuffle(distractors).slice(0, 3);
         var choices = api.util.shuffle([item.answer].concat(distractors));
+        // For people watching: the first clue and the names (the answer is shared after the round).
+        if (race) race.describe({ kind: 'choice', text: FF.t('whoAmIBible', 'Who am I?') + ' ' + item.clues[0], options: choices }, choices.indexOf(item.answer));
 
         FF.ui.clear(api.shell.root);
 
         var wrap = FF.GameUI.stage();
 
-        wrap.appendChild(FF.GameUI.turnBar(scorers.length > 1 ? scorer : null, FF.t('figureOf', 'Figure {n} of {total}', { n: cardIdx + 1, total: deck.length })));
+        wrap.appendChild(FF.GameUI.turnBar(scorers.length > 1 ? scorer : null, race ? FF.GameLength.roundText(cardIdx + 1, deck.length) : FF.t('figureOf', 'Figure {n} of {total}', { n: cardIdx + 1, total: deck.length })));
         wrap.appendChild(FF.GameUI.prompt(FF.t('whoAmIBible', 'Who am I?')));
 
         var clueList = FF.ui.el('ol', { class: 'gm-list', id: 'clue-items', 'aria-live': 'polite', 'aria-label': FF.t('clues', 'Clues') });
@@ -293,7 +441,31 @@ window.FF = window.FF || {};
         api.shell.root.appendChild(wrap);
 
         updateCluesDisplay(item);
-        startClueTimer(item);
+        if (race) {
+          // Nobody can guess, or open a clue, before the round opens for everyone.
+          var buttons = FF.ui.$$('button', wrap);
+          buttons.forEach(function (b) { b.disabled = true; });
+          var thisCard = cardIdx;
+          opening.then(function () {
+            race.gate(function () {
+              if (resolved || cardIdx !== thisCard) return;
+              buttons.forEach(function (b) { b.disabled = false; });
+              updateCluesDisplay(item);
+              startClueTimer(item);
+              if (timerSecs > 0) api.shell.setTimer(timerSecs, function () { lockOutLocal(); });
+            });
+          });
+        } else {
+          startClueTimer(item);
+        }
+      }
+
+      // Out of time in a room: stop here and let the round settle for everyone.
+      function lockOutLocal() {
+        if (resolved) return;
+        resolved = true;
+        if (clueTimer) clearInterval(clueTimer);
+        FF.ui.$$('button', api.shell.root).forEach(function (b) { b.disabled = true; });
       }
 
       function updateCluesDisplay(item) {
@@ -344,6 +516,13 @@ window.FF = window.FF || {};
         var scorer = scorers[scorerIdx % scorers.length];
         var isCorrect = (chosenName === item.answer);
 
+        if (race) {
+          // Worth what it was on THIS device's clue count, so send it along.
+          // A wrong name locks this player out while the others play on.
+          race.submit(chosenName, isCorrect, null, { value: isCorrect ? (5 - clueLevel) * 75 : 0 });
+          return;
+        }
+
         var buttons = choiceGrid.querySelectorAll('button');
         buttons.forEach(function (b) {
           b.disabled = true;
@@ -382,6 +561,11 @@ window.FF = window.FF || {};
   /* ============================================================
      3. VERSE RUSH (SCRIPTURE SCRAMBLE)
      ============================================================ */
+  // Online, every finished verse scores; the quickest two earn more.
+  function versePlacePoints(place) {
+    return 150 + Math.max(0, 3 - (place || 1)) * 50;
+  }
+
   FF.registerGame({
     id: 'bibleVerseRush',
     name: 'Verse Rush',
@@ -410,7 +594,19 @@ window.FF = window.FF || {};
 
       var scorers = scorerList(api.config);
       var rounds = FF.GameLength.rounds(api, 5, data.verses.length);
+      var racing = seedDeck(api);
       var verses = api.util.shuffle(data.verses.slice()).slice(0, rounds);
+      var timerSecs = api.config.timer != null ? api.config.timer : 30;
+
+      // ---- Race support: everyone builds the same verse at once, and every
+      // finished verse scores by its place. ----
+      var race = racing ? FF.Race.forGame(api, {
+        rounds: rounds,
+        mode: 'ranked',
+        timerMs: timerSecs * 1000,
+        optionSelector: '.verse-play',
+        pointsFor: function (answer, place) { return versePlacePoints(place); }
+      }) : null;
 
       var verseIdx = 0;
       var scorerIdx = 0;
@@ -418,28 +614,49 @@ window.FF = window.FF || {};
       var targetWords = [];
       var poolWords = [];
       var solved = false;
+      var settled = false;
+
+      var offSettle = race ? race.onSettle(function (payload) {
+        if (settled) return;
+        settled = true;
+        solved = true;
+        api.shell.hideTimer();
+        var item = verses[verseIdx];
+        race.showResult(payload, {
+          answerText: item ? item.scramble.join(' ') : null,
+          isLast: race.isLastRound(verseIdx, verses.length),
+          onNext: function () { verseIdx++; renderVerse(); }
+        });
+      }) : null;
 
       function renderVerse() {
-        if (verseIdx >= verses.length) {
+        if (verseIdx >= verses.length || (race && race.over(verseIdx))) {
+          if (offSettle) offSettle();
+          if (race) race.end();
           api.audio.play('winner');
           api.end({});
           return;
         }
 
         solved = false;
+        settled = false;
         assembled = [];
         var item = verses[verseIdx];
-        var scorer = scorers[scorerIdx % scorers.length];
+        // Seeded first, so every device scatters the words the same way.
+        var opening = race ? race.beginRound(verseIdx) : null;
+        var scorer = race ? myScorer(scorers) : scorers[scorerIdx % scorers.length];
         api.shell.updateScores(scorer.id);
 
         targetWords = item.scramble.slice();
         poolWords = api.util.shuffle(targetWords.slice());
+        // For people watching: the reference and the scattered words.
+        if (race) race.describe({ kind: 'card', text: item.reference + ': ' + poolWords.join(' ') }, null);
 
         FF.ui.clear(api.shell.root);
 
         var wrap = FF.GameUI.stage();
 
-        wrap.appendChild(FF.GameUI.turnBar(scorers.length > 1 ? scorer : null, FF.t('verseOf', 'Verse {n} of {total}', { n: verseIdx + 1, total: verses.length })));
+        wrap.appendChild(FF.GameUI.turnBar(scorers.length > 1 ? scorer : null, race ? FF.GameLength.roundText(verseIdx + 1, verses.length) : FF.t('verseOf', 'Verse {n} of {total}', { n: verseIdx + 1, total: verses.length })));
         wrap.appendChild(FF.GameUI.prompt(item.reference));
         wrap.appendChild(FF.GameUI.sub(FF.t('verseRule', 'Tap the words in the right order to build the verse.')));
 
@@ -452,19 +669,40 @@ window.FF = window.FF || {};
         wrap.appendChild(poolBox);
 
         // Action buttons (Clear / Check)
+        // In a room nothing can be tapped before the round opens for everyone.
+        var open = !race;
         var actionRow = FF.ui.div('gm-row');
         var clearBtn = FF.UI.button(FF.t('startOver', 'Start over'), {
           icon: 'restart',
+          class: 'verse-play',
           onClick: function () {
+            if (solved || !open) return;
             assembled = [];
             poolWords = api.util.shuffle(targetWords.slice());
             refreshDisplay();
           }
         });
         actionRow.appendChild(clearBtn);
+        if (race) {
+          // Passing ends this verse for this player, so a round nobody can
+          // finish still ends.
+          actionRow.appendChild(FF.UI.button(FF.t('giveUp', 'Give up'), {
+            icon: 'flag',
+            class: 'verse-play',
+            onClick: function () {
+              if (solved || !open) return;
+              solved = true;
+              race.submit(null, false, null);
+            }
+          }));
+        }
         wrap.appendChild(actionRow);
 
         api.shell.root.appendChild(wrap);
+
+        function lockBoard() {
+          FF.ui.$$('.verse-play', wrap).forEach(function (b) { b.disabled = true; });
+        }
 
         function refreshDisplay() {
           FF.ui.clear(assembleBox);
@@ -476,10 +714,11 @@ window.FF = window.FF || {};
             assembled.forEach(function (word, idx) {
               var wBtn = FF.ui.el('button', {
                 type: 'button',
-                class: 'word-chip word-chip--placed',
+                class: 'word-chip word-chip--placed verse-play',
+                disabled: !open || solved,
                 'aria-label': FF.t('removeWord', 'Remove {w}', { w: word }),
                 onclick: function () {
-                  if (solved) return;
+                  if (solved || !open) return;
                   assembled.splice(idx, 1);
                   poolWords.push(word);
                   api.audio.play('tap');
@@ -493,9 +732,10 @@ window.FF = window.FF || {};
           poolWords.forEach(function (word, idx) {
             var pBtn = FF.ui.el('button', {
               type: 'button',
-              class: 'word-chip',
+              class: 'word-chip verse-play',
+              disabled: !open || solved,
               onclick: function () {
-                if (solved) return;
+                if (solved || !open) return;
                 poolWords.splice(idx, 1);
                 assembled.push(word);
                 api.audio.play('tap');
@@ -520,7 +760,16 @@ window.FF = window.FF || {};
             }
           }
 
-          if (isMatch) {
+          if (isMatch && race) {
+            // Scored by finishing place once everyone is done.
+            solved = true;
+            api.shell.hideTimer();
+            api.audio.play('correct');
+            assembleBox.classList.add('verse-build--good');
+            lockBoard();
+            wrap.appendChild(FF.GameUI.feedback('good', FF.t('verseDoneWait', 'Verse complete! Waiting for everyone else.')));
+            race.submit(assembled.join(' '), true, null);
+          } else if (isMatch) {
             solved = true;
             api.shell.hideTimer();
             api.audio.play('correct');
@@ -545,8 +794,27 @@ window.FF = window.FF || {};
         }
 
         refreshDisplay();
-        var timerSecs = api.config.timer != null ? api.config.timer : 30;
-        if (timerSecs > 0) {
+        if (race) {
+          lockBoard();
+          api.shell.hideTimer();
+          var thisVerse = verseIdx;
+          opening.then(function () {
+            race.gate(function () {
+              if (solved || verseIdx !== thisVerse) return;
+              open = true;
+              FF.ui.$$('.verse-play', wrap).forEach(function (b) { b.disabled = false; });
+              if (timerSecs > 0) {
+                // Out of time: stop here; the round settles for everyone.
+                api.shell.setTimer(timerSecs, function () {
+                  if (solved) return;
+                  solved = true;
+                  api.audio.play('wrong');
+                  lockBoard();
+                });
+              }
+            });
+          });
+        } else if (timerSecs > 0) {
           api.shell.setTimer(timerSecs, function () {
             if (!solved) {
               api.audio.play('wrong');
@@ -589,6 +857,8 @@ window.FF = window.FF || {};
         FF.GameUI.exitCard(api, FF.t('noBooks', 'Books data not loaded'));
         return;
       }
+
+      if (FF.Parallel && FF.Parallel.active()) { bibleBooksOnline(api, data.books); return; }
 
       var scorers = scorerList(api.config);
       var deck = api.util.shuffle(data.books.slice()).slice(0, 15);

@@ -19,6 +19,15 @@ window.FF = window.FF || {};
     'whatsMissing',
     'numberChallenge',
     'visualRiddle',
+    // Races: the same card, word, clues or verse for everyone at once.
+    'higherOrLower', 'wordScramble', 'bibleWhoAmI', 'bibleVerseRush',
+    // Parallel challenges (js/net/parallel.js): the same puzzle on every
+    // phone at once, each player keeps their own score.
+    'memoryMatch', 'pictureMemory', 'rememberSequence',
+    'picturePuzzle', 'spotDifference', 'hiddenObject',
+    'wordBuilder', 'bibleBooks',
+    // Votes: everyone votes on their own phone, then sees the same split.
+    'wouldYouRather', 'thisOrThat', 'whoIsMostLikely',
     // Secret words dealt by the server's referee (js/imposters/referee.js).
     'imposters'
     // Brain Battle is deliberately absent: its format is a personal

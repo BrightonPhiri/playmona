@@ -390,19 +390,45 @@ window.FF = window.FF || {};
 
   /* ================= Game 2: Higher or Lower ================= */
 
+  // In a room a round waits for every guess, so it needs a clock even when
+  // the host chose none; one guess takes a moment.
+  var HOL_ONLINE_SECS = 15;
+
+  // Online, every right guess scores; the quickest earn a little more.
+  function holPlacePoints(place, diff) {
+    return Math.round((100 + Math.max(0, 3 - (place || 1)) * 25) * bonusMultiplier(diff || 'easy'));
+  }
+
   function startHigherOrLower(api) {
     var scorers = api.config.scorers;
     if (!scorers || !scorers.length) { renderNoPlayers(api); return; }
+    var holSecs = api.config.timer > 0 ? api.config.timer : HOL_ONLINE_SECS;
+    var race = FF.Race ? FF.Race.forGame(api, {
+      rounds: FF.GameLength.rounds(api, 8, 0),
+      mode: 'ranked',
+      timerMs: holSecs * 1000,
+      optionSelector: '.hol-actions button',
+      pointsFor: function (answer, place) { return holPlacePoints(place, api.config.difficulty); }
+    }) : null;
     var state = {
       round: 0,
-      total: FF.GameLength.rounds(api, 8, 0) * scorers.length,
+      // Offline everyone takes 8 turns; in a room everyone guesses every card.
+      total: race ? FF.GameLength.rounds(api, 8, 0) : FF.GameLength.rounds(api, 8, 0) * scorers.length,
       correct: 0,
       answered: 0,
       locked: false,
       current: 0,
       next: 0,
       active: null,
-      lastPoints: 0
+      lastPoints: 0,
+      // ---- Race support. Offline this stays null and nothing changes. ----
+      race: race,
+      raceSecs: holSecs,
+      guessed: false,
+      myCorrect: false,
+      openedAt: 0,
+      opening: null,
+      offSettle: null
     };
     api.audio.play('roundStart');
     renderHigherOrLower(api, state);
@@ -411,11 +437,28 @@ window.FF = window.FF || {};
   function renderHigherOrLower(api, state) {
     var scorers = api.config.scorers;
     var active = scorers[state.round % scorers.length];
+    if (state.race) {
+      // Seed the round before drawing the card, so every device draws the
+      // same one. The gate waits for the shared open instant to arrive.
+      state.opening = state.race.beginRound(state.round);
+      var me = FF.Room.current();
+      active = scorers.filter(function (sc) { return sc.id === me.uid; })[0] || scorers[0];
+    }
     var pair = drawPair();
     state.locked = false;
+    state.guessed = false;
+    state.myCorrect = false;
     state.current = pair.current;
     state.next = pair.next;
     state.active = active;
+    // For people watching (the answer is shared after the round).
+    if (state.race) {
+      state.race.describe({
+        kind: 'choice',
+        text: FF.t('holWatch', 'The number is {n}. Will the next one be higher or lower?', { n: pair.current }),
+        options: [FF.t('higher', 'Higher'), FF.t('lower', 'Lower')]
+      }, pair.next > pair.current ? 0 : 1);
+    }
 
     var root = api.shell.root;
     FF.ui.clear(root);
@@ -430,6 +473,8 @@ window.FF = window.FF || {};
     actions.classList.add('hol-actions');
     var high = FF.GameUI.duoButton(FF.t('higher', 'Higher'), function () { guessHigherOrLower(api, state, 'higher'); }, 'up', 'arrow-up');
     var low = FF.GameUI.duoButton(FF.t('lower', 'Lower'), function () { guessHigherOrLower(api, state, 'lower'); }, 'down', 'arrow-down');
+    // In a room nobody can guess before the round opens for everyone.
+    if (state.race) { high.disabled = true; low.disabled = true; }
     actions.appendChild(high);
     actions.appendChild(low);
     wrap.appendChild(actions);
@@ -438,15 +483,72 @@ window.FF = window.FF || {};
     api.shell.updateScores(active.id);
     if (FF.Nav && FF.Nav.focusFirst) FF.Nav.focusFirst(root);
 
-    if (api.config.timer > 0) {
+    if (state.race) {
+      // Everyone sees the card from the same shared instant; the round
+      // settles for all at once, when every guess is in or time runs out.
+      api.shell.hideTimer();
+      var thisRound = state.round;
+      state.opening.then(function () {
+        state.race.gate(function () {
+          if (state.locked || state.round !== thisRound) return;
+          FF.util.$$('.hol-actions button', root).forEach(function (b) { b.disabled = false; });
+          state.openedAt = Date.now();
+          api.shell.setTimer(state.raceSecs, function () { lockHigherOrLower(api, state, null); });
+        });
+      });
+      if (state.offSettle) state.offSettle();
+      state.offSettle = state.race.onSettle(function (payload) {
+        if (state.locked) return;
+        state.locked = true;
+        api.shell.hideTimer();
+        state.answered++;
+        if (state.myCorrect) state.correct++;
+        var wentUp = state.next > state.current;
+        state.race.showResult(payload, {
+          answerText: wentUp
+            ? FF.t('holWentUpTo', 'higher ({n})', { n: state.next })
+            : FF.t('holWentDownTo', 'lower ({n})', { n: state.next }),
+          isLast: state.race.isLastRound(state.round, state.total),
+          onNext: function () { nextHigherOrLower(api, state); }
+        });
+      });
+    } else if (api.config.timer > 0) {
       api.shell.setTimer(api.config.timer, function () { timeoutHigherOrLower(api, state); });
     } else {
       api.shell.hideTimer();
     }
   }
 
+  // In a room: hold this device's guess (or its timeout) until the round
+  // settles. Right and wrong look the same here, so the reveal stays a reveal.
+  function lockHigherOrLower(api, state, choice) {
+    if (state.guessed || state.locked) return;
+    state.guessed = true;
+    FF.util.$$('.hol-actions button', api.shell.root).forEach(function (b) {
+      b.disabled = true;
+      // Fade the side not chosen, so the guess shows without a verdict.
+      if (choice && !b.classList.contains(choice === 'higher' ? 'gm-duo-btn--up' : 'gm-duo-btn--down')) b.classList.add('gm-opt--dim');
+    });
+    var wrap = api.shell.root.querySelector('.hol-wrap');
+    if (!wrap) return;
+    wrap.appendChild(FF.GameUI.feedback('info', choice
+      ? FF.t('holLockedIn', 'You said {dir}. Waiting for everyone…', { dir: choice === 'higher' ? FF.t('higher', 'Higher') : FF.t('lower', 'Lower') })
+      : FF.t('timesUp', 'Time’s up!')));
+  }
+
   function guessHigherOrLower(api, state, choice) {
     if (state.locked) return;
+    if (state.race) {
+      if (state.guessed) return;
+      var right = (choice === 'higher' && state.next > state.current) || (choice === 'lower' && state.next < state.current);
+      state.myCorrect = right;
+      lockHigherOrLower(api, state, choice);
+      // The race layer directly, not race.submit: that would say "you're
+      // out" after a wrong guess and give the next number away early.
+      var shared = FF.Race.msSinceOpen();
+      FF.Race.submit(choice, right, shared != null ? shared : Date.now() - state.openedAt);
+      return;
+    }
     state.locked = true;
     api.shell.hideTimer();
     var active = state.active;
@@ -525,7 +627,7 @@ window.FF = window.FF || {};
 
   function nextHigherOrLower(api, state) {
     state.round++;
-    if (state.round >= state.total) {
+    if (state.round >= state.total || (state.race && state.race.over(state.round))) {
       finishHigherOrLower(api, state);
     } else {
       renderHigherOrLower(api, state);
@@ -534,6 +636,8 @@ window.FF = window.FF || {};
 
   function finishHigherOrLower(api, state) {
     api.shell.hideTimer();
+    if (state.offSettle) { state.offSettle(); state.offSettle = null; }
+    if (state.race) state.race.end();
     var ranked = api.scoring.ranked();
     var bestStreak = 0;
     api.config.scorers.forEach(function (s) {

@@ -86,7 +86,7 @@ window.FF = window.FF || {};
   var SHAPE_WORDS = { circle: 'BALL', square: 'SQUARE', triangle: 'TRIANGLE' };
 
   function makeSceneItem() {
-    if (Math.random() < 0.55) {
+    if (FF._rand() < 0.55) {
       return { type: 'emoji', emoji: FF.util.pick(SCENE_EMOJIS) };
     }
     var c = FF.util.pick(SCENE_COLORS);
@@ -266,6 +266,35 @@ window.FF = window.FF || {};
     return { count: count, size: size };
   }
 
+  /* ================= room challenges (FF.Parallel) =================
+     Everyone gets the same puzzle at the same moment and keeps their own
+     score: these turn one finished (or unfinished) puzzle into points. */
+
+  // A sliding puzzle "par": about four moves a tile.
+  function puzzlePoints(st, ms, limitMs, bonus) {
+    var tiles = st.size * st.size - 1;
+    if (!st.solved) return Math.round(bonus * 100 * (st.placed || 0) / tiles);
+    var par = tiles * 4;
+    var tidy = Math.round(100 * Math.min(1, par / Math.max(1, st.moves)));
+    return Math.round(bonus * (150 + tidy + FF.Parallel.speedBonus(ms, limitMs, 150)));
+  }
+
+  function spotPoints(st, ms, limitMs, bonus) {
+    var pts = st.found * 100;
+    if (st.found >= st.total) pts += FF.Parallel.speedBonus(ms, limitMs, 200);
+    return Math.max(0, Math.round(bonus * pts) - (st.wrong || 0) * 20);
+  }
+
+  function hiddenPoints(st, ms, limitMs, bonus) {
+    if (!st.found) return 0;
+    return Math.max(0, Math.round(bonus * (50 + FF.Parallel.speedBonus(ms, limitMs, 100))) - (st.wrong || 0) * 10);
+  }
+
+  function wrongText(n) {
+    if (!n) return '';
+    return n === 1 ? FF.t('wrongTap1', '1 wrong tap') : FF.t('wrongTapsN', '{n} wrong taps', { n: n });
+  }
+
   /* ================= puzzle helpers ================= */
 
   function puzzleNeighbors(cell, size) {
@@ -327,6 +356,8 @@ window.FF = window.FF || {};
       if (api.config.difficulty === 'normal') size = 4;
       else if (api.config.difficulty === 'hard') size = 5;
 
+      if (FF.Parallel && FF.Parallel.active()) { picturePuzzleOnline(api, pool, size); return; }
+
       var list = scorers(api);
       var index = 0;
       var rounds = (list.length > 1 && api.config.mode !== 'solo') ? list.length : 1;
@@ -343,7 +374,39 @@ window.FF = window.FF || {};
     }
   });
 
-  function renderPuzzle(api, scorer, item, size, label, onDone) {
+  var PUZZLE_SECONDS = { 3: 150, 4: 300, 5: 480 };
+
+  /* Online: every phone gets the same picture, scrambled the same way. */
+  function picturePuzzleOnline(api, pool, size) {
+    var bonus = bonusFor(api);
+    FF.Parallel.seed(api, 'pictures');
+    var pictures = new api.random.Bag(pool);
+    FF.Parallel.run(api, {
+      rounds: size === 3 ? 2 : 1,
+      seconds: PUZZLE_SECONDS[size] || 300,
+      gate: '.puzzle-tile',
+      play: function (n, ctx) {
+        var item = pictures.next();
+        return renderPuzzle(api, ctx.me, item, size, FF.t('slideTiles', 'Slide the tiles to reveal the picture'), null, {
+          extra: ctx.live,
+          roundText: ctx.roundText,
+          done: function (st) { ctx.done(Object.assign({ value: puzzlePoints(st, ctx.elapsed(), ctx.limitMs, bonus) }, st)); },
+          points: function (st) { return puzzlePoints(st, null, ctx.limitMs, bonus); }
+        });
+      },
+      describe: function () { return { kind: 'card', text: FF.t('ppzWatch', 'Everyone is solving the same sliding puzzle') }; },
+      detail: function (a) {
+        return a.solved
+          ? FF.t('ppzDetailSolved', '{moves} moves · {time}', { moves: a.moves || 0, time: FF.Parallel.clock(a.ms) })
+          : FF.t('ppzDetailPlaced', '{n} tiles in place', { n: a.placed || 0 });
+      }
+    });
+  }
+
+  /* race (a room challenge only): { extra, roundText, done(stats), points(stats) }.
+     Then the board is built at once from the round's seeded random numbers,
+     waits for start(), and returns { start, stop }. */
+  function renderPuzzle(api, scorer, item, size, label, onDone, race) {
     var root = api.shell.root;
     api.ui.clear(root);
     api.shell.updateScores(scorer.id);
@@ -351,6 +414,10 @@ window.FF = window.FF || {};
 
     var wrap = FF.GameUI.stage();
 
+    if (race) {
+      wrap.appendChild(race.extra);
+      wrap.appendChild(FF.GameUI.turnBar(null, race.roundText));
+    }
     wrap.appendChild(FF.GameUI.prompt(label, 'sm'));
     var meta = FF.ui.div('gm-turnbar');
     meta.appendChild(FF.GameUI.pill(item.name, 'image'));
@@ -364,9 +431,12 @@ window.FF = window.FF || {};
 
     stage.appendChild(FF.GameUI.note(FF.t('preparing', 'Getting the puzzle ready…')));
 
-    var controls = api.ui.div('gm-row puzzle-controls');
-    controls.appendChild(FF.UI.button(FF.t('reshuffle', 'Shuffle again'), { icon: 'shuffle', onClick: function () { buildBoard(); } }));
-    wrap.appendChild(controls);
+    // Online everyone keeps the same scramble.
+    if (!race) {
+      var controls = api.ui.div('gm-row puzzle-controls');
+      controls.appendChild(FF.UI.button(FF.t('reshuffle', 'Shuffle again'), { icon: 'shuffle', onClick: function () { buildBoard(); } }));
+      wrap.appendChild(controls);
+    }
 
     root.appendChild(wrap);
 
@@ -379,6 +449,7 @@ window.FF = window.FF || {};
     var tileSize = 0;
     var total = 0;
     var built = false;
+    var open = !race;
 
     function isSolved() {
       for (var cell = 0; cell < total; cell++) {
@@ -407,8 +478,18 @@ window.FF = window.FF || {};
       }
     }
 
+    function placed() {
+      var n = 0;
+      for (var cell = 0; cell < total - 1; cell++) if (board[cell] === cell) n++;
+      return n;
+    }
+
+    function stats() {
+      return { solved: solved && isSolved(), moves: moves, placed: placed(), size: size };
+    }
+
     function onTap(cell) {
-      if (solved || !built) return;
+      if (solved || !built || !open) return;
       if (puzzleAdjacent(cell, blankCell, size)) {
         board[blankCell] = board[cell];
         board[cell] = null;
@@ -420,6 +501,13 @@ window.FF = window.FF || {};
         if (isSolved()) {
           solved = true;
           api.audio.play('winner');
+          if (race) {
+            api.shell.toast(FF.t('ppzSolvedIn', 'Solved in {m} moves!', { m: moves }), 'good');
+            var done = stage.querySelector('.puzzle-board');
+            if (done) done.classList.add('puzzle-board--solved');
+            setTimeout(function () { race.done(stats()); }, 1200);
+            return;
+          }
           var raw = Math.max(50, 300 - moves * 5);
           var pts = Math.round(raw * bonusFor(api));
           api.scoring.add(scorer.id, pts);
@@ -457,37 +545,18 @@ window.FF = window.FF || {};
       return t;
     }
 
-    function buildBoard() {
+    function buildBoard(scrambled) {
       FF.ui.clear(stage);
       total = size * size;
       boardSize = Math.min(340, Math.max(220, (window.innerWidth || 360) - 64));
       boardSize = Math.floor(boardSize / size) * size;
       tileSize = boardSize / size;
 
-      board = [];
-      var i;
-      for (i = 0; i < total - 1; i++) board[i] = i;
-      board[total - 1] = null;
-      blankCell = total - 1;
+      board = scrambled || scramble();
+      blankCell = board.indexOf(null);
       moves = 0;
       solved = false;
       tileEls = [];
-
-      var shuffles = total * 30;
-      for (i = 0; i < shuffles; i++) {
-        var nb = puzzleNeighbors(blankCell, size);
-        var cell = nb[FF.util.int(0, nb.length - 1)];
-        board[blankCell] = board[cell];
-        board[cell] = null;
-        blankCell = cell;
-      }
-      if (isSolved()) {
-        var nb2 = puzzleNeighbors(blankCell, size);
-        var c2 = nb2[FF.util.int(0, nb2.length - 1)];
-        board[blankCell] = board[c2];
-        board[c2] = null;
-        blankCell = c2;
-      }
 
       var uri = api.assets.svgUri(item.svg);
       var cont = api.ui.div('puzzle-board');
@@ -505,6 +574,45 @@ window.FF = window.FF || {};
       updateStatus();
     }
 
+    /* A solvable scramble: random slides away from the finished picture. */
+    function scramble() {
+      total = size * size;
+      board = [];
+      var i;
+      for (i = 0; i < total - 1; i++) board[i] = i;
+      board[total - 1] = null;
+      blankCell = total - 1;
+
+      var shuffles = total * 30;
+      for (i = 0; i < shuffles; i++) {
+        var nb = puzzleNeighbors(blankCell, size);
+        var cell = nb[FF.util.int(0, nb.length - 1)];
+        board[blankCell] = board[cell];
+        board[cell] = null;
+        blankCell = cell;
+      }
+      if (isSolved()) {
+        var nb2 = puzzleNeighbors(blankCell, size);
+        var c2 = nb2[FF.util.int(0, nb2.length - 1)];
+        board[blankCell] = board[c2];
+        board[c2] = null;
+        blankCell = c2;
+      }
+      return board;
+    }
+
+    if (race) {
+      // Drawn now, while the round's random numbers are seeded.
+      buildBoard(scramble());
+      return {
+        start: function () { open = true; },
+        stop: function () {
+          var st = stats();
+          solved = true;   // freezes the tiles
+          return Object.assign({ value: race.points(st) }, st);
+        }
+      };
+    }
     setTimeout(function () { if (!built) buildBoard(); }, 250);
   }
 
@@ -530,6 +638,7 @@ window.FF = window.FF || {};
       'Find them all to finish your turn.'
     ],
     start: function (api) {
+      if (FF.Parallel && FF.Parallel.active()) { spotOnline(api); return; }
       var list = scorers(api);
       var index = 0;
       var rounds = (list.length > 1 && api.config.mode !== 'solo') ? list.length : 1;
@@ -545,21 +654,57 @@ window.FF = window.FF || {};
     }
   });
 
-  function renderSpotRound(api, scorer, label, onDone) {
+  function spotCount(api) {
+    if (api.config.difficulty === 'normal') return 5;
+    if (api.config.difficulty === 'hard') return 7;
+    return 3;
+  }
+
+  /* Online: every phone gets the same two scenes each round. */
+  function spotOnline(api) {
+    var bonus = bonusFor(api);
+    var n = spotCount(api);
+    FF.Parallel.run(api, {
+      rounds: 3,
+      seconds: 30 + n * 10,
+      gate: '.scene-item--tap',
+      play: function (r, ctx) {
+        return renderSpotRound(api, ctx.me, FF.t('spotTheDifferences', 'Spot the differences'), null, {
+          extra: ctx.live,
+          roundText: ctx.roundText,
+          done: function (st) { ctx.done(Object.assign({ value: spotPoints(st, ctx.elapsed(), ctx.limitMs, bonus) }, st)); },
+          points: function (st) { return spotPoints(st, null, ctx.limitMs, bonus); }
+        });
+      },
+      describe: function () { return { kind: 'card', text: FF.t('spotWatch', 'Everyone is hunting the same {n} differences', { n: n }) }; },
+      detail: function (a) {
+        var found = a.found >= a.total
+          ? FF.t('spotDetailAll', 'All {n} in {time}', { n: a.total || 0, time: FF.Parallel.clock(a.ms) })
+          : FF.t('foundOf', 'Found {f} of {n}', { f: a.found || 0, n: a.total || 0 });
+        return [found, wrongText(a.wrong)].filter(Boolean).join(' \u00b7 ');
+      }
+    });
+  }
+
+  /* race (a room challenge only): { extra, roundText, done(stats), points(stats) };
+     the scenes stay hidden until start(), and it returns { start, stop }. */
+  function renderSpotRound(api, scorer, label, onDone, race) {
     var root = api.shell.root;
     api.ui.clear(root);
     api.shell.updateScores(scorer.id);
     api.shell.hideTimer();
 
-    var n = 3;
-    if (api.config.difficulty === 'normal') n = 5;
-    else if (api.config.difficulty === 'hard') n = 7;
+    var n = spotCount(api);
 
     var base = placeSceneItems(16, 600, 380, [22, 34], false);
     var changes = pickChanges(base, n);
 
     var wrap = FF.GameUI.stage({ wide: true });
 
+    if (race) {
+      wrap.appendChild(race.extra);
+      wrap.appendChild(FF.GameUI.turnBar(null, race.roundText));
+    }
     wrap.appendChild(FF.GameUI.prompt(label, 'sm'));
     wrap.appendChild(FF.GameUI.sub(FF.t('spotRule', 'Tap the {n} differences in the second picture.', { n: n })));
 
@@ -570,7 +715,7 @@ window.FF = window.FF || {};
     statusRow.appendChild(status);
     wrap.appendChild(statusRow);
 
-    var panels = api.ui.div('spot-panels');
+    var panels = api.ui.div('spot-panels' + (race ? ' hidden' : ''));
     wrap.appendChild(panels);
 
     var fs = fitScaleFor(600);
@@ -588,8 +733,11 @@ window.FF = window.FF || {};
 
     var found = {};
     var foundCount = 0;
+    var wrongCount = 0;
     var done = false;
     var bEls = [];
+
+    function stats() { return { found: foundCount, total: n, wrong: wrongCount }; }
 
     bItems.forEach(function (bit, i) {
       var el;
@@ -618,9 +766,11 @@ window.FF = window.FF || {};
       if (changeMap[i] && !found[i]) {
         found[i] = true;
         foundCount++;
-        var pts = Math.round(100 * bonusFor(api));
-        api.scoring.add(scorer.id, pts);
-        api.shell.updateScores(scorer.id);
+        if (!race) {
+          var pts = Math.round(100 * bonusFor(api));
+          api.scoring.add(scorer.id, pts);
+          api.shell.updateScores(scorer.id);
+        }
         api.audio.play('correct');
         ring(bEls[i]);
         if (aEls[i]) ring(aEls[i]);
@@ -631,17 +781,30 @@ window.FF = window.FF || {};
           done = true;
           api.audio.play('roundEnd');
           api.shell.toast(FF.t('allFound', 'All {n} differences found!', { n: n }), 'good');
-          setTimeout(onDone, 1400);
+          if (race) setTimeout(function () { race.done(stats()); }, 1200);
+          else setTimeout(onDone, 1400);
         }
       } else if (!changeMap[i]) {
         api.audio.play('wrong');
-        api.scoring.subtract(scorer.id, 20);
-        api.shell.updateScores(scorer.id);
+        wrongCount++;
+        if (!race) {
+          api.scoring.subtract(scorer.id, 20);
+          api.shell.updateScores(scorer.id);
+        }
         flashWrong(bEls[i]);
       }
     }
 
     root.appendChild(wrap);
+    if (!race) return null;
+    return {
+      start: function () { panels.classList.remove('hidden'); },
+      stop: function () {
+        done = true;
+        var st = stats();
+        return Object.assign({ value: race.points(st) }, st);
+      }
+    };
   }
 
   /* ============================================================
@@ -666,6 +829,7 @@ window.FF = window.FF || {};
       'Careful — wrong taps cost points.'
     ],
     start: function (api) {
+      if (FF.Parallel && FF.Parallel.active()) { hiddenOnline(api); return; }
       var list = scorers(api);
       var rounds = FF.GameLength.rounds(api, 6, 0);
       var round = 0;
@@ -680,7 +844,31 @@ window.FF = window.FF || {};
     }
   });
 
-  function renderHiddenRound(api, scorer, roundNum, totalRounds, onDone) {
+  /* Online: every phone hunts the same object in the same scene. */
+  function hiddenOnline(api) {
+    var bonus = bonusFor(api);
+    FF.Parallel.run(api, {
+      rounds: 6,
+      seconds: 20,
+      gate: '.scene-item--tap',
+      play: function (n, ctx) {
+        return renderHiddenRound(api, ctx.me, n + 1, ctx.total, null, {
+          extra: ctx.live,
+          roundText: ctx.roundText,
+          done: function (st) { ctx.done(Object.assign({ value: hiddenPoints(st, ctx.elapsed(), ctx.limitMs, bonus) }, st)); }
+        });
+      },
+      describe: function () { return { kind: 'card', text: FF.t('hiddenWatch', 'Everyone is hunting the same hidden object') }; },
+      detail: function (a) {
+        var line = a.found ? FF.t('hiddenFoundIn', 'Found in {s} s', { s: ((a.ms || 0) / 1000).toFixed(1) }) : FF.t('hiddenMissed', 'Not found');
+        return [line, wrongText(a.wrong)].filter(Boolean).join(' \u00b7 ');
+      }
+    });
+  }
+
+  /* race (a room challenge only): { extra, roundText, done(stats) }; the
+     target and scene stay hidden until start(), and it returns { start, stop }. */
+  function renderHiddenRound(api, scorer, roundNum, totalRounds, onDone, race) {
     var root = api.shell.root;
     api.ui.clear(root);
     api.shell.updateScores(scorer.id);
@@ -696,16 +884,17 @@ window.FF = window.FF || {};
 
     var wrap = FF.GameUI.stage({ wide: true });
 
-    wrap.appendChild(FF.GameUI.turnBar(scorers(api).length > 1 ? scorer : null, FF.GameLength.roundText(roundNum, totalRounds)));
+    if (race) wrap.appendChild(race.extra);
+    wrap.appendChild(FF.GameUI.turnBar(scorers(api).length > 1 ? scorer : null, race ? race.roundText : FF.GameLength.roundText(roundNum, totalRounds)));
 
-    var prompt = api.ui.el('h2', { class: 'find-prompt gm-prompt' });
+    var prompt = api.ui.el('h2', { class: 'find-prompt gm-prompt' + (race ? ' hidden' : '') });
     prompt.appendChild(document.createTextNode(FF.t('findThe', 'Find the') + ' '));
     prompt.appendChild(api.ui.span(target.type === 'emoji' ? 'find-prompt__emoji' : 'find-prompt__name', target.type === 'emoji' ? target.emoji : describeItem(target).toLowerCase()));
     wrap.appendChild(prompt);
 
     wrap.appendChild(FF.GameUI.note(FF.t('hiddenRule', 'Tap it as fast as you can. Wrong taps cost 10 points.')));
 
-    var stageWrap = api.ui.div('scene-wrap');
+    var stageWrap = api.ui.div('scene-wrap' + (race ? ' hidden' : ''));
     var fs = fitScaleFor(areaW);
     var st = scaledStage(api, areaW, areaH, fs.scale);
     stageWrap.appendChild(st.outer);
@@ -723,14 +912,21 @@ window.FF = window.FF || {};
       if (i === targetIndex) targetEl = el;
     });
 
+    var wrongCount = 0;
     var t = api.config.timer;
-    if (t && t > 0) {
+    if (t && t > 0 && !race) {
       api.shell.setTimer(t, function () { onTimeout(); });
     }
 
     function onPick(i) {
       if (done) return;
-      if (i === targetIndex) {
+      if (i === targetIndex && race) {
+        done = true;
+        api.audio.play('correct');
+        ring(targetEl);
+        api.shell.toast(FF.t('foundItShort', 'Found it!'), 'good');
+        setTimeout(function () { race.done({ found: true, wrong: wrongCount }); }, 900);
+      } else if (i === targetIndex) {
         done = true;
         api.shell.hideTimer();
         var pts = Math.round(100 * bonusFor(api));
@@ -742,10 +938,27 @@ window.FF = window.FF || {};
         setTimeout(onDone, 900);
       } else {
         api.audio.play('wrong');
-        api.scoring.subtract(scorer.id, 10);
-        api.shell.updateScores(scorer.id);
+        wrongCount++;
+        if (!race) {
+          api.scoring.subtract(scorer.id, 10);
+          api.shell.updateScores(scorer.id);
+        }
         flashWrong(itemsEls[i]);
       }
+    }
+
+    if (race) {
+      return {
+        start: function () {
+          prompt.classList.remove('hidden');
+          stageWrap.classList.remove('hidden');
+        },
+        stop: function () {
+          done = true;
+          if (targetEl) ring(targetEl);
+          return { value: 0, found: false, wrong: wrongCount };
+        }
+      };
     }
 
     function onTimeout() {

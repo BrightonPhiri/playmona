@@ -79,11 +79,12 @@ test('crew: migrate twice keeps the data', function () {
     eq(3, count($w['crew']->all()));
 });
 
-test('crew: the game list matches the online games in roomUI.js', function () {
+// Crew only play games they have a brain for (js/crew/brains/*); newer online games join when theirs is written.
+test('crew: every crew game is one of the online games in roomUI.js', function () {
     preg_match('/var ONLINE_GAMES = \[(.*?)\];/s', (string) file_get_contents(__DIR__ . '/../../js/net/roomUI.js'), $m);
     preg_match_all("/'([A-Za-z]+)'/", preg_replace('#//.*#', '', $m[1]), $ids);
-    $a = $ids[1]; $b = Crew::GAMES; sort($a); sort($b);
-    eq($a, $b);
+    eq([], array_values(array_diff(Crew::GAMES, $ids[1])));
+    eq(count(Crew::GAMES), count(array_unique(Crew::GAMES)));
 });
 
 test('crew: a created player persists with a lasting identity, personality and skills', function () {

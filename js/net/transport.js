@@ -41,12 +41,60 @@ window.FF = window.FF || {};
     return v === undefined ? null : JSON.parse(JSON.stringify(v));
   }
 
+  /* How deep a document is split into separate keys. Anything deeper stays
+     whole in one key, so a reader in another tab never sees half of it.
+     rounds/<n>/answers/<uid> is the deepest record the room writes in one
+     go: split into fields, another tab could see an answer's choice before
+     its "correct" flag and end the round as if nobody got it right. */
+  var SPLIT_DEPTH = 4;
+
+  /* A document as { 'a/b/c': value }, split down to SPLIT_DEPTH. Arrays
+     are kept whole; empty objects vanish, as they do in Firebase. */
+  function flatten(value, prefix, out, depth) {
+    out = out || {};
+    depth = depth || 0;
+    var isObject = value !== null && typeof value === 'object' && !Array.isArray(value);
+    if (isObject && !Object.keys(value).length) return out;
+    if (isObject && depth < SPLIT_DEPTH) {
+      Object.keys(value).forEach(function (k) {
+        flatten(value[k], prefix ? prefix + '/' + k : k, out, depth + 1);
+      });
+    } else if (value !== null && value !== undefined) {
+      out[prefix] = value;
+    }
+    return out;
+  }
+
   /* A bus backed by localStorage + BroadcastChannel, shared by
-     every tab of the same origin. Swappable for tests. */
-  function browserBus(namespace) {
+     every tab of the same origin. Swappable for tests.
+
+     Each part of a document is its own localStorage key (see SPLIT_DEPTH),
+     and a write touches only the keys it changes. Tabs see each other's localStorage writes a moment
+     late (Chromium syncs them between processes asynchronously), so when
+     a document was one key, a tab writing from a slightly old copy erased
+     whatever another tab had just written: a presence heartbeat could wipe
+     a round's winner. Now a write can only change what the writer changed.
+     storage: optional, for tests; defaults to window.localStorage. */
+  function browserBus(namespace, storage) {
     var KEY = 'ff-dev-bus:' + (namespace || 'default');
     var channel = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel(KEY) : null;
     var listeners = [];
+
+    function store() { return storage || window.localStorage; }
+    function prefixOf(k) { return KEY + '|' + k + '|'; }
+
+    // { 'a/b': value } for document k, as this tab sees it.
+    function leaves(k) {
+      var s = store();
+      var prefix = prefixOf(k);
+      var out = {};
+      for (var i = 0; i < s.length; i++) {
+        var name = s.key(i);
+        if (!name || name.indexOf(prefix) !== 0) continue;
+        try { out[name.slice(prefix.length)] = JSON.parse(s.getItem(name)); } catch (e) { /* skip a bad entry */ }
+      }
+      return out;
+    }
 
     function fire(k) {
       listeners.slice().forEach(function (fn) { fn(k); });
@@ -54,22 +102,46 @@ window.FF = window.FF || {};
 
     if (channel) channel.onmessage = function (ev) { fire(ev && ev.data); };
     if (typeof window.addEventListener === 'function') {
-      window.addEventListener('storage', function (ev) { if (ev.key === KEY) fire(null); });
+      window.addEventListener('storage', function (ev) {
+        if (ev.key && ev.key.indexOf(KEY + '|') === 0) fire(null);
+      });
     }
 
     return {
       read: function (k) {
         try {
-          var all = JSON.parse(window.localStorage.getItem(KEY) || '{}');
-          return all[k] === undefined ? null : all[k];
+          var flat = leaves(k);
+          var paths = Object.keys(flat);
+          if (!paths.length) return null;
+          if (paths.length === 1 && paths[0] === '') return flat[''];
+          var doc = {};
+          paths.forEach(function (p) { plant(doc, splitPath(p), flat[p]); });
+          return doc;
         } catch (e) { return null; }
       },
       write: function (k, v) {
+        var changed = false;
         try {
-          var all = JSON.parse(window.localStorage.getItem(KEY) || '{}');
-          if (v === null) delete all[k]; else all[k] = v;
-          window.localStorage.setItem(KEY, JSON.stringify(all));
+          var s = store();
+          var prefix = prefixOf(k);
+          var before = leaves(k);
+          var after = flatten(v, '', {});
+          Object.keys(after).forEach(function (p) {
+            var json = JSON.stringify(after[p]);
+            if (Object.prototype.hasOwnProperty.call(before, p) && JSON.stringify(before[p]) === json) return;
+            s.setItem(prefix + p, json);
+            changed = true;
+          });
+          // Only what this tab saw and dropped is removed. A value another
+          // tab added that has not reached this tab yet is not in `before`,
+          // so it survives.
+          Object.keys(before).forEach(function (p) {
+            if (Object.prototype.hasOwnProperty.call(after, p)) return;
+            s.removeItem(prefix + p);
+            changed = true;
+          });
         } catch (e) { /* storage full or blocked */ }
+        if (!changed) return;
         if (channel) channel.postMessage(k);
         fire(k);
       },
@@ -84,8 +156,8 @@ window.FF = window.FF || {};
   }
 
   /* Development transport. Same interface as the Firebase one.
-     The whole room lives under a single bus key as one document,
-     which keeps reads and writes trivially consistent. */
+     It reads and writes the room as one document; the browser bus stores
+     each value separately, so a write only changes what it changed. */
   function dev(opts) {
     opts = opts || {};
     var bus = opts.bus || browserBus(opts.namespace);
@@ -151,9 +223,10 @@ window.FF = window.FF || {};
       },
 
       /* Synchronous read-modify-write. Single-threaded JavaScript makes
-         this genuinely atomic within a tab; across tabs the localStorage
-         write is last-write-wins, which is why the Firebase transport's
-         real transaction is what ships. Good enough for development. */
+         this genuinely atomic within a tab; across tabs two writes to the
+         SAME value at the same moment are last-write-wins, which is why the
+         Firebase transport's real transaction is what ships. Good enough
+         for development. */
       transaction: function (path, fn) {
         var current = readPath(path);
         var next = fn(current);
