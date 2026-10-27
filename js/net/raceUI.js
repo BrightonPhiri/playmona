@@ -35,8 +35,9 @@ window.FF = window.FF || {};
        can answer early. Firebase echoes a device's own write immediately,
        so without this the host always sees the question first.
 
-       Disables the option buttons, shows a brief countdown, then enables
-       them and calls onOpen() - at the same moment on every device.
+       Disables the option buttons until then, then enables them and
+       calls onOpen() - at the same moment on every device. The hold is
+       silent: the only countdown in a room is the one before the game.
        Returns a cancel function. */
     gate: function (root, optionSelector, onOpen) {
       onOpen = onOpen || function () {};
@@ -51,34 +52,10 @@ window.FF = window.FF || {};
       });
       buttons.forEach(function (b) { b.disabled = true; });
 
-      var overlay = FF.ui.el('div', { class: 'ffr-gate', role: 'status', 'aria-live': 'assertive' });
-      var label = FF.ui.div('ffr-gate__label', FF.t('getReady', 'Get ready'));
-      var num = FF.ui.div('ffr-gate__num', '');
-      overlay.appendChild(label);
-      overlay.appendChild(num);
-      document.body.appendChild(overlay);
-
-      var lastShown = null;
-      var ticker = setInterval(function () {
-        var secs = Math.ceil(FF.Race.msUntilOpen() / 1000);
-        if (secs !== lastShown) {
-          lastShown = secs;
-          num.textContent = secs > 0 ? String(secs) : '';
-        }
-      }, 80);
-
-      function cleanup() {
-        clearInterval(ticker);
-        if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
-      }
-
-      var cancelWait = FF.Race.whenOpen(function () {
-        cleanup();
+      return FF.Race.whenOpen(function () {
         buttons.forEach(function (b) { b.disabled = false; });
         onOpen();
       });
-
-      return function () { cancelWait(); cleanup(); };
     },
 
     /* Wrong answer in a room: disable the options, stay on the
