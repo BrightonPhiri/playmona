@@ -18,7 +18,9 @@ window.FF = window.FF || {};
     'letterRush',
     'whatsMissing',
     'numberChallenge',
-    'visualRiddle'
+    'visualRiddle',
+    // Races: the same card, word, clues or verse for everyone at once.
+    'higherOrLower', 'wordScramble', 'bibleWhoAmI', 'bibleVerseRush'
     // Brain Battle is deliberately absent: its format is a personal
     // streak run per player, so there is no shared question to race for.
   ];

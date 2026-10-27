@@ -353,10 +353,23 @@ window.FF = window.FF || {};
       if (!order.length) { showMissingData(api, 'Word Scramble', 'No players were found.'); return; }
       if (api.config.randomOrder) order = FF.util.shuffle(order);
 
+      // In a room every device deals the same words: draw them from the
+      // room's seed. The race seeds each round again before scrambling.
+      var racing = !!(FF.Race && FF.Race.active() && FF.Room && FF.Room.current());
+      if (racing) FF.Random.seed(FF.Random.roundSeed(FF.Room.current().meta.seed, api.def.id, 'deck'));
+
       var bag = new api.random.Bag(filtered);
       var items = [];
       var count = FF.GameLength.rounds(api, 6, 0);
       for (var i = 0; i < count; i++) items.push(bag.next());
+
+      // ---- Race support: the first to type the word takes the round. ----
+      var race = racing ? FF.Race.forGame(api, { rounds: count, optionSelector: '.ws-play' }) : null;
+      var me = null;
+      if (race) {
+        var uid = FF.Room.current().uid;
+        me = order.filter(function (e) { return e.id === uid; })[0] || order[0];
+      }
 
       var state = {
         order: order,
@@ -364,18 +377,44 @@ window.FF = window.FF || {};
         total: count,
         items: items,
         busy: false,
-        ended: false
+        ended: false,
+        word: '',
+        answered: false
       };
+
+      var offSettle = race ? race.onSettle(function (payload) {
+        if (state.answered) return;
+        state.answered = true;
+        api.shell.hideTimer();
+        race.showResult(payload, {
+          answerText: state.word.toUpperCase(),
+          isLast: race.isLastRound(state.round, state.total),
+          onNext: next
+        });
+      }) : null;
+
+      function next() {
+        api.audio.play('click');
+        state.round++;
+        state.busy = false;
+        if (state.round >= state.total || (race && race.over(state.round))) { renderEnd(); return; }
+        renderRound();
+      }
 
       function renderRound() {
         if (state.ended) return;
-        var entity = state.order[state.round % state.order.length];
+        var entity = race ? me : state.order[state.round % state.order.length];
         var item = state.items[state.round];
+        // Seeded first, so every device scrambles the word the same way.
+        var opening = race ? race.beginRound(state.round) : null;
         var word = item.word.toLowerCase();
         var scrambled = scrambleWord(word);
         var hinted = false;
         var answered = false;
         var seconds = turnSeconds(api, null);
+        state.word = word;
+        state.answered = false;
+        if (race) race.describe({ kind: 'card', text: FF.t('wsWatch', 'Unscramble {letters}. Clue: {clue}', { letters: scrambled.toUpperCase(), clue: item.clue }) }, null);
 
         var root = api.shell.root;
         FF.ui.clear(root);
@@ -383,19 +422,21 @@ window.FF = window.FF || {};
         api.shell.setTitle(api.def.name);
 
         var wrap = FF.ui.div('panel panel--center wg-wrap');
-        wrap.appendChild(FF.ui.el('h2', {}, entityLabel(entity) + ' — ' + FF.GameLength.roundText(state.round + 1, state.total)));
+        wrap.appendChild(FF.ui.el('h2', {}, (race ? FF.t('everyoneRaces', 'Everyone races') : entityLabel(entity)) + ' — ' + FF.GameLength.roundText(state.round + 1, state.total)));
         wrap.appendChild(FF.ui.div('wg-scramble', scrambled.toUpperCase()));
         wrap.appendChild(FF.ui.el('p', { class: 'hint' }, 'Clue: ' + item.clue));
 
         var form = FF.ui.div('wg-word-form');
         var input = FF.ui.el('input', {
-          type: 'text', class: 'wg-input', placeholder: 'Your answer…',
+          type: 'text', class: 'wg-input ws-play', placeholder: 'Your answer…',
           autocomplete: 'off', autocapitalize: 'off', spellcheck: 'false', maxlength: 16,
           onkeydown: function (e) { if (e.key === 'Enter') { e.preventDefault(); check(); } }
         });
-        var checkBtn = FF.UI.button('Check', { icon: 'check',  primary: true, class: 'btn', onClick: check });
-        var hintBtn = FF.UI.button('Hint (-30)', { icon: 'lightbulb',  class: 'btn', onClick: hint });
-        var skipBtn = FF.UI.button('Skip', { icon: 'chevron-right',  class: 'btn', onClick: function () { resolve(false, 'skip'); } });
+        var checkBtn = FF.UI.button('Check', { icon: 'check',  primary: true, class: 'btn ws-play', onClick: check });
+        var hintBtn = FF.UI.button('Hint (-30)', { icon: 'lightbulb',  class: 'btn ws-play', onClick: hint });
+        var skipBtn = FF.UI.button('Skip', { icon: 'chevron-right',  class: 'btn ws-play', onClick: function () { resolve(false, 'skip'); } });
+        // In a room nobody can type before the round opens for everyone.
+        if (race) [input, checkBtn, hintBtn, skipBtn].forEach(function (c) { c.disabled = true; });
         form.appendChild(input);
         form.appendChild(checkBtn);
         wrap.appendChild(form);
@@ -408,8 +449,12 @@ window.FF = window.FF || {};
         function hint() {
           if (answered || hinted) return;
           hinted = true;
-          api.scoring.subtract(entity.id, 30);
-          api.shell.updateScores(entity.id);
+          // In a room scores come from the race, so the hint lowers what
+          // this answer is worth instead.
+          if (!race) {
+            api.scoring.subtract(entity.id, 30);
+            api.shell.updateScores(entity.id);
+          }
           api.audio.play('tap');
           api.shell.toast('First letter: ' + word.charAt(0).toUpperCase(), 'hint');
           input.value = word.charAt(0);
@@ -421,12 +466,31 @@ window.FF = window.FF || {};
           if (answered) return;
           var ans = FF.util.lettersOnly(input.value);
           if (!ans) { api.shell.toast('Type your answer first.', 'warning'); api.audio.play('wrong'); return; }
+          if (race && ans !== word) {
+            // A wrong try stays on this device: keep typing until someone gets it.
+            api.audio.play('wrong');
+            api.shell.toast(FF.t('wsKeepTrying', 'Not quite. Keep trying!'), 'warning');
+            input.select();
+            return;
+          }
           if (ans === word) resolve(true, ''); else resolve(false, 'wrong');
         }
 
         function resolve(correct, kind) {
           if (answered) return;
           answered = true;
+          if (race) {
+            // The race decides the round. Skipping (or running out of time)
+            // passes, so a round nobody can solve still ends.
+            api.shell.hideTimer();
+            if (kind === 'timeout') {
+              [input, checkBtn, hintBtn, skipBtn].forEach(function (c) { c.disabled = true; });
+              return;
+            }
+            race.submit(correct ? word : null, correct, null, { value: correct ? Math.max(0, applyBonus(api, 100) - (hinted ? 30 : 0)) : 0 });
+            if (correct) [input, checkBtn, hintBtn, skipBtn].forEach(function (c) { c.disabled = true; });
+            return;
+          }
           api.shell.hideTimer();
           var root2 = api.shell.root;
           FF.ui.clear(root2);
@@ -450,27 +514,38 @@ window.FF = window.FF || {};
           root2.appendChild(box);
         }
 
-        function next() {
-          api.audio.play('click');
-          state.round++;
-          state.busy = false;
-          if (state.round >= state.total) { renderEnd(); return; }
-          renderRound();
+        function startClock() {
+          if (seconds && seconds > 0) {
+            api.shell.setTimer(seconds, function () { resolve(false, 'timeout'); });
+          }
+          focusSoon(input);
         }
 
-        if (seconds && seconds > 0) {
-          api.shell.setTimer(seconds, function () { resolve(false, 'timeout'); });
-        } else {
+        if (!(seconds && seconds > 0)) {
           wrap.appendChild(FF.ui.div('wg-timer-note', 'No timer — take your time.'));
         }
 
-        focusSoon(input);
+        if (race) {
+          // Everyone sees the letters from the same shared instant.
+          var thisRound = state.round;
+          opening.then(function () {
+            race.gate(function () {
+              if (answered || state.answered || state.round !== thisRound) return;
+              [input, checkBtn, hintBtn, skipBtn].forEach(function (c) { c.disabled = false; });
+              startClock();
+            });
+          });
+        } else {
+          startClock();
+        }
       }
 
       function renderEnd() {
         if (state.ended) return;
         state.ended = true;
         api.shell.hideTimer();
+        if (offSettle) offSettle();
+        if (race) race.end();
         playEnd(api);
         var sr = api.scoring.results();
         api.end({ results: sr.results, winnerId: sr.winnerId, bestStreak: maxStreak(sr.results) });
