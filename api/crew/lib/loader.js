@@ -20,7 +20,8 @@ const FILES = [
   'js/crew/brains.js',
   'js/crew/brains/quiz.js',
   'js/crew/brains/reaction.js',
-  'js/crew/brains/letterRush.js'
+  'js/crew/brains/letterRush.js',
+  'js/crew/controller.js'
 ];
 
 function stubElement() {
