@@ -249,6 +249,13 @@ window.FF = window.FF || {};
     return s ? FF.t('nMinSec', '{m} min {s} s', { m: m, s: s }) : FF.t('nMin', '{n} min', { n: m });
   }
 
+  /* Same settings, whatever order the keys are in (Firebase returns them sorted). */
+  function sameSettings(a, b) {
+    a = a || {}; b = b || {};
+    var ka = Object.keys(a), kb = Object.keys(b);
+    return ka.length === kb.length && ka.every(function (k) { return Object.prototype.hasOwnProperty.call(b, k) && a[k] === b[k]; });
+  }
+
   /* What the settings mean, in a sentence. A game with its own lobby
      settings (def.room) describes them itself. */
   function pickSummary(gameId, set) {
@@ -367,6 +374,7 @@ window.FF = window.FF || {};
 
   FF.RoomUI = {
     ONLINE_GAMES: ONLINE_GAMES,
+    sameSettings: sameSettings,
 
     /* The Watch live page (its own page, so viewers need no account). */
     openWatch: function () {
@@ -1161,7 +1169,7 @@ window.FF = window.FF || {};
         // five players drops back to one imposter): the host re-picks for everyone.
         if (s.isHost && pick && pickDef && pickDef.room && pickDef.room.sanitize) {
           var fitted = pickDef.room.sanitize(pick.settings || {}, players.length);
-          if (JSON.stringify(fitted) !== JSON.stringify(pick.settings || {}) && self._refitPick !== pick.id) {
+          if (!sameSettings(fitted, pick.settings) && self._refitPick !== pick.id) {
             self._refitPick = pick.id;
             Object.assign(gameSettings(pick.gameId), fitted);
             var refit = { id: FF.util.uid() + FF.util.uid(), gameId: pick.gameId, settings: fitted };

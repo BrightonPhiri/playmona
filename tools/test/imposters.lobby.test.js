@@ -61,3 +61,18 @@ test('imposters lobby: roomUI waits for the minimum and lets the game start itse
   assert(/gr && gr\.start \? gr\.start\(s, pick\)/.test(src), 'a server-started game is not started by the host phone');
   assert(/pickDef\.room\.sanitize\(pick\.settings/.test(src), 're-fits the pick when players come and go');
 });
+
+test('imposters lobby: settings read back with their keys in another order still count as the same', function () {
+  // Firebase returns object keys sorted; comparing JSON text would re-pick for ever.
+  vm.runInContext(fs.readFileSync(path.join(ROOT, 'js/net/roomUI.js'), 'utf8'), FF.__sandbox, { filename: 'roomUI.js' });
+  const same = FF.RoomUI.sameSettings;
+  const fitted = room.sanitize({ mode: 'word', imposters: 2, rounds: 4 }, 6);
+  const sorted = {};
+  Object.keys(fitted).sort().forEach((k) => { sorted[k] = fitted[k]; });
+  assert(JSON.stringify(sorted) !== JSON.stringify(fitted), 'the test really reorders the keys');
+  assertEqual(same(fitted, sorted), true);
+  assertEqual(same(room.sanitize(sorted, 6), sorted), true, 'a fitted pick is left alone');
+  assertEqual(same(room.sanitize(sorted, 5), sorted), false, 'dropping to five still re-picks');
+  assertEqual(same({ a: 1 }, { a: 1, b: 2 }), false);
+  assertEqual(same(null, {}), true);
+});
