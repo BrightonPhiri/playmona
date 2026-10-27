@@ -213,3 +213,109 @@ test('sign-in: anonymous sign-in switched off says so clearly', async function (
   try { await FF.Net.signInForRoom(auth); } catch (e) { err = e; }
   assertEqual(err && err.code, 'anon-disabled');
 });
+
+/* ---------- The browser bus with tabs that see each other late ----------
+   Chromium passes one tab's localStorage writes to the others a moment
+   later. Two fake storages model that: each tab writes to its own copy,
+   and the other copy catches up only on flush(). */
+function laggingStorages() {
+  const copies = [new Map(), new Map()];
+  const pending = [[], []];
+  function storage(i) {
+    const mine = copies[i];
+    const theirs = pending[1 - i];
+    return {
+      get length() { return mine.size; },
+      key: function (n) { const keys = Array.from(mine.keys()); return n < keys.length ? keys[n] : null; },
+      getItem: function (k) { return mine.has(k) ? mine.get(k) : null; },
+      setItem: function (k, v) { mine.set(k, String(v)); theirs.push([k, String(v)]); },
+      removeItem: function (k) { mine.delete(k); theirs.push([k, null]); }
+    };
+  }
+  return {
+    a: storage(0),
+    b: storage(1),
+    flush: function () {
+      [0, 1].forEach(function (i) {
+        pending[i].splice(0).forEach(function (op) {
+          if (op[1] === null) copies[i].delete(op[0]); else copies[i].set(op[0], op[1]);
+        });
+      });
+    },
+    // Deliver one of tab A's writes to tab B; false when none are left.
+    flushOneToB: function () {
+      const op = pending[1].shift();
+      if (!op) return false;
+      if (op[1] === null) copies[1].delete(op[0]); else copies[1].set(op[0], op[1]);
+      return true;
+    }
+  };
+}
+
+async function twoTabs() {
+  const FF = loadFF(['js/core.js', 'js/net/transport.js']);
+  const s = laggingStorages();
+  const a = FF.Transport.dev({ bus: FF.Transport.browserBus('t', s.a), root: 'rooms/T' });
+  const b = FF.Transport.dev({ bus: FF.Transport.browserBus('t', s.b), root: 'rooms/T' });
+  await a.connect();
+  await b.connect();
+  return { a: a, b: b, flush: s.flush, flushOneToB: s.flushOneToB };
+}
+
+test('dev bus: a write from a tab that is behind never erases another tab\'s write', async function () {
+  const t = await twoTabs();
+  await t.a.set('players/b', { name: 'Ben', lastSeen: 1 });
+  t.flush();
+  // Tab A claims the round; tab B has not seen it yet when its heartbeat runs.
+  await t.a.transaction('rounds/0/winner', function (cur) { return cur == null ? 'ana' : undefined; });
+  await t.b.update('players/b', { lastSeen: 2 });
+  t.flush();
+  assertEqual(await t.a.get('rounds/0/winner'), 'ana', 'tab A keeps its winner');
+  assertEqual(await t.b.get('rounds/0/winner'), 'ana', 'tab B gets it too');
+  assertEqual(await t.a.get('players/b'), { name: 'Ben', lastSeen: 2 }, 'and B\'s heartbeat lands');
+});
+
+test('dev bus: removing a branch drops only what that tab had seen', async function () {
+  const t = await twoTabs();
+  await t.a.set('rounds/0', { startedAt: 5, answers: { u1: { correct: true } } });
+  t.flush();
+  await t.a.set('rounds/1/startedAt', 9);
+  await t.b.set('rounds/0', null);
+  t.flush();
+  assertEqual(await t.a.get('rounds'), { 1: { startedAt: 9 } }, 'round 0 gone, round 1 kept');
+  assertEqual(await t.b.get('rounds'), { 1: { startedAt: 9 } });
+});
+
+test('dev bus: documents round-trip, arrays whole and empty objects dropped like Firebase', async function () {
+  const FF = loadFF(['js/core.js', 'js/net/transport.js']);
+  const s = laggingStorages();
+  const bus = FF.Transport.browserBus('t', s.a);
+  const doc = { meta: { status: 'lobby', settings: { questions: 5 } }, list: [1, 'two', { three: 3 }], flag: false, zero: 0, empty: {} };
+  bus.write('rooms/T', doc);
+  assertEqual(bus.read('rooms/T'), { meta: { status: 'lobby', settings: { questions: 5 } }, list: [1, 'two', { three: 3 }], flag: false, zero: 0 });
+  assertEqual(bus.read('rooms/OTHER'), null, 'documents are separate');
+  bus.write('rooms/T', null);
+  assertEqual(bus.read('rooms/T'), null, 'writing null clears it');
+});
+
+test('dev bus: an unchanged write tells nobody', async function () {
+  const FF = loadFF(['js/core.js', 'js/net/transport.js']);
+  const bus = FF.Transport.browserBus('t', laggingStorages().a);
+  let calls = 0;
+  bus.subscribe(function () { calls++; });
+  bus.write('rooms/T', { a: 1 });
+  bus.write('rooms/T', { a: 1 });
+  assertEqual(calls, 1);
+});
+
+test('dev bus: another tab never sees half of an answer', async function () {
+  const t = await twoTabs();
+  await t.a.set('rounds/0/answers/ana', { choice: 'pyramid', correct: true, ms: 900, value: 150 });
+  await t.a.transaction('rounds/0/winner', function (cur) { return cur == null ? 'ana' : undefined; });
+  // Tab B catches up one key at a time, reading after each.
+  do {
+    const a = await t.b.get('rounds/0/answers/ana');
+    assert(a === null || (a.correct === true && a.choice === 'pyramid'), 'whole or absent, never partial: ' + JSON.stringify(a));
+  } while (t.flushOneToB());
+  assertEqual(await t.b.get('rounds/0/winner'), 'ana');
+});
