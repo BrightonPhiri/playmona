@@ -89,8 +89,9 @@ window.FF = window.FF || {};
 
     function onLobby() {
       var pick = meta.pick;
-      if (meta.mode === 'teams') assignTeams();
       if (!pick || !pick.id) return;
+      // Join a team once the host picks a game: by then the people here have chosen theirs.
+      if (meta.mode === 'teams') assignTeams();
       uids.forEach(function (uid, i) {
         if (!present(uid) || players[uid].ready === pick.id || readied[uid] === pick.id) return;
         readied[uid] = pick.id;
