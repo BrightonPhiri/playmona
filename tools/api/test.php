@@ -1096,6 +1096,7 @@ test('live: the routes answer /live and /live/<code>', function () {
 });
 
 require __DIR__ . '/crew.test.php';
+require __DIR__ . '/imposters.test.php';
 
 echo "\n" . ($GLOBALS['count'] - $GLOBALS['failures']) . '/' . $GLOBALS['count'] . " passed\n";
 exit($GLOBALS['failures'] ? 1 : 0);

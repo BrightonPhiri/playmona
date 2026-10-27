@@ -182,6 +182,22 @@ window.FF = window.FF || {};
       }).catch(function (e) { log('report failed: ' + e.message); });
     }
 
+    /* Imposters has no rounds to plan: its seats play the referee's phases
+       (js/crew/brains/imposters.js), each reading only its own secret. */
+    var impSeats = null, impKey = null;
+    function onImposters() {
+      var playing = meta && meta.status === 'playing' && meta.gameId === 'imposters' && FF.CrewImposters && opts.secretOf;
+      var key = playing ? gameKey() : null;
+      if (impSeats && impKey !== key) { impSeats.stop(); impSeats = null; }
+      if (!playing || impSeats) return;
+      impKey = key;
+      impSeats = FF.CrewImposters.create({
+        transport: T, uids: function () { return uids.filter(present); }, crew: crew, later: later, log: log,
+        secretOf: opts.secretOf, isQuiet: opts.isQuiet
+      });
+      impSeats.start();
+    }
+
     function onMeta(v) {
       meta = v;
       if (!meta) { stop(); return; }
@@ -189,11 +205,13 @@ window.FF = window.FF || {};
       if (status === 'lobby') onLobby();
       else if (status === 'playing') onRounds();
       else if (status === 'ended') onEnded();
+      onImposters();
     }
 
     function stop() {
       if (stopped) return;
       stopped = true;
+      if (impSeats) { impSeats.stop(); impSeats = null; }
       offs.forEach(function (off) { try { off(); } catch (e) { /* already closed */ } });
       offs = [];
       pending.forEach(function (id) { timers.clearTimeout(id); });

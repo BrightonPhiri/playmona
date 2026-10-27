@@ -36,6 +36,18 @@ class EngineRoutes
             if ($m === 'GET') return Response::json($this->app->matchmaker()->ticket($u, $mm[1], $this->isAdmin($u), $now));
         }
 
+        // Imposters: the server starts the match; the referee in the runner plays it out.
+        if ($m === 'POST' && $p === '/imposters/start') {
+            return Response::json($this->app->imposters()->start($this->user($req), $req->json(), $now));
+        }
+        if ($m === 'POST' && $p === '/imposters/crew') {
+            $u = $this->user($req);
+            return Response::json($this->app->imposters()->findPlayers($u, $this->isAdmin($u), $req->json(), $now));
+        }
+        if ($m === 'POST' && $p === '/imposters/nudge') {
+            return Response::json($this->app->imposters()->nudge($this->user($req), $req->json(), $now));
+        }
+
         // Friends
         if ($m === 'GET' && $p === '/friends') return Response::json($this->app->friends()->overview($this->user($req)->uid, $now));
         if ($m === 'POST' && str_starts_with($p, '/friends/')) return $this->friendAction($req, substr($p, 9), $now);
@@ -133,11 +145,16 @@ class EngineRoutes
         switch ($action) {
             case 'heartbeat':
                 $drop = $mm->heartbeat((int) ($body['pid'] ?? 0), (array) ($body['matches'] ?? []), $now);
+                $dropImposters = $this->app->imposters()->stillActive((array) ($body['imposters'] ?? []));
                 $s = $this->app->crew()->settings();
-                return Response::json(['drop' => $drop, 'settings' => ['mode' => $s['mode'], 'stopNew' => $s['stopNew']]]);
+                return Response::json(['drop' => $drop, 'dropImposters' => $dropImposters, 'settings' => ['mode' => $s['mode'], 'stopNew' => $s['stopNew']]]);
             case 'report':
                 $matchId = (string) ($body['matchId'] ?? '');
                 $event = (string) ($body['event'] ?? '');
+                if ($event === 'imposters') {
+                    $this->app->imposters()->recordResult($body, $now);
+                    return Response::json(['ok' => true]);
+                }
                 if ($event === 'game') {
                     $stay = $mm->gameEnded($matchId, (string) ($body['gameId'] ?? ''), (array) ($body['ranked'] ?? []), $now);
                     return Response::json(['stay' => $stay]);

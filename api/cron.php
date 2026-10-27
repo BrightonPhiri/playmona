@@ -68,6 +68,8 @@ try {
     foreach ($stale as $matchId) $app->matchmaker()->endMatch($matchId, 'cancelled', $now);
     $faded = $app->friends()->sweep($now);
     if ($stale || $faded) echo 'Freed ' . count($stale) . " stale match(es), faded $faded request(s).\n";
+    $abandoned = $app->imposters()->sweep($now);
+    if ($abandoned) echo "Ended $abandoned abandoned Imposters match(es).\n";
 } catch (Throwable $e) {
     fwrite(STDERR, 'Crew cleanup failed: ' . $e->getMessage() . "\n");
 }

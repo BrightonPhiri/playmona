@@ -125,7 +125,13 @@ reliable voice. Video only in private rooms, host can mute and remove, report bu
 
 ## Phase 6+: games and extras
 
-- Games: Imposter / Undercover, Who's the Spy, Heads Up, Two Truths and a Lie, Mafia/Werewolf,
+- **Imposters** (built 27 Oct 2026, branch `feat/imposters`): Word Imposter and Number Imposter,
+  3 to 12 players online, 1 imposter up to 5 players and a choice of 1 or 2 from 6. The server
+  starts each match and the crew runner referees it; secrets live in `imposterSecrets` (owner-read
+  only). Room text chat for the discussion. "Find PlayMona players" seats crew in the lobby
+  (follows the crew mode). Future modes plug into `js/imposters/modes/`: category, pattern,
+  emoji, sound, picture, estimation, rule, trivia, memory.
+- Games: Who's the Spy, Heads Up, Two Truths and a Lie, Mafia/Werewolf,
   Emoji Decode, Rank It, a Wavelength-style game, Trivia Royale.
 - Extras: promo codes and referrals, shareable result cards, push notifications, receipt and
   reminder emails, report/block and moderation, XP and achievements, friends list, Shona and

@@ -18,7 +18,9 @@ window.FF = window.FF || {};
     'letterRush',
     'whatsMissing',
     'numberChallenge',
-    'visualRiddle'
+    'visualRiddle',
+    // Secret words dealt by the server's referee (js/imposters/referee.js).
+    'imposters'
     // Brain Battle is deliberately absent: its format is a personal
     // streak run per player, so there is no shared question to race for.
   ];
@@ -236,6 +238,14 @@ window.FF = window.FF || {};
     var m = Math.floor(secs / 60), s = secs % 60;
     if (!m) return FF.t('nSec', '{n} s', { n: s });
     return s ? FF.t('nMinSec', '{m} min {s} s', { m: m, s: s }) : FF.t('nMin', '{n} min', { n: m });
+  }
+
+  /* What the settings mean, in a sentence. A game with its own lobby
+     settings (def.room) describes them itself. */
+  function pickSummary(gameId, set) {
+    var def = gameId ? FF.Games.get(gameId) : null;
+    if (def && def.room && def.room.summary) return def.room.summary(set || {}, FF.Room.presentPlayers().length);
+    return lengthSummary(set);
   }
 
   /* One plain sentence about how long the game runs and the time to answer. */
@@ -768,8 +778,91 @@ window.FF = window.FF || {};
         };
       }
       var rs = self._roomSettings;
+      // Games with their own lobby settings (def.room.fields) keep them here, per game.
+      if (!self._gameSettings) self._gameSettings = {};
+
+      function gameRoom(id) {
+        var d = id ? FF.Games.get(id) : null;
+        return d && d.room ? d.room : null;
+      }
+
+      function gameSettings(id) {
+        var gr = gameRoom(id);
+        if (!self._gameSettings[id]) self._gameSettings[id] = Object.assign({ difficulty: rs.difficulty }, (gr && gr.defaults) || {});
+        return self._gameSettings[id];
+      }
 
       function settingRow(label, node) { return FF.UI.settingRow(label, node); }
+
+      // The usual rows: difficulty and how long the game runs.
+      function lengthFields(opts) {
+        opts.appendChild(settingRow(FF.t('difficulty', 'Difficulty'), segs([['Easy', 'easy'], ['Normal', 'normal'], ['Hard', 'hard']], 'difficulty', FF.t('difficulty', 'Difficulty'))));
+        // How long the game runs: a number of questions, a game clock, or
+        // both (it ends at whichever comes first). Presets plus Custom.
+        var summary = FF.ui.el('p', { class: 'rm-length-summary', 'aria-live': 'polite' }, lengthSummary(rs));
+        var resum = function () { summary.textContent = lengthSummary(rs); };
+        opts.appendChild(settingRow(FF.t('timeToAnswer', 'Time to answer'), FF.SettingsUI.duration(rs.timer, function (v) { rs.timer = v; resum(); }, {
+          allowOff: true, alwaysCustom: true, label: FF.t('timeToAnswer', 'Time to answer'),
+          presets: [
+            { label: FF.t('noLimit', 'No limit'), value: 0 },
+            { label: '10s', value: 10 }, { label: '20s', value: 20 },
+            { label: '30s', value: 30 }, { label: '1m', value: 60 }
+          ]
+        })));
+        opts.appendChild(settingRow(FF.t('numQuestions', 'Number of questions'), FF.SettingsUI.count(rs.questions, function (v) { rs.questions = v; resum(); }, {
+          label: FF.t('numQuestions', 'Number of questions'), min: 1, max: 100,
+          unit: FF.t('questionsUnit', 'questions'), placeholder: 12,
+          presets: [
+            { label: FF.t('usual', 'Usual'), value: 0 },
+            { label: '5', value: 5 }, { label: '10', value: 10 },
+            { label: '15', value: 15 }, { label: '20', value: 20 }
+          ]
+        })));
+        opts.appendChild(settingRow(FF.t('gameClock', 'Game clock'), FF.SettingsUI.duration(rs.clock, function (v) { rs.clock = v; resum(); }, {
+          allowOff: true, alwaysCustom: true, label: FF.t('gameClock', 'Game clock'),
+          presets: [
+            { label: FF.t('off', 'Off'), value: 0 },
+            { label: '2m', value: 120 }, { label: '5m', value: 300 },
+            { label: '10m', value: 600 }, { label: '15m', value: 900 }
+          ]
+        })));
+        opts.appendChild(summary);
+      }
+
+      // The game's own settings rows, rebuilt when the player count changes what is offered.
+      function gameFields(section, def, n) {
+        var gs = gameSettings(def.id);
+        var summary = FF.ui.el('p', { class: 'rm-length-summary', 'aria-live': 'polite' });
+        var resum = function () { summary.textContent = def.room.summary(def.room.sanitize(gs, n), n); };
+        def.room.fields(gs, { players: n }).forEach(function (f) {
+          if (f.note) { section.appendChild(FF.ui.el('p', { class: 'rm-hint rm-fieldnote' }, f.note)); return; }
+          section.appendChild(settingRow(f.label, FF.UI.segmented({
+            label: f.label, value: gs[f.key], options: f.options,
+            onChange: function (v) { gs[f.key] = v; if (f.redraw) render(); else resum(); }
+          })));
+        });
+        resum();
+        section.appendChild(summary);
+      }
+
+      // "Find PlayMona players": a game that offers it seats crew players for the host.
+      function findPlayersButton(s, players, gameId) {
+        var gr = gameRoom(gameId);
+        if (!s.isHost || !gr || !gr.findPlayers || players.length >= FF.Room.MAX_PLAYERS) return null;
+        var btn = FF.UI.button(FF.t('rmFindPlayers', 'Find PlayMona players'), {
+          class: 'btn-soft rm-findplayers', icon: 'users',
+          onClick: function () {
+            btn.disabled = true;
+            FF.Audio.play('click');
+            gr.findPlayers(s.code, gameSettings(gameId).difficulty || rs.difficulty).then(function (added) {
+              FF.UI.toast(FF.t('rmFoundPlayers', '{n} PlayMona players joined', { n: added }), { type: 'success' });
+            }).catch(function (err) {
+              FF.UI.toast((err && err.message) || FF.t('rmFindFailed', 'Nobody could be found right now.'), { type: 'error', duration: 4000 });
+            }).then(function () { btn.disabled = false; });
+          }
+        });
+        return btn;
+      }
 
       function segs(opts, key, label) {
         return FF.UI.segmented({
@@ -954,7 +1047,16 @@ window.FF = window.FF || {};
       }
 
       function currentSettings() {
+        var gr = gameRoom(chosen);
+        if (gr && gr.sanitize) return gr.sanitize(gameSettings(chosen), FF.Room.presentPlayers().length);
         return { difficulty: rs.difficulty, timer: rs.timer, questions: rs.questions || 0, clock: rs.clock || 0 };
+      }
+
+      // Fewer players than the game needs: no countdown yet.
+      function shortOf(gameId, players) {
+        var gr = gameRoom(gameId);
+        var min = (gr && gr.minPlayers) || 1;
+        return players.length < min ? min : 0;
       }
 
       // Step 4 -> 5: tell everyone what we're playing. The same game and
@@ -983,10 +1085,14 @@ window.FF = window.FF || {};
       // Everyone ready: the host's device starts the 10 second countdown.
       function maybeStart(s, pick) {
         if (!s.isHost || !pick || !FF.Room.everyoneReady()) return;
+        if (shortOf(pick.gameId, FF.Room.presentPlayers())) return;
         if (self._autoStarted === pick.id) return;
         self._autoStarted = pick.id;
         FF.Audio.play('roundStart');
-        FF.Room.startGame(pick.gameId, pick.settings || {}).then(function () {
+        // A game with secrets is started by the server (def.room.start), not this phone.
+        var gr = gameRoom(pick.gameId);
+        var starting = gr && gr.start ? gr.start(s, pick) : FF.Room.startGame(pick.gameId, pick.settings || {});
+        starting.then(function () {
           if (FF.Access) FF.Access.usePlay(pick.gameId);   // the host's free play, for limited games
         }).catch(function (err) {
           self._autoStarted = null;
@@ -1041,6 +1147,19 @@ window.FF = window.FF || {};
           }
         }
         if (!pick) self._seenPick = null;
+
+        // Players came or went and the picked settings no longer fit (Imposters at
+        // five players drops back to one imposter): the host re-picks for everyone.
+        if (s.isHost && pick && pickDef && pickDef.room && pickDef.room.sanitize) {
+          var fitted = pickDef.room.sanitize(pick.settings || {}, players.length);
+          if (JSON.stringify(fitted) !== JSON.stringify(pick.settings || {}) && self._refitPick !== pick.id) {
+            self._refitPick = pick.id;
+            Object.assign(gameSettings(pick.gameId), fitted);
+            var refit = { id: FF.util.uid() + FF.util.uid(), gameId: pick.gameId, settings: fitted };
+            FF.Room.setPick(refit).then(function () { return FF.Room.setReady(refit.id); }).catch(function () { self._refitPick = null; });
+            FF.UI.toast(pickDef.room.refitText ? pickDef.room.refitText(fitted, players.length) : FF.t('rmSettingsFit', 'The settings changed to fit the players here.'), { duration: 4000 });
+          }
+        }
 
         // Room name (host can rename), save for later, and leave: on every step.
         var head = FF.ui.div('rm-roomhead');
@@ -1127,6 +1246,8 @@ window.FF = window.FF || {};
           body.appendChild(FF.ui.el('h3', { class: 'rm-subtitle' }, FF.t('whosHere', 'Who’s here ({n} of {max})', { n: players.length, max: FF.Room.MAX_PLAYERS })));
           body.appendChild(lobbyChips(players, s.uid));
           if (players.length < 2) body.appendChild(FF.ui.el('p', { class: 'rm-hint rm-waitjoin' }, FF.t('rmWaitingJoin', 'Waiting for friends to join…')));
+          var findInvite = findPlayersButton(s, players, chosen || (pick && pick.gameId));
+          if (findInvite) body.appendChild(findInvite);
           body.appendChild(stepNav(null, FF.t('rmNextVoice', 'Next: voice and watching')));
         } else if (stepKey === 'voice') {
           stepTitle(FF.t('rmVoiceTitle', 'Voice chat and watching'), FF.t('rmVoiceHint', 'Both are optional. You can skip this step.'));
@@ -1169,42 +1290,13 @@ window.FF = window.FF || {};
             stepTitle(FF.t('settingsForAll', 'Settings for everyone'), null);
             body.appendChild(pickedCard(def, function () { goStep(3); }));
             var opts = FF.ui.el('section', { class: 'settings-section', id: 'rm-settings' });
-            opts.appendChild(settingRow(FF.t('difficulty', 'Difficulty'), segs([['Easy', 'easy'], ['Normal', 'normal'], ['Hard', 'hard']], 'difficulty', FF.t('difficulty', 'Difficulty'))));
-            // How long the game runs: a number of questions, a game clock, or
-            // both (it ends at whichever comes first). Presets plus Custom.
-            var summary = FF.ui.el('p', { class: 'rm-length-summary', 'aria-live': 'polite' }, lengthSummary(rs));
-            var resum = function () { summary.textContent = lengthSummary(rs); };
-            opts.appendChild(settingRow(FF.t('timeToAnswer', 'Time to answer'), FF.SettingsUI.duration(rs.timer, function (v) { rs.timer = v; resum(); }, {
-              allowOff: true, alwaysCustom: true, label: FF.t('timeToAnswer', 'Time to answer'),
-              presets: [
-                { label: FF.t('noLimit', 'No limit'), value: 0 },
-                { label: '10s', value: 10 }, { label: '20s', value: 20 },
-                { label: '30s', value: 30 }, { label: '1m', value: 60 }
-              ]
-            })));
-            opts.appendChild(settingRow(FF.t('numQuestions', 'Number of questions'), FF.SettingsUI.count(rs.questions, function (v) { rs.questions = v; resum(); }, {
-              label: FF.t('numQuestions', 'Number of questions'), min: 1, max: 100,
-              unit: FF.t('questionsUnit', 'questions'), placeholder: 12,
-              presets: [
-                { label: FF.t('usual', 'Usual'), value: 0 },
-                { label: '5', value: 5 }, { label: '10', value: 10 },
-                { label: '15', value: 15 }, { label: '20', value: 20 }
-              ]
-            })));
-            opts.appendChild(settingRow(FF.t('gameClock', 'Game clock'), FF.SettingsUI.duration(rs.clock, function (v) { rs.clock = v; resum(); }, {
-              allowOff: true, alwaysCustom: true, label: FF.t('gameClock', 'Game clock'),
-              presets: [
-                { label: FF.t('off', 'Off'), value: 0 },
-                { label: '2m', value: 120 }, { label: '5m', value: 300 },
-                { label: '10m', value: 600 }, { label: '15m', value: 900 }
-              ]
-            })));
-            opts.appendChild(summary);
+            if (def.room && def.room.fields) gameFields(opts, def, players.length);
+            else lengthFields(opts);
             body.appendChild(opts);
             body.appendChild(stepNav(null, FF.t('rmNextReady', 'Next: ready check'), publishPick, { icon: 'check' }));
           } else {
             stepTitle(FF.t('settingsForAll', 'Settings for everyone'), FF.t('rmHostSets', 'The host chooses these.'));
-            if (pick) body.appendChild(FF.ui.el('p', { class: 'rm-length-summary' }, lengthSummary(pick.settings || {})));
+            if (pick) body.appendChild(FF.ui.el('p', { class: 'rm-length-summary' }, pickSummary(pick.gameId, pick.settings)));
             else body.appendChild(FF.ui.el('p', { class: 'rm-hint' }, FF.t('waitingHost', 'Waiting for the host')));
             body.appendChild(stepNav(null, FF.t('next', 'Next')));
           }
@@ -1217,12 +1309,20 @@ window.FF = window.FF || {};
           } else {
             var readyN = players.filter(function (p) { return p.ready === pick.id; }).length;
             var all = readyN === players.length && players.length > 0;
-            stepTitle(all ? FF.t('rmAllReady', 'Everyone is ready!') : FF.t('rmReadyTitle', 'Ready check'),
-              all ? FF.t('rmStarting', 'Starting…') : FF.t('rmReadyCount', '{n} of {total} ready. The countdown starts when everyone is.', { n: readyN, total: players.length }));
+            var need = shortOf(pick.gameId, players);
+            if (need) {
+              stepTitle(FF.t('rmNeedPlayers', 'Waiting for more players'),
+                FF.t('rmNeedPlayersHint', '{game} needs at least {min} players. {n} here now.', { game: pickDef.name, min: need, n: players.length }));
+            } else {
+              stepTitle(all ? FF.t('rmAllReady', 'Everyone is ready!') : FF.t('rmReadyTitle', 'Ready check'),
+                all ? FF.t('rmStarting', 'Starting…') : FF.t('rmReadyCount', '{n} of {total} ready. The countdown starts when everyone is.', { n: readyN, total: players.length }));
+            }
             var mini = pickedCard(pickDef, s.isHost ? function () { goStep(3); } : null);
             mini.classList.add('rm-picked--mini');
             body.appendChild(mini);
-            body.appendChild(FF.ui.el('p', { class: 'rm-length-summary' }, lengthSummary(pick.settings || {})));
+            var findReady = findPlayersButton(s, players, pick.gameId);
+            if (findReady) body.appendChild(findReady);
+            body.appendChild(FF.ui.el('p', { class: 'rm-length-summary' }, pickSummary(pick.gameId, pick.settings)));
             body.appendChild(readyList(players, pick, s.uid));
             var me = players.filter(function (p) { return p.uid === s.uid; })[0];
             var amReady = !!me && me.ready === pick.id;
@@ -1408,7 +1508,7 @@ window.FF = window.FF || {};
           FF.ui.el('h1', { class: 'rm-count__game' }, def ? def.name : FF.t('getReady', 'Get ready')),
           stage,
           FF.ui.div('rm-hint', FF.t('startsTogether', 'Everyone starts together at zero.')),
-          FF.ui.div('rm-hint', lengthSummary(meta.settings)),
+          FF.ui.div('rm-hint', pickSummary(meta.gameId, meta.settings)),
           playerChips(FF.Room.presentPlayers(), s.uid)
         ]);
         wrap.classList.add('rm-count');

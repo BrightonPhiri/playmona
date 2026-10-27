@@ -589,6 +589,9 @@ window.FF = window.FF || {};
       if (!state.isHost) return Promise.reject(new Error('Only the room host can restart a game.'));
       var transport = state.transport;
       return transport.set('rounds', null).then(function () {
+        // The last game's chat (Imposters) does not carry into the next one.
+        return transport.set('chat', null).catch(function () {});
+      }).then(function () {
         return transport.update('meta', {
           seed: FF.Random.newSeed(),
           status: 'lobby',

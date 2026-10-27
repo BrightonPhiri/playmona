@@ -278,6 +278,39 @@ class Db
             output TEXT NOT NULL,
             created_at BIGINT NOT NULL
         )$engine");
+        // Imposters: one row per match the server started, and each seat's record once it ends.
+        // The live match (secrets, ballots) is in Firebase's server-only paths, not here.
+        $this->pdo->exec("CREATE TABLE IF NOT EXISTS imposter_matches (
+            id VARCHAR(32) NOT NULL PRIMARY KEY,
+            room_code VARCHAR(12) NOT NULL,
+            host_uid VARCHAR(128) NOT NULL,
+            mode VARCHAR(8) NOT NULL,
+            difficulty VARCHAR(8) NOT NULL,
+            players INTEGER NOT NULL,
+            imposters INTEGER NOT NULL,
+            rounds INTEGER NOT NULL,
+            pair_id VARCHAR(80) NULL,
+            status VARCHAR(12) NOT NULL,
+            winner VARCHAR(8) NULL,
+            rounds_played INTEGER NULL,
+            majority_word VARCHAR(40) NULL,
+            minority_word VARCHAR(40) NULL,
+            created_at BIGINT NOT NULL,
+            ended_at BIGINT NULL
+        )$engine");
+        $this->pdo->exec("CREATE TABLE IF NOT EXISTS imposter_seats (
+            match_id VARCHAR(32) NOT NULL,
+            uid VARCHAR(128) NOT NULL,
+            crew_id VARCHAR(32) NULL,
+            side VARCHAR(8) NOT NULL,
+            out_round INTEGER NOT NULL DEFAULT 0,
+            correct_votes INTEGER NOT NULL DEFAULT 0,
+            clues INTEGER NOT NULL DEFAULT 0,
+            points INTEGER NOT NULL DEFAULT 0,
+            won INTEGER NOT NULL DEFAULT 0,
+            PRIMARY KEY (match_id, uid),
+            FOREIGN KEY (match_id) REFERENCES imposter_matches (id)
+        )$engine");
         // Columns added after the first release. Each fails harmlessly once it exists.
         foreach ([
             'ALTER TABLE orders ADD COLUMN mode VARCHAR(8) NULL',
@@ -309,6 +342,9 @@ class Db
             'CREATE INDEX blocks_blocked ON blocks (blocked)',
             'CREATE INDEX recent_owner ON recent_players (owner_uid, last_played_at)',
             'CREATE INDEX invites_to ON friend_invites (to_uid, expires_at)',
+            'CREATE INDEX imposters_room ON imposter_matches (room_code, created_at)',
+            'CREATE INDEX imposters_status ON imposter_matches (status, created_at)',
+            'CREATE INDEX imposter_seats_uid ON imposter_seats (uid)',
         ] as $sql) {
             try { $this->pdo->exec($sql); } catch (\PDOException $e) { /* already there */ }
         }

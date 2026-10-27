@@ -138,31 +138,56 @@ class Matchmaker
 
         [$lo, $hi] = $s['crewPerMatch'];
         $want = random_int($lo, $hi);
+        $seated = $this->seatCrew($t['room_code'], $t['uid'], $game, $t['difficulty'], $want, $now,
+            function (Db $db, string $matchId) use ($t, $game) {
+                $fresh = $db->one("SELECT status FROM match_tickets WHERE id = ?" . $db->forUpdate(), [$t['id']]);
+                if (!$fresh || $fresh['status'] !== 'waiting') return false;
+                $db->run(
+                    "UPDATE match_tickets SET status = 'matched', match_id = ?, match_room = room_code, match_game = ? WHERE id = ?",
+                    [$matchId, $game, $t['id']]
+                );
+                return true;
+            },
+            function () use ($t) {
+                $this->db->run("UPDATE match_tickets SET status = 'waiting', match_id = NULL, match_room = NULL, match_game = NULL WHERE id = ?", [$t['id']]);
+            }
+        );
+        return (bool) $seated;
+    }
+
+    /**
+     * Seats up to $count crew players in a room as a match of their own, which the runner plays.
+     * Used by the Quick Match fallback and by "Find PlayMona players" in a room.
+     * $claim(Db, matchId) runs inside the transaction and may return false to call it all off;
+     * $undo() runs if the room could not be written. Returns the players seated ([] for none).
+     */
+    public function seatCrew(string $room, string $hostUid, string $game, string $difficulty, int $count, int $now, ?callable $claim = null, ?callable $undo = null): array
+    {
+        if ($count < 1) return [];
         $matchId = newId('m');
-        $seated = $this->db->transaction(function (Db $db) use ($t, $game, $want, $matchId, $now) {
-            $fresh = $db->one("SELECT status FROM match_tickets WHERE id = ?" . $db->forUpdate(), [$t['id']]);
-            if (!$fresh || $fresh['status'] !== 'waiting') return [];
-            $db->run(
-                "INSERT INTO matches (id, game_id, difficulty, room_code, host_uid, crew_count, status, created_at) VALUES (?, ?, ?, ?, ?, 0, 'active', ?)",
-                [$matchId, $game, $t['difficulty'], $t['room_code'], $t['uid'], $now]
-            );
-            $players = $this->crew->reserve($db, $matchId, $game, $t['difficulty'], $want, $now);
-            if (!$players) {
-                $db->run("UPDATE matches SET status = 'failed', ended_at = ? WHERE id = ?", [$now, $matchId]);
-                return [];
-            }
-            $db->run('INSERT INTO match_seats (match_id, uid, joined_at) VALUES (?, ?, ?)', [$matchId, $t['uid'], $now]);
-            foreach ($players as $p) {
-                $db->run('INSERT INTO match_seats (match_id, uid, crew_id, joined_at) VALUES (?, ?, ?, ?)', [$matchId, $p['uid'], $p['id'], $now]);
-            }
-            $db->run('UPDATE matches SET crew_count = ? WHERE id = ?', [count($players), $matchId]);
-            $db->run(
-                "UPDATE match_tickets SET status = 'matched', match_id = ?, match_room = room_code, match_game = ? WHERE id = ?",
-                [$matchId, $game, $t['id']]
-            );
-            return $players;
-        });
-        if (!$seated) return false;
+        try {
+            $seated = $this->db->transaction(function (Db $db) use ($room, $hostUid, $game, $difficulty, $count, $matchId, $now, $claim) {
+                $db->run(
+                    "INSERT INTO matches (id, game_id, difficulty, room_code, host_uid, crew_count, status, created_at) VALUES (?, ?, ?, ?, ?, 0, 'active', ?)",
+                    [$matchId, $game, $difficulty, $room, $hostUid, $now]
+                );
+                $players = $this->crew->reserve($db, $matchId, $game, $difficulty, $count, $now);
+                if (!$players) {
+                    $db->run("UPDATE matches SET status = 'failed', ended_at = ? WHERE id = ?", [$now, $matchId]);
+                    return [];
+                }
+                $db->run('INSERT INTO match_seats (match_id, uid, joined_at) VALUES (?, ?, ?)', [$matchId, $hostUid, $now]);
+                foreach ($players as $p) {
+                    $db->run('INSERT INTO match_seats (match_id, uid, crew_id, joined_at) VALUES (?, ?, ?, ?)', [$matchId, $p['uid'], $p['id'], $now]);
+                }
+                $db->run('UPDATE matches SET crew_count = ? WHERE id = ?', [count($players), $matchId]);
+                if ($claim && !$claim($db, $matchId)) throw new CallOff();
+                return $players;
+            });
+        } catch (CallOff $e) {
+            return [];
+        }
+        if (!$seated) return [];
 
         // Seat them in the room the way a phone joining would, a moment after the host.
         try {
@@ -173,20 +198,20 @@ class Matchmaker
                     'joinedAt' => $now + $i + 1, 'lastSeen' => $now, 'online' => true, 'away' => false,
                 ];
             }
-            $this->rtdb->update('rooms/' . $t['room_code'], $values);
+            $this->rtdb->update('rooms/' . $room, $values);
             $this->rtdb->set('crewRuns/' . $matchId, [
-                'roomCode' => $t['room_code'], 'gameId' => $game, 'difficulty' => $t['difficulty'],
-                'hostUid' => $t['uid'], 'createdAt' => $now, 'maxGames' => $this->crew->settings()['maxGamesPerMatch'],
+                'roomCode' => $room, 'gameId' => $game, 'difficulty' => $difficulty,
+                'hostUid' => $hostUid, 'createdAt' => $now, 'maxGames' => $this->crew->settings()['maxGamesPerMatch'],
                 'crew' => array_combine(array_column($seated, 'uid'), array_map(fn ($p) => $this->crew->runSheet($p), $seated)),
             ]);
         } catch (\Throwable $e) {
             error_log('PlayMona Quick Match: could not seat crew: ' . $e->getMessage());
             $this->endMatch($matchId, 'failed', $now);
-            $this->db->run("UPDATE match_tickets SET status = 'waiting', match_id = NULL, match_room = NULL, match_game = NULL WHERE id = ?", [$t['id']]);
-            return false;
+            if ($undo) $undo();
+            return [];
         }
         $this->runner->ensure($now);
-        return true;
+        return $seated;
     }
 
     /* ---------- reports from the runner ---------- */
@@ -295,3 +320,6 @@ class Matchmaker
         return $out;
     }
 }
+
+/** Thrown inside seatCrew's transaction when the caller's claim fails, so it all rolls back. */
+final class CallOff extends \RuntimeException {}

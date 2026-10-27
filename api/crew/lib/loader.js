@@ -21,7 +21,14 @@ const FILES = [
   'js/crew/brains/quiz.js',
   'js/crew/brains/reaction.js',
   'js/crew/brains/letterRush.js',
-  'js/crew/controller.js'
+  'js/crew/controller.js',
+  // Imposters: the referee the runner hosts, and how crew seats play it.
+  'js/imposters/rules.js',
+  'js/imposters/client.js',
+  'js/imposters/modes/word.js',
+  'js/imposters/modes/number.js',
+  'js/imposters/referee.js',
+  'js/crew/brains/imposters.js'
 ];
 
 function stubElement() {

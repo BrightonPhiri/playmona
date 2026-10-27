@@ -34,7 +34,7 @@ const avgMs = (plans) => { const v = plans.filter((p) => p && p.answer.ms != nul
 
 test('crew brains: every online game has a brain', function () {
   const games = onlineGames();
-  assertEqual(games.length, 22);
+  assertEqual(games.length, 23);
   games.forEach((g) => assert(B.forGame(g), 'no brain for ' + g));
 });
 

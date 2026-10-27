@@ -62,6 +62,6 @@ return [
     // Games sold one at a time: id => name, price in cents and (optional) a picture for
     // Linkwa's payment page. Plus plan prices are set in the admin portal (Finances).
     'premium_games' => [
-        // 'imposter' => ['name' => 'Imposter', 'cents' => 199, 'image' => '/assets/images/covers/imposter.jpg'],
+        // 'imposters' => ['name' => 'Imposters', 'cents' => 199, 'image' => '/assets/images/covers/imposters.webp'],
     ],
 ];

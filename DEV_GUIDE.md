@@ -340,6 +340,32 @@ Prefer a light rounded background so illustrations look good in dark mode.
 
 Write the file now. Be complete and generous with content — quality and quantity both matter.
 
+## Games with secrets (server-run, like Imposters)
+
+Most room games deal the same content on every phone from the room seed, and anyone in the room
+can read everything under `rooms/<code>`. A game with **hidden information** (a secret word per
+player) cannot work that way. Imposters is the pattern to copy:
+
+- **The server starts it.** `def.room.start(room, pick)` calls `POST /api/imposters/start`
+  (`api/lib/Imposters.php`), which checks the host, the ready check, the player count and the
+  settings, then hands the match to the referee through the server-only `imposterRuns/<id>`.
+- **One referee per match** (`js/imposters/referee.js`) runs in the crew runner as the service
+  account. It deals, runs every phase on its own clock, checks every command, counts votes and
+  writes the results. Phones never decide anything.
+- **Public view vs. secrets.** The referee writes `rooms/<code>/imp` (no secrets until the end)
+  and `imposterSecrets/<code>/<uid>` (readable only by that player). Neither has a client write rule.
+- **Commands** go to `rooms/<code>/impInbox/<uid>/<id>`, once each, with the current `phaseId` and a
+  server timestamp. The referee drops stale, replayed or out-of-phase commands, and runs them one
+  at a time, so nothing happens twice.
+- **Content that would give the game away stays on the server** (the word pairs are in
+  `api/lib/ImposterWords.php`, never shipped to phones).
+- **A new mode** is a module in `js/imposters/modes/` implementing the interface described at the
+  top of `modes/word.js`. The lobby, voting, wins and AI seats work unchanged.
+- **Game-specific lobby settings:** a def's `room` object (`minPlayers`, `defaults`, `fields(gs, {players})`,
+  `sanitize(settings, n)`, `summary`, `refitText`, `start`, `findPlayers`) is drawn by `js/net/roomUI.js`.
+- **Dev rooms** have no server: `js/imposters/dev.js` runs the same referee in the host's tab
+  (secrets are not private there).
+
 ## Players, avatars and accounts (for game code)
 
 - Read players with `api.config.players` (the people **in** this game, as `FF.Players.get()`). Never

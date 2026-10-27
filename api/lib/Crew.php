@@ -22,7 +22,7 @@ class Crew
         'bibleQuiz', 'whereInWorld', 'mapChallenge', 'capitalChallenge', 'guessFlag',
         'guessCountry', 'guessLandmark', 'guessAnimal', 'guessFood', 'guessObject', 'guessSport',
         'guessVehicle', 'familyQuiz', 'trueOrFalse', 'guessWho', 'pictureQuiz', 'quickTap',
-        'colorReaction', 'letterRush', 'whatsMissing', 'numberChallenge', 'visualRiddle',
+        'colorReaction', 'letterRush', 'whatsMissing', 'numberChallenge', 'visualRiddle', 'imposters',
     ];
 
     public const TRAITS = ['competitiveness', 'friendliness', 'reaction', 'accuracy', 'risk', 'strategy', 'patience', 'consistency', 'social'];
