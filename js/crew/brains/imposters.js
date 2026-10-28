@@ -150,6 +150,17 @@ window.FF = window.FF || {};
       if (ctx.imp.final) return 0.35 + ctx.random() * 0.3;
       if (ctx.random() < 0.25 * patience) return -1;
       return 0.3 + patience * 0.4 + ctx.random() * 0.2;
+    },
+
+    /* Which way out of the talk to back: { type: 'callVote' | 'moreClues', at } or null.
+       Patient players want another clue round more often, most of all after round 1. */
+    discuss: function (ctx) {
+      var patience = ((ctx.persona && ctx.persona.patience) || 50) / 100;
+      if (!ctx.imp.final && ctx.random() < (ctx.imp.round <= 1 ? 0.35 : 0.15) + patience * 0.3) {
+        return { type: 'moreClues', at: 0.2 + ctx.random() * 0.4 };
+      }
+      var at = strategy.callVoteAt(ctx);
+      return at < 0 ? null : { type: 'callVote', at: at };
     }
   };
 
@@ -172,6 +183,23 @@ window.FF = window.FF || {};
     var off = null;
 
     function now() { return T.serverNow(); }
+
+    /* This seat's own secret for the match. One retry: the referee may still be writing it, and
+       a read that fails must never pass silently (a crew player would just never clue). */
+    function secretFor(uid, matchId) {
+      function read() {
+        return Promise.resolve().then(function () { return opts.secretOf(uid); }).then(function (s) {
+          return s && s.matchId === matchId ? s : null;
+        });
+      }
+      return read().catch(function (e) { log('imposters secret read failed for ' + uid + ': ' + (e && e.message)); return null; }).then(function (s) {
+        if (s) return s;
+        return new Promise(function (resolve) { opts.later(resolve, 1200); }).then(read).catch(function (e) {
+          log('imposters secret read failed again for ' + uid + ': ' + (e && e.message));
+          return null;
+        });
+      });
+    }
 
     function level(uid) {
       var sheet = opts.crew[uid] || {};
@@ -213,38 +241,41 @@ window.FF = window.FF || {};
           act(uid, imp, 1500 + random() * 3500, function (cur) { send(uid, cur, 'ready'); });
         } else if (imp.phase === 'clues' && !seat.submitted) {
           act(uid, imp, 4000 + random() * 9000, function (cur) {
-            opts.secretOf(uid).then(function (secret) {
-              if (!secret || secret.matchId !== cur.matchId) return;
+            secretFor(uid, cur.matchId).then(function (secret) {
+              if (!secret) { log('imposters: ' + uid + ' has no secret, so no clue'); return; }
+              if (!latest || latest.phaseId !== cur.phaseId) return;
               var c = strategy.word.clue({ imp: cur, uid: uid, secret: secret, level: lv, random: random, myClues: clues[uid] || [], isQuiet: opts.isQuiet });
-              if (!c) return;
+              if (!c) { log('imposters: ' + uid + ' found no clue to give'); return; }
               clues[uid] = (clues[uid] || []).concat([c.toLowerCase()]);
               send(uid, cur, 'clue', { clue: c });
-            });
+            }).catch(function (e) { log('imposters clue failed for ' + uid + ': ' + (e && e.message)); });
           });
         } else if (imp.phase === 'challenge' && !seat.submitted) {
           var key = uid + ':' + imp.matchId + ':' + imp.phaseId;
           if (done[key]) return;
           done[key] = true;
-          opts.secretOf(uid).then(function (secret) {
-            if (!secret || secret.matchId !== imp.matchId) return;
+          secretFor(uid, imp.matchId).then(function (secret) {
+            if (!secret) { log('imposters: ' + uid + ' has no target, so no stop'); return; }
             var aim = strategy.number.stopAt({ secret: secret, level: lv, random: random });
             opts.later(function () {
               if (!latest || latest.phaseId !== imp.phaseId) return;
               send(uid, latest, 'stop', { ms: aim });
             }, imp.goAt + aim - now());
           });
-        } else if (imp.phase === 'discuss' && !seat.wantsVote) {
-          var at = strategy.callVoteAt({ imp: imp, random: random, persona: sheet.persona });
-          if (at < 0) return;
+        } else if (imp.phase === 'discuss' && !seat.wantsVote && !seat.wantsClues) {
+          var key2 = uid + ':' + imp.matchId + ':' + imp.phaseId;
+          if (done[key2]) return;
+          var pick = strategy.discuss({ imp: imp, random: random, persona: sheet.persona });
+          if (!pick) { done[key2] = true; return; }
           var span = Math.max(0, imp.deadline - now());
-          act(uid, imp, span * at, function (cur) { send(uid, cur, 'callVote'); });
+          act(uid, imp, span * pick.at, function (cur) { send(uid, cur, pick.type); });
         } else if (imp.phase === 'vote' && !seat.voted) {
           act(uid, imp, 3000 + random() * 9000, function (cur) {
-            opts.secretOf(uid).then(function (secret) {
-              if (!secret || secret.matchId !== cur.matchId) return;
+            secretFor(uid, cur.matchId).then(function (secret) {
+              if (!secret) return;
               var target = strategy.vote({ imp: cur, uid: uid, secret: secret, level: lv, random: random });
               if (target) send(uid, cur, 'vote', { target: target });
-            });
+            }).catch(function (e) { log('imposters vote failed for ' + uid + ': ' + (e && e.message)); });
           });
         }
       });

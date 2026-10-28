@@ -523,7 +523,7 @@ window.FF = window.FF || {};
       if (over || !open || e.ctrlKey || e.metaKey || e.altKey) return;
       var target = e.target;
       if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return;
-      if (document.querySelector('.ff-dialog, .ffr-gate')) return;
+      if (document.querySelector('.ff-dialog')) return;
       var k = e.key;
       if (k === 'Enter') { e.preventDefault(); submit(); return; }
       if (k === 'Backspace') { e.preventDefault(); removeLast(); return; }

@@ -131,6 +131,10 @@ window.FF = window.FF || {};
     var autoScores = null;
 
     var client = C.create({ room: room, onChange: schedule });
+    // Set before the chat starts: its first count can arrive while it is being made.
+    var chatSheet = null;
+    var chatCount = 0;
+    var chatSeen = 0;
     var chat = FF.RoomChat.create({
       room: room,
       canSend: function () {
@@ -138,7 +142,8 @@ window.FF = window.FF || {};
         var ph = v.imp && v.imp.phase;
         return v.seated && v.alive && (ph === 'discuss' || ph === 'vote' || ph === 'elimination' || ph === 'ended');
       },
-      closedText: t('impChatClosed', 'The chat opens when everyone has given their clues.')
+      closedText: t('impChatClosed', 'The chat opens when everyone has given their clues.'),
+      onChange: function (n) { chatCount = n; if (chatSheet) chatSeen = n; updateChatButton(); }
     });
     var ticker = setInterval(tick, 200);
 
@@ -156,6 +161,7 @@ window.FF = window.FF || {};
       clearInterval(ticker);
       if (pending) clearTimeout(pending);
       if (autoScores) clearTimeout(autoScores);
+      if (chatSheet) chatSheet.close();
       client.stop();
       chat.destroy();
       if (FF.Race && FF.Race.end) { try { FF.Race.end(); } catch (e) { /* not running */ } }
@@ -191,6 +197,42 @@ window.FF = window.FF || {};
       FF.Race.describe({ kind: 'card', text: text }, null);
     }
 
+    /* ---------- chat: a floating button that opens it in a sheet ---------- */
+
+    function chatButton() {
+      var btn = FF.ui.el('button', { type: 'button', class: 'imp-chatfab', 'aria-haspopup': 'dialog' });
+      btn.appendChild(icon('chat'));
+      btn.appendChild(FF.ui.span('imp-chatfab__label', t('chatTitle', 'Chat')));
+      btn.appendChild(FF.ui.span('imp-chatfab__badge'));
+      btn.addEventListener('click', function () { FF.Audio.play('click'); openChat(); });
+      return btn;
+    }
+
+    function updateChatButton() {
+      var btn = root.querySelector('.imp-chatfab');
+      if (!btn) return;
+      var unread = chatSheet ? 0 : Math.max(0, chatCount - chatSeen);
+      var badge = btn.querySelector('.imp-chatfab__badge');
+      badge.textContent = unread > 9 ? '9+' : (unread ? String(unread) : '');
+      btn.classList.toggle('imp-chatfab--new', unread > 0);
+      btn.setAttribute('aria-label', unread
+        ? t('impChatUnread', 'Chat, {n} new', { n: unread })
+        : t('chatTitle', 'Chat'));
+    }
+
+    function openChat() {
+      if (chatSheet) return;
+      chatSeen = chatCount;
+      chat.refresh();
+      chatSheet = FF.UI.sheet({
+        title: t('chatTitle', 'Chat'), body: chat.el, className: 'imp-chatsheet',
+        onClose: function () { chatSheet = null; chatSeen = chatCount; updateChatButton(); }
+      });
+      chat.scrollToEnd();
+      chat.focus();
+      updateChatButton();
+    }
+
     /* ---------- drawing ---------- */
 
     function render() {
@@ -214,7 +256,6 @@ window.FF = window.FF || {};
       stage.appendChild(seatStrip(imp, v));
       var layout = FF.ui.div('imp-layout');
       var mainCol = FF.ui.div('imp-main');
-      var withChat = imp.phase === 'discuss' || imp.phase === 'vote' || imp.phase === 'elimination';
 
       if (!v.seated) mainCol.appendChild(FF.GameUI.feedback('info', t('impWatching', 'This game started without you. You can watch, and join the next one.')));
       else if (!v.alive && imp.phase !== 'ended') mainCol.appendChild(FF.GameUI.feedback('info', t('impYouAreOut', 'You were voted out. Watch how it ends: your secret stays hidden.')));
@@ -223,15 +264,11 @@ window.FF = window.FF || {};
       (screens[imp.phase] || function () {})(mainCol, imp, v, l);
 
       layout.appendChild(mainCol);
-      if (withChat) {
-        layout.classList.add('imp-layout--chat');
-        var side = FF.ui.div('imp-side');
-        chat.refresh();
-        side.appendChild(chat.el);
-        layout.appendChild(side);
-      }
       stage.appendChild(layout);
+      stage.appendChild(chatButton());
       root.appendChild(stage);
+      chat.refresh();
+      updateChatButton();
 
       if (local.draftEl && draft != null && draftPhase === imp.phaseId) local.draftEl.value = draft;
       if (focusId) {
@@ -285,14 +322,20 @@ window.FF = window.FF || {};
         var right = FF.ui.div('imp-head__side');
         right.appendChild(FF.ui.span('imp-head__round', t('impRoundOf', 'Round {n} of {total}', { n: imp.round, total: imp.rounds })));
         right.appendChild(prog);
-        var timer = FF.ui.el('div', { class: 'imp-timer', role: 'timer' });
-        timer.appendChild(icon('timer'));
-        timer.appendChild(FF.ui.span('imp-timer__text', ''));
-        right.appendChild(timer);
+        // The talk has no clock on screen: players move on with Vote now or More clues.
+        var timed = imp.phase !== 'discuss';
+        if (timed) {
+          var timer = FF.ui.el('div', { class: 'imp-timer', role: 'timer' });
+          timer.appendChild(icon('timer'));
+          timer.appendChild(FF.ui.span('imp-timer__text', ''));
+          right.appendChild(timer);
+        }
         head.appendChild(right);
-        var bar = FF.GameUI.meter(1);
-        bar.classList.add('imp-head__meter');
-        head.appendChild(bar);
+        if (timed) {
+          var bar = FF.GameUI.meter(1);
+          bar.classList.add('imp-head__meter');
+          head.appendChild(bar);
+        }
       }
       return head;
     }
@@ -304,16 +347,17 @@ window.FF = window.FF || {};
         var done = imp.phase === 'reveal' ? s.ready
           : (imp.phase === 'clues' || imp.phase === 'challenge') ? s.submitted
             : imp.phase === 'vote' ? s.voted
-              : imp.phase === 'discuss' ? s.wantsVote : false;
+              : imp.phase === 'discuss' ? (s.wantsVote || s.wantsClues) : false;
         var li = FF.ui.el('li', { class: 'imp-seat' + (s.alive ? '' : ' imp-seat--out') + (done ? ' imp-seat--done' : '') + (s.uid === v.uid ? ' imp-seat--me' : '') });
         li.appendChild(FF.Players.avatarEl(s, 'imp-seat__ava'));
         li.appendChild(FF.ui.span('imp-seat__name', s.name + (s.uid === v.uid ? ' ' + t('youTag', '(you)') : '')));
+        var moreClues = imp.phase === 'discuss' && s.wantsClues;
         var state = !s.alive ? t('impOut', 'Out')
-          : done ? (imp.phase === 'discuss' ? t('impWantsVote', 'Wants to vote') : t('impDone', 'Done'))
+          : done ? (imp.phase === 'discuss' ? (moreClues ? t('impWantsClues', 'More clues') : t('impWantsVote', 'Wants to vote')) : t('impDone', 'Done'))
             : '';
         if (state) {
           var tag = FF.ui.span('imp-seat__tag');
-          tag.appendChild(icon(!s.alive ? 'x' : (imp.phase === 'discuss' ? 'megaphone' : 'check')));
+          tag.appendChild(icon(!s.alive ? 'x' : (imp.phase === 'discuss' ? (moreClues ? 'pencil' : 'megaphone') : 'check')));
           tag.appendChild(document.createTextNode(state));
           li.appendChild(tag);
         }
@@ -556,20 +600,36 @@ window.FF = window.FF || {};
     function discussScreen(box, imp, v, l) {
       box.appendChild(board(imp));
       if (imp.final) box.appendChild(FF.GameUI.feedback('tip', t('impFinalRound', 'Last round. When the time is up, everyone votes.')));
+      var moreLabel = imp.mode === 'number' ? t('impMoreRound', 'Another round') : t('impMoreClues', 'More clues');
       if (v.seated && v.alive) {
-        var asked = v.me && v.me.wantsVote;
-        var btn = FF.UI.button(asked ? t('impAskedVote', 'You asked for a vote') : t('impVoteNow', 'Vote now'), {
-          class: 'btn-lg ' + (asked ? 'btn-soft' : 'btn-primary') + ' imp-votenow', icon: 'megaphone',
-          onClick: function () { if (asked) return; FF.Audio.play('select'); sendCmd(l, 'callVote'); }
+        var wantsVote = !!(v.me && v.me.wantsVote);
+        var wantsMore = !!(v.me && v.me.wantsClues);
+        var row = FF.ui.div('imp-actions' + (imp.final ? ' imp-actions--one' : ''));
+        // Your pick stays lit; the other button switches you over.
+        if (!imp.final) {
+          var more = FF.UI.button(moreLabel, {
+            class: 'btn-lg ' + (wantsMore ? 'btn-primary imp-actions__on' : 'btn-soft') + ' imp-actions__btn', icon: 'pencil',
+            onClick: function () { if (wantsMore) return; FF.Audio.play('select'); sendCmd(l, 'moreClues'); }
+          });
+          more.setAttribute('aria-pressed', wantsMore ? 'true' : 'false');
+          row.appendChild(more);
+        }
+        var vote = FF.UI.button(t('impVoteNow', 'Vote now'), {
+          class: 'btn-lg ' + (wantsVote || !wantsMore ? 'btn-primary' : 'btn-soft') + (wantsVote ? ' imp-actions__on' : '') + ' imp-actions__btn', icon: 'megaphone',
+          onClick: function () { if (wantsVote) return; FF.Audio.play('select'); sendCmd(l, 'callVote'); }
         });
-        btn.disabled = !!asked;
-        box.appendChild(btn);
+        vote.setAttribute('aria-pressed', wantsVote ? 'true' : 'false');
+        row.appendChild(vote);
+        box.appendChild(row);
+        var fb = feedbackFor(v, l);
+        if (fb) box.appendChild(fb);
         box.appendChild(peekButton(v));
       }
-      box.appendChild(FF.GameUI.note(t('impVoteNeed', '{n} of {need} players needed to start the vote. Otherwise {next} when the time is up.', {
-        n: imp.wantCount || 0, need: imp.need,
-        next: imp.final ? t('impVoteAnyway', 'the vote starts anyway') : (imp.mode === 'number' ? t('impNextTiming', 'another timing round starts') : t('impNextClues', 'another clue round starts'))
-      })));
+      box.appendChild(FF.GameUI.note(imp.final
+        ? t('impVoteNeedFinal', '{n} of {need} players want to vote. In the last round the vote starts anyway when the talk ends.', { n: imp.wantCount || 0, need: imp.need })
+        : t('impMoveOn', '{need} players need to agree. Vote now: {votes}. {more}: {clues}.', {
+          need: imp.need, votes: imp.wantCount || 0, clues: imp.moreCount || 0, more: moreLabel
+        })));
     }
 
     /* ---------- voting ---------- */
@@ -648,8 +708,11 @@ window.FF = window.FF || {};
     function endedScreen(box, imp, v) {
       var res = imp.result || {};
       var seats = C.seats(imp, players());
-      var mine = res.sides ? res.sides[v.uid] : null;
+      var sides = res.sides || {};
+      var mine = sides[v.uid] || null;
       var won = mine && mine === res.winner;
+      var nameOf = function (u) { var s = seats.filter(function (x) { return x.uid === u; })[0]; return s ? s.name : '?'; };
+
       var banner = FF.ui.div('imp-win imp-win--' + (res.winner || 'majority'));
       banner.appendChild(icon(res.winner === 'minority' ? 'detective' : 'trophy'));
       banner.appendChild(FF.GameUI.prompt(res.winner === 'minority' ? t('impMinorityWins', 'The imposters win!') : t('impMajorityWins', 'The majority wins!'), 'xl'));
@@ -657,79 +720,71 @@ window.FF = window.FF || {};
       box.appendChild(banner);
       if (!local.cheered) { local.cheered = true; FF.Audio.play(won ? 'streak' : 'roundEnd'); }
 
+      // Who the imposters were, before anything else.
+      var imposters = seats.filter(function (s) { return sides[s.uid] === 'minority'; });
+      var reveal = FF.ui.el('section', { class: 'imp-reveal' });
+      reveal.appendChild(FF.ui.el('h3', { class: 'imp-reveal__title' }, imposters.length > 1 ? t('impTheyWere', 'The imposters were') : t('impItWas', 'The imposter was')));
+      var faces = FF.ui.el('ul', { class: 'imp-reveal__list' });
+      imposters.forEach(function (s) {
+        var li = FF.ui.el('li', { class: 'imp-reveal__who' });
+        li.appendChild(FF.Players.avatarEl(s, 'imp-reveal__ava'));
+        li.appendChild(FF.ui.span('imp-reveal__name', s.name + (s.uid === v.uid ? ' ' + t('youTag', '(you)') : '')));
+        if (res.words && res.assignments) li.appendChild(FF.ui.span('imp-chip imp-chip--imp', res.assignments[s.uid]));
+        faces.appendChild(li);
+      });
+      reveal.appendChild(faces);
       if (res.words) {
-        box.appendChild(FF.GameUI.sub(t('impWordsWere', 'Most players had “{maj}”. The imposters had “{min}”.', { maj: res.words.majority, min: res.words.minority })));
-      } else if (res.targets) {
-        var lines = Object.keys(res.targets).sort().map(function (k) {
-          var tg = res.targets[k];
-          return t('impTargetsWere', 'Round {n}: most aimed for {maj}, the imposters for {min}.', { n: k.slice(1), maj: targetText(tg.majority), min: targetText(tg.minority) });
-        });
+        reveal.appendChild(FF.GameUI.sub(t('impWordsWere', 'Most players had “{maj}”. The imposters had “{min}”.', { maj: res.words.majority, min: res.words.minority })));
+      }
+      box.appendChild(reveal);
+
+      if (res.targets) {
         var tl = FF.ui.el('ul', { class: 'imp-targets' });
-        lines.forEach(function (x) { tl.appendChild(FF.ui.el('li', null, x)); });
+        Object.keys(res.targets).sort().forEach(function (k) {
+          var tg = res.targets[k];
+          tl.appendChild(FF.ui.el('li', null, t('impTargetsWere', 'Round {n}: most aimed for {maj}, the imposters for {min}.', { n: k.slice(1), maj: targetText(tg.majority), min: targetText(tg.minority) })));
+        });
         box.appendChild(tl);
       }
 
-      var groups = FF.ui.div('imp-groups');
-      ['majority', 'minority'].forEach(function (side) {
-        var g = FF.ui.el('section', { class: 'imp-group imp-group--' + side });
-        g.appendChild(FF.ui.el('h3', { class: 'imp-group__title' }, side === 'minority' ? t('impTheImposters', 'The imposters') : t('impTheMajority', 'The majority')));
-        var ul = FF.ui.el('ul', { class: 'imp-group__list' });
-        seats.filter(function (s) { return res.sides && res.sides[s.uid] === side; }).forEach(function (s) {
-          var li = FF.ui.el('li', { class: 'imp-group__who' });
-          li.appendChild(FF.Players.avatarEl(s, 'imp-group__ava'));
-          li.appendChild(FF.ui.span('', s.name));
-          if (res.words && res.assignments) li.appendChild(FF.ui.span('imp-group__word', res.assignments[s.uid]));
-          ul.appendChild(li);
-        });
-        g.appendChild(ul);
-        groups.appendChild(g);
-      });
-      box.appendChild(groups);
+      // Everyone: their word, their side, and each vote they cast, right or wrong.
+      var voteKeys = Object.keys(res.ballots || {}).sort(function (a, b) { return Number(a.slice(1)) - Number(b.slice(1)); });
+      var list = FF.ui.el('section', { class: 'imp-recap' });
+      list.appendChild(FF.ui.el('h3', { class: 'imp-recap__title' }, t('impEveryone', 'Everyone’s word and vote')));
+      var ul = FF.ui.el('ul', { class: 'imp-recap__list' });
+      imposters.concat(seats.filter(function (s) { return sides[s.uid] !== 'minority'; })).forEach(function (s) {
+        var isImp = sides[s.uid] === 'minority';
+        var li = FF.ui.el('li', { class: 'imp-recap__row' + (isImp ? ' imp-recap__row--imp' : '') + (s.uid === v.uid ? ' imp-recap__row--me' : '') });
+        var top = FF.ui.div('imp-recap__top');
+        top.appendChild(FF.Players.avatarEl(s, 'imp-recap__ava'));
+        top.appendChild(FF.ui.span('imp-recap__name', s.name + (s.uid === v.uid ? ' ' + t('youTag', '(you)') : '')));
+        if (res.words && res.assignments) top.appendChild(FF.ui.span('imp-chip' + (isImp ? ' imp-chip--imp' : ''), res.assignments[s.uid]));
+        if (isImp) top.appendChild(FF.ui.span('imp-recap__side', t('impImposter', 'Imposter')));
+        li.appendChild(top);
 
-      var history = Object.keys(res.ballots || {}).sort(function (a, b) { return Number(a.slice(1)) - Number(b.slice(1)); });
-      if (history.length) {
-        var hist = FF.ui.el('section', { class: 'imp-history' });
-        hist.appendChild(FF.ui.el('h3', { class: 'imp-history__title' }, t('impHowVoted', 'How everyone voted')));
-        var nameOf = function (u) { var s = seats.filter(function (x) { return x.uid === u; })[0]; return s ? s.name : '?'; };
-        history.forEach(function (k) {
-          var rec = (imp.votes || {})[k] || {};
-          var ballots = res.ballots[k] || {};
-          var det = FF.ui.el('details', { class: 'imp-history__vote' });
-          var outText = rec.out ? t('impVoteOut', '{name} out', { name: nameOf(rec.out) }) : (rec.tied && rec.tied.length ? t('impVoteTie', 'tie') : t('impVoteNone', 'nobody out'));
-          det.appendChild(FF.ui.el('summary', null, t('impVoteN', 'Vote {n} (round {r}): {out}', { n: k.slice(1), r: rec.round || '?', out: outText })));
-          var ul = FF.ui.el('ul');
-          Object.keys(ballots).forEach(function (voter) {
-            ul.appendChild(FF.ui.el('li', null, t('impBallot', '{voter} voted for {target}', { voter: nameOf(voter), target: nameOf(ballots[voter]) })));
-          });
-          det.appendChild(ul);
-          hist.appendChild(det);
+        var votes = FF.ui.el('ul', { class: 'imp-recap__votes' });
+        voteKeys.forEach(function (k) {
+          var target = (res.ballots[k] || {})[s.uid];
+          if (!target) return;
+          var right = sides[target] === 'minority';
+          // Only the majority are out to catch someone; an imposter's vote is just shown.
+          var kind = isImp ? 'plain' : (right ? 'good' : 'bad');
+          var item = FF.ui.el('li', { class: 'imp-recap__vote imp-recap__vote--' + kind });
+          if (kind !== 'plain') item.appendChild(icon(right ? 'check' : 'x'));
+          item.appendChild(FF.ui.span('', voteKeys.length > 1
+            ? t('impVotedForN', 'Vote {n}: {name}', { n: k.slice(1), name: nameOf(target) })
+            : t('impVotedFor', 'Voted for {name}', { name: nameOf(target) })));
+          if (kind !== 'plain') item.appendChild(FF.ui.span('sr-only', right ? t('impRight', 'right') : t('impWrong', 'wrong')));
+          votes.appendChild(item);
         });
-        box.appendChild(hist);
-      }
-
-      var stats = res.stats || {};
-      var table = FF.ui.el('table', { class: 'imp-stats' });
-      table.appendChild(FF.ui.el('caption', { class: 'imp-board__caption' }, t('impStatsTitle', 'This game')));
-      var hr = FF.ui.el('tr');
-      [t('impPlayer', 'Player'), t('impPoints', 'Points'), t('impCorrectVotes', 'Good votes'), imp.mode === 'number' ? t('impStops', 'Stops') : t('impClues', 'Clues'), t('impLasted', 'Lasted')].forEach(function (h) {
-        hr.appendChild(FF.ui.el('th', { scope: 'col' }, h));
+        if (!votes.children.length) votes.appendChild(FF.ui.el('li', { class: 'imp-recap__vote imp-recap__vote--plain' }, t('impNoVote', 'Did not vote')));
+        var st = (res.stats || {})[s.uid] || {};
+        if (st.out) votes.appendChild(FF.ui.el('li', { class: 'imp-recap__vote imp-recap__vote--plain' }, t('impOutRound', 'Out in round {n}', { n: st.out })));
+        li.appendChild(votes);
+        ul.appendChild(li);
       });
-      table.appendChild(FF.ui.el('thead', null, [hr]));
-      var tb = FF.ui.el('tbody');
-      seats.slice().sort(function (a, b) { return ((stats[b.uid] || {}).points || 0) - ((stats[a.uid] || {}).points || 0); }).forEach(function (s) {
-        var st = stats[s.uid] || {};
-        var tr = FF.ui.el('tr', { class: s.uid === v.uid ? 'imp-stats__me' : '' });
-        tr.appendChild(FF.ui.el('th', { scope: 'row' }, s.name));
-        tr.appendChild(FF.ui.el('td', null, String(st.points || 0)));
-        tr.appendChild(FF.ui.el('td', null, String(st.correctVotes || 0)));
-        tr.appendChild(FF.ui.el('td', null, String(st.clues || 0)));
-        tr.appendChild(FF.ui.el('td', null, st.survived ? t('impToTheEnd', 'To the end') : t('impOutRound', 'Out in round {n}', { n: st.out || '?' })));
-        tb.appendChild(tr);
-      });
-      table.appendChild(tb);
-      var tw = FF.ui.div('imp-board');
-      tw.appendChild(table);
-      box.appendChild(tw);
+      list.appendChild(ul);
+      box.appendChild(list);
 
       box.appendChild(FF.GameUI.action(t('impSeeScores', 'See scores'), function () { FF.Audio.play('click'); finish(); }, { icon: 'trophy' }));
       if (!autoScores) autoScores = setTimeout(finish, AUTO_SCORES_MS);

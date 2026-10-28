@@ -204,3 +204,42 @@ test('crew imposters: crew seats play a whole match through the inbox and read o
   ctl.stop();
   ref.stop();
 });
+
+test('crew imposters: a failed secret read is retried, so the crew player still gives a clue', async function () {
+  const clock = makeClock(1000);
+  let cb = null;
+  const sent = [];
+  const T = {
+    serverNow: () => clock.now,
+    watch: (path, fn) => { cb = fn; return () => {}; },
+    set: (path, v) => { sent.push({ path, v }); return Promise.resolve(); }
+  };
+  let reads = 0;
+  const logs = [];
+  const seats = FF.CrewImposters.create({
+    transport: T, uids: ['c1'], crew: { c1: { skills: { imposters: { level: 'medium' } } } },
+    later: (fn, ms) => clock.setTimeout(fn, ms), log: (m) => logs.push(m), random: rnd(3),
+    secretOf: () => (++reads === 1 ? Promise.reject(new Error('read timed out')) : Promise.resolve({ word: 'Water', hints: PAIR.hintsA, shared: PAIR.shared, matchId: 'm' }))
+  });
+  seats.start();
+  cb({ matchId: 'm', phaseId: 2, phase: 'clues', round: 1, deadline: clock.now + 45000, order: ['c1', 'h'], seats: { c1: { alive: true }, h: { alive: true } }, board: {} });
+  await clock.advance(20000);
+  const clue = sent.filter((s) => s.v.type === 'clue');
+  assertEqual(clue.length, 1, 'one clue sent');
+  assertEqual(reads, 2);
+  assert(logs.some((m) => m.indexOf('read timed out') !== -1), 'the failure is logged');
+  seats.stop();
+});
+
+test('crew imposters: in the talk, crew back either a vote or another clue round, and never more clues in the last round', function () {
+  const kinds = { callVote: 0, moreClues: 0, none: 0 };
+  for (let i = 0; i < 200; i++) {
+    const p = S.discuss({ imp: { round: 1, final: false }, random: rnd(i + 1), persona: { patience: 50 } });
+    kinds[p ? p.type : 'none']++;
+  }
+  assert(kinds.callVote > 20 && kinds.moreClues > 20, JSON.stringify(kinds));
+  for (let i = 0; i < 100; i++) {
+    const p = S.discuss({ imp: { round: 4, final: true }, random: rnd(i + 1), persona: { patience: 90 } });
+    assertEqual(p.type, 'callVote');
+  }
+});
