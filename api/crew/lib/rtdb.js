@@ -122,26 +122,7 @@ class Rtdb {
     const self = this;
     log = log || function () {};
 
-    function apply(rel, data, merge) {
-      const parts = rel.split('/').filter(Boolean);
-      if (!parts.length) {
-        tree = merge && tree && typeof tree === 'object' ? Object.assign({}, tree, data) : data;
-        if (merge) Object.keys(data || {}).forEach((k) => { if (data[k] === null) delete tree[k]; });
-        return;
-      }
-      if (!tree || typeof tree !== 'object') tree = {};
-      let node = tree;
-      for (let i = 0; i < parts.length - 1; i++) {
-        if (!node[parts[i]] || typeof node[parts[i]] !== 'object') node[parts[i]] = {};
-        node = node[parts[i]];
-      }
-      const last = parts[parts.length - 1];
-      if (merge) {
-        node[last] = Object.assign({}, node[last] && typeof node[last] === 'object' ? node[last] : {}, data);
-        Object.keys(data || {}).forEach((k) => { if (data[k] === null) delete node[last][k]; });
-      } else if (data === null) delete node[last];
-      else node[last] = data;
-    }
+    function apply(rel, data, merge) { tree = applyEvent(tree, rel, data, merge); }
 
     async function open(url) {
       if (closed) return;
@@ -194,6 +175,40 @@ class Rtdb {
   }
 }
 
+/** Writes data at a path in the tree (null deletes it). Returns the tree, which may be a new object. */
+function putAt(tree, rel, data) {
+  const parts = String(rel || '').split('/').filter(Boolean);
+  if (!parts.length) return data;
+  if (!tree || typeof tree !== 'object') {
+    if (data === null) return tree;
+    tree = {};
+  }
+  let node = tree;
+  for (let i = 0; i < parts.length - 1; i++) {
+    if (!node[parts[i]] || typeof node[parts[i]] !== 'object') {
+      if (data === null) return tree;        // deleting under something that is not there
+      node[parts[i]] = {};
+    }
+    node = node[parts[i]];
+  }
+  const last = parts[parts.length - 1];
+  if (data === null) delete node[last];
+  else node[last] = data;
+  return tree;
+}
+
+/**
+ * Applies one stream event to the cached tree. A put replaces the data at path. A patch's keys
+ * are paths relative to it: a multi-path update such as { 'meta/status': 'playing' } arrives
+ * like that, and must land in tree.meta.status, not in a key called "meta/status".
+ */
+function applyEvent(tree, path, data, merge) {
+  if (!merge) return putAt(tree, path, data);
+  const base = String(path || '').replace(/\/+$/, '');
+  Object.keys(data || {}).forEach((k) => { tree = putAt(tree, base + '/' + k, data[k]); });
+  return tree;
+}
+
 /** One room as the transport interface js/net/transport.js defines (paths relative to the room). */
 function roomTransport(rtdb, code, serverNow, log) {
   const root = 'rooms/' + code;
@@ -227,4 +242,4 @@ function roomTransport(rtdb, code, serverNow, log) {
   };
 }
 
-module.exports = { Rtdb, tokenSource, roomTransport, request };
+module.exports = { Rtdb, tokenSource, roomTransport, request, applyEvent };
