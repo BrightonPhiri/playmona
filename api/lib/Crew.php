@@ -17,7 +17,18 @@ class Crew
 {
     public const SETTING = 'crew';
 
-    /** Must match ONLINE_GAMES in js/net/roomUI.js (a test compares them). */
+    /** Every game playable online: must match ONLINE_GAMES in js/net/roomUI.js (a test compares them). Live match pairs people on any of these. */
+    public const ONLINE_GAMES = [
+        'bibleQuiz', 'whereInWorld', 'mapChallenge', 'capitalChallenge', 'guessFlag',
+        'guessCountry', 'guessLandmark', 'guessAnimal', 'guessFood', 'guessObject', 'guessSport',
+        'guessVehicle', 'familyQuiz', 'trueOrFalse', 'guessWho', 'pictureQuiz', 'quickTap',
+        'colorReaction', 'letterRush', 'whatsMissing', 'numberChallenge', 'visualRiddle',
+        'higherOrLower', 'wordScramble', 'bibleWhoAmI', 'bibleVerseRush', 'memoryMatch', 'pictureMemory',
+        'rememberSequence', 'picturePuzzle', 'spotDifference', 'hiddenObject', 'wordBuilder', 'bibleBooks',
+        'wouldYouRather', 'thisOrThat', 'whoIsMostLikely', 'imposters',
+    ];
+
+    /** The online games crew can play (each has a brain in js/crew/brains). Crew are only seated in these. */
     public const GAMES = [
         'bibleQuiz', 'whereInWorld', 'mapChallenge', 'capitalChallenge', 'guessFlag',
         'guessCountry', 'guessLandmark', 'guessAnimal', 'guessFood', 'guessObject', 'guessSport',

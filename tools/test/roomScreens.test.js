@@ -202,7 +202,9 @@ test('room screens: everyone taps ready, then the countdown starts', async funct
 
   find(guest.main, 'rm-readybtn').dispatch('click');
   await tick(60);
-  assertEqual(host.FF.Room.current().meta.status, 'playing', 'everyone ready: the game starts');
+  assertEqual(host.FF.Room.current().meta.status, 'lobby', 'everyone ready: a 3 second pause first');
+  await tick(3100);
+  assertEqual(host.FF.Room.current().meta.status, 'playing', 'then the game starts');
   assertEqual(host.FF.Room.current().meta.gameId, 'familyQuiz');
   assert(!host.FF.Room.current().meta.pick, 'the ready check is cleared for next time');
   host.FF.Room.leave(); guest.FF.Room.leave();

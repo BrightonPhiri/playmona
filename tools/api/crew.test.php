@@ -79,11 +79,13 @@ test('crew: migrate twice keeps the data', function () {
     eq(3, count($w['crew']->all()));
 });
 
-// Crew only play games they have a brain for (js/crew/brains/*); newer online games join when theirs is written.
-test('crew: every crew game is one of the online games in roomUI.js', function () {
+// Live match pairs people on every online game; crew only play games they have a brain for (js/crew/brains/*).
+test('crew: the online games match roomUI.js, and every crew game is one of them', function () {
     preg_match('/var ONLINE_GAMES = \[(.*?)\];/s', (string) file_get_contents(__DIR__ . '/../../js/net/roomUI.js'), $m);
     preg_match_all("/'([A-Za-z]+)'/", preg_replace('#//.*#', '', $m[1]), $ids);
-    eq([], array_values(array_diff(Crew::GAMES, $ids[1])));
+    $a = $ids[1]; $b = Crew::ONLINE_GAMES; sort($a); sort($b);
+    eq($a, $b);
+    eq([], array_values(array_diff(Crew::GAMES, Crew::ONLINE_GAMES)));
     eq(count(Crew::GAMES), count(array_unique(Crew::GAMES)));
 });
 
@@ -213,7 +215,7 @@ test('match: only the host of a lobby room can queue, with an online game', func
     $w = crewWorld();
     openRoom($w, 'ABC234', 'alice');
     throwsHttp(403, fn () => $w['mm']->queue(human('bob'), false, ['gameId' => 'quickTap', 'roomCode' => 'ABC234'], 1));
-    throwsHttp(400, fn () => $w['mm']->queue(human('alice'), false, ['gameId' => 'memoryMatch', 'roomCode' => 'ABC234'], 1));
+    throwsHttp(400, fn () => $w['mm']->queue(human('alice'), false, ['gameId' => 'brainBattle', 'roomCode' => 'ABC234'], 1));
     throwsHttp(400, fn () => $w['mm']->queue(human('alice'), false, ['gameId' => 'quickTap', 'roomCode' => 'ABC234', 'difficulty' => 'insane'], 1));
     $w['rtdb']->data['rooms']['ABC234']['meta']['status'] = 'playing';
     throwsHttp(409, fn () => $w['mm']->queue(human('alice'), false, ['gameId' => 'quickTap', 'roomCode' => 'ABC234'], 1));
@@ -402,6 +404,28 @@ test('match: the Quick Match addresses work end to end', function () {
     eq('matched', $p->body['status'], 'an admin gets crew in admins-only mode');
     eq(200, $w['routes']->handle(req('POST', '/match/ticket/' . $id . '/cancel', ['token' => $tok]))->status);
     eq(200, $w['routes']->handle(req('POST', '/presence', ['token' => $tok]))->status);
+});
+
+test('match: people pair on a game crew cannot play, and crew never fill it', function () {
+    $w = crewWorld();
+    $w['crew']->seed(3);
+    crewSettings($w, ['fallbackSeconds' => 0]);
+    openRoom($w, 'AAAAAA', 'admin1');
+    $t = $w['mm']->queue(human('admin1'), true, ['gameId' => 'wouldYouRather', 'roomCode' => 'AAAAAA'], 1000);
+    eq('waiting', $t['status']);
+    eq('waiting', $w['mm']->ticket(human('admin1'), $t['ticket'], true, 50_000)['status'], 'no crew brain: keeps waiting');
+    openRoom($w, 'BBBBBB', 'bob');
+    $b = $w['mm']->queue(human('bob'), false, ['gameId' => 'wouldYouRather', 'roomCode' => 'BBBBBB'], 51_000);
+    eq('matched', $b['status']);
+    eq('AAAAAA', $b['roomCode']);
+});
+
+test('match: Live match counts the other people here, and marks this player here', function () {
+    $w = crewWorld();
+    $online = fn (string $uid) => $w['routes']->handle(req('GET', '/match/online', ['token' => idToken(['sub' => $uid, 'user_id' => $uid])]));
+    eq(0, $online('alice')->body['players']);
+    eq(1, $online('bob')->body['players'], 'alice is here');
+    eq(401, $w['routes']->handle(req('GET', '/match/online'))->status);
 });
 
 echo "\nFriends\n";

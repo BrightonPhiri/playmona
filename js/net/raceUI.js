@@ -9,6 +9,8 @@ window.FF = window.FF || {};
 (function () {
   'use strict';
 
+  var RESULT_MS = 1500;   // how long a round's result stays up in a room race
+
 
   /* A compact live scoreboard so every device shows the same standings. */
   function scoreboard() {
@@ -124,7 +126,8 @@ window.FF = window.FF || {};
       wrap.appendChild(FF.Advance.button(
         opts.isLast ? FF.t('seeResults', 'See results') : FF.t('next', 'Next'),
         opts.onNext || function () {},
-        { class: 'btn btn-lg' }
+        // A quick look at who got it, then straight on: no waiting between questions.
+        { class: 'btn btn-lg', ms: RESULT_MS }
       ));
 
       root.appendChild(wrap);

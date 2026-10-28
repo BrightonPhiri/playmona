@@ -52,7 +52,8 @@ test('crew brains: answers have exactly the fields a phone writes, and stay in t
   B.QUIZ_GAMES.forEach(function (g) {
     many(g, {}, 60).forEach(function (p) {
       if (!p) return;
-      assertEqual(Object.keys(p.answer).join(','), 'choice,correct,ms', g);
+      assertEqual(Object.keys(p.answer).join(','), g === 'bibleQuiz' ? 'choice,correct,ms,value' : 'choice,correct,ms', g);
+      if (g === 'bibleQuiz') assertEqual(p.answer.value > 0, p.answer.correct, 'a right Bible Quiz answer scores, as on a phone');
       assertEqual(typeof p.answer.correct, 'boolean');
       assert(p.answer.ms > 0 && p.answer.ms <= 20000 - 400, g + ' ms ' + p.answer.ms);
       assertEqual(p.atMs, p.answer.ms, 'answers when its time says');

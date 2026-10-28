@@ -850,9 +850,15 @@ window.FF = window.FF || {};
       }
 
       if (Object.keys(scores).length) {
-        // Past visitors of a saved room are not part of this game.
+        // Past visitors of a saved room are not part of this game; anyone who
+        // answered in it is, even with 0 points or a late heartbeat.
+        const played = {};
+        const all = rounds || room.rounds || {};
+        Object.keys(all).forEach(function (n) {
+          Object.keys((all[n] && all[n].answers) || {}).forEach(function (uid) { played[uid] = true; });
+        });
         return FF.Room.racePlayers().filter(function (p) {
-          return p.online || scores[p.uid] || p.uid === room.uid;
+          return p.online || scores[p.uid] || played[p.uid] || p.uid === room.uid;
         }).map(function (p) {
           return {
             id: p.uid,
