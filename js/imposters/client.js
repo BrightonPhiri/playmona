@@ -117,7 +117,7 @@ window.FF = window.FF || {};
       var s = (imp.seats && imp.seats[uid]) || {};
       return {
         uid: uid, name: p.name || FF.t('impPlayer', 'Player'), avatar: p.avatar || null, color: p.color || null,
-        alive: !!s.alive, ready: !!s.ready, submitted: !!s.submitted, voted: !!s.voted, wantsVote: !!s.wantsVote,
+        alive: !!s.alive, ready: !!s.ready, submitted: !!s.submitted, voted: !!s.voted, wantsVote: !!s.wantsVote, wantsClues: !!s.wantsClues,
         online: p.online !== false
       };
     });
@@ -149,6 +149,7 @@ window.FF = window.FF || {};
     out: ['impErrOut', 'You are out of this game. You can still watch.'],
     stale: ['impErrStale', 'Too late: the game moved on.'],
     early: ['impErrEarly', 'Wait for the clock to start.'],
+    final: ['impErrFinal', 'This is the last round: it ends in a vote.'],
     phase: ['impErrStale', 'Too late: the game moved on.'],
     bad: ['impErrStale', 'Too late: the game moved on.']
   };

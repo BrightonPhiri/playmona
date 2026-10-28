@@ -47,7 +47,7 @@ test('rules: a command is written once, by its sender, for this match, server-st
   assert(cmd['.write'].indexOf("child('imp').child('seats').child(auth.uid).exists()") !== -1, 'seated players only');
   assertEqual(cmd.t['.validate'], 'newData.isNumber() && newData.val() === now');
   assert(cmd.matchId['.validate'].indexOf("child('imp').child('matchId').val()") !== -1, 'the current match only');
-  assert(cmd.type['.validate'].indexOf('^(ready|clue|callVote|vote|stop)$') !== -1);
+  assert(cmd.type['.validate'].indexOf('^(ready|clue|callVote|moreClues|vote|stop)$') !== -1);
   assertEqual(cmd.$other['.validate'], false);
   assertEqual(room.impInbox['.write'], undefined);
   assertEqual(room.impInbox.$uid['.write'], undefined);
