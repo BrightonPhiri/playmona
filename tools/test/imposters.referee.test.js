@@ -252,6 +252,39 @@ test('referee: VOTE NOW needs more than half of the players still in', async fun
   m.ref.stop();
 });
 
+test('referee: MORE CLUES starts the next clue round once more than half ask, and switching sides moves the ask', async function () {
+  const m = await match({ players: 5 });
+  await m.readyAll(); await m.cluesAll();
+  await m.send('p1', 'moreClues');
+  await m.send('p2', 'moreClues');
+  await m.send('p3', 'callVote');
+  assertEqual(m.imp().moreCount, 2);
+  assertEqual(m.imp().wantCount, 1);
+  assertEqual(m.imp().seats.p3.wantsVote, true);
+  // p3 changes their mind: the vote ask goes, the third clue ask starts round 2.
+  await m.send('p3', 'moreClues');
+  assertEqual(m.imp().phase, 'clues');
+  assertEqual(m.imp().round, 2);
+  assertEqual(m.imp().moreCount, 0);
+  assertEqual(m.imp().seats.p3.wantsClues, false);
+  m.ref.stop();
+});
+
+test('referee: MORE CLUES is refused in the last round', async function () {
+  const m = await match({ players: 3, rounds: 3 });
+  for (let r = 0; r < 3; r++) {
+    if (m.imp().phase === 'reveal') await m.readyAll();
+    await m.cluesAll();
+    if (r < 2) await m.clock.advance(61000);
+  }
+  assertEqual(m.imp().phase, 'discuss');
+  assertEqual(m.imp().final, true);
+  await m.send('p1', 'moreClues');
+  assertEqual(m.feedback('p1').code, 'final');
+  assertEqual(m.imp().moreCount, 0);
+  m.ref.stop();
+});
+
 test('referee: no self votes, no double votes, and ballots stay private until the end', async function () {
   const m = await match({ players: 4 });
   await m.readyAll(); await m.cluesAll(); await m.callVote();

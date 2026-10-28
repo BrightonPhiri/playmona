@@ -37,7 +37,7 @@ window.FF = window.FF || {};
   var VOTE_MS = 30000;
   var ELIMINATION_MS = 5000;
   var PRESENCE_STALE_MS = 20000;   // as js/net/room.js
-  var TYPES = { ready: 'reveal', clue: 'clues', stop: 'challenge', callVote: 'discuss', vote: 'vote' };
+  var TYPES = { ready: 'reveal', clue: 'clues', stop: 'challenge', callVote: 'discuss', moreClues: 'discuss', vote: 'vote' };
 
   function has(obj, k) { return Object.prototype.hasOwnProperty.call(obj || {}, k); }
 
@@ -88,7 +88,7 @@ window.FF = window.FF || {};
         settings: settings, seats: seats, crew: run.crew || {},
         minority: R.chooseMinority(seats, settings.imposters, randomInt),
         alive: alive, phase: 'starting', phaseId: 0, round: 0, deadline: 0, goAt: 0,
-        ready: {}, subs: {}, wants: {}, board: {}, voteNo: 0, ballots: {}, allBallots: {},
+        ready: {}, subs: {}, wants: {}, more: {}, board: {}, voteNo: 0, ballots: {}, allBallots: {},
         candidates: [], revote: false, votes: {}, eliminated: [], pending: null, done: {}, result: null
       };
       mode.deal(s, run, ctx());
@@ -97,7 +97,7 @@ window.FF = window.FF || {};
 
     /* Firebase keeps no empty objects or arrays: put them back on a saved state. */
     function revive(s) {
-      ['alive', 'ready', 'subs', 'wants', 'board', 'ballots', 'allBallots', 'votes', 'done', 'crew', 'used', 'targets'].forEach(function (k) {
+      ['alive', 'ready', 'subs', 'wants', 'more', 'board', 'ballots', 'allBallots', 'votes', 'done', 'crew', 'used', 'targets'].forEach(function (k) {
         if (!s[k] || typeof s[k] !== 'object') s[k] = {};
       });
       ['seats', 'minority', 'candidates', 'eliminated'].forEach(function (k) {
@@ -165,6 +165,7 @@ window.FF = window.FF || {};
     function beginRound() {
       state.round++;
       state.wants = {};
+      state.more = {};
       var secretsNow = mode.secretsFor(state, state.round, ctx());
       if (secretsNow) {
         writeSecrets(secretsNow);
@@ -186,6 +187,7 @@ window.FF = window.FF || {};
       state.board['r' + state.round] = mode.close(state, state.subs);
       state.subs = {};
       state.wants = {};
+      state.more = {};
       go('discuss', now() + state.settings.discussSeconds * 1000);
     }
 
@@ -316,11 +318,22 @@ window.FF = window.FF || {};
           state.subs[uid] = res.value;
           return null;
         }
+        // Each player backs one way out of the talk: vote now, or another clue round.
         case 'callVote': {
           state.wants[uid] = true;
+          delete state.more[uid];
           var alive = aliveSeats();
           var n = alive.filter(function (u) { return state.wants[u]; }).length;
           if (n >= R.votesNeeded(alive.length)) openVote(alive, false);
+          return null;
+        }
+        case 'moreClues': {
+          if (isFinal()) return 'final';
+          state.more[uid] = true;
+          delete state.wants[uid];
+          var still = aliveSeats();
+          var m = still.filter(function (u) { return state.more[u]; }).length;
+          if (m >= R.votesNeeded(still.length)) beginRound();
           return null;
         }
         case 'vote': {
@@ -420,7 +433,8 @@ window.FF = window.FF || {};
           ready: !!state.ready[uid],
           submitted: has(state.subs, uid),
           voted: has(state.ballots, uid),
-          wantsVote: !!state.wants[uid]
+          wantsVote: !!state.wants[uid],
+          wantsClues: !!state.more[uid]
         };
       });
       var v = {
@@ -429,7 +443,7 @@ window.FF = window.FF || {};
         settings: state.settings, order: state.seats, seats: seats, board: state.board,
         voteNo: state.voteNo, revote: state.revote, candidates: state.candidates, final: isFinal(),
         votes: state.votes, eliminated: state.eliminated,
-        wantCount: Object.keys(state.wants).length, need: R.votesNeeded(aliveSeats().length)
+        wantCount: Object.keys(state.wants).length, moreCount: Object.keys(state.more).length, need: R.votesNeeded(aliveSeats().length)
       };
       if (state.phase === 'ended') v.result = state.result;
       return JSON.parse(JSON.stringify(v));

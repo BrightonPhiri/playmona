@@ -4,8 +4,11 @@
    where players talk things over, such as Imposters. Voice chat
    keeps working alongside it.
 
-     var chat = FF.RoomChat.create({ room: FF.Room.current(), canSend: fn });
+     var chat = FF.RoomChat.create({ room: FF.Room.current(), canSend: fn, onChange: fn(count) });
      parent.appendChild(chat.el); ... chat.destroy();
+
+   onChange is told how many messages there are each time they change,
+   so a game can show an unread badge while the chat is tucked away.
 
    Messages are one line, up to 120 characters, written once by
    their sender (database.rules.json checks that, and that an
@@ -112,12 +115,20 @@ window.FF = window.FF || {};
       note.textContent = ok ? '' : (opts.closedText || t('chatClosed', 'You can read the chat but not write.'));
     }
 
-    var off = T.watch('chat', function (v) { messages = v || {}; render(); });
+    var off = T.watch('chat', function (v) {
+      messages = v || {};
+      render();
+      if (opts.onChange) opts.onChange(Object.keys(messages).length);
+    });
     sync();
 
     return {
       el: el,
       refresh: sync,
+      count: function () { return Object.keys(messages).length; },
+      // After the chat is put back on screen (a list off screen cannot scroll).
+      scrollToEnd: function () { list.scrollTop = list.scrollHeight; seen = Object.keys(messages).length; },
+      focus: function () { if (canSend()) { try { input.focus({ preventScroll: true }); } catch (e) { /* gone */ } } },
       destroy: function () { if (off) off(); off = null; }
     };
   }

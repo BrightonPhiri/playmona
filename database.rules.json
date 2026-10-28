@@ -320,7 +320,7 @@
               ".write": "auth != null && $uid === auth.uid && !data.exists() && newData.exists() && !root.child('bans').child(auth.uid).exists() && root.child('rooms').child($code).child('imp').child('seats').child(auth.uid).exists()",
               ".validate": "$id.matches(/^[A-Za-z0-9_-]{6,40}$/) && newData.hasChildren(['type', 'matchId', 'phaseId', 't'])",
               "type": {
-                ".validate": "newData.isString() && newData.val().matches(/^(ready|clue|callVote|vote|stop)$/)"
+                ".validate": "newData.isString() && newData.val().matches(/^(ready|clue|callVote|moreClues|vote|stop)$/)"
               },
               "matchId": {
                 ".validate": "newData.isString() && newData.val() === root.child('rooms').child($code).child('imp').child('matchId').val()"
