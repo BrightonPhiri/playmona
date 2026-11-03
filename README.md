@@ -141,6 +141,11 @@ admins; the rules stop anyone making themselves one.
 - **Games**: on/off, guest access, access tier and free plays (used once payments arrive), New/Hot badges.
 - **Players**: search, recent and newest players, suspend and restore.
 - **Live rooms**: rooms open right now.
+- **Crew**: the server-run players who fill empty seats in Live match and Imposters. Who gets
+  them (off, admins only, everyone), stop new matches, limits and the difficulty mix, which games
+  they play, matches they are in (with End), and each crew player (add from a draft, edit
+  personality and skills, switch off). Also the optional AI providers used for fresher drafts.
+  Needs the PlayMona server, so it shows a note with device-only accounts.
 - **Site**: home-screen announcement, maintenance mode, which features guests may use.
 
 With device-only accounts (`devAuth`, or `file://`) the portal shows this browser's own test data.

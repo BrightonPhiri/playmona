@@ -183,7 +183,7 @@ class EngineRoutes
             'players' => array_map(fn ($p) => $p + ['totals' => $this->app->crew()->totals($p['id'])], $this->app->crew()->all()),
             'matches' => $this->app->matchmaker()->activeCrewMatches(),
             'runner' => ['alive' => $runner->alive($now)] + array_intersect_key($runner->state(), array_flip(['beatAt', 'startedAt', 'matches', 'spawnAt', 'stoppedAt'])),
-            'games' => Crew::GAMES, 'traits' => Crew::TRAITS,
+            'games' => Crew::GAMES, 'traits' => Crew::TRAITS, 'archetypes' => array_keys(Crew::ARCHETYPES),
             'humansOnline' => $this->app->matchmaker()->humansOnline('', $now),
         ]);
     }

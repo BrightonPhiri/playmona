@@ -20,6 +20,7 @@ window.FF = window.FF || {};
     { id: 'users', label: 'Players', icon: 'users' },
     { id: 'finance', label: 'Finances', icon: 'stack' },
     { id: 'rooms', label: 'Live rooms', icon: 'wifi' },
+    { id: 'crew', label: 'Crew', icon: 'users-three' },
     { id: 'site', label: 'Site', icon: 'gear' }
   ];
 

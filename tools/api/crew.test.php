@@ -635,6 +635,7 @@ test('admin: the crew page needs an admin and shows players, settings and the ru
     $o = $w['routes']->handle(req('GET', '/admin/crew', ['token' => $tok]));
     eq(2, count($o->body['players']));
     eq(false, $o->body['runner']['alive']);
+    eq(true, in_array('quizzer', $o->body['archetypes'], true), 'play styles for the draft picker');
     $s = $w['routes']->handle(req('POST', '/admin/crew/settings', ['token' => $tok, 'json' => ['mode' => 'everyone']]));
     eq('everyone', $s->body['settings']['mode']);
     $made = $w['routes']->handle(req('POST', '/admin/crew/player', ['token' => $tok, 'json' => ['displayName' => 'New One', 'username' => 'new_one', 'avatar' => 'fox']]));
