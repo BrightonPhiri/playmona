@@ -264,7 +264,7 @@ window.FF = window.FF || {};
       });
       wrap.appendChild(optionsWrap);
 
-      wrap.appendChild(FF.GameUI.note(FF.t('worldPoints', '{n} points for a right answer, plus {b} if you are quick.', { n: basePoints(api), b: SPEED_BONUS })));
+      wrap.appendChild(FF.ui.div('wld-points-note', FF.GameUI.note(FF.t('worldPoints', '{n} points for a right answer, plus {b} if you are quick.', { n: basePoints(api), b: SPEED_BONUS }))));
 
       root.appendChild(wrap);
       if (FF.Nav && FF.Nav.focusFirst) FF.Nav.focusFirst(root);
@@ -320,7 +320,7 @@ window.FF = window.FF || {};
         api.audio.play('wrong');
       }
       api.shell.updateScores(scorer.id);
-      renderFeedback(q, correct, points);
+      renderFeedback(q, correct, points, choiceIndex);
     }
 
     function renderRaceFeedback(q, payload) {
@@ -336,9 +336,19 @@ window.FF = window.FF || {};
       });
     }
 
-    function renderFeedback(q, correct, points) {
-      FF.ui.clear(root);
-      var wrap = FF.GameUI.stage({ className: 'wld-fb' });
+    // Keep the question on screen: mark the right answer and the player's pick, then add the result below.
+    function renderFeedback(q, correct, points, choiceIndex) {
+      var stage = root.querySelector('.wld-wrap') || root;
+      var buttons = stage.querySelectorAll('.wld-option');
+      Array.prototype.forEach.call(buttons, function (b, i) {
+        b.disabled = true;
+        if (i === q.answer) FF.GameUI.markOption(b, 'correct');
+        else if (i === choiceIndex) FF.GameUI.markOption(b, 'wrong');
+        else FF.GameUI.markOption(b, 'dim');
+      });
+      var note = stage.querySelector('.wld-points-note');
+      if (note) note.parentNode.removeChild(note);
+      var wrap = FF.ui.div('wld-fb');
 
       var result = FF.ui.el('h2', { class: 'wld-fb-result ' + (correct ? 'wld-correct' : 'wld-wrong'), role: 'status' });
       result.appendChild(FF.Icons.icon(correct ? 'check-circle' : 'x-circle'));
@@ -367,8 +377,8 @@ window.FF = window.FF || {};
       }, { class: 'btn btn-lg' });
       wrap.appendChild(next);
 
-      root.appendChild(wrap);
-      if (FF.Nav && FF.Nav.focusFirst) FF.Nav.focusFirst(root);
+      stage.appendChild(wrap);
+      if (FF.Nav && FF.Nav.focus) FF.Nav.focus(next);
     }
 
     renderRound();
