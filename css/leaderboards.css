@@ -1,0 +1,95 @@
+/* ============================================================
+   PLAYMONA — leaderboards.css
+   The Leaderboard page, the "top 20" celebration, the daily
+   challenge's game card and the phone's "More" sections sheet
+   (js/leaderboards.js, js/social.js, js/app.js). Board rows (.lb)
+   are in social.css.
+   ============================================================ */
+
+/* ---------- Leaderboard page ---------- */
+.lb-tabs { margin: var(--sp-4) 0 var(--sp-3); overflow-x: auto; scrollbar-width: none; }
+.lb-tabs::-webkit-scrollbar { display: none; }
+/* One row that scrolls sideways on phones, so a new board (leagues, tournaments) never squeezes the others. */
+.lb-tabs .seg { flex-wrap: nowrap; max-width: none; }
+.lb-tabs .seg__btn { flex: none; white-space: nowrap; }
+.lb-panel { display: flex; flex-direction: column; gap: var(--sp-3); }
+.lb-tools { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); }
+.lb-tools .btn { margin-left: auto; }
+.lb-caption { color: var(--muted); font-size: var(--fs-sm); font-weight: 700; margin: 0; }
+.lb-caption:empty { display: none; }
+.lb-picker { min-width: 0; flex: 1 1 12rem; max-width: 20rem; padding: 8px 10px; }
+.lb-chips { display: flex; gap: var(--sp-2); overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin; }
+.lb-chip { white-space: nowrap; flex: none; }
+
+.lb__row.is-highlight { box-shadow: 0 0 0 3px var(--accent); animation: lb-pulse 1.2s ease-out 2; }
+@keyframes lb-pulse { 0% { transform: scale(1); } 40% { transform: scale(1.02); } 100% { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .lb__row.is-highlight { animation: none; } }
+
+.lb-you {
+  display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; margin-top: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4); border-radius: var(--r-md); border: 1px dashed var(--accent); background: var(--accent-soft);
+}
+.lb-you__label { font-weight: 800; }
+.lb-you__score { font-family: var(--font-display); font-size: var(--fs-lg); font-weight: 600; font-variant-numeric: tabular-nums; }
+.lb-you__note { color: var(--muted); font-size: var(--fs-sm); font-weight: 700; flex: 1 1 12rem; }
+
+.lb-places { list-style: none; margin: 0 0 var(--sp-2); padding: 0; display: flex; gap: var(--sp-2); overflow-x: auto; padding-bottom: 4px; }
+.lb-place {
+  display: flex; align-items: center; gap: var(--sp-2); white-space: nowrap; cursor: pointer;
+  font: inherit; color: var(--text); padding: 8px 14px; border-radius: var(--r-pill);
+  background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-1);
+}
+.lb-place:hover { border-color: var(--accent); }
+.lb-place:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.lb-place__rank { color: var(--accent); font-family: var(--font-display); font-size: var(--fs-lg); }
+.lb-place__text { font-weight: 700; font-size: var(--fs-sm); }
+
+.lb-soon { align-items: center; text-align: center; }
+.lb-soon__icon { display: inline-flex; width: 56px; height: 56px; align-items: center; justify-content: center; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-size: 1.8rem; }
+.lb-soon__title { margin: 0; }
+.lb-soon__text { margin: 0; color: var(--muted); max-width: 32rem; }
+.lb-soon__badge { padding: 2px 12px; border-radius: var(--r-pill); background: var(--surface-3); color: var(--muted); font-size: var(--fs-xs); font-weight: 800; }
+
+/* ---------- The celebration ---------- */
+.lb-celebrate { display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--sp-2); }
+.lb-celebrate__badge {
+  display: inline-flex; width: 72px; height: 72px; align-items: center; justify-content: center; border-radius: 50%;
+  background: var(--warn-soft); color: var(--warn); font-size: 2.4rem;
+}
+.lb-celebrate__rank { margin: 0; font-family: var(--font-display); font-size: var(--fs-xl); font-weight: 600; }
+.lb-celebrate__line { margin: 0; font-weight: 700; }
+
+/* ---------- Game details: does this count? ---------- */
+.details__cta { flex-wrap: wrap; }
+.details__lb-note { flex: 1 1 100%; display: flex; align-items: center; justify-content: center; gap: 6px; margin: 0; color: var(--muted); font-size: var(--fs-sm); font-weight: 700; text-align: center; }
+.details__lb-note .icon-svg { color: var(--accent); flex: none; }
+
+/* ---------- Daily challenge: today's game ---------- */
+.daily-game { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-4); }
+.daily-game__cover {
+  aspect-ratio: 16 / 9; border-radius: var(--r-md); background: var(--wash, var(--surface-3));
+  background-image: var(--art), var(--wash, none); background-size: cover; background-position: center;
+}
+.daily-game__text { display: flex; flex-direction: column; gap: 4px; }
+.daily-game__kicker { color: var(--accent); font-size: var(--fs-xs); font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; }
+.daily-game__name { margin: 0; }
+.daily-game__cat { color: var(--muted); font-size: var(--fs-sm); font-weight: 700; }
+.daily-game__desc { margin: var(--sp-1) 0 0; }
+.daily-game > .social-rules, .daily-game > .btn, .daily-game > .social-done, .daily-game > .social-actions, .daily-game > .bill-loading { grid-column: 1 / -1; }
+.daily-game__yesterday { color: var(--muted); font-size: var(--fs-sm); font-weight: 700; margin: 0 0 var(--sp-4); }
+.daily-game__yesterday:empty { display: none; }
+@media (min-width: 720px) {
+  .daily-game { grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); align-items: center; }
+}
+
+/* ---------- Profile shortcuts and the phone's "More" sheet ---------- */
+.profile-shortcuts { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin: 0 0 var(--sp-3); }
+.more-nav { display: flex; flex-direction: column; gap: 4px; }
+.more-nav__item {
+  display: flex; align-items: center; gap: var(--sp-3); width: 100%; padding: 12px 14px; cursor: pointer;
+  font: inherit; font-weight: 700; color: var(--text); background: none; border: 0; border-radius: var(--r-md); text-align: left;
+}
+.more-nav__item .icon-svg { font-size: 1.3rem; color: var(--muted); }
+.more-nav__item:hover { background: var(--surface-2); }
+.more-nav__item.is-active, .more-nav__item.is-active .icon-svg { color: var(--accent); }
+.more-nav__item:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }

@@ -3,13 +3,14 @@
    Ways to play with other people that do not need everyone online
    at the same time:
 
-   - FF.Daily      one 10-question challenge a day, the same for
-                   everyone, with a daily leaderboard.
+   - FF.Daily      one game a day, the same for everyone, with a
+                   daily leaderboard. The game is picked by the
+                   server (api/cron.php) or FF.Leaderboards.dailyGame.
    - FF.Challenge  play 10 questions, send a link, a friend plays
                    the same questions and tries to beat your score.
 
-   Both use FF.QuizRun for the questions and FF.Cloud for shared
-   results. Guests can play; leaderboards need an account.
+   Challenges use FF.QuizRun for the questions; both use FF.Cloud for
+   shared results. Leaderboards need an account.
    ============================================================ */
 window.FF = window.FF || {};
 
@@ -22,7 +23,7 @@ window.FF = window.FF || {};
   };
   var icon = function (k) { return FF.Icons.icon(k); };
   var fmt = function (n) { return FF.util.formatNumber(n || 0); };
-  var MAX_SCORE = 1500;
+  var MAX_SCORE = 1500;          // challenges (10 questions)
 
   function me() {
     var p = (FF.Auth && FF.Auth.profile()) || {};
@@ -64,32 +65,15 @@ window.FF = window.FF || {};
   }
 
   // Ranked list of rows: [{ name, avatar, score, correct, ms, key }]
+  // The list itself lives in FF.Leaderboards; challenges show n/10 beside each score.
   function board(rows, myUid, opts) {
     opts = opts || {};
-    var list = FF.ui.el('ol', { class: 'lb' });
-    rows.forEach(function (r, i) {
-      var mine = r.key === myUid;
-      var li = FF.ui.el('li', { class: 'lb__row' + (mine ? ' is-me' : '') + (i < 3 ? ' lb__row--top' : '') });
-      var rank = FF.ui.span('lb__rank');
-      if (i < 3) { rank.classList.add('rank-medal', 'rank-medal--' + (i + 1)); rank.appendChild(icon('medal')); rank.appendChild(FF.ui.span('sr-only', String(i + 1))); }
-      else rank.textContent = String(i + 1);
-      li.appendChild(rank);
-      li.appendChild(FF.Players.avatarEl({ name: r.name, avatar: r.avatar }, 'lb__ava'));
-      var who = FF.ui.span('lb__name', r.name || t('player', 'Player'));
-      if (mine) who.appendChild(FF.ui.span('lb__you', t('you', 'You')));
-      li.appendChild(who);
-      if (opts.showCorrect !== false) li.appendChild(FF.ui.span('lb__meta', t('nOfTen', '{n}/10', { n: r.correct || 0 })));
-      li.appendChild(FF.ui.span('lb__score', fmt(r.score)));
-      list.appendChild(li);
+    return FF.Leaderboards.board(rows, myUid, {
+      meta: opts.showCorrect === false ? null : function (r) { return t('nOfTen', '{n}/10', { n: r.correct || 0 }); }
     });
-    return list;
   }
 
-  function sortRows(rows) {
-    return rows.filter(function (r) { return r && typeof r.score === 'number'; }).sort(function (a, b) {
-      return (b.score - a.score) || ((a.ms || 0) - (b.ms || 0)) || ((a.t || 0) - (b.t || 0));
-    });
-  }
+  function sortRows(rows) { return FF.Leaderboards.sortRows(rows); }
 
   function cloudNote(kind) {
     var n = FF.ui.div('social-note');
@@ -140,23 +124,45 @@ window.FF = window.FF || {};
       FF.Storage.set('dailyLog', log);
     },
 
+    // Today's game id (the same on every device).
+    game: function (key) { return FF.Leaderboards.dailyGame(key || this.key()); },
+
     start: function () {
       if (this.played()) { FF.Nav.go('daily'); return; }
+      if (this._starting) return;
       var key = this.key();
       var self = this;
-      // Starting uses up today's attempt, so a reload cannot restart it.
-      this._save(key, { started: true, score: 0, correct: 0, total: FF.QuizRun.COUNT, ms: 0, t: Date.now() });
-      var finish = function (r) {
-        self._save(key, { done: true, score: r.score, correct: r.correct, total: r.total, ms: r.ms, t: Date.now(), submitted: false });
-        addXp(20 + r.correct * 5, r.correct, r.total);
-        self.submit().then(function () { FF.Nav.go('daily'); }, function () { FF.Nav.go('daily'); });
-      };
-      FF.QuizRun.play({
-        title: t('dailyChallenge', 'Daily challenge'), icon: 'calendar',
-        questions: FF.QuizRun.build(this.seed(key), 'mixed'),
-        quitBody: t('dailyQuitBody', 'You get one try a day. Leaving now ends today’s challenge with the points you have so far.'),
-        onDone: finish, onQuit: finish
-      });
+      this._starting = true;
+      this.game(key).then(function (id) {
+        self._starting = false;
+        var def = id && FF.Games.get(id);
+        if (!def) {
+          FF.UI.toast(t('dailyNoGame', 'Today’s game is not in this version of PlayMona yet. Reload the page to update.'), { type: 'error' });
+          return;
+        }
+        // Starting uses up today's attempt, so a reload cannot restart it.
+        self._save(key, { started: true, game: id, score: 0, ms: 0, t: Date.now() });
+        FF.GameFlow.launch(id, { daily: key, skipIntro: true });
+      }, function () { self._starting = false; });
+    },
+
+    /* GameFlow calls this when the daily game ends, or is left early (the points so far count).
+       Resolves the player's place when it is inside the celebration threshold, else 0. */
+    finish: function (key, gameId, points, correct) {
+      var entry = this.log()[key];
+      if (!entry || entry.done) return Promise.resolve(0);
+      var done = { done: true, game: gameId, score: Math.max(0, Math.round(points || 0)), ms: Math.max(0, Date.now() - (entry.t || Date.now())), t: Date.now(), submitted: false };
+      if (typeof correct === 'number') done.correct = correct;
+      this._save(key, done);
+      if (key !== this.key()) return Promise.resolve(0);   // finished after midnight: too late for that board
+      return this.submit().then(function () {
+        var uid = me().uid;
+        if (!uid) return 0;
+        return FF.Leaderboards.rankIn('daily/' + key, uid, FF.Leaderboards.threshold()).then(function (rank) {
+          if (rank) FF.Leaderboards.remember('daily', { rank: rank, game: gameId, period: 'daily' });
+          return rank;
+        });
+      }).catch(function () { return 0; });
     },
 
     // Put today's score on the leaderboard (once). Retries next visit if offline.
@@ -166,9 +172,9 @@ window.FF = window.FF || {};
       if (!d || !d.done || d.submitted || !FF.Cloud.available()) return Promise.resolve();
       var who = me();
       var self = this;
-      return FF.Cloud.set('daily/' + key + '/' + who.uid, {
-        name: who.name, avatar: who.avatar, score: Math.min(MAX_SCORE, d.score), correct: d.correct, ms: Math.round(d.ms), t: d.t
-      }).then(function () {
+      var row = { name: who.name, avatar: who.avatar, score: Math.min(FF.Leaderboards.MAX_SCORE, d.score), ms: Math.round(d.ms || 0), t: d.t, game: d.game || 'quiz' };
+      if (typeof d.correct === 'number') row.correct = d.correct;
+      return FF.Cloud.set('daily/' + key + '/' + who.uid, row).then(function () {
         d.submitted = true; self._save(key, d);
       }).catch(function (e) {
         // Already on the board (a second device, say): nothing more to do.
@@ -182,7 +188,8 @@ window.FF = window.FF || {};
     },
 
     shareText: function (d) {
-      return t('dailyShare', 'PlayMona daily challenge {date}: {n}/10, {pts} points. Can you beat me?', { date: this.key(), n: d.correct, pts: fmt(d.score) });
+      var game = d.game && FF.Games.get(d.game) ? FF.Leaderboards.gameName(d.game) : t('dailyChallenge', 'Daily challenge');
+      return t('dailyShareGame', 'PlayMona daily challenge {date} ({game}): {pts} points. Can you beat me?', { date: this.key(), game: game, pts: fmt(d.score) });
     }
   };
 
@@ -342,44 +349,70 @@ window.FF = window.FF || {};
       var streak = D.streak();
       main.appendChild(backLink());
       main.appendChild(banner('calendar', 'blue', t('dailyChallenge', 'Daily challenge'),
-        t('dailySub', '10 questions, the same for everyone today. One try. New questions in {time}.', { time: untilText(D.msLeft()) })));
+        t('dailySubGame', 'One game, the same for everyone today. One try. A new game in {time}.', { time: untilText(D.msLeft()) })));
 
       var row = FF.ui.div('social-stats');
       row.appendChild(stat(String(streak), streak === 1 ? t('dayStreak1', 'day streak') : t('dayStreakN', 'day streak'), 'fire'));
       if (d && (d.done || d.started)) {
         row.appendChild(stat(fmt(d.score), t('points', 'Points'), 'star-fill'));
-        row.appendChild(stat(t('nOfTen', '{n}/10', { n: d.correct }), t('correctLabel', 'Correct'), 'check-circle'));
+        if (typeof d.correct === 'number') row.appendChild(stat(fmt(d.correct), t('correctLabel', 'Correct'), 'check-circle'));
       }
       main.appendChild(row);
 
-      if (!d) {
-        var card = FF.ui.el('section', { class: 'social-card' });
-        var rules = FF.ui.el('ul', { class: 'social-rules' });
-        [t('dailyRule1', '10 questions: quiz, true or false, flags and capitals.'),
-          t('dailyRule2', '15 seconds a question. Faster correct answers score more.'),
-          t('dailyRule3', 'One try a day. Everyone gets the same questions.')].forEach(function (r) {
-          var li = FF.ui.el('li', {});
-          li.appendChild(icon('check'));
-          li.appendChild(FF.ui.span('', r));
-          rules.appendChild(li);
-        });
-        card.appendChild(rules);
-        card.appendChild(FF.UI.button(t('startDaily', 'Start today’s challenge'), { class: 'btn-lg btn-primary btn-block', icon: 'play', onClick: function () { D.start(); } }));
-        main.appendChild(card);
-      } else {
-        var done = FF.ui.el('section', { class: 'social-card social-card--done' });
-        done.appendChild(FF.ui.el('p', { class: 'social-done' }, t('dailyDone', 'You have played today’s challenge. Come back in {time} for new questions.', { time: untilText(D.msLeft()) })));
-        var acts = FF.ui.div('social-actions');
-        acts.appendChild(FF.UI.button(t('shareResult', 'Share result'), { class: 'btn-primary', icon: 'share', onClick: function () {
-          shareOrCopy('PlayMona', D.shareText(d), siteUrl());
-        } }));
-        acts.appendChild(FF.UI.button(t('challengeFriend', 'Challenge a friend'), { icon: 'swords', onClick: function () { FF.Nav.go('challenges'); } }));
-        done.appendChild(acts);
-        main.appendChild(done);
-      }
+      // Today's game: cover, name and how to play, then Start (or the result).
+      var card = FF.ui.el('section', { class: 'social-card daily-game' });
+      card.appendChild(loadingRow());
+      main.appendChild(card);
+      var yesterday = FF.ui.el('p', { class: 'daily-game__yesterday' }, '');
+      main.appendChild(yesterday);
+      D.game(D.key()).then(function (id) {
+        FF.ui.clear(card);
+        var def = id && FF.Games.get(id);
+        if (!def) {
+          card.appendChild(FF.ui.el('p', { class: 'social-done' }, t('dailyNoGame', 'Today’s game is not in this version of PlayMona yet. Reload the page to update.')));
+          return;
+        }
+        var cat = FF.Categories && FF.Categories.meta ? FF.Categories.meta(def.category) : { name: def.category };
+        var cover = FF.ui.div('daily-game__cover');
+        cover.style.setProperty('--art', FF.Assets.artUrl('covers', def.id));
+        cover.style.setProperty('--wash', FF.Assets.wash(def.category));
+        card.appendChild(cover);
+        var text = FF.ui.div('daily-game__text');
+        text.appendChild(FF.ui.span('daily-game__kicker', t('dailyTodaysGame', 'Today’s game')));
+        text.appendChild(FF.ui.el('h2', { class: 'daily-game__name' }, FF.Leaderboards.gameName(def.id)));
+        text.appendChild(FF.ui.span('daily-game__cat', cat.name || def.category));
+        if (def.description) text.appendChild(FF.ui.el('p', { class: 'daily-game__desc' }, def.description));
+        card.appendChild(text);
+        if (!d) {
+          var rules = FF.ui.el('ul', { class: 'social-rules' });
+          (def.howToPlay || []).slice(0, 3).concat([t('dailyRuleOneTry', 'One try a day. Everyone plays the same game, with the same rounds.')]).forEach(function (r) {
+            var li = FF.ui.el('li', {});
+            li.appendChild(icon('check'));
+            li.appendChild(FF.ui.span('', r));
+            rules.appendChild(li);
+          });
+          card.appendChild(rules);
+          card.appendChild(FF.UI.button(t('startDaily', 'Start today’s challenge'), { class: 'btn-lg btn-primary btn-block', icon: 'play', onClick: function () { D.start(); } }));
+        } else {
+          card.classList.add('social-card--done');
+          card.appendChild(FF.ui.el('p', { class: 'social-done' }, t('dailyDoneGame', 'You have played today’s challenge. A new game comes in {time}.', { time: untilText(D.msLeft()) })));
+          var acts = FF.ui.div('social-actions');
+          acts.appendChild(FF.UI.button(t('shareResult', 'Share result'), { class: 'btn-primary', icon: 'share', onClick: function () {
+            shareOrCopy('PlayMona', D.shareText(d), siteUrl());
+          } }));
+          acts.appendChild(FF.UI.button(t('challengeFriend', 'Challenge a friend'), { icon: 'swords', onClick: function () { FF.Nav.go('challenges'); } }));
+          card.appendChild(acts);
+        }
+      });
+      var y = new Date();
+      y.setUTCDate(y.getUTCDate() - 1);
+      FF.Leaderboards.dailyGameOn(utcKey(y)).then(function (id) {
+        if (id && FF.Games.get(id)) yesterday.textContent = t('dailyYesterday', 'Yesterday: {game}', { game: FF.Leaderboards.gameName(id) });
+      });
 
       // Leaderboard
-      main.appendChild(FF.App.sectionHead(t('todaysLeaderboard', 'Today’s leaderboard')));
+      main.appendChild(FF.App.sectionHead(t('todaysLeaderboard', 'Today’s leaderboard'),
+        FF.UI.button(t('allLeaderboards', 'All leaderboards'), { class: 'btn-sm btn-ghost', icon: 'trophy', onClick: function () { FF.Nav.go('leaderboard', { tab: 'daily' }); } })));
       if (!FF.Cloud.available()) { main.appendChild(cloudNote('guest')); return; }
       var holder = FF.ui.div('social-board');
       holder.appendChild(loadingRow());
@@ -391,7 +424,7 @@ window.FF = window.FF || {};
           holder.appendChild(FF.ui.el('p', { class: 'social-empty' }, t('lbEmpty', 'No scores yet today. Be the first.')));
           return;
         }
-        holder.appendChild(board(rows, who.uid));
+        holder.appendChild(FF.Leaderboards.board(rows, who.uid));
         var mine = rows.some(function (r) { return r.key === who.uid; });
         if (d && d.done && !mine) holder.appendChild(FF.ui.el('p', { class: 'social-empty' }, t('lbNotTop', 'You are not in the top 50 today. Keep going!')));
       }).catch(function () {
@@ -559,8 +592,14 @@ window.FF = window.FF || {};
     daily.appendChild(di);
     var dt = FF.ui.div('today-card__text');
     dt.appendChild(FF.ui.el('strong', {}, t('dailyChallenge', 'Daily challenge')));
-    dt.appendChild(FF.ui.span('', d ? t('dailyDoneShort', 'Done · {n}/10 · {pts} pts', { n: d.correct, pts: fmt(d.score) }) : t('dailyNew', 'New questions today. One try.')));
+    var sub = FF.ui.span('', d && d.done ? t('dailyDoneShortPts', 'Done · {pts} pts', { pts: fmt(d.score) }) : t('dailyNewGame', 'A new game today. One try.'));
+    dt.appendChild(sub);
     daily.appendChild(dt);
+    if (!(d && d.done)) {
+      D.game(D.key()).then(function (id) {
+        if (id && FF.Games.get(id)) sub.textContent = t('dailyTodayIs', 'Today: {game}. One try.', { game: FF.Leaderboards.gameName(id) });
+      }).catch(function () {});
+    }
     var streak = D.streak();
     if (streak) {
       var st = FF.ui.span('today-card__streak');

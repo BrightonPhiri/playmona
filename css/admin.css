@@ -240,3 +240,4 @@
 .crew-slider__label { font-size: var(--fs-sm); font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .crew-slider__input { width: 100%; accent-color: var(--accent); }
 .crew-slider__value { font-variant-numeric: tabular-nums; font-weight: 800; text-align: right; font-size: var(--fs-sm); }
+.admin-pins { display: flex; flex-wrap: wrap; gap: var(--sp-2); }

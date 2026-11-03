@@ -34,7 +34,8 @@ window.FF = window.FF || {};
   // Features a guest can use until the admin portal says otherwise.
   var GUEST_FEATURES = { online: false, daily: false, challenge: false, gameNight: false };
 
-  var GAME_DEFAULTS = { enabled: true, tier: 'free', freePlays: 3, badge: null };
+  // ranked: on the daily challenge and leaderboards (only games FF.Leaderboards.eligible allows).
+  var GAME_DEFAULTS = { enabled: true, tier: 'free', freePlays: 3, badge: null, ranked: true };
 
   var cfg = null;          // { games: {}, site: {} } from the database
   var listeners = [];
@@ -92,7 +93,12 @@ window.FF = window.FF || {};
       var s = cached().site || {};
       var guest = {};
       for (var k in GUEST_FEATURES) guest[k] = s.guest && s.guest[k] != null ? !!s.guest[k] : GUEST_FEATURES[k];
-      return { maintenance: !!s.maintenance, payments: !!s.payments, announcement: s.announcement || '', guest: guest };
+      var lb = s.leaderboard || {};
+      var pinned = Array.isArray(lb.pinned) ? lb.pinned : Object.keys(lb.pinned || {}).sort().map(function (k) { return lb.pinned[k]; });
+      return {
+        maintenance: !!s.maintenance, payments: !!s.payments, announcement: s.announcement || '', guest: guest,
+        leaderboard: { celebrateTop: typeof lb.celebrateTop === 'number' ? lb.celebrateTop : 20, pinned: pinned.filter(function (id) { return typeof id === 'string'; }) }
+      };
     }
   };
 

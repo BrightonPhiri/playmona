@@ -65,6 +65,7 @@ window.FF = window.FF || {};
     tags: ['quick'],             // optional
     modes: ['solo', 'turn', 'team', 'everyone', 'host'], // supported modes
     defaultMode: 'turn',
+    // leaderboard: false,      // optional: see "Daily challenge and leaderboards" below
     howToPlay: [
       'Look at the letters on screen.',
       'Make as many words as you can.',
@@ -234,6 +235,19 @@ when done — never leave the game stuck. Provide the full ranked `results` arra
 custom scoring (e.g. per-round totals) so the winner screen shows correct numbers.
 
 Always call `api.shell.updateScores()` after any score change, and call `api.audio.play(...)` for feedback.
+
+### Daily challenge and leaderboards
+
+A new game joins the daily challenge and the leaderboards by itself when it can be played solo
+and is not a `party` or `creative` game (those are judged by people). Set `leaderboard: false`
+to keep a game off, or `leaderboard: true` to put a party game on. Then:
+
+- Add or remove its id in `Leaderboards::GAMES` (api/lib/Leaderboards.php). A test fails until the
+  server's list matches, because the server picks each day's game.
+- Deal content with `FF.Random` / `api.random`, never `Math.random`. The daily challenge seeds
+  `FF.Random` so everyone plays the same rounds that day.
+- Points must mean the same for everyone on the standard settings (normal difficulty and length,
+  the usual timer). Only those results count. The score cap is 1,000,000.
 
 ### Robustness
 

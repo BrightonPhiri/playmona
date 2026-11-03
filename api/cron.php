@@ -63,6 +63,15 @@ try {
     fwrite(STDERR, 'Sync failed: ' . $e->getMessage() . "\n");
 }
 
+// Leaderboards: the daily challenge's game for today and tomorrow, and the most played games.
+try {
+    $now = PlayMona\nowMs();
+    foreach ($app->leaderboards()->scheduleDaily($now) as $day => $game) echo "Daily challenge $day: $game.\n";
+    $app->leaderboards()->updateFeatured($now);
+} catch (Throwable $e) {
+    fwrite(STDERR, 'Leaderboards failed: ' . $e->getMessage() . "\n");
+}
+
 // Watch live: broadcasts of rooms nobody has used for 10 minutes.
 try {
     $gone = $app->live()->prune(PlayMona\nowMs());
