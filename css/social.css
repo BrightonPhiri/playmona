@@ -315,3 +315,10 @@
 }
 .ch-reveal__line { margin: 0; font-weight: 700; }
 .ch-reveal .social-actions { justify-content: center; }
+
+/* ============ Brag image sheet (js/shareCard.js) ============ */
+.share-card { display: flex; flex-direction: column; align-items: center; gap: var(--sp-3); }
+.share-card__preview { display: grid; place-items: center; min-height: 240px; width: 100%; }
+.share-card__img { display: block; max-width: 100%; border-radius: var(--r-md); box-shadow: var(--shadow-2); }
+.share-card__img--story { max-height: min(60vh, 520px); width: auto; }
+.share-card__img--square { max-height: min(50vh, 360px); width: auto; }

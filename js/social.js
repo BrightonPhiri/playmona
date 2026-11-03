@@ -273,13 +273,15 @@ window.FF = window.FF || {};
     _incoming: {},
 
     // The link a friend opens. Everything needed to replay the run is in it.
-    link: function (rec) {
+    // opts.short: leave out the picture and stats, for a QR code that scans easily.
+    link: function (rec, opts) {
       var owner = rec.from || { name: me().name, avatar: me().avatar, score: rec.me.score, correct: rec.me.correct, stats: rec.me.stats };
       var payload = rec.v === 2
         ? { v: 2, i: rec.id, s: rec.seed, g: rec.game, n: owner.name, a: owner.avatar, sc: owner.score,
             st: (owner.stats || []).slice(0, 3).map(function (x) { return [x.value, x.label]; }),
             d: rec.from ? rec.from.at : (rec.at ? Math.floor(rec.at / 3600000) : undefined) }
         : { v: 1, i: rec.id, s: rec.seed, k: rec.topic, n: owner.name, a: owner.avatar, sc: owner.score, c: owner.correct };
+      if (opts && opts.short) { delete payload.st; delete payload.a; }
       var code = b64encode(payload);
       var base = window.location.protocol === 'file:' ? 'https://playmona.com/play' : window.location.origin + window.location.pathname;
       return base + '#challenge=' + code;
@@ -605,9 +607,12 @@ window.FF = window.FF || {};
   function saveBrag(rec, kind) {
     if (!FF.ShareCard) return;
     var self = me();
-    var art = challengeArt(rec);
+    var def = FF.Challenge.gameOf(rec);
+    var coverId = def ? def.id : 'familyQuiz';
     var name = challengeName(rec);
-    var spec = { game: name, cover: art.url, wash: art.wash, footer: { url: FF.Challenge.link(rec) } };
+    var cat = FF.Categories && FF.Categories.meta ? FF.Categories.meta(def ? def.category : 'quiz') : null;
+    var spec = { game: name, cover: FF.Assets.has('covers', coverId) ? FF.Assets.artPath('covers', coverId) : null,
+      tint: cat && cat.color, footer: { url: FF.Challenge.link(rec, { short: true }) } };
     if (kind === 'dare') {
       spec.verdict = t('cardScored', '{name} scored {pts}', { name: self.name, pts: fmt(rec.me.score) });
       spec.sub = FF.Challenge.wording(rec.id).tagline.replace('{name}', self.name);
