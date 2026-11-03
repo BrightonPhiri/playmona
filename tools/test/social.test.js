@@ -195,3 +195,12 @@ test('rules: challenge results take any game score up to a million, without a co
   assert(/newData\.child\('game'\)/.test(v), 'game is checked');
   assertEqual(JSON.stringify(require('../gen-rules.js').rules.challenges), JSON.stringify(rules.challenges), 'generator and file agree');
 });
+
+test('challenge v2: the sign-in screen can say who challenged you, and to what', function () {
+  const FF = boot2();
+  const rec = { id: 'abcdefgh12345678', v: 2, game: 'memoryMatch', seed: 'k3y9x2p1', role: 'sent', me: { score: 900, stats: [] } };
+  const code = codeOf(FF.Challenge.link(rec));
+  const line = FF.Challenge.inviteLine(code);
+  assert(/Memory Match/.test(line) && /challenged you/.test(line), line);
+  assertEqual(FF.Challenge.inviteLine('broken'), null);
+});

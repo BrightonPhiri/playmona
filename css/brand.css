@@ -616,3 +616,5 @@ body.auth-open #app { display: none; }
 }
 .locked-panel .page-sub { margin: var(--sp-2) auto var(--sp-6); max-width: 28rem; }
 .locked-panel__actions { max-width: 20rem; margin: 0 auto; }
+.auth__alert--challenge { background: var(--accent-soft); font-size: var(--fs-md); }
+.auth__alert--challenge .icon-svg { color: var(--accent); }

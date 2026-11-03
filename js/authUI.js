@@ -431,6 +431,14 @@ window.FF = window.FF || {};
       if (view !== 'personalize') panel.appendChild(cancelLink());
       var off = offlineNote();
       if (off) panel.appendChild(off);
+      // Opened from a friend's challenge link: say so before asking anyone to sign in.
+      var chLine = FF.Challenge && FF.Challenge.inviteLine(FF.Challenge.codeFromUrl());
+      if (chLine && view !== 'personalize') {
+        var chNote = FF.ui.el('div', { class: 'auth__alert auth__alert--challenge', role: 'status' });
+        chNote.appendChild(icon('swords'));
+        chNote.appendChild(FF.ui.span('', chLine));
+        panel.appendChild(chNote);
+      }
       var firstInput;
       if (view === 'signup') firstInput = signUpView(panel);
       else if (view === 'reset') firstInput = resetView(panel, opts);

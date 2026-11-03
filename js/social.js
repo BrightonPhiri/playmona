@@ -321,6 +321,16 @@ window.FF = window.FF || {};
       } catch (e) { return null; }
     },
 
+    // One line for the sign-in screen when a challenge link was opened, or null.
+    inviteLine: function (code) {
+      var c = code ? this.decode(code) : null;
+      if (!c) return null;
+      var what = c.v === 2 ? (this.gameOf(c) && FF.Leaderboards ? FF.Leaderboards.gameName(c.game) : null) : t('topic_' + c.topic, FF.QuizRun.topic(c.topic).name);
+      return what
+        ? t('chAuthLine', '{name} has challenged you to {game}! Play as a guest or sign in to take them on.', { name: c.from.name, game: what })
+        : t('chAuthLineAny', '{name} has challenged you! Play as a guest or sign in to take them on.', { name: c.from.name });
+    },
+
     codeFromUrl: function () {
       var m = /[#&]challenge=([A-Za-z0-9_-]+)/.exec(window.location.hash || '');
       return m ? m[1] : null;
