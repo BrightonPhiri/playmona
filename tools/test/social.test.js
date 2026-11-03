@@ -127,6 +127,9 @@ test('challenge v2: a link for any game carries the game, seed, score and stats'
   assertEqual([c.v, c.id, c.seed, c.game, c.from.score], [2, 'abcdefgh12345678', 'k3y9x2p1', 'memoryMatch', 250000]);
   assertEqual(JSON.stringify(c.from.stats), JSON.stringify(rec.me.stats));
   assertEqual(FF.Challenge.playable(c), true);
+  const sent = Date.UTC(2026, 10, 3, 9, 0, 0);
+  const d = FF.Challenge.decode(codeOf(FF.Challenge.link(Object.assign({}, rec, { at: sent }))));
+  assertEqual(d.at, sent, 'the day it was sent (to the hour)');
 });
 
 test('challenge v2: old quiz links still decode as a quiz topic', function () {
