@@ -96,7 +96,8 @@ window.FF = window.FF || {};
 
       var promptBox = FF.ui.div('rv-prompt');
       if (opts.render) {
-        promptBox.appendChild(opts.render(item));
+        // render may return one node or a list (with gaps for optional parts).
+        [].concat(opts.render(item)).forEach(function (n) { if (n) promptBox.appendChild(n); });
       } else {
         promptBox.appendChild(FF.ui.div('rv-word', item.word));
         if (item.category) promptBox.appendChild(FF.ui.div('rv-cat', item.category));
@@ -112,11 +113,13 @@ window.FF = window.FF || {};
       wrap.appendChild(hint);
 
       var timer = null;
-      var secs = api.config.timer || 60;
+      var secs = turnClock(api, 60);
       var remaining = secs;
       var timerEl = FF.ui.div('rv-cat', '' + remaining + 's');
       wrap.appendChild(timerEl);
       timer = setInterval(function () {
+        // The player left the game: stop counting.
+        if (!wrap.isConnected) { clearInterval(timer); return; }
         remaining--;
         timerEl.textContent = '' + remaining + 's';
         if (remaining <= 5 && remaining > 0) api.audio.play('warning');
@@ -151,6 +154,12 @@ window.FF = window.FF || {};
     }
 
     render();
+  }
+
+  // The timer setting is per quiz question; acting or drawing needs at least `min` seconds.
+  function turnClock(api, min) {
+    var t = api.config.timer;
+    return t ? Math.max(t, min) : min;
   }
 
   /* ---------- canvas drawing component ---------- */
@@ -483,7 +492,7 @@ window.FF = window.FF || {};
         wrap.appendChild(doneBtn);
         // re-append wrap after canvas
         root.appendChild(wrap);
-        api.shell.setTimer(api.config.timer || 60, function () { votePhase(drawer, board); });
+        api.shell.setTimer(turnClock(api, 60), function () { votePhase(drawer, board); });
       }
 
       function votePhase(drawer, board) {
@@ -610,7 +619,7 @@ window.FF = window.FF || {};
         guessWrap.appendChild(actions);
         root.appendChild(guessWrap);
 
-        api.shell.setTimer(api.config.timer || 90, function () {
+        api.shell.setTimer(turnClock(api, 90), function () {
           if (!solved) {
             msg.textContent = "Time! The word was " + item.word + '.';
             api.audio.play('roundEnd');

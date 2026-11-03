@@ -138,13 +138,7 @@ window.FF = window.FF || {};
     var b = bonusMul(api.config.difficulty);
     var basePts = opts.points;
     var gameEnded = false;
-
-    if (api.config.timer > 0) {
-      api.shell.setTimer(api.config.timer, function () {
-        if (gameEnded) return;
-        finish();
-      });
-    }
+    // No clock: the timer setting is per question, and a pass-and-vote round has no right answer to race.
 
     function playRound(index) {
       if (index >= rounds.length) { finish(); return; }
@@ -279,10 +273,7 @@ window.FF = window.FF || {};
     var animate = !!api.config.animations;
     var b = bonusMul(api.config.difficulty);
     var ended = false;
-
-    if (api.config.timer > 0) {
-      api.shell.setTimer(api.config.timer, function () { finish(); });
-    }
+    // No clock, as in the other voting games.
 
     function playRound(index) {
       if (index >= rounds.length) { finish(); return; }

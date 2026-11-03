@@ -815,13 +815,21 @@ window.FF = window.FF || {};
             });
           });
         } else if (timerSecs > 0) {
+          // Out of time: show the whole verse, then move on when the player is ready.
           api.shell.setTimer(timerSecs, function () {
-            if (!solved) {
-              api.audio.play('wrong');
+            if (solved) return;
+            solved = true;
+            api.audio.play('wrong');
+            api.scoring.markAnswer(scorer.id, false);
+            lockBoard();
+            wrap.appendChild(FF.GameUI.feedback('bad', FF.t('verseTimeUp', 'Time is up. The verse is: {v}', { v: targetWords.join(' ') })));
+            var next = FF.Advance.button(FF.t('next', 'Next'), function () {
               verseIdx++;
               scorerIdx++;
               renderVerse();
-            }
+            }, { class: 'btn-lg' });
+            wrap.appendChild(next);
+            FF.Nav.focus(next);
           });
         }
       }
