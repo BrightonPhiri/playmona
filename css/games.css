@@ -1198,7 +1198,8 @@ button.wm-opt.wrong { background: var(--danger-soft); border-color: var(--danger
 
 /* ============ Imposters ============
    Secret card, clue board, the hidden clock, voting, the results
-   reveal, and the room chat (net/chat.js) beside the discussion. */
+   reveal, and the room chat (net/chat.js) in a sheet behind a
+   floating button. */
 .imp { gap: var(--sp-3); }
 .imp-head {
   display: grid; grid-template-columns: 1fr auto; gap: var(--sp-2) var(--sp-4); align-items: center;
@@ -1236,10 +1237,7 @@ button.wm-opt.wrong { background: var(--danger-soft); border-color: var(--danger
 .imp-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-4); align-items: start; }
 .imp-main { display: flex; flex-direction: column; gap: var(--sp-3); align-items: center; min-width: 0; }
 .imp-main > * { max-width: 100%; }
-.imp-side { min-width: 0; }
 @media (min-width: 900px) {
-  .imp-layout--chat { grid-template-columns: minmax(0, 1fr) 320px; }
-  .imp-side { position: sticky; top: var(--sp-4); }
 }
 
 /* The secret card: face down, face up, then locked away. */
@@ -1275,7 +1273,6 @@ button.imp-card:focus-visible { outline: 3px solid var(--focus-ring); outline-of
 .imp-board__ava { width: 26px; height: 26px; flex: none; }
 .imp-board__none { color: var(--muted); font-weight: 600; font-style: italic; }
 .imp-board__row--out { opacity: 0.55; }
-.imp-stats__me th, .imp-stats__me td { background: var(--accent-soft); }
 
 /* Number Imposter's clock: visible for a moment, then counting blind. */
 .imp-clock { display: flex; flex-direction: column; align-items: center; gap: var(--sp-3); }
@@ -1290,7 +1287,35 @@ button.imp-card:focus-visible { outline: 3px solid var(--focus-ring); outline-of
 .imp-stop { min-width: min(100%, 280px); min-height: 72px; font-size: var(--fs-xl); }
 @keyframes imp-pulse { 50% { box-shadow: 0 0 0 14px var(--accent-soft); } }
 
-.imp-votenow { min-width: min(100%, 280px); }
+/* The way out of the talk: More clues | Vote now, side by side. */
+.imp-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-2); width: min(100%, 460px); }
+.imp-actions--one { grid-template-columns: minmax(0, 1fr); }
+.imp-actions__btn { min-width: 0; padding-inline: var(--sp-3); }
+.imp-actions__on { box-shadow: 0 0 0 3px var(--accent-soft); }
+
+/* Chat: a floating button, and the chat itself in a sheet. */
+.imp-chatfab {
+  position: fixed; z-index: var(--z-overlay);
+  right: calc(var(--sp-4) + env(safe-area-inset-right)); bottom: calc(var(--sp-4) + env(safe-area-inset-bottom));
+  display: inline-flex; align-items: center; gap: var(--sp-2);
+  min-height: 52px; padding: 0 var(--sp-4); border: 0; border-radius: 999px;
+  background: var(--accent); color: var(--accent-text); font-weight: 800; font-size: var(--fs-md);
+  box-shadow: var(--shadow-2); cursor: pointer;
+}
+.imp-chatfab .icon-svg { font-size: 1.35rem; }
+.imp-chatfab:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 3px; }
+.imp-chatfab:active { transform: translateY(2px); }
+.imp-chatfab__badge:empty { display: none; }
+.imp-chatfab__badge {
+  min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; display: inline-grid; place-items: center;
+  background: var(--danger); color: var(--on-status); font-size: var(--fs-xs); font-weight: 900;
+}
+.imp-chatfab--new { animation: imp-pulse 1.4s ease-in-out 2; }
+/* Room under the last thing on the screen, so the button never covers it. */
+.imp { padding-bottom: 76px; }
+.imp-chatsheet .rchat { padding: 0; border: 0; background: none; }
+.imp-chatsheet .rchat__head { display: none; }
+.imp-chatsheet .rchat__list { max-height: 50vh; max-height: 50dvh; min-height: 120px; }
 .imp-vote { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: var(--sp-2); width: 100%; }
 .imp-vote__pick {
   display: flex; flex-direction: column; align-items: center; gap: var(--sp-2); min-height: 110px;
@@ -1316,19 +1341,31 @@ button.imp-card:focus-visible { outline: 3px solid var(--focus-ring); outline-of
 /* Results */
 .imp-win { display: flex; flex-direction: column; align-items: center; gap: var(--sp-2); padding: var(--sp-5); border-radius: var(--r-lg); width: 100%; background: var(--accent-soft); border: 2px solid var(--accent); }
 .imp-win .icon-svg { font-size: 2.6rem; color: var(--accent); }
-.imp-groups { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--sp-3); width: 100%; }
-.imp-group { padding: var(--sp-3); border-radius: var(--r-lg); background: var(--surface); border: 1px solid var(--border); text-align: left; }
-.imp-group--minority { border-color: var(--accent); }
-.imp-group__title { margin: 0 0 var(--sp-2); font-size: var(--fs-md); color: var(--text); }
-.imp-group__list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: var(--sp-2); }
-.imp-group__who { display: flex; align-items: center; gap: var(--sp-2); font-weight: 700; color: var(--text); }
-.imp-group__ava { width: 28px; height: 28px; flex: none; }
-.imp-group__word { margin-left: auto; padding: 2px var(--sp-2); border-radius: 999px; background: var(--surface-2); font-size: var(--fs-sm); }
 .imp-targets { margin: 0; padding-left: var(--sp-5); text-align: left; color: var(--text); }
-.imp-history { width: 100%; text-align: left; }
-.imp-history__title { margin: 0 0 var(--sp-2); font-size: var(--fs-md); color: var(--text); }
-.imp-history__vote { padding: var(--sp-2) var(--sp-3); border-radius: var(--radius-sm); background: var(--surface); border: 1px solid var(--border); margin-bottom: var(--sp-2); color: var(--text); }
-.imp-history__vote summary { cursor: pointer; font-weight: 700; min-height: 32px; }
+.imp-chip { padding: 2px var(--sp-2); border-radius: 999px; background: var(--surface-2); color: var(--text); font-size: var(--fs-sm); font-weight: 800; white-space: nowrap; }
+.imp-chip--imp { background: var(--accent); color: var(--accent-text); }
+/* The reveal: who the imposters were, big, before the details. */
+.imp-reveal { display: flex; flex-direction: column; align-items: center; gap: var(--sp-2); width: 100%; padding: var(--sp-4); border-radius: var(--r-lg); background: var(--surface); border: 2px solid var(--accent); }
+.imp-reveal__title { margin: 0; font-size: var(--fs-md); color: var(--muted); }
+.imp-reveal__list { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--sp-4); margin: 0; padding: 0; list-style: none; }
+.imp-reveal__who { display: flex; flex-direction: column; align-items: center; gap: var(--sp-1); }
+.imp-reveal__ava { width: 72px; height: 72px; }
+.imp-reveal__name { font-family: var(--font-display); font-size: var(--fs-xl); font-weight: 900; color: var(--text); }
+/* Everyone's word and how they voted. */
+.imp-recap { width: 100%; text-align: left; }
+.imp-recap__title { margin: 0 0 var(--sp-2); font-size: var(--fs-md); color: var(--text); }
+.imp-recap__list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: var(--sp-2); }
+.imp-recap__row { padding: var(--sp-2) var(--sp-3); border-radius: var(--radius-sm); background: var(--surface); border: 1px solid var(--border); }
+.imp-recap__row--imp { border-color: var(--accent); }
+.imp-recap__row--me { box-shadow: inset 4px 0 0 var(--accent); }
+.imp-recap__top { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; }
+.imp-recap__ava { width: 30px; height: 30px; flex: none; }
+.imp-recap__name { font-weight: 800; color: var(--text); margin-right: auto; overflow-wrap: anywhere; }
+.imp-recap__side { font-size: var(--fs-xs); font-weight: 900; text-transform: uppercase; letter-spacing: 0.04em; color: var(--accent); }
+.imp-recap__votes { display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-3); margin: var(--sp-1) 0 0 38px; padding: 0; list-style: none; font-size: var(--fs-sm); font-weight: 700; }
+.imp-recap__vote { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); }
+.imp-recap__vote--good { color: var(--success); }
+.imp-recap__vote--bad { color: var(--danger); }
 
 /* Intro and waiting */
 .imp-intro__badge, .imp-wait__spin {
@@ -1359,12 +1396,9 @@ button.imp-card:focus-visible { outline: 3px solid var(--focus-ring); outline-of
 .rm-fieldnote { margin: var(--sp-2) 0; }
 
 @media (prefers-reduced-motion: reduce) {
-  .imp-card--up, .imp-clock__ring--run, .imp-out--gone .imp-out__ava, .imp-wait__spin { animation: none; }
+  .imp-card--up, .imp-clock__ring--run, .imp-out--gone .imp-out__ava, .imp-wait__spin, .imp-chatfab--new { animation: none; }
 }
-:root[data-reduce="1"] .imp-card--up, :root[data-reduce="1"] .imp-clock__ring--run, :root[data-reduce="1"] .imp-out--gone .imp-out__ava, :root[data-reduce="1"] .imp-wait__spin { animation: none; }
-
-/* ============================================================
-   Parallel challenges in a room (js/net/parallel.js): everyone's
+Parallel challenges in a room (js/net/parallel.js): everyone's
    progress while playing, the standings and the podium.
    ============================================================ */
 .pp-live { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--sp-2); width: 100%; margin-bottom: var(--sp-2); }
@@ -1415,3 +1449,7 @@ button.imp-card:focus-visible { outline: 3px solid var(--focus-ring); outline-of
   .pp-screen, .pp-step { animation: none !important; }
   .pp-row { transition: none !important; }
 }
+=======
+:root[data-reduce="1"] .imp-card--up, :root[data-reduce="1"] .imp-clock__ring--run, :root[data-reduce="1"] .imp-out--gone .imp-out__ava, :root[data-reduce="1"] .imp-wait__spin, :root[data-reduce="1"] .imp-chatfab--new { animation: none; }
+
+/* =====================================================
