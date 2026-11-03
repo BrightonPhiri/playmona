@@ -178,9 +178,23 @@ window.FF = window.FF || {};
       ['enabled', 'guest', 'tier', 'freePlays', 'badge'].forEach(function (k) {
         if (settings[k] != null && settings[k] !== '') clean[k] = settings[k];
       });
+      if (settings.ranked === false) clean.ranked = false;   // on leaderboards unless switched off
       return this.set('config/games/' + id, clean);
     },
     saveSite: function (site) { return this.set('config/site', site); },
+
+    /* Leaderboards (js/leaderboards.js): the celebration threshold and games shown first. */
+    saveLeaderboard: function (celebrateTop, pinned) {
+      var n = Math.round(Number(celebrateTop));
+      var out = { celebrateTop: isFinite(n) ? Math.max(3, Math.min(100, n)) : 20 };
+      var list = (pinned || []).filter(Boolean).slice(0, 10);
+      if (list.length) out.pinned = list;
+      return this.set('config/site/leaderboard', out).then(function () { return out; });
+    },
+    // A day's daily challenge game; null lets PlayMona pick it.
+    setDailyGame: function (day, gameId) {
+      return this.set('dailyMeta/' + day, gameId ? { game: gameId, by: 'admin', t: Date.now() } : null);
+    },
 
     rooms: function () { return this.get('rooms').then(function (v) { return v || {}; }); },
 

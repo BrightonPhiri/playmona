@@ -409,7 +409,12 @@ window.FF = window.FF || {};
 
     buildConfig: function (def, overrides) {
       overrides = overrides || {};
-      const players = FF.Players.get();
+      if (overrides.daily) {
+        const std = FF.Leaderboards ? FF.Leaderboards.standard() : { difficulty: 'normal', length: 'normal', timer: FF.Settings.defaults.timer };
+        const meP = FF.Players.me() || FF.Players.get()[0];
+        overrides = Object.assign({}, overrides, { mode: 'solo', difficulty: std.difficulty, length: std.length, timer: std.timer, clock: 0, variation: 'standard', soloPlayer: meP });
+      }
+      const players = overrides.soloPlayer ? [overrides.soloPlayer] : FF.Players.get();
       const teamsEnabled = FF.Teams.enabled();
       const teams = FF.Teams.get();
 
@@ -421,7 +426,7 @@ window.FF = window.FF || {};
         mode = 'solo';
       }
 
-      const scorers = (mode === 'team') ? FF.Teams.entities() : FF.Players.entities();
+      const scorers = overrides.soloPlayer ? [overrides.soloPlayer] : (mode === 'team') ? FF.Teams.entities() : FF.Players.entities();
 
       // In a room the scoreboard is the connected devices, not the
       // players configured locally on this one.
@@ -447,6 +452,7 @@ window.FF = window.FF || {};
         displaySeconds: overrides.displaySeconds != null ? overrides.displaySeconds : (FF.Settings.get('displaySeconds') || 60),
         round: overrides.round || null,
         tournament: !!overrides.tournament,
+        daily: overrides.daily || null,       // the daily challenge's date (FF.Daily)
         onEnd: overrides.onEnd || null,
         room: inRoom,
         roomStartAt: inRoom ? (overrides.roomStartAt || null) : null
@@ -459,7 +465,8 @@ window.FF = window.FF || {};
       const def = FF.Games.get(id);
       if (!def) { FF.Nav.go('home'); return; }
       // Room games follow the host; everything else checks the switches, guest access and the paywall.
-      if (FF.Access && !(overrides && overrides.room) && !FF.Access.canPlay(id)) {
+      // The daily challenge's game is free to play that day, whatever its tier.
+      if (FF.Access && !(overrides && (overrides.room || overrides.daily)) && !FF.Access.canPlay(id)) {
         FF.Access.explain(id);
         return;
       }
@@ -753,6 +760,13 @@ window.FF = window.FF || {};
         cta.appendChild(FF.UI.button(config.variation === 'display' ? t('playOnTV', 'Play on the TV') : t('play', 'Play'), {
           class: 'btn-lg btn-primary', icon: 'play', onClick: startGame
         }));
+        const lbNote = FF.Leaderboards && FF.Leaderboards.detailsNote(def, Object.assign({}, config, { scorers: FF.Players.get() }));
+        if (lbNote) {
+          const n = FF.ui.el('p', { class: 'details__lb-note' });
+          n.appendChild(FF.Icons.icon('trophy'));
+          n.appendChild(FF.ui.span('', lbNote));
+          cta.appendChild(n);
+        }
         page.appendChild(cta);
 
         screen.appendChild(page);
@@ -780,7 +794,7 @@ window.FF = window.FF || {};
       FF.Scoring.init(config.scorers, config.mode);
       if (FF.Track) FF.Track.play(def.id, !!config.room);
       // Uses up one of today's free plays (limited games only). Room guests play on the host's.
-      if (FF.Access && !config.room) FF.Access.usePlay(def.id);
+      if (FF.Access && !config.room && !config.daily) FF.Access.usePlay(def.id);
       const api = {
         def: def,
         config: config,
@@ -803,6 +817,9 @@ window.FF = window.FF || {};
       if (config.room && FF.Room && FF.Room.current() && FF.Random.seed) {
         const roomMeta = FF.Room.current().meta || {};
         FF.Random.seed(FF.Random.roundSeed(roomMeta.seed, def.id, 'init'));
+      } else if (config.daily && FF.Random.seed) {
+        // The daily challenge: everyone deals the same rounds today.
+        FF.Random.seed(FF.Random.roundSeed('daily|' + config.daily, def.id, 'init'));
       }
 
       const shell = buildShell(def, config, api);
@@ -1016,12 +1033,31 @@ window.FF = window.FF || {};
 
       if (typeof FF.App !== 'undefined' && FF.App.onGameEnded) FF.App.onGameEnded(results);
 
+      if (cur.config.daily && FF.Daily) {
+        if (FF.Random.unseed) FF.Random.unseed();
+        const mineD = this._myResult(results.results);
+        const gameId = cur.def.id;
+        FF.Daily.finish(cur.config.daily, gameId, mineD ? mineD.points : 0, results.quizCorrect).then(function (rank) {
+          if (rank && FF.Leaderboards) FF.Leaderboards.celebrate({ game: gameId, places: [{ period: 'daily', rank: rank }] });
+        });
+        results.daily = true;
+        this.showResults(results);
+        return;
+      }
+      if (FF.Leaderboards) FF.Leaderboards.afterGame(cur, results);
+
       // tournament hook
       if (cur.config.tournament && cur.config.onEnd) {
         cur.config.onEnd(results);
         return;
       }
       this.showResults(results);
+    },
+
+    // The account holder's row in a solo result.
+    _myResult: function (ranked) {
+      ranked = ranked || [];
+      return ranked.filter(function (r) { return r.isMe || r.id === 'me'; })[0] || ranked[0] || null;
     },
 
     showResults: function (results) {
@@ -1102,6 +1138,12 @@ window.FF = window.FF || {};
             FF.GameFlow.close('online');
           }
         });
+      } else if (results.daily) {
+        wrap.appendChild(FF.ui.div('hint', t('dailyResultHint', 'That was today’s daily challenge. A new game comes tomorrow.')));
+        actions.appendChild(FF.UI.button(t('dailyLeaderboard', 'Daily leaderboard'), { class: 'btn-lg btn-primary', icon: 'trophy', onClick: function () {
+          FF.GameFlow.close('leaderboard', { tab: 'daily', highlight: true });
+        } }));
+        actions.appendChild(FF.UI.button(t('navHome', 'Home'), { class: 'btn-lg btn-ghost', icon: 'house', onClick: function () { FF.GameFlow.exitToHome(); } }));
       } else {
         actions.appendChild(FF.UI.button(t('playAgain', 'Play again'), { class: 'btn-lg btn-primary', icon: 'restart', onClick: function () { FF.Audio.play('roundStart'); FF.GameFlow.launch(FF.GameFlow.current.def.id, { skipIntro: true }); } }));
         actions.appendChild(FF.UI.button(t('anotherGame', 'Choose another game'), { class: 'btn-lg', icon: 'game-controller', onClick: function () { FF.GameFlow.close('games'); } }));
@@ -1287,12 +1329,20 @@ window.FF = window.FF || {};
       });
     },
 
-    close: function (view) {
+    close: function (view, params) {
       if (FF.Advance) FF.Advance.cancelAll();
       if (FF.GameLength) FF.GameLength.stop();
       // Leaving an online game early: stop following its rounds, and tell the
       // room so nobody's round waits for this player.
       const leaving = this.current;
+      if (leaving && leaving.config && leaving.config.daily) {
+        if (FF.Random.unseed) FF.Random.unseed();
+        if (!leaving.ended && FF.Daily) {
+          leaving.ended = true;
+          const mineQ = this._myResult(FF.Scoring.results().results);
+          FF.Daily.finish(leaving.config.daily, leaving.def.id, mineQ ? mineQ.points : 0);
+        }
+      }
       if (leaving && leaving.config && leaving.config.room && FF.Room && FF.Room.current()) {
         FF.Room.setAway(false);
         if (!leaving.roomEnding) FF.Room.markLeftGame(leaving.config.roomStartAt);
@@ -1309,7 +1359,7 @@ window.FF = window.FF || {};
       document.body.classList.remove('game-active');
       this.current = null;
       if (typeof FF.App !== 'undefined' && FF.App.onGameExit) FF.App.onGameExit();
-      FF.Nav.go(view || 'home');
+      FF.Nav.go(view || 'home', params);
     },
 
     // Leave the room from inside a game (pause menu).

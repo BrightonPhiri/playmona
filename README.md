@@ -22,7 +22,12 @@ own phone. It is a static web app with no build step.
   deleted to play alone. Teams of 2–4.
 - **Dashboard**: level and XP, weekly activity, favourite kinds of game, medals.
 - **Online rooms**: share a code or QR; everyone answers on their own phone (Firebase).
-- **Daily challenge**: 10 questions a day, the same for everyone, one try, daily leaderboard.
+- **Daily challenge**: one game a day, picked from every leaderboard game (new games join by
+  themselves), the same rounds for everyone, one try, daily leaderboard.
+- **Leaderboards** (`/play` → Leaderboard): the daily challenge, and every leaderboard game this
+  week and all time, led by the 10 most played. Only solo games on the standard settings count.
+  A player in the top 20 (set in the admin portal) gets confetti and a link to their place.
+  Leagues and Tournaments have their tabs waiting.
 - **Challenge a friend**: play 10 questions, send a link (or WhatsApp); your friend plays the
   same questions and tries to beat your score. Works for guests too.
 - Quick match, Leagues and Tournaments are placeholders for now.

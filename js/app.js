@@ -81,7 +81,9 @@ window.FF = window.FF || {};
   // Screens a guest may be locked out of (see FF.Access, js/gameConfig.js).
   var VIEW_FEATURE = { daily: 'daily', challenges: 'challenge', challenge: 'challenge', gamenight: 'gameNight' };
   // Which main destination a view belongs to (for nav highlighting).
-  var NAV_OF = { home: 'home', gamenight: 'home', games: 'games', online: 'online', daily: 'online', challenges: 'online', challenge: 'online', plus: 'profile', profile: 'profile', settings: 'settings', credits: 'settings', about: 'settings' };
+  var NAV_OF = { home: 'home', gamenight: 'home', games: 'games', online: 'online', daily: 'online', challenges: 'online', challenge: 'online', leaderboard: 'leaderboard', plus: 'profile', profile: 'profile', settings: 'profile', credits: 'profile', about: 'profile' };
+  // The phone's bottom bar shows this many buttons; with more sections it shows one fewer plus "More".
+  var TABBAR_MAX = 5;
 
   FF.App = {
     session: { games: 0, wins: {}, totalPoints: 0, players: {} },
@@ -439,18 +441,39 @@ window.FF = window.FF || {};
       var views = this.views;
       Object.keys(FF.Social.views).forEach(function (k) { views[k] = FF.Social.views[k]; });
       if (FF.Plus) Object.keys(FF.Plus.views).forEach(function (k) { views[k] = FF.Plus.views[k]; });
+      if (FF.Leaderboards) Object.keys(FF.Leaderboards.views).forEach(function (k) { views[k] = FF.Leaderboards.views[k]; });
     },
 
     /* ================= Shell ================= */
+    /* The main sections, in order. Settings lives in the account menu and on the Profile page.
+       New sections (leagues, tournaments) go here: phones fold the extras into "More". */
     navItems: function () {
       var items = [
         { view: 'home', icon: 'house', label: t('navHome', 'Home') },
         { view: 'games', icon: 'game-controller', label: t('navGames', 'Games') }
       ];
       if (onlineEnabled()) items.push({ view: 'online', icon: 'wifi', label: t('navOnline', 'Online') });
+      items.push({ view: 'leaderboard', icon: 'trophy', label: t('navLeaderboard', 'Leaderboard') });
       items.push({ view: 'profile', icon: 'user', label: t('navProfile', 'Profile') });
-      items.push({ view: 'settings', icon: 'sliders', label: t('navSettings', 'Settings') });
       return items;
+    },
+
+    // Phones: the sections that do not fit in the bottom bar, in a sheet.
+    openMoreNav: function (rest) {
+      var self = this;
+      var body = FF.ui.el('nav', { class: 'more-nav', 'aria-label': t('moreSections', 'More sections') });
+      var sheet;
+      var current = NAV_OF[this._currentView] || this._currentView;
+      rest.forEach(function (item) {
+        var b = FF.ui.el('button', { type: 'button', class: 'more-nav__item' + (item.view === current ? ' is-active' : ''), dataset: { view: item.view } });
+        if (item.view === current) b.setAttribute('aria-current', 'page');
+        b.appendChild(icon(item.icon));
+        b.appendChild(FF.ui.span('', item.label));
+        b.addEventListener('click', function () { if (sheet) sheet.close(); self._navTo(item.view); });
+        body.appendChild(b);
+      });
+      sheet = FF.UI.sheet({ title: t('more', 'More'), body: body });
+      return sheet;
     },
 
     buildShell: function () {
@@ -487,19 +510,32 @@ window.FF = window.FF || {};
 
       var topnav = FF.ui.el('nav', { class: 'topnav', 'aria-label': t('mainNav', 'Main') });
       var tabbar = FF.ui.el('nav', { class: 'tabbar', 'aria-label': t('mainNav', 'Main') });
-      this.navItems().forEach(function (item) {
+      var items = this.navItems();
+      var inBar = items.length > TABBAR_MAX ? items.slice(0, TABBAR_MAX - 1) : items;
+      var rest = items.slice(inBar.length);
+      function tabButton(view, iconKey, label, onClick) {
+        var b = FF.ui.el('button', { type: 'button', class: 'tabbar__item', dataset: { view: view }, onclick: onClick });
+        var ic = FF.ui.span('tabbar__icon');
+        ic.appendChild(icon(iconKey));
+        b.appendChild(ic);
+        b.appendChild(FF.ui.span('tabbar__label', label));
+        return b;
+      }
+      items.forEach(function (item) {
         var a = FF.ui.el('button', { type: 'button', class: 'topnav__link', dataset: { view: item.view }, onclick: function () { self._navTo(item.view); } });
         a.appendChild(icon(item.icon));
         a.appendChild(FF.ui.span('', item.label));
         topnav.appendChild(a);
-
-        var b = FF.ui.el('button', { type: 'button', class: 'tabbar__item', dataset: { view: item.view }, onclick: function () { self._navTo(item.view); } });
-        var ic = FF.ui.span('tabbar__icon');
-        ic.appendChild(icon(item.icon));
-        b.appendChild(ic);
-        b.appendChild(FF.ui.span('tabbar__label', item.label));
-        tabbar.appendChild(b);
       });
+      inBar.forEach(function (item) {
+        tabbar.appendChild(tabButton(item.view, item.icon, item.label, function () { self._navTo(item.view); }));
+      });
+      if (rest.length) {
+        var more = tabButton('more', 'squares-four', t('more', 'More'), function () { self.openMoreNav(rest); });
+        more.setAttribute('aria-haspopup', 'dialog');
+        more.dataset.more = rest.map(function (i) { return i.view; }).join(' ');
+        tabbar.appendChild(more);
+      }
       header.appendChild(topnav);
 
       var tools = FF.ui.div('topbar__tools');
@@ -602,7 +638,8 @@ window.FF = window.FF || {};
     _syncNav: function () {
       var current = NAV_OF[this._currentView] || this._currentView;
       FF.ui.$$('.topnav__link, .tabbar__item').forEach(function (n) {
-        if (n.dataset.view === current) n.setAttribute('aria-current', 'page');
+        var on = n.dataset.view === current || (n.dataset.more && n.dataset.more.split(' ').indexOf(current) !== -1);
+        if (on) n.setAttribute('aria-current', 'page');
         else n.removeAttribute('aria-current');
       });
     },
@@ -1221,6 +1258,11 @@ window.FF = window.FF || {};
       profile: function (main, params) {
         var tab = params.tab || 'overview';
         main.appendChild(FF.App.profileHeader());
+        // Settings left the main bar (it grows with new sections): it lives here and in the account menu.
+        var shortcuts = FF.ui.div('profile-shortcuts');
+        shortcuts.appendChild(FF.UI.button(t('navSettings', 'Settings'), { class: 'btn-sm', icon: 'sliders', onClick: function () { FF.App._navTo('settings'); } }));
+        shortcuts.appendChild(FF.UI.button(t('navLeaderboard', 'Leaderboard'), { class: 'btn-sm', icon: 'trophy', onClick: function () { FF.App._navTo('leaderboard'); } }));
+        main.appendChild(shortcuts);
         main.appendChild(FF.App.tabs({
           label: t('profileSections', 'Profile sections'),
           value: tab,

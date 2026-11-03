@@ -37,6 +37,7 @@ const ORDER = [
   'js/sync.js',
   'js/authUI.js',
   'js/cloud.js',
+  'js/leaderboards.js',
   'js/social.js',
   'js/data/quiz.js',
   'js/data/words.js',

@@ -18,7 +18,20 @@ const STR = (max) => ({ ".validate": "newData.isString() && newData.val().length
 const NUM = { ".validate": "newData.isNumber()" };
 const BOOL = { ".validate": "newData.isBoolean()" };
 const NONE = { ".validate": false };
+// Challenges: 10 questions. The daily challenge and game boards use the rules below.
 const RESULT = "newData.hasChildren(['name', 'score', 'correct', 't']) && newData.child('name').isString() && newData.child('name').val().length <= 40 && newData.child('score').isNumber() && newData.child('score').val() >= 0 && newData.child('score').val() <= 1500 && newData.child('correct').isNumber() && newData.child('correct').val() >= 0 && newData.child('correct').val() <= 10";
+
+// A score on a leaderboard (js/leaderboards.js). Scores are capped; points differ a lot between games.
+const SCORE = "newData.child('name').isString() && newData.child('name').val().length <= 40 && newData.child('score').isNumber() && newData.child('score').val() >= 0 && newData.child('score').val() <= 1000000 && newData.child('t').isNumber() && newData.child('t').val() <= now + 60000 && (!newData.child('avatar').exists() || (newData.child('avatar').isString() && newData.child('avatar').val().length <= 60))";
+// The daily challenge: one game a day (dailyMeta/<day>/game), one result per player.
+const DAILY_RESULT = "newData.hasChildren(['name', 'score', 't', 'game']) && " + SCORE + " && newData.child('game').val() === root.child('dailyMeta').child($day).child('game').val() && (!newData.child('correct').exists() || (newData.child('correct').isNumber() && newData.child('correct').val() >= 0 && newData.child('correct').val() <= 1000)) && (!newData.child('ms').exists() || newData.child('ms').isNumber())";
+// A player's best on a game board: only a higher score replaces it.
+const BEST = {
+  ".write": ACCOUNT + " && auth.uid === $uid && " + NOT_BANNED,
+  ".validate": "newData.hasChildren(['name', 'score', 't']) && " + SCORE + " && (!data.exists() || newData.child('score').val() > data.child('score').val())",
+  name: { ".validate": true }, score: { ".validate": true }, t: { ".validate": true }, avatar: { ".validate": true },
+  "$other": { ".validate": false }
+};
 
 const counterNode = (nameCheck) => ({
   ".write": "auth != null",
@@ -49,6 +62,8 @@ const rules = {
           tier: { ".validate": "newData.isString() && newData.val().matches(/^(free|limited|premium)$/)" },
           freePlays: { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100" },
           badge: { ".validate": "newData.isString() && newData.val().matches(/^(new|hot)$/)" },
+          // false takes the game off the daily challenge and leaderboards.
+          ranked: { ".validate": "newData.isBoolean()" },
           "$other": { ".validate": false }
         }
       },
@@ -63,6 +78,12 @@ const rules = {
         watch: {
           room: { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 1000" },
           site: { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 100000" },
+          "$other": { ".validate": false }
+        },
+        // Leaderboards: who gets the celebration (top N) and games shown first.
+        leaderboard: {
+          celebrateTop: { ".validate": "newData.isNumber() && newData.val() >= 3 && newData.val() <= 100" },
+          pinned: { "$i": { ".validate": "$i.matches(/^[0-9]$/) && newData.isString() && newData.val().matches(" + ID + ")" } },
           "$other": { ".validate": false }
         },
         "$other": { ".validate": false }
@@ -150,8 +171,42 @@ const rules = {
         ".validate": "$day.matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/)",
         "$uid": {
           ".write": ACCOUNT + " && auth.uid === $uid && " + NOT_BANNED + " && !data.exists()",
-          ".validate": RESULT
+          ".validate": DAILY_RESULT
         }
+      }
+    },
+    // The daily challenge's game for each day. The server picks it ahead (api/cron.php); if it
+    // has not, the first player saves one, once. Admins can change it.
+    dailyMeta: {
+      ".read": true,
+      "$day": {
+        ".write": "(" + ACCOUNT + " && !data.exists()) || (" + ADMIN + ")",
+        ".validate": "$day.matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/) && newData.hasChildren(['game'])",
+        game: { ".validate": "newData.isString() && newData.val().matches(" + ID + ") && root.child('config').child('games').child(newData.val()).child('enabled').val() !== false" },
+        by: { ".validate": "newData.isString() && newData.val().matches(/^(server|device|admin)$/)" },
+        t: { ".validate": "newData.isNumber()" },
+        "$other": { ".validate": false }
+      }
+    },
+    // Per-game boards: each player's best this week and all time. featured is written by the server.
+    leaderboards: {
+      featured: { ".read": true },
+      "$game": {
+        ".validate": "$game.matches(" + ID + ")",
+        week: {
+          "$week": {
+            ".read": ACCOUNT,
+            ".indexOn": ["score"],
+            ".validate": "$week.matches(/^[0-9]{4}-W[0-9]{2}$/)",
+            "$uid": BEST
+          }
+        },
+        all: {
+          ".read": ACCOUNT,
+          ".indexOn": ["score"],
+          "$uid": BEST
+        },
+        "$other": { ".validate": false }
       }
     },
     challenges: {
@@ -314,5 +369,8 @@ const rules = {
 
 // .indexOn with an empty list is not allowed; drop it.
 delete rules.rules.stats.days['.indexOn'];
-fs.writeFileSync(OUT, JSON.stringify(rules, null, 2) + '\n');
-console.log('wrote', OUT);
+if (require.main === module) {
+  fs.writeFileSync(OUT, JSON.stringify(rules, null, 2) + '\n');
+  console.log('wrote', OUT);
+}
+module.exports = rules;

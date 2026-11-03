@@ -167,6 +167,70 @@ window.FF = window.FF || {};
     return det;
   }
 
+  /* Site > Leaderboards: who gets the "top N" celebration, games shown first, and the daily
+     challenge's game for the next 7 days (js/leaderboards.js, api/lib/Leaderboards.php). */
+  function leaderboardCard(site) {
+    var LB = FF.Leaderboards;
+    var cfg = Object.assign({ celebrateTop: 20, pinned: [] }, site.leaderboard || {});
+    var c = card('Leaderboards', 'Players in the top N of a board get confetti and a link to their place. Only solo games on the standard settings count. Switch games off the leaderboards on the Games page.');
+    var id = FF.UI.uid('f');
+    var top = el('input', { id: id, type: 'number', class: 'input', min: 3, max: 100, step: 1, value: String(cfg.celebrateTop) });
+    c.appendChild(el('div', { class: 'field' }, [el('label', { class: 'field__label', for: id }, 'Celebrate the top'), top,
+      el('span', { class: 'field__hint' }, '3 to 100. Places 1 to 10 are told "top 10", the rest "top N".')]));
+
+    var games = LB.games().slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
+    var options = [{ label: 'None', value: '' }].concat(games.map(function (g) { return { label: g.name, value: g.id }; }));
+    var pinBox = el('div', { class: 'admin-pins' });
+    var pins = [];
+    for (var i = 0; i < 3; i++) {
+      var s = selectBox('Game shown first, number ' + (i + 1), options, (cfg.pinned || [])[i] || '', function () {});
+      pins.push(s);
+      pinBox.appendChild(s);
+    }
+    c.appendChild(el('div', { class: 'field' }, [el('span', { class: 'field__label' }, 'Games shown first'), pinBox,
+      el('span', { class: 'field__hint' }, 'Up to three. The rest are the most played games this week, counted by the server.')]));
+    var acts = el('div', { class: 'admin-actions' });
+    acts.appendChild(FF.UI.button('Save leaderboards', { class: 'btn-primary', icon: 'check', onClick: function () {
+      var list = pins.map(function (p) { return p.value; }).filter(function (v, j, all) { return v && all.indexOf(v) === j; });
+      D().saveLeaderboard(top.value, list).then(function (out) {
+        site.leaderboard = out;
+        top.value = String(out.celebrateTop);
+        saved();
+      }, function () { saved(false); });
+    } }));
+    c.appendChild(acts);
+
+    // The next 7 days of daily challenge games.
+    c.appendChild(el('h3', { class: 'admin-card__title' }, 'Daily challenge'));
+    c.appendChild(el('p', { class: 'admin-card__sub' }, 'One game a day for everyone (UTC days). The server picks each day ahead and avoids repeats within two weeks. Today is fixed once it has started.'));
+    var sched = el('div', { class: 'admin-table-wrap' });
+    c.appendChild(sched);
+    loading(sched);
+    D().get('dailyMeta').then(function (meta) {
+      meta = meta || {};
+      FF.ui.clear(sched);
+      var tbl = el('table', { class: 'admin-table' });
+      tbl.appendChild(el('thead', {}, [el('tr', {}, ['Day', 'Game', 'Picked by'].map(function (h) { return el('th', { scope: 'col' }, h); }))]));
+      var body = el('tbody');
+      lastDays(7, -6).forEach(function (day, i) {
+        var m = meta[day] || {};
+        var who = el('td', {}, m.game ? ({ server: 'PlayMona', device: 'First player', admin: 'An admin' }[m.by] || '—') : 'Not picked yet');
+        var cell = el('td', {});
+        if (i === 0) {
+          cell.appendChild(el('span', { class: 'admin-game__name' }, m.game ? gameName(m.game) : 'Picked when someone opens it'));
+        } else {
+          cell.appendChild(selectBox('Daily challenge game on ' + shortDate(day), [{ label: 'Let PlayMona pick', value: '' }].concat(options.slice(1)), m.game || '', function (v) {
+            D().setDailyGame(day, v).then(function () { who.textContent = v ? 'An admin' : 'Not picked yet'; saved(); }, function () { saved(false); });
+          }));
+        }
+        body.appendChild(el('tr', {}, [el('th', { scope: 'row' }, (i === 0 ? 'Today · ' : '') + shortDate(day)), cell, who]));
+      });
+      tbl.appendChild(body);
+      sched.appendChild(tbl);
+    }).catch(function (e) { failed(sched, e); });
+    return c;
+  }
+
   var state = { range: 7, userSort: 'lastSeen', userKind: 'accounts' };
 
   // Shared with js/admin/details.js.
@@ -278,7 +342,7 @@ window.FF = window.FF || {};
         FF.ui.clear(box);
 
         var tbl = el('table', { class: 'admin-table admin-games' });
-        tbl.appendChild(el('thead', {}, [el('tr', {}, ['Game', 'Plays (7 days)', 'On', 'Guests', 'Access', 'Free plays', 'Badge'].map(function (h) { return el('th', { scope: 'col' }, h); }))]));
+        tbl.appendChild(el('thead', {}, [el('tr', {}, ['Game', 'Plays (7 days)', 'On', 'Guests', 'Leaderboards', 'Access', 'Free plays', 'Badge'].map(function (h) { return el('th', { scope: 'col' }, h); }))]));
         var tbody = el('tbody');
         var rows = [];
 
@@ -310,6 +374,10 @@ window.FF = window.FF || {};
           tr.appendChild(el('td', { class: 'num' }, num(week.games[g.id])));
           tr.appendChild(el('td', {}, [miniSwitch('Show ' + g.name + ' to players', cfg.enabled, function (on) { save({ enabled: on }); })]));
           tr.appendChild(el('td', {}, [miniSwitch('Guests can play ' + g.name, cfg.guest, function (on) { save({ guest: on }); })]));
+          // Party and creative games never count (people judge them), so they have no switch.
+          tr.appendChild(el('td', {}, FF.Leaderboards && FF.Leaderboards.eligible(g)
+            ? [miniSwitch(g.name + ' on the daily challenge and leaderboards', cfg.ranked !== false, function (on) { save({ ranked: on }); })]
+            : [el('span', { class: 'admin-game__cat', title: 'Party and creative games are not on leaderboards' }, '—')]));
           var free = el('input', { class: 'input admin-num', type: 'number', min: 0, max: 100, value: cfg.freePlays, 'aria-label': 'Free plays a day for ' + g.name });
           free.disabled = cfg.tier !== 'limited';
           free.addEventListener('change', function () { save({ freePlays: Math.max(0, Math.min(100, parseInt(free.value, 10) || 0)) }); });
@@ -586,8 +654,9 @@ window.FF = window.FF || {};
         site.guest = Object.assign({}, FF.GameConfig.GUEST_FEATURES, site.guest || {});
         function save() {
           var clean = { maintenance: !!site.maintenance, payments: !!site.payments, guest: site.guest };
-          // Keep the viewer limits (saved on their own below).
+          // Keep the viewer limits and leaderboard settings (saved on their own below).
           if (site.watch) clean.watch = site.watch;
+          if (site.leaderboard) clean.leaderboard = site.leaderboard;
           if (site.announcement) clean.announcement = site.announcement;
           return D().saveSite(clean).then(function () { saved(); }, function () { saved(false); });
         }
@@ -664,6 +733,7 @@ window.FF = window.FF || {};
         } }));
         watchCard.appendChild(limActs);
         box.appendChild(watchCard);
+        if (FF.Leaderboards) box.appendChild(leaderboardCard(site));
       }).catch(function (e) { failed(box, e); });
     }
   };
