@@ -88,6 +88,8 @@ window.FF = window.FF || {};
   }
 
   // Returns api.config.timer when set (may be 0 = off), else fallback.
+  var BUILDER_CLOCK = { quick: 60, short: 75, normal: 90, long: 120 };
+
   function turnSeconds(api, fallback) {
     var t = api.config.timer;
     if (t == null) return fallback;
@@ -725,8 +727,11 @@ window.FF = window.FF || {};
           });
           claimRow.appendChild(b);
         });
-        wrap.appendChild(claimRow);
-        wrap.appendChild(FF.ui.div('wg-sub wg-center', 'Tap your name, then type a word to claim it.'));
+        // Playing alone there is nobody to pick between.
+        if (players.length > 1) {
+          wrap.appendChild(claimRow);
+          wrap.appendChild(FF.ui.div('wg-sub wg-center', 'Tap your name, then type a word to claim it.'));
+        }
 
         var form = FF.ui.div('wg-word-form');
         var input = FF.ui.el('input', {
@@ -777,7 +782,9 @@ window.FF = window.FF || {};
         }
 
         renderLists();
+        // The timer setting is per question; a whole word hunt needs a longer clock (as Letter Rush).
         var seconds = turnSeconds(api, 60);
+        if (seconds) seconds = Math.max(seconds, BUILDER_CLOCK[api.config.length] || BUILDER_CLOCK.normal);
         if (seconds && seconds > 0) {
           api.shell.setTimer(seconds, renderEnd);
         } else {
@@ -902,7 +909,9 @@ window.FF = window.FF || {};
           state.idx = (state.idx + 1) % state.order.length;
           guard++;
         }
-        if (aliveCount() <= 1 || state.round > state.maxRounds) { renderEnd(); return; }
+        // Alone, play on until the lives run out; with others, until one is left.
+        var lastStanding = state.order.length > 1 ? aliveCount() <= 1 : aliveCount() === 0;
+        if (lastStanding || state.round > state.maxRounds) { renderEnd(); return; }
 
         var entity = state.order[state.idx];
         var lastWord = state.chain[state.chain.length - 1];
@@ -1212,7 +1221,8 @@ window.FF = window.FF || {};
         var ch = FF.util.lettersOnly(raw).charAt(0);
         var sol = state.grid[r][c];
         if (!ch || sol == null) { input.value = ''; return; }
-        if (ch === sol) {
+        // Puzzles store capitals; lettersOnly() lower-cases what was typed.
+        if (ch === String(sol).toLowerCase()) {
           input.value = '';
           if (state.solved[r + ',' + c]) { moveNext(r, c); return; }
           fillCorrect(r, c, true);
@@ -1284,6 +1294,23 @@ window.FF = window.FF || {};
         api.audio.play('tap');
         api.shell.toast('Revealed ' + (count || '') + ' letter(s) (-40).', 'hint');
         checkComplete();
+      }
+
+      // Show every answer first, so giving up still teaches the words; then a button to the results.
+      function revealPuzzle() {
+        if (state.ended || state.revealedAll) return;
+        state.revealedAll = true;
+        api.shell.hideTimer();
+        for (var r = 0; r < state.size; r++) {
+          for (var c = 0; c < state.size; c++) {
+            if (state.grid[r][c] != null && !state.solved[r + ',' + c]) fillCorrect(r, c, false);
+          }
+        }
+        FF.ui.$$('.wg-cw-controls button', api.shell.root).forEach(function (b) { b.disabled = true; });
+        var controls = FF.ui.$('.wg-cw-controls', api.shell.root);
+        var done = FF.UI.button(FF.t('seeResults', 'See results'), { icon: 'trophy', class: 'btn btn-primary', onClick: function () { finish(false); } });
+        if (controls) controls.appendChild(done);
+        FF.Nav.focus(done);
       }
 
       function finish(complete) {
@@ -1379,7 +1406,7 @@ window.FF = window.FF || {};
         var controls = FF.ui.div('wg-cw-controls');
         controls.appendChild(FF.UI.button('Reveal letter (-20)', { icon: 'search',  class: 'btn', onClick: revealLetter }));
         controls.appendChild(FF.UI.button('Reveal word (-40)', { icon: 'search',  class: 'btn', onClick: revealWord }));
-        controls.appendChild(FF.UI.button('Reveal puzzle', { icon: 'check',  class: 'btn danger', onClick: function () { finish(false); } }));
+        controls.appendChild(FF.UI.button('Reveal puzzle', { icon: 'check',  class: 'btn danger', onClick: revealPuzzle }));
         wrap.appendChild(controls);
 
         var clues = FF.ui.div('wg-cw-clues');

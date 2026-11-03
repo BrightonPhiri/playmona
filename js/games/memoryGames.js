@@ -699,11 +699,7 @@ window.FF = window.FF || {};
       wrap.appendChild(stage);
       root.appendChild(wrap);
 
-      // Offline the time limit is for the whole game. In a room it is the time
-      // to answer each round (the race handles it), so it must not end the game.
-      if (api.config.timer > 0 && !(FF.Race && FF.Race.active && FF.Race.active())) {
-        api.shell.setTimer(api.config.timer, function () { finish(); });
-      }
+      // The time limit is per round, to answer once the gap shows (a room's race runs its own clock).
 
       var revealTimer = null;
 
@@ -836,11 +832,8 @@ window.FF = window.FF || {};
           var answered = false;
           var startMs = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
 
-          options.forEach(function (em) {
-            var b = api.ui.button(em, {
-              class: 'btn wm-opt',
-              dataset: { emoji: em },
-              onClick: function () {
+          // em is null when the time runs out.
+          function choose(em, b) {
                 if (answered || ended) return;
                 var elapsed = (typeof performance !== 'undefined' && performance.now)
                   ? (performance.now() - startMs)
@@ -854,6 +847,8 @@ window.FF = window.FF || {};
                 }
 
                 answered = true;
+                api.shell.hideTimer();
+                Array.prototype.forEach.call(opts.childNodes, function (ob) { ob.disabled = true; });
                 if (em === missing) {
                   b.classList.add('correct');
                   api.audio.play('correct');
@@ -861,21 +856,28 @@ window.FF = window.FF || {};
                   api.scoring.add(currentScorer().id, pts, { correct: true, fastest: Math.round(elapsed) });
                   status.textContent = 'Correct, ' + currentScorer().name + '! +' + pts;
                 } else {
-                  b.classList.add('wrong');
+                  if (b) b.classList.add('wrong');
                   api.audio.play('wrong');
                   api.scoring.markAnswer(currentScorer().id, false, Math.round(elapsed));
-                  status.textContent = 'Not quite — it was ' + missing;
+                  status.textContent = (em == null ? 'Time is up — it was ' : 'Not quite — it was ') + missing;
                   Array.prototype.forEach.call(opts.childNodes, function (ob) {
                     if (ob.dataset && ob.dataset.emoji === missing) ob.classList.add('correct');
                   });
                 }
                 api.shell.updateScores(currentScorer().id);
                 setTimeout(nextRound, 1400);
-              }
+          }
+
+          options.forEach(function (em) {
+            var b = api.ui.button(em, {
+              class: 'btn wm-opt',
+              dataset: { emoji: em },
+              onClick: function () { choose(em, b); }
             });
             opts.appendChild(b);
           });
           stage.appendChild(opts);
+          if (!race && api.config.timer > 0) api.shell.setTimer(api.config.timer, function () { choose(null, null); });
 
           if (race) {
             race.gate();
@@ -1085,9 +1087,6 @@ window.FF = window.FF || {};
       var turnIdx = 0;
       var donePlayers = {};
       var ended = false;
-      if (api.config.timer > 0) {
-        api.shell.setTimer(api.config.timer, function () { finish(); });
-      }
 
       function currentScorer() { return scorers[turnIdx % scorers.length]; }
 
@@ -1148,9 +1147,24 @@ window.FF = window.FF || {};
         renderSeqProgress();
         msg.textContent = currentScorer().name + ', watch the sequence!';
         revealSequence(function () {
+          if (ended) return;
           locked = false;
           msg.textContent = 'Your turn — repeat the sequence!';
+          // The time limit is to repeat each sequence, not for the whole game.
+          if (api.config.timer > 0) api.shell.setTimer(api.config.timer, function () { miss(true); });
         });
+      }
+
+      function miss(timedOut) {
+        if (ended || locked) return;
+        locked = true;
+        api.shell.hideTimer();
+        api.audio.play('wrong');
+        api.scoring.markAnswer(currentScorer().id, false);
+        msg.textContent = (timedOut ? 'Time is up, ' : '') + currentScorer().name + ' — the sequence was ' + seqNames() + '.';
+        donePlayers[currentScorer().id] = true;
+        turnIdx++;
+        setTimeout(beginTurn, 1600);
       }
 
       function onTile(i) {
@@ -1158,19 +1172,14 @@ window.FF = window.FF || {};
         flash(i);
         api.audio.play('tap');
         if (i !== seq[inputIdx]) {
-          locked = true;
-          api.audio.play('wrong');
-          api.scoring.markAnswer(currentScorer().id, false);
-          msg.textContent = '' + currentScorer().name + ' — the sequence was ' + seqNames() + '.';
-          donePlayers[currentScorer().id] = true;
-          turnIdx++;
-          setTimeout(beginTurn, 1600);
+          miss(false);
           return;
         }
         inputIdx++;
         renderSeqProgress();
         if (inputIdx >= seq.length) {
           locked = true;
+          api.shell.hideTimer();
           api.audio.play('correct');
           var pts = roundPoints(100, api.config.difficulty);
           api.scoring.add(currentScorer().id, pts, { correct: true });
