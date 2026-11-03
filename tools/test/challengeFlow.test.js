@@ -81,3 +81,30 @@ test('challenge flow: the same challenge seed deals the same numbers on two phon
   };
   assertEqual(JSON.stringify(draw()), JSON.stringify(draw()));
 });
+
+test('review: a run that cannot be a challenge never keeps an earlier seed', function () {
+  const FF = boot();
+  FF.Random.seed('left|over');
+  const config = solo(FF, 'quickTap', { scorers: [{ id: 'a' }, { id: 'b' }] });
+  FF.GameFlow._applySeed(config.def, config);
+  assertEqual(FF.Random.seeded(), false);
+});
+
+test('review: a friend\'s challenge is one go, so pausing offers no restart', function () {
+  const FF = boot();
+  assertEqual(FF.GameFlow._canRestart({ config: { challenge: { id: 'abcdefgh12', seed: 'k3y9x2p1' } } }), false);
+  assertEqual(FF.GameFlow._canRestart({ config: {} }), true);
+});
+
+test('review: restarting a picker run keeps it challenge-ready', function () {
+  const FF = boot();
+  const config = FF.GameFlow.buildConfig(FF.Games.get('quickTap'), { standard: true });
+  assertEqual(config.standard, true);
+  assertEqual(FF.GameFlow._restartOverrides({ config: config }).standard, true);
+});
+
+test('review: game ids that are built-in object names are not games', function () {
+  const FF = boot();
+  assertEqual(FF.Games.get('constructor'), null);
+  assertEqual(FF.Games.get('toString'), null);
+});

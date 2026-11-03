@@ -263,6 +263,21 @@ window.FF = window.FF || {};
       return !!(def && FF.Leaderboards && FF.Leaderboards.active(def));
     },
 
+    /* A received link unlocks its game for that run. To stop made-up links from
+       opening paid games without end, a phone gets 3 new unlocks a day. */
+    UNLOCKS_PER_DAY: 3,
+    unlock: function (id, gameId) {
+      if (!FF.Access || FF.Access.canPlay(gameId)) return true;
+      var day = new Date().toISOString().slice(0, 10);
+      var log = FF.Storage.get('chUnlocks', null);
+      if (!log || log.day !== day) log = { day: day, ids: [] };
+      if (log.ids.indexOf(id) !== -1) return true;
+      if (log.ids.length >= this.UNLOCKS_PER_DAY) return false;
+      log.ids.push(id);
+      FF.Storage.set('chUnlocks', log);
+      return true;
+    },
+
     list: function () { return FF.Storage.get('challenges', []) || []; },
     byId: function (id) { return this.list().filter(function (c) { return c.id === id; })[0] || null; },
     _put: function (rec) {
@@ -279,7 +294,7 @@ window.FF = window.FF || {};
       var payload = rec.v === 2
         ? { v: 2, i: rec.id, s: rec.seed, g: rec.game, n: owner.name, a: owner.avatar, sc: owner.score,
             st: (owner.stats || []).slice(0, 3).map(function (x) { return [x.value, x.label]; }),
-            d: rec.from ? rec.from.at : (rec.at ? Math.floor(rec.at / 3600000) : undefined) }
+            d: rec.from ? rec.from.at : (rec.at ? Math.floor(rec.at / 3600000) : undefined), o: rec.opts || undefined }
         : { v: 1, i: rec.id, s: rec.seed, k: rec.topic, n: owner.name, a: owner.avatar, sc: owner.score, c: owner.correct };
       if (opts && opts.short) { delete payload.st; delete payload.a; }
       var code = b64encode(payload);
@@ -306,7 +321,12 @@ window.FF = window.FF || {};
           // d: when it was sent, in hours (never in the future).
           var hrs = Math.floor(Number(p.d));
           if (hrs > 0 && hrs * 3600000 <= Date.now() + 3600000) from.at = hrs;
-          return { v: 2, id: p.i, seed: p.s, game: p.g, at: from.at ? from.at * 3600000 : null, from: from };
+          var out = { v: 2, id: p.i, seed: p.s, game: p.g, at: from.at ? from.at * 3600000 : null, from: from };
+          // The game's own choices (Quiz Mix topics): plain ids only.
+          if (p.o && Array.isArray(p.o.topics)) {
+            out.opts = { topics: p.o.topics.filter(function (x) { return typeof x === 'string' && /^[a-z]{2,20}$/.test(x); }).slice(0, 12) };
+          }
+          return out;
         }
         var topic = FF.QuizRun.topic(p.k).id;
         return {
@@ -370,7 +390,8 @@ window.FF = window.FF || {};
       if (!c) return;
       if (c.v === 2) {
         if (!this.playable(c)) { FF.UI.toast(t('chNotHere', 'This game is not in this version of PlayMona. Reload the page to update.'), { type: 'error' }); return; }
-        FF.GameFlow.launch(c.game, { challenge: { id: c.id, seed: c.seed }, skipIntro: true });
+        if (!this.unlock(c.id, c.game)) { FF.Access.explain(c.game); return; }
+        FF.GameFlow.launch(c.game, { challenge: { id: c.id, seed: c.seed, opts: c.opts || null }, skipIntro: true });
         return;
       }
       FF.QuizRun.play({
@@ -394,7 +415,7 @@ window.FF = window.FF || {};
       results = results || {};
       var mine = FF.GameFlow && FF.GameFlow._myResult ? FF.GameFlow._myResult(results.results) : (results.results || [])[0];
       var rec = { id: FF.Random.newSeed() + FF.Random.newSeed(), v: 2, game: cur.def.id,
-        seed: results.challengeSeed || cur.config.challengeSeed, role: 'sent', at: Date.now(),
+        seed: results.challengeSeed || cur.config.challengeSeed, role: 'sent', at: Date.now(), opts: results.dealOptions || undefined,
         me: { score: Math.max(0, Math.round(mine ? mine.points || 0 : 0)), ms: 0, stats: this.stats(results) } };
       if (typeof results.quizCorrect === 'number') rec.me.correct = results.quizCorrect;
       this._put(rec);
@@ -407,7 +428,7 @@ window.FF = window.FF || {};
       var id = cur.config.challenge.id;
       var c = this._incoming[id];
       if (!c || this.byId(id)) return;
-      var rec = { id: c.id, v: 2, game: c.game, seed: c.seed, role: 'received', from: c.from, at: Date.now(),
+      var rec = { id: c.id, v: 2, game: c.game, seed: c.seed, opts: c.opts, role: 'received', from: c.from, at: Date.now(),
         me: { score: Math.max(0, Math.round(points || 0)), ms: 0, stats: this.stats(results) } };
       if (results && typeof results.quizCorrect === 'number') rec.me.correct = results.quizCorrect;
       this._put(rec);
@@ -754,9 +775,9 @@ window.FF = window.FF || {};
       quizCard.appendChild(FF.ui.span('topic-card__desc', t('chQuizTopicDesc', '10 questions on a topic you pick.')));
       quizCard.addEventListener('click', function () { Views._topicSheet(); });
       main.appendChild(quizCard);
+      // Straight into the game on the standard settings (the setup screen could change them).
       main.appendChild(FF.App.gameGrid(games, { onPlay: function (def) {
-        var played = FF.Recents && FF.Recents.get().some(function (r) { return r.id === def.id; });
-        FF.GameFlow.launch(def.id, { standard: true, skipIntro: !!played });
+        FF.GameFlow.launch(def.id, { standard: true, skipIntro: true });
       } }));
 
       var list = FF.Challenge.list();

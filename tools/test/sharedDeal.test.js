@@ -54,7 +54,7 @@ test('shared deal: Memory Match does not save the board deck', function () {
 function loadQuiz() {
   const FF = loadFF(['js/core.js', 'js/storage.js', 'js/i18n.js', 'js/registry.js', 'js/gameLength.js', 'js/data/quiz.js']);
   const src = fs.readFileSync(path.join(ROOT, 'js/games/quizMix.js'), 'utf8')
-    .replace(/\}\)\(\);\s*$/, 'FF.__qmDealer = qmDealer;\n})();');
+    .replace(/\}\)\(\);\s*$/, 'FF.__qmDealer = qmDealer;\nFF.__qmTopicsFor = qmTopicsFor;\n})();');
   vm.runInContext(src, FF.__sandbox, { filename: 'quizMix.js' });
   FF.Storage.init();
   return FF;
@@ -95,4 +95,14 @@ test('shared deal: GameFlow marks daily runs as shared and turns off random orde
   assertEqual([daily.sharedDeal, daily.randomOrder], [true, false]);
   const plain = FF.GameFlow.buildConfig(def, {});
   assertEqual(plain.sharedDeal, false);
+});
+
+test('review: a challenge-ready Quiz Mix run still lets you pick topics, and a friend gets the same ones', function () {
+  const FF = loadQuiz();
+  const pick = FF.__qmTopicsFor;
+  assertEqual(pick({ challengeSeed: 'k3y9x2p1' }), null, 'your own run: the topic picker shows');
+  assertEqual(pick({}), null, 'a normal run: the topic picker shows');
+  assertEqual(JSON.stringify(pick({ daily: '2026-11-03' })), '[]', 'the daily plays Everything');
+  assertEqual(JSON.stringify(pick({ challenge: { id: 'x', seed: 'y', opts: { topics: ['science'] } } })), JSON.stringify(['science']), 'a friend plays your topics');
+  assertEqual(JSON.stringify(pick({ challenge: { id: 'x', seed: 'y' } })), '[]', 'an older challenge plays Everything');
 });

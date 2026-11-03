@@ -182,6 +182,14 @@ window.FF = window.FF || {};
     return function () { return bags[topicBag.next()].next(); };
   }
 
+  /* The topics a run must play, or null to let the player pick. The daily plays
+     Everything; a friend's challenge plays the sender's topics. */
+  function qmTopicsFor(config) {
+    if (config.challenge) return (config.challenge.opts && config.challenge.opts.topics) || [];
+    if (config.daily) return [];
+    return null;
+  }
+
   /* ---------- Small helpers ---------- */
 
   function scorerList(config) {
@@ -678,9 +686,14 @@ window.FF = window.FF || {};
       if (!FF.QuizBankData) loadingScreen(api);
       FF.QuizBank.load().then(function () {
         if (!stillShown(api)) return;
-        // Shared deals play Everything, so every phone has the same pool.
-        if (racing || api.config.sharedDeal) play(api, []);
-        else topicPicker(api, function (ids) { play(api, ids); });
+        // Shared deals fix the topics, so every phone has the same pool.
+        var fixed = racing ? [] : qmTopicsFor(api.config);
+        if (fixed) play(api, fixed);
+        else topicPicker(api, function (ids) {
+          // A challenge-ready run sends its topics with the challenge.
+          if (api.config.challengeSeed) api.config.dealOptions = { topics: ids };
+          play(api, ids);
+        });
       });
     }
   });

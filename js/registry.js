@@ -53,7 +53,7 @@ window.FF = window.FF || {};
       if (this._order.indexOf(def.id) === -1) this._order.push(def.id);
     },
 
-    get: function (id) { return FF.Games._registry[id] || null; },
+    get: function (id) { return Object.prototype.hasOwnProperty.call(FF.Games._registry, id) ? FF.Games._registry[id] : null; },
     // Games switched off in the admin portal are left out of every list.
     all: function () {
       var list = this._order.map(function (id) { return FF.Games._registry[id]; });
@@ -456,6 +456,7 @@ window.FF = window.FF || {};
         daily: overrides.daily || null,       // the daily challenge's date (FF.Daily)
         challenge: overrides.challenge || null,   // a friend's challenge being played: { id, seed }
         challengeSeed: null,                  // set in start() when this run can become a challenge
+        standard: !!overrides.standard,       // started from the challenge picker
         onEnd: overrides.onEnd || null,
         room: inRoom,
         roomStartAt: inRoom ? (overrides.roomStartAt || null) : null
@@ -810,6 +811,45 @@ window.FF = window.FF || {};
       return FF.Random.roundSeed('ch|' + config.challengeSeed, def.id, 'init');
     },
 
+    // Seed (or clear) the RNG for a run. A local run never carries on an earlier
+    // run's seeded stream, so only seeded runs are deterministic.
+    _applySeed: function (def, config) {
+      if (!FF.Random.seed) return;
+      if (config.room && FF.Room && FF.Room.current()) {
+        const roomMeta = FF.Room.current().meta || {};
+        FF.Random.seed(FF.Random.roundSeed(roomMeta.seed, def.id, 'init'));
+        return;
+      }
+      if (FF.Random.unseed) FF.Random.unseed();
+      // The daily challenge and friend challenges: everyone deals the same rounds.
+      const seed = this._seedFor(def, config);
+      if (seed) FF.Random.seed(seed);
+    },
+
+    // A friend's challenge is one go: no restarting to see the rounds first.
+    _canRestart: function (cur) { return !(cur && cur.config && cur.config.challenge); },
+
+    // Re-launch with the same settings so difficulty/length/timer and any
+    // tournament/room context survive a restart.
+    _restartOverrides: function (cur) {
+      const c = cur.config;
+      return {
+        skipIntro: true,
+        mode: c.mode,
+        variation: c.variation,
+        displaySeconds: c.displaySeconds,
+        difficulty: c.difficulty,
+        length: c.length,
+        timer: c.timer,
+        clock: c.clock,
+        tournament: c.tournament,
+        round: c.round,
+        onEnd: c.onEnd,
+        room: c.room,
+        standard: c.standard
+      };
+    },
+
     showIntro: function (def, config) { this.showDetails(def, config); },
     showGameSettings: function (def, config) { this.showDetails(def, config, { open: 'players' }); },
     showHowTo: function (def) { this.showDetails(def, this.current.config, { open: 'howto' }); },
@@ -845,14 +885,7 @@ window.FF = window.FF || {};
       // create question Bags during setup, not just per round, so every
       // device has to start from the same RNG state or they deal
       // different questions from round one.
-      if (config.room && FF.Room && FF.Room.current() && FF.Random.seed) {
-        const roomMeta = FF.Room.current().meta || {};
-        FF.Random.seed(FF.Random.roundSeed(roomMeta.seed, def.id, 'init'));
-      } else if (FF.Random.seed) {
-        // The daily challenge and friend challenges: everyone deals the same rounds.
-        const seed = this._seedFor(def, config);
-        if (seed) FF.Random.seed(seed);
-      }
+      this._applySeed(def, config);
 
       const shell = buildShell(def, config, api);
       api.shell = shell;
@@ -1085,7 +1118,10 @@ window.FF = window.FF || {};
         return;
       }
       if (FF.Leaderboards) FF.Leaderboards.afterGame(cur, results);
-      if (cur.config.challengeSeed) results.challengeSeed = cur.config.challengeSeed;
+      if (cur.config.challengeSeed) {
+        results.challengeSeed = cur.config.challengeSeed;
+        results.dealOptions = cur.config.dealOptions || null;   // e.g. Quiz Mix topics
+      }
 
       // tournament hook
       if (cur.config.tournament && cur.config.onEnd) {
@@ -1301,9 +1337,9 @@ window.FF = window.FF || {};
         actions: [
           { label: t('resume', 'Resume'), primary: true, icon: 'play', onClick: function () { FF.GameFlow.resume(); } },
           { label: t('howToPlay', 'How to play'), icon: 'lightbulb', onClick: function () { FF.GameFlow.showRules(cur.def); } },
-          { label: t('restart', 'Restart'), icon: 'restart', onClick: function () { FF.GameFlow.restart(); } },
+          this._canRestart(cur) ? { label: t('restart', 'Restart'), icon: 'restart', onClick: function () { FF.GameFlow.restart(); } } : null,
           { label: t('exitGame', 'Exit game'), ghost: true, icon: 'close', onClick: function () { FF.GameFlow.exitToHome(); } }
-        ]
+        ].filter(Boolean)
       });
     },
 
@@ -1333,24 +1369,8 @@ window.FF = window.FF || {};
       const overlay = FF.ui.$('.pause-overlay', FF.ui.$('#game-screen'));
       if (overlay) overlay.parentNode.removeChild(overlay);
       const cur = this.current;
-      if (!cur) return;
-      const c = cur.config;
-      // Re-launch with the same settings so difficulty/length/timer and any
-      // tournament/room context survive a restart.
-      FF.GameFlow.launch(cur.def.id, {
-        skipIntro: true,
-        mode: c.mode,
-        variation: c.variation,
-        displaySeconds: c.displaySeconds,
-        difficulty: c.difficulty,
-        length: c.length,
-        timer: c.timer,
-        clock: c.clock,
-        tournament: c.tournament,
-        round: c.round,
-        onEnd: c.onEnd,
-        room: c.room
-      });
+      if (!cur || !this._canRestart(cur)) return;
+      FF.GameFlow.launch(cur.def.id, this._restartOverrides(cur));
     },
 
     // Shared "back" behaviour for the hardware/remote back key and the

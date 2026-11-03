@@ -204,3 +204,22 @@ test('challenge v2: the sign-in screen can say who challenged you, and to what',
   assert(/Memory Match/.test(line) && /challenged you/.test(line), line);
   assertEqual(FF.Challenge.inviteLine('broken'), null);
 });
+
+test('review: links unlock at most 3 paid challenge runs a day on a phone', function () {
+  const FF = boot2();
+  FF.Access = { canPlay: function () { return false; } };
+  ['aaaaaa1', 'aaaaaa2', 'aaaaaa3'].forEach(function (id) { assertEqual(FF.Challenge.unlock(id, 'memoryMatch'), true, id); });
+  assertEqual(FF.Challenge.unlock('aaaaaa1', 'memoryMatch'), true, 'the same challenge again is not a new unlock');
+  assertEqual(FF.Challenge.unlock('aaaaaa4', 'memoryMatch'), false, 'the fourth new one today needs normal access');
+  FF.Access = { canPlay: function () { return true; } };
+  assertEqual(FF.Challenge.unlock('aaaaaa5', 'memoryMatch'), true, 'games you can play anyway are not counted');
+});
+
+test('review: a challenge carries the game\'s own choices (Quiz Mix topics) to the friend', function () {
+  const FF = boot2();
+  const rec = { id: 'abcdefgh12345678', v: 2, game: 'memoryMatch', seed: 'k3y9x2p1', role: 'sent', opts: { topics: ['science', 'sport'] }, me: { score: 900, stats: [] } };
+  const c = FF.Challenge.decode(codeOf(FF.Challenge.link(rec)));
+  assertEqual(JSON.stringify(c.opts), JSON.stringify({ topics: ['science', 'sport'] }));
+  const raw = Buffer.from(JSON.stringify({ v: 2, i: 'abcdefgh', s: 'seed1234', g: 'memoryMatch', o: { topics: ['<b>', 'ok', 5] } })).toString('base64').replace(/=+$/, '');
+  assertEqual(JSON.stringify(FF.Challenge.decode(raw).opts), JSON.stringify({ topics: ['ok'] }));
+});
