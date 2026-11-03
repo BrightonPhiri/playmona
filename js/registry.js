@@ -409,7 +409,7 @@ window.FF = window.FF || {};
 
     buildConfig: function (def, overrides) {
       overrides = overrides || {};
-      if (overrides.daily) {
+      if (overrides.daily || overrides.challenge) {
         const std = FF.Leaderboards ? FF.Leaderboards.standard() : { difficulty: 'normal', length: 'normal', timer: FF.Settings.defaults.timer };
         const meP = FF.Players.me() || FF.Players.get()[0];
         overrides = Object.assign({}, overrides, { mode: 'solo', difficulty: std.difficulty, length: std.length, timer: std.timer, clock: 0, variation: 'standard', soloPlayer: meP });
@@ -453,6 +453,8 @@ window.FF = window.FF || {};
         round: overrides.round || null,
         tournament: !!overrides.tournament,
         daily: overrides.daily || null,       // the daily challenge's date (FF.Daily)
+        challenge: overrides.challenge || null,   // a friend's challenge being played: { id, seed }
+        challengeSeed: null,                  // set in start() when this run can become a challenge
         onEnd: overrides.onEnd || null,
         room: inRoom,
         roomStartAt: inRoom ? (overrides.roomStartAt || null) : null
@@ -460,8 +462,8 @@ window.FF = window.FF || {};
       // A shared deal gives every phone the same content from the seed alone
       // (games skip this phone's history and saved choices when it is set). Rooms
       // already share their deal through FF.Race / FF.Parallel.
-      config.sharedDeal = !!config.daily;
-      if (config.daily) config.randomOrder = false;
+      config.sharedDeal = !!(config.daily || config.challenge);
+      if (config.sharedDeal) config.randomOrder = false;
       return config;
     },
 
@@ -470,8 +472,9 @@ window.FF = window.FF || {};
       const def = FF.Games.get(id);
       if (!def) { FF.Nav.go('home'); return; }
       // Room games follow the host; everything else checks the switches, guest access and the paywall.
-      // The daily challenge's game is free to play that day, whatever its tier.
-      if (FF.Access && !(overrides && (overrides.room || overrides.daily)) && !FF.Access.canPlay(id)) {
+      // The daily challenge's game is free to play that day, whatever its tier, and a
+      // friend's challenge unlocks its game for that one run.
+      if (FF.Access && this._checksAccess(overrides) && !FF.Access.canPlay(id)) {
         FF.Access.explain(id);
         return;
       }
@@ -784,6 +787,28 @@ window.FF = window.FF || {};
     },
 
     // Older entry points, now views of the details screen.
+    // Whether a launch goes through the switches, guest access and the paywall.
+    _checksAccess: function (overrides) {
+      return !(overrides && (overrides.room || overrides.daily || overrides.challenge));
+    },
+
+    /* The seed a local run deals from, or null for an unseeded run. A run that can
+       become a friend challenge gets a fresh seed, so a friend can be dealt the same
+       game afterwards; a challenge run deals from the challenge's seed. */
+    _seedFor: function (def, config) {
+      if (config.room) return null;
+      if (config.daily) return FF.Random.roundSeed('daily|' + config.daily, def.id, 'init');
+      if (config.challenge) {
+        config.challengeSeed = config.challenge.seed;
+        return FF.Random.roundSeed('ch|' + config.challenge.seed, def.id, 'init');
+      }
+      if (config.tournament || !FF.Leaderboards || !FF.Leaderboards.challengeable(config)) return null;
+      config.challengeSeed = FF.Random.newSeed();
+      config.sharedDeal = true;
+      config.randomOrder = false;
+      return FF.Random.roundSeed('ch|' + config.challengeSeed, def.id, 'init');
+    },
+
     showIntro: function (def, config) { this.showDetails(def, config); },
     showGameSettings: function (def, config) { this.showDetails(def, config, { open: 'players' }); },
     showHowTo: function (def) { this.showDetails(def, this.current.config, { open: 'howto' }); },
@@ -799,7 +824,7 @@ window.FF = window.FF || {};
       FF.Scoring.init(config.scorers, config.mode);
       if (FF.Track) FF.Track.play(def.id, !!config.room);
       // Uses up one of today's free plays (limited games only). Room guests play on the host's.
-      if (FF.Access && !config.room && !config.daily) FF.Access.usePlay(def.id);
+      if (FF.Access && !config.room && !config.daily && !config.challenge) FF.Access.usePlay(def.id);
       const api = {
         def: def,
         config: config,
@@ -822,9 +847,10 @@ window.FF = window.FF || {};
       if (config.room && FF.Room && FF.Room.current() && FF.Random.seed) {
         const roomMeta = FF.Room.current().meta || {};
         FF.Random.seed(FF.Random.roundSeed(roomMeta.seed, def.id, 'init'));
-      } else if (config.daily && FF.Random.seed) {
-        // The daily challenge: everyone deals the same rounds today.
-        FF.Random.seed(FF.Random.roundSeed('daily|' + config.daily, def.id, 'init'));
+      } else if (FF.Random.seed) {
+        // The daily challenge and friend challenges: everyone deals the same rounds.
+        const seed = this._seedFor(def, config);
+        if (seed) FF.Random.seed(seed);
       }
 
       const shell = buildShell(def, config, api);
@@ -1049,7 +1075,16 @@ window.FF = window.FF || {};
         this.showResults(results);
         return;
       }
+      if (cur.config.challengeSeed && FF.Random.unseed) FF.Random.unseed();
+      if (cur.config.challenge && FF.Challenge) {
+        const mineC = this._myResult(results.results);
+        FF.Challenge.finishRun(cur, mineC ? mineC.points : 0, results);
+        results.challenge = cur.config.challenge.id;
+        this.showResults(results);
+        return;
+      }
       if (FF.Leaderboards) FF.Leaderboards.afterGame(cur, results);
+      if (cur.config.challengeSeed) results.challengeSeed = cur.config.challengeSeed;
 
       // tournament hook
       if (cur.config.tournament && cur.config.onEnd) {
@@ -1326,7 +1361,9 @@ window.FF = window.FF || {};
       this._overlay({
         icon: 'alert',
         title: t('leaveGameQ', 'Leave this game?'),
-        sub: t('progressLost', 'Scores from this game will not be saved.'),
+        sub: cur && cur.config && cur.config.challenge
+          ? t('challengeLeaveBody', 'Leaving now ends the challenge with the points you have so far.')
+          : t('progressLost', 'Scores from this game will not be saved.'),
         actions: [
           { label: t('keepPlaying', 'Keep playing'), primary: true, icon: 'play', onClick: function () { FF.GameFlow.resume(); } },
           { label: t('leaveGame', 'Leave game'), danger: true, icon: 'close', onClick: function () { FF.GameFlow.exitToHome(); } }
@@ -1346,6 +1383,16 @@ window.FF = window.FF || {};
           leaving.ended = true;
           const mineQ = this._myResult(FF.Scoring.results().results);
           FF.Daily.finish(leaving.config.daily, leaving.def.id, mineQ ? mineQ.points : 0);
+        }
+      }
+      if (leaving && leaving.config && leaving.config.challengeSeed) {
+        if (FF.Random.unseed) FF.Random.unseed();
+        // Leaving a friend's challenge early: the points so far count.
+        if (leaving.config.challenge && !leaving.ended && FF.Challenge) {
+          leaving.ended = true;
+          const mineX = this._myResult(FF.Scoring.results().results);
+          FF.Challenge.finishRun(leaving, mineX ? mineX.points : 0, {});
+          if (!view || view === 'home') { view = 'challenge'; params = { id: leaving.config.challenge.id }; }
         }
       }
       if (leaving && leaving.config && leaving.config.room && FF.Room && FF.Room.current()) {
