@@ -21,7 +21,8 @@ window.FF = window.FF || {};
   FF.Assets = {
     // Build an inline-SVG illustration container.
     illustration: function (svg, cls, altText) {
-      const wrap = FF.ui.div(cls || 'illustration');
+      // Always 'illustration', so shared frames (.gm-media) size the SVG.
+      const wrap = FF.ui.div(cls ? 'illustration ' + cls : 'illustration');
       if (svg) {
         wrap.innerHTML = svg;
         if (altText) wrap.setAttribute('role', 'img');

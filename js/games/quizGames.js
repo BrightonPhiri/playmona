@@ -336,7 +336,7 @@ window.FF = window.FF || {};
 
         function stopTimer() { if (timer) { timer.stop(); timer = null; } }
 
-        function settle(correct) {
+        function settle(correct, choice) {
           if (answered) return;
           const elapsed = (Date.now() - startTime) / 1000;
 
@@ -353,6 +353,7 @@ window.FF = window.FF || {};
           falseBtn.disabled = true;
           if (item.answer === true) markOption(trueBtn, 'correct'); else markOption(trueBtn, 'dim');
           if (item.answer === false) markOption(falseBtn, 'correct'); else markOption(falseBtn, 'dim');
+          if (!correct && choice != null) markOption(choice ? trueBtn : falseBtn, 'wrong');
 
           answeredTotal++;
           if (correct) {
@@ -378,7 +379,7 @@ window.FF = window.FF || {};
 
         function answer(choice) {
           if (answered) return;
-          settle(choice === item.answer);
+          settle(choice === item.answer, choice);
         }
 
         function onTimeout() {
@@ -528,7 +529,7 @@ window.FF = window.FF || {};
         for (let i = 0; i < optEls.length; i++) {
           optEls[i].disabled = true;
           if (i === q.answer) markOption(optEls[i], 'correct');
-          else markOption(optEls[i], 'dim');
+          else if (!optEls[i].classList.contains('gm-opt--wrong')) markOption(optEls[i], 'dim');
         }
         api.shell.updateScores(current.id);
 
