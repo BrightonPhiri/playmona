@@ -206,7 +206,63 @@ window.FF = window.FF || {};
     return JSON.parse(decodeURIComponent(escape(atob(s))));
   }
 
+  var BIG_SCORE = 1000000;   // any game's points (the leaderboard cap); quiz links keep MAX_SCORE
+
+  // FNV-1a, so a challenge picks the same wording on every phone.
+  function hash(str) {
+    var h = 0x811c9dc5;
+    for (var i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+    return h >>> 0;
+  }
+
+  function cleanText(s, max) { return String(s == null ? '' : s).replace(/[<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, max); }
+
   FF.Challenge = {
+    // The invite's headline and main button. Each challenge keeps one pair everywhere.
+    TAGLINES: [
+      ['chTag1', '{name} has challenged you!'],
+      ['chTag2', '{name} dares you to beat this'],
+      ['chTag3', 'You’ve been called out by {name}'],
+      ['chTag4', '{name} thinks they can beat you'],
+      ['chTag5', '{name} set the score. Your move.'],
+      ['chTag6', 'Can you top {name}?'],
+      ['chTag7', '{name} wants a rematch… with you'],
+      ['chTag8', '{name} says you can’t beat this']
+    ],
+    BUTTONS: [
+      ['chBtn1', 'Accept the challenge'],
+      ['chBtn2', 'Take them on'],
+      ['chBtn3', 'I’m in']
+    ],
+    wording: function (id) {
+      var h = hash(String(id || ''));
+      var tg = this.TAGLINES[h % this.TAGLINES.length];
+      var bt = this.BUTTONS[Math.floor(h / this.TAGLINES.length) % this.BUTTONS.length];
+      return { tagline: t(tg[0], tg[1]), button: t(bt[0], bt[1]) };
+    },
+
+    // Up to three highlights from a game's results, for the ticket and the brag image.
+    stats: function (results) {
+      results = results || {};
+      var out = [];
+      if (results.quizCorrect) out.push({ value: String(results.quizCorrect), label: t('stCorrect', 'Correct') });
+      if (results.bestStreak) out.push({ value: String(results.bestStreak), label: t('stStreak', 'Best streak') });
+      if (results.fastest != null && isFinite(results.fastest)) out.push({ value: Number(results.fastest).toFixed(2) + ' s', label: t('stFastest', 'Fastest') });
+      if (results.mostWords) out.push({ value: String(results.mostWords), label: t('stWords', 'Words') });
+      return out.slice(0, 3);
+    },
+
+    // The game a challenge is for (v2), or null for a quiz-topic challenge.
+    gameOf: function (c) { return c && c.game && FF.Games ? FF.Games.get(c.game) || null : null; },
+
+    // Whether this version of PlayMona can play the challenge.
+    playable: function (c) {
+      if (!c) return false;
+      if (c.v !== 2) return true;
+      var def = this.gameOf(c);
+      return !!(def && FF.Leaderboards && FF.Leaderboards.active(def));
+    },
+
     list: function () { return FF.Storage.get('challenges', []) || []; },
     byId: function (id) { return this.list().filter(function (c) { return c.id === id; })[0] || null; },
     _put: function (rec) {
@@ -218,8 +274,12 @@ window.FF = window.FF || {};
 
     // The link a friend opens. Everything needed to replay the run is in it.
     link: function (rec) {
-      var code = b64encode({ v: 1, i: rec.id, s: rec.seed, k: rec.topic, n: rec.from ? rec.from.name : me().name,
-        a: rec.from ? rec.from.avatar : me().avatar, sc: rec.from ? rec.from.score : rec.me.score, c: rec.from ? rec.from.correct : rec.me.correct });
+      var owner = rec.from || { name: me().name, avatar: me().avatar, score: rec.me.score, correct: rec.me.correct, stats: rec.me.stats };
+      var payload = rec.v === 2
+        ? { v: 2, i: rec.id, s: rec.seed, g: rec.game, n: owner.name, a: owner.avatar, sc: owner.score,
+            st: (owner.stats || []).slice(0, 3).map(function (x) { return [x.value, x.label]; }) }
+        : { v: 1, i: rec.id, s: rec.seed, k: rec.topic, n: owner.name, a: owner.avatar, sc: owner.score, c: owner.correct };
+      var code = b64encode(payload);
       var base = window.location.protocol === 'file:' ? 'https://playmona.com/play' : window.location.origin + window.location.pathname;
       return base + '#challenge=' + code;
     },
@@ -228,11 +288,23 @@ window.FF = window.FF || {};
     decode: function (code) {
       try {
         var p = b64decode(code);
-        if (!p || p.v !== 1 || typeof p.i !== 'string' || typeof p.s !== 'string') return null;
+        if (!p || (p.v !== 1 && p.v !== 2) || typeof p.i !== 'string' || typeof p.s !== 'string') return null;
         if (!/^[a-z0-9]{6,24}$/.test(p.i) || !/^[a-z0-9]{4,24}$/.test(p.s)) return null;
+        var from = {
+          name: cleanText(p.n || t('aFriend', 'A friend'), 24) || t('aFriend', 'A friend'),
+          avatar: FF.Avatars.has(p.a) ? p.a : FF.Avatars.normalize(p.a, p.n)
+        };
+        if (p.v === 2) {
+          if (typeof p.g !== 'string' || !/^[A-Za-z]{2,40}$/.test(p.g)) return null;
+          from.score = Math.max(0, Math.min(BIG_SCORE, Math.round(Number(p.sc) || 0)));
+          from.stats = (Array.isArray(p.st) ? p.st : []).slice(0, 3).filter(Array.isArray).map(function (x) {
+            return { value: cleanText(x[0], 12), label: cleanText(x[1], 16) };
+          });
+          return { v: 2, id: p.i, seed: p.s, game: p.g, from: from };
+        }
         var topic = FF.QuizRun.topic(p.k).id;
         return {
-          id: p.i, seed: p.s, topic: topic,
+          v: 1, id: p.i, seed: p.s, topic: topic,
           from: {
             name: String(p.n || t('aFriend', 'A friend')).replace(/\s+/g, ' ').trim().slice(0, 24),
             avatar: FF.Avatars.has(p.a) ? p.a : FF.Avatars.normalize(p.a, p.n),
@@ -280,6 +352,11 @@ window.FF = window.FF || {};
       var self = this;
       var c = this._incoming[id];
       if (!c) return;
+      if (c.v === 2) {
+        if (!this.playable(c)) { FF.UI.toast(t('chNotHere', 'This game is not in this version of PlayMona. Reload the page to update.'), { type: 'error' }); return; }
+        FF.GameFlow.launch(c.game, { challenge: { id: c.id, seed: c.seed }, skipIntro: true });
+        return;
+      }
       FF.QuizRun.play({
         title: t('challengeFrom', '{name}’s challenge', { name: c.from.name }), icon: 'swords',
         questions: FF.QuizRun.build(c.seed, c.topic),
@@ -295,13 +372,47 @@ window.FF = window.FF || {};
       });
     },
 
+    /* A game just ended on a challenge-ready run: save it as a challenge to send.
+       cur is FF.GameFlow.current; results is what the game ended with. */
+    fromRun: function (cur, results) {
+      results = results || {};
+      var mine = FF.GameFlow && FF.GameFlow._myResult ? FF.GameFlow._myResult(results.results) : (results.results || [])[0];
+      var rec = { id: FF.Random.newSeed() + FF.Random.newSeed(), v: 2, game: cur.def.id,
+        seed: results.challengeSeed || cur.config.challengeSeed, role: 'sent', at: Date.now(),
+        me: { score: Math.max(0, Math.round(mine ? mine.points || 0 : 0)), ms: 0, stats: this.stats(results) } };
+      if (typeof results.quizCorrect === 'number') rec.me.correct = results.quizCorrect;
+      this._put(rec);
+      this._post(rec);
+      return rec;
+    },
+
+    /* A friend's challenge game ended (or was left early: the points so far count). */
+    finishRun: function (cur, points, results) {
+      var id = cur.config.challenge.id;
+      var c = this._incoming[id];
+      if (!c || this.byId(id)) return;
+      var rec = { id: c.id, v: 2, game: c.game, seed: c.seed, role: 'received', from: c.from, at: Date.now(),
+        me: { score: Math.max(0, Math.round(points || 0)), ms: 0, stats: this.stats(results) } };
+      if (results && typeof results.quizCorrect === 'number') rec.me.correct = results.quizCorrect;
+      this._put(rec);
+      delete this._incoming[id];
+      this._post(rec);
+    },
+
     // Share results so the sender can see who took them on (accounts only).
     _post: function (rec) {
       if (!FF.Cloud.available()) return;
       var who = me();
-      FF.Cloud.set('challenges/' + rec.id + '/' + who.uid, {
-        name: who.name, avatar: who.avatar, score: Math.min(MAX_SCORE, rec.me.score), correct: rec.me.correct, ms: rec.me.ms, t: Date.now()
-      }).catch(function () {});
+      var row = { name: who.name, avatar: who.avatar, ms: rec.me.ms || 0, t: Date.now() };
+      if (rec.v === 2) {
+        row.score = Math.min(BIG_SCORE, rec.me.score);
+        row.game = rec.game;
+        if (typeof rec.me.correct === 'number') row.correct = Math.min(1000, rec.me.correct);
+      } else {
+        row.score = Math.min(MAX_SCORE, rec.me.score);
+        row.correct = rec.me.correct;
+      }
+      FF.Cloud.set('challenges/' + rec.id + '/' + who.uid, row).catch(function () {});
     },
 
     results: function (id) {

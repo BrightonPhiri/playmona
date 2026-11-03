@@ -100,3 +100,95 @@ test('stats: a challenge counts as a game with XP', function () {
   const s = FF.Stats.get();
   assertEqual([s.gamesPlayed, s.xp, s.quizCorrect, s.byCategory.quiz], [1, 60, 8, 1]);
 });
+
+/* ---------- Challenges on any game (v2 links) ---------- */
+const FILES2 = ['js/core.js', 'js/storage.js', 'js/scoring.js', 'js/data/avatars.js', 'js/avatars.js', 'js/players.js',
+  'js/registry.js', 'js/data/quiz.js', 'js/data/countries.js', 'js/quizRun.js', 'js/auth.js', 'js/cloud.js',
+  'js/gameConfig.js', 'js/leaderboards.js', 'js/social.js'];
+
+function boot2() {
+  const FF = loadFF(FILES2);
+  FF.__sandbox.btoa = function (s) { return Buffer.from(s, 'binary').toString('base64'); };
+  FF.__sandbox.atob = function (s) { return Buffer.from(s, 'base64').toString('binary'); };
+  FF.__sandbox.crypto = require('crypto').webcrypto;
+  FF.__sandbox.TextEncoder = TextEncoder;
+  FF.Storage.init();
+  FF.Games.register({ id: 'memoryMatch', name: 'Memory Match', category: 'memory', players: [1, 8], modes: ['solo', 'turn'] });
+  return FF;
+}
+
+function codeOf(link) { return /#challenge=([A-Za-z0-9_-]+)/.exec(link)[1]; }
+
+test('challenge v2: a link for any game carries the game, seed, score and stats', function () {
+  const FF = boot2();
+  const rec = { id: 'abcdefgh12345678', v: 2, game: 'memoryMatch', seed: 'k3y9x2p1', role: 'sent',
+    me: { score: 250000, ms: 48000, stats: [{ value: '0:48', label: 'Time' }, { value: '×6', label: 'Best streak' }] } };
+  const c = FF.Challenge.decode(codeOf(FF.Challenge.link(rec)));
+  assertEqual([c.v, c.id, c.seed, c.game, c.from.score], [2, 'abcdefgh12345678', 'k3y9x2p1', 'memoryMatch', 250000]);
+  assertEqual(JSON.stringify(c.from.stats), JSON.stringify(rec.me.stats));
+  assertEqual(FF.Challenge.playable(c), true);
+});
+
+test('challenge v2: old quiz links still decode as a quiz topic', function () {
+  const FF = boot2();
+  const rec = { id: 'abcdefgh12345678', seed: 'k3y9x2p1', topic: 'world', role: 'sent', me: { score: 1234, correct: 8, ms: 40000 } };
+  const c = FF.Challenge.decode(codeOf(FF.Challenge.link(rec)));
+  assertEqual([c.v, c.topic, c.from.score, c.from.correct], [1, 'world', 1234, 8]);
+  assertEqual(FF.Challenge.playable(c), true);
+});
+
+test('challenge v2: tampered scores clamp, and unknown games are not playable', function () {
+  const FF = boot2();
+  const raw = Buffer.from(JSON.stringify({ v: 2, i: 'abcdefgh', s: 'seed1234', g: 'notAGame', n: 'Kuda', sc: 5000000,
+    st: [['1', '<b>x</b>'], ['2', 'b'], ['3', 'c'], ['4', 'd']] })).toString('base64').replace(/=+$/, '');
+  const c = FF.Challenge.decode(raw);
+  assertEqual(c.from.score, 1000000);
+  assertEqual(c.from.stats.length, 3, 'three stats at most');
+  assertEqual(FF.Challenge.playable(c), false);
+  const bad = Buffer.from(JSON.stringify({ v: 2, i: 'abcdefgh', s: 'seed1234', g: 'mem<script>' })).toString('base64').replace(/=+$/, '');
+  assertEqual(FF.Challenge.decode(bad), null, 'game ids are plain letters');
+});
+
+test('challenge v2: wording is the same for a challenge everywhere, and varies between challenges', function () {
+  const FF = boot2();
+  const a = FF.Challenge.wording('abcdefgh12');
+  assertEqual(JSON.stringify(a), JSON.stringify(FF.Challenge.wording('abcdefgh12')));
+  assert(FF.Challenge.TAGLINES.length >= 6, 'at least six taglines');
+  FF.Challenge.TAGLINES.forEach(function (x) { assert(x[1].indexOf('{name}') !== -1, x[0] + ' names the sender'); });
+  assertEqual(FF.Challenge.BUTTONS.map(function (b) { return b[1]; }), ['Accept the challenge', 'Take them on', 'I’m in']);
+  const seen = {};
+  for (let i = 0; i < 50; i++) seen[FF.Challenge.wording('chal' + i + 'xyz').tagline] = true;
+  assert(Object.keys(seen).length >= 3, 'taglines vary: ' + Object.keys(seen).length);
+});
+
+test('challenge v2: stats come from the game results, three at most', function () {
+  const FF = boot2();
+  const s = FF.Challenge.stats({ bestStreak: 6, fastest: 0.42, mostWords: 12, quizCorrect: 8 });
+  assertEqual(s.length, 3);
+  assertEqual(s.map(function (x) { return x.value; }), ['8', '6', '0.42 s'], 'correct, streak, fastest');
+  assertEqual(FF.Challenge.stats({}).length, 0);
+});
+
+test('challenge v2: a finished run becomes a sent challenge, and playing one saves the result', function () {
+  const FF = boot2();
+  const cur = { def: FF.Games.get('memoryMatch'), config: { challengeSeed: 'k3y9x2p1' } };
+  const rec = FF.Challenge.fromRun(cur, { results: [{ id: 'me', isMe: true, points: 900 }], challengeSeed: 'k3y9x2p1', bestStreak: 4 });
+  assertEqual([rec.v, rec.game, rec.seed, rec.role, rec.me.score], [2, 'memoryMatch', 'k3y9x2p1', 'sent', 900]);
+  assertEqual(FF.Challenge.byId(rec.id).id, rec.id);
+  const c = FF.Challenge.decode(codeOf(FF.Challenge.link(rec)));
+  c.id = 'zzzzzzzz9999';
+  FF.Challenge._incoming[c.id] = c;
+  FF.Challenge.finishRun({ def: cur.def, config: { challenge: { id: c.id, seed: c.seed } } }, 1200, {});
+  const got = FF.Challenge.byId(c.id);
+  assertEqual([got.role, got.game, got.me.score, got.from.score], ['received', 'memoryMatch', 1200, 900]);
+  assert(!FF.Challenge._incoming[c.id], 'no longer waiting to be played');
+});
+
+test('rules: challenge results take any game score up to a million, without a correct count', function () {
+  const rules = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '..', '..', 'database.rules.json'), 'utf8')).rules;
+  const v = rules.challenges.$id.$uid['.validate'];
+  assert(/val\(\) <= 1000000/.test(v), 'score cap');
+  assert(!/hasChildren\(\['name', 'score', 'correct'/.test(v), 'correct is optional');
+  assert(/newData\.child\('game'\)/.test(v), 'game is checked');
+  assertEqual(JSON.stringify(require('../gen-rules.js').rules.challenges), JSON.stringify(rules.challenges), 'generator and file agree');
+});

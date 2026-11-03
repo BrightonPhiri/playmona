@@ -318,7 +318,7 @@
         ".validate": "$id.matches(/^[a-z0-9]{6,24}$/)",
         "$uid": {
           ".write": "auth != null && auth.token.firebase.sign_in_provider !== 'anonymous' && auth.uid === $uid && !root.child('bans').child(auth.uid).exists() && !data.exists()",
-          ".validate": "newData.hasChildren(['name', 'score', 'correct', 't']) && newData.child('name').isString() && newData.child('name').val().length <= 40 && newData.child('score').isNumber() && newData.child('score').val() >= 0 && newData.child('score').val() <= 1500 && newData.child('correct').isNumber() && newData.child('correct').val() >= 0 && newData.child('correct').val() <= 10"
+          ".validate": "newData.hasChildren(['name', 'score', 't']) && newData.child('name').isString() && newData.child('name').val().length <= 40 && newData.child('score').isNumber() && newData.child('score').val() >= 0 && newData.child('score').val() <= 1000000 && (!newData.child('correct').exists() || (newData.child('correct').isNumber() && newData.child('correct').val() >= 0 && newData.child('correct').val() <= 1000)) && (!newData.child('game').exists() || (newData.child('game').isString() && newData.child('game').val().length <= 40)) && (!newData.child('avatar').exists() || (newData.child('avatar').isString() && newData.child('avatar').val().length <= 60))"
         }
       }
     },

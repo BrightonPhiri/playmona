@@ -18,8 +18,8 @@ const STR = (max) => ({ ".validate": "newData.isString() && newData.val().length
 const NUM = { ".validate": "newData.isNumber()" };
 const BOOL = { ".validate": "newData.isBoolean()" };
 const NONE = { ".validate": false };
-// Challenges: 10 questions. The daily challenge and game boards use the rules below.
-const RESULT = "newData.hasChildren(['name', 'score', 'correct', 't']) && newData.child('name').isString() && newData.child('name').val().length <= 40 && newData.child('score').isNumber() && newData.child('score').val() >= 0 && newData.child('score').val() <= 1500 && newData.child('correct').isNumber() && newData.child('correct').val() >= 0 && newData.child('correct').val() <= 10";
+// Challenges: any game (points up to the leaderboard cap); quiz challenges also send how many were right.
+const RESULT = "newData.hasChildren(['name', 'score', 't']) && newData.child('name').isString() && newData.child('name').val().length <= 40 && newData.child('score').isNumber() && newData.child('score').val() >= 0 && newData.child('score').val() <= 1000000 && (!newData.child('correct').exists() || (newData.child('correct').isNumber() && newData.child('correct').val() >= 0 && newData.child('correct').val() <= 1000)) && (!newData.child('game').exists() || (newData.child('game').isString() && newData.child('game').val().length <= 40)) && (!newData.child('avatar').exists() || (newData.child('avatar').isString() && newData.child('avatar').val().length <= 60))";
 
 // A score on a leaderboard (js/leaderboards.js). Scores are capped; points differ a lot between games.
 const SCORE = "newData.child('name').isString() && newData.child('name').val().length <= 40 && newData.child('score').isNumber() && newData.child('score').val() >= 0 && newData.child('score').val() <= 1000000 && newData.child('t').isNumber() && newData.child('t').val() <= now + 60000 && (!newData.child('avatar').exists() || (newData.child('avatar').isString() && newData.child('avatar').val().length <= 60))";
