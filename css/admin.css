@@ -216,3 +216,27 @@
 .plan-row.is-off .plan-row__text strong { color: var(--muted); }
 .plan-edit { display: flex; flex-direction: column; gap: var(--sp-4); }
 .plan-edit__preview { width: 160px; height: 160px; border-radius: var(--r-md); object-fit: cover; background: var(--surface-3); }
+
+/* Crew page (js/admin/crew.js) */
+.crew-note { margin: 0; }
+.crew-grid { display: grid; gap: var(--sp-3) var(--sp-4); grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); margin: var(--sp-3) 0; }
+.crew-pair { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; }
+.crew-pair__to { color: var(--muted); font-size: var(--fs-sm); }
+.crew-pair__item { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-sm); font-weight: 700; }
+.crew-games { list-style: none; margin: var(--sp-2) 0 0; padding: 0; display: grid; gap: 4px var(--sp-4); grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr)); }
+.crew-games li { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2); padding: 4px 0; border-bottom: 1px solid var(--border); }
+.crew-games .switch { transform: scale(0.9); flex: none; }
+.admin-table tr.is-off .admin-user__name { color: var(--muted); }
+.crew-edit .crew-grid { margin: 0; }
+.crew-draft .prem-grant { flex-wrap: wrap; }
+.crew-draft__idea { flex: 1 1 16rem; min-width: 0; }
+.crew-edit__ava-row { display: flex; align-items: center; gap: var(--sp-2); }
+.crew-edit__ava-row select { flex: 1; min-width: 0; }
+.crew-edit__ava { width: 44px; height: 44px; flex: none; }
+.crew-edit__img { width: 44px; height: 44px; border-radius: 50%; }
+.crew-edit__color { width: 64px; height: 40px; padding: 2px; }
+.crew-sliders { display: grid; gap: 6px var(--sp-4); grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); }
+.crew-slider { display: grid; grid-template-columns: minmax(0, 9rem) minmax(0, 1fr) 2.5em; align-items: center; gap: var(--sp-2); }
+.crew-slider__label { font-size: var(--fs-sm); font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.crew-slider__input { width: 100%; accent-color: var(--accent); }
+.crew-slider__value { font-variant-numeric: tabular-nums; font-weight: 800; text-align: right; font-size: var(--fs-sm); }
