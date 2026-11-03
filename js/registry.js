@@ -457,6 +457,11 @@ window.FF = window.FF || {};
         room: inRoom,
         roomStartAt: inRoom ? (overrides.roomStartAt || null) : null
       };
+      // A shared deal gives every phone the same content from the seed alone
+      // (games skip this phone's history and saved choices when it is set). Rooms
+      // already share their deal through FF.Race / FF.Parallel.
+      config.sharedDeal = !!config.daily;
+      if (config.daily) config.randomOrder = false;
       return config;
     },
 

@@ -169,6 +169,19 @@ window.FF = window.FF || {};
     FF.Storage.set(SEEN_KEY, arr);
   }
 
+  /* The question dealer for one game. Topics take turns, so a big topic (games)
+     cannot crowd out the rest. A shared deal (race, daily, challenge) ignores what
+     this phone has seen, so every phone gets the same questions. */
+  function qmDealer(basePool, rounds, opts) {
+    var pool = opts.shared ? basePool : freshFirst(basePool, rounds);
+    var byTopic = {};
+    pool.forEach(function (q) { (byTopic[q.topic] = byTopic[q.topic] || []).push(q); });
+    var topicBag = new opts.random.Bag(Object.keys(byTopic).sort());
+    var bags = {};
+    Object.keys(byTopic).forEach(function (id) { bags[id] = new opts.random.Bag(byTopic[id]); });
+    return function () { return bags[topicBag.next()].next(); };
+  }
+
   /* ---------- Small helpers ---------- */
 
   function scorerList(config) {
@@ -325,14 +338,8 @@ window.FF = window.FF || {};
     var rounds = FF.GameLength.rounds(api, 10, basePool.length);
     // Pass and play: everyone gets the same number of questions.
     if (!racing && !timed && n > 1) rounds = Math.ceil(rounds / n) * n;
-    var pool = racing ? basePool : freshFirst(basePool, rounds);
-    // Topics take turns, so a big topic (games) cannot crowd out the rest.
-    var byTopic = {};
-    pool.forEach(function (q) { (byTopic[q.topic] = byTopic[q.topic] || []).push(q); });
-    var topicBag = new api.random.Bag(Object.keys(byTopic).sort());
-    var bags = {};
-    Object.keys(byTopic).forEach(function (id) { bags[id] = new api.random.Bag(byTopic[id]); });
-    function deal() { return bags[topicBag.next()].next(); }
+    var shared = racing || !!config.sharedDeal;
+    var deal = qmDealer(basePool, rounds, { shared: shared, random: api.random });
     if (timed) FF.GameLength.manual();
 
     var round = 0;
@@ -393,7 +400,7 @@ window.FF = window.FF || {};
       if (race) race.beginRound(round);
       var entity = racing ? scorers[0] : scorers[round % n];
       var base = deal();
-      if (!racing) markSeen(base.id);
+      if (!shared) markSeen(base.id);
       // Shuffle the answers (true/false stays in order).
       var order = base.tf ? [0, 1] : FF.util.shuffle(base.options.map(function (o, i) { return i; }));
       var q = {
@@ -671,7 +678,8 @@ window.FF = window.FF || {};
       if (!FF.QuizBankData) loadingScreen(api);
       FF.QuizBank.load().then(function () {
         if (!stillShown(api)) return;
-        if (racing) play(api, []);
+        // Shared deals play Everything, so every phone has the same pool.
+        if (racing || api.config.sharedDeal) play(api, []);
         else topicPicker(api, function (ids) { play(api, ids); });
       });
     }
