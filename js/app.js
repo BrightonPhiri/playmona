@@ -79,7 +79,8 @@ window.FF = window.FF || {};
     favorites: { view: 'games', params: { favorites: true } }
   };
   // Screens a guest may be locked out of (see FF.Access, js/gameConfig.js).
-  var VIEW_FEATURE = { daily: 'daily', challenges: 'challenge', challenge: 'challenge', gamenight: 'gameNight' };
+  // A friend's challenge link (the 'challenge' view) opens for guests too: playing it is free.
+  var VIEW_FEATURE = { daily: 'daily', challenges: 'challenge', gamenight: 'gameNight' };
   // Which main destination a view belongs to (for nav highlighting).
   var NAV_OF = { home: 'home', gamenight: 'home', games: 'games', online: 'online', daily: 'online', challenges: 'online', challenge: 'online', leaderboard: 'leaderboard', plus: 'profile', profile: 'profile', settings: 'profile', credits: 'profile', about: 'profile' };
   // The phone's bottom bar shows this many buttons; with more sections it shows one fewer plus "More".
@@ -773,7 +774,7 @@ window.FF = window.FF || {};
         t('minutesCount', '{n} minutes', { n: minutes }) + (isOnlineGame(def.id) && onlineEnabled() ? '. ' + t('playsOnline', 'Plays online') : '');
       var link = FF.ui.el('button', {
         type: 'button', class: 'gcard__link', 'aria-label': label,
-        onclick: function () { FF.Audio.play('select'); FF.GameFlow.launch(def.id); }
+        onclick: function () { FF.Audio.play('select'); if (opts.onPlay) opts.onPlay(def); else FF.GameFlow.launch(def.id); }
       }, def.name);
       var name = FF.ui.el('h3', { class: 'gcard__name' }, [link]);
       var desc = FF.ui.el('p', { class: 'gcard__desc' }, def.description);

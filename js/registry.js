@@ -409,7 +409,8 @@ window.FF = window.FF || {};
 
     buildConfig: function (def, overrides) {
       overrides = overrides || {};
-      if (overrides.daily || overrides.challenge) {
+      // standard: started from the challenge picker, so the run can become a challenge.
+      if (overrides.daily || overrides.challenge || overrides.standard) {
         const std = FF.Leaderboards ? FF.Leaderboards.standard() : { difficulty: 'normal', length: 'normal', timer: FF.Settings.defaults.timer };
         const meP = FF.Players.me() || FF.Players.get()[0];
         overrides = Object.assign({}, overrides, { mode: 'solo', difficulty: std.difficulty, length: std.length, timer: std.timer, clock: 0, variation: 'standard', soloPlayer: meP });
@@ -1184,8 +1185,23 @@ window.FF = window.FF || {};
           FF.GameFlow.close('leaderboard', { tab: 'daily', highlight: true });
         } }));
         actions.appendChild(FF.UI.button(t('navHome', 'Home'), { class: 'btn-lg btn-ghost', icon: 'house', onClick: function () { FF.GameFlow.exitToHome(); } }));
+      } else if (results.challenge) {
+        // A friend's challenge: the reveal shows who won.
+        actions.appendChild(FF.UI.button(t('chSeeWhoWon', 'See who won'), { class: 'btn-lg btn-primary', icon: 'trophy', onClick: function () {
+          FF.GameFlow.close('challenge', { id: results.challenge, reveal: true });
+        } }));
+        actions.appendChild(FF.UI.button(t('navHome', 'Home'), { class: 'btn-lg btn-ghost', icon: 'house', onClick: function () { FF.GameFlow.exitToHome(); } }));
       } else {
         actions.appendChild(FF.UI.button(t('playAgain', 'Play again'), { class: 'btn-lg btn-primary', icon: 'restart', onClick: function () { FF.Audio.play('roundStart'); FF.GameFlow.launch(FF.GameFlow.current.def.id, { skipIntro: true }); } }));
+        if (results.challengeSeed && FF.Challenge) {
+          actions.appendChild(FF.UI.button(t('challengeFriend', 'Challenge a friend'), { class: 'btn-lg', icon: 'swords', onClick: function () {
+            const cur = FF.GameFlow.current;
+            FF.Access.gate('challenge', function () {
+              const rec = FF.Challenge.fromRun(cur, results);
+              FF.GameFlow.close('challenge', { id: rec.id, fresh: true });
+            });
+          } }));
+        }
         actions.appendChild(FF.UI.button(t('anotherGame', 'Choose another game'), { class: 'btn-lg', icon: 'game-controller', onClick: function () { FF.GameFlow.close('games'); } }));
         actions.appendChild(FF.UI.button(t('navHome', 'Home'), { class: 'btn-lg btn-ghost', icon: 'house', onClick: function () { FF.GameFlow.exitToHome(); } }));
       }

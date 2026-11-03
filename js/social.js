@@ -449,6 +449,12 @@ window.FF = window.FF || {};
     return s;
   }
 
+  // What a challenge is for: the game's name, or the quiz topic.
+  function challengeName(c) {
+    if (c.v === 2) return FF.Games.get(c.game) && FF.Leaderboards ? FF.Leaderboards.gameName(c.game) : c.game;
+    return t('topic_' + c.topic, FF.QuizRun.topic(c.topic).name);
+  }
+
   function loadingRow() {
     return FF.UI.loading(t('loading', 'Loading…'));
   }
@@ -547,10 +553,37 @@ window.FF = window.FF || {};
     challenges: function (main) {
       main.appendChild(backLink());
       main.appendChild(banner('swords', 'pink', t('challengeFriend', 'Challenge a friend'),
-        t('challengeSub', 'Answer 10 questions, then send the link. Your friend gets the same questions and tries to beat your score.')));
+        t('challengeSubAny', 'Play any game, then send the link. Your friend gets the same game and tries to beat your score.')));
 
-      main.appendChild(FF.App.sectionHead(t('pickTopic', 'Pick a topic')));
+      // Pick a game: it plays on the standard settings, and its results screen sends it.
+      main.appendChild(FF.App.sectionHead(t('chPickGame', 'Pick a game')));
+      var games = FF.Leaderboards.games().filter(function (g) { return !FF.Access || FF.Access.canPlay(g.id); });
+      var quizCard = FF.ui.el('button', { type: 'button', class: 'topic-card ch-quiz-card' });
+      var qic = FF.ui.span('topic-card__icon');
+      qic.appendChild(icon('lightbulb'));
+      quizCard.appendChild(qic);
+      quizCard.appendChild(FF.ui.el('strong', { class: 'topic-card__name' }, t('chQuizTopic', 'Quiz by topic')));
+      quizCard.appendChild(FF.ui.span('topic-card__desc', t('chQuizTopicDesc', '10 questions on a topic you pick.')));
+      quizCard.addEventListener('click', function () { Views._topicSheet(); });
+      main.appendChild(quizCard);
+      main.appendChild(FF.App.gameGrid(games, { onPlay: function (def) {
+        var played = FF.Recents && FF.Recents.get().some(function (r) { return r.id === def.id; });
+        FF.GameFlow.launch(def.id, { standard: true, skipIntro: !!played });
+      } }));
+
+      var list = FF.Challenge.list();
+      main.appendChild(FF.App.sectionHead(t('yourChallenges', 'Your challenges')));
+      if (!list.length) {
+        main.appendChild(FF.ui.el('p', { class: 'social-empty' }, t('noChallenges', 'Challenges you send and receive show up here.')));
+        return;
+      }
+      Views._challengeList(main, list);
+    },
+
+    // The old quiz challenge: pick a topic, answer 10 questions.
+    _topicSheet: function () {
       var grid = FF.ui.el('ul', { class: 'topic-grid' });
+      var sheet = null;
       FF.QuizRun.TOPICS.forEach(function (tp) {
         var li = FF.ui.el('li', {});
         var b = FF.ui.el('button', { type: 'button', class: 'topic-card' });
@@ -559,18 +592,14 @@ window.FF = window.FF || {};
         b.appendChild(ic);
         b.appendChild(FF.ui.el('strong', { class: 'topic-card__name' }, t('topic_' + tp.id, tp.name)));
         b.appendChild(FF.ui.span('topic-card__desc', t('topicDesc_' + tp.id, tp.desc)));
-        b.addEventListener('click', function () { FF.Challenge.create(tp.id); });
+        b.addEventListener('click', function () { if (sheet) sheet.close(); FF.Challenge.create(tp.id); });
         li.appendChild(b);
         grid.appendChild(li);
       });
-      main.appendChild(grid);
+      sheet = FF.UI.sheet({ title: t('pickTopic', 'Pick a topic'), body: grid });
+    },
 
-      var list = FF.Challenge.list();
-      main.appendChild(FF.App.sectionHead(t('yourChallenges', 'Your challenges')));
-      if (!list.length) {
-        main.appendChild(FF.ui.el('p', { class: 'social-empty' }, t('noChallenges', 'Challenges you send and receive show up here.')));
-        return;
-      }
+    _challengeList: function (main, list) {
       var ul = FF.ui.el('ul', { class: 'ch-list' });
       list.forEach(function (c) {
         var li = FF.ui.el('li', {});
@@ -578,7 +607,7 @@ window.FF = window.FF || {};
         var other = c.role === 'received' ? c.from : null;
         b.appendChild(FF.Players.avatarEl(other ? { name: other.name, avatar: other.avatar } : { name: me().name, avatar: me().avatar }, 'ch-row__ava'));
         var txt = FF.ui.div('ch-row__text');
-        var topicName = t('topic_' + c.topic, FF.QuizRun.topic(c.topic).name);
+        var topicName = c.v === 2 ? challengeName(c) : t('topic_' + c.topic, FF.QuizRun.topic(c.topic).name);
         if (other) {
           var res = c.me.score > other.score ? 'won' : (c.me.score < other.score ? 'lost' : 'tied');
           txt.appendChild(FF.ui.el('strong', {}, t('vsName', 'You vs {name}', { name: other.name })));
