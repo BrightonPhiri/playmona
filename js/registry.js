@@ -53,7 +53,7 @@ window.FF = window.FF || {};
       if (this._order.indexOf(def.id) === -1) this._order.push(def.id);
     },
 
-    get: function (id) { return FF.Games._registry[id] || null; },
+    get: function (id) { return Object.prototype.hasOwnProperty.call(FF.Games._registry, id) ? FF.Games._registry[id] : null; },
     // Games switched off in the admin portal are left out of every list.
     all: function () {
       var list = this._order.map(function (id) { return FF.Games._registry[id]; });
@@ -409,7 +409,8 @@ window.FF = window.FF || {};
 
     buildConfig: function (def, overrides) {
       overrides = overrides || {};
-      if (overrides.daily) {
+      // standard: started from the challenge picker, so the run can become a challenge.
+      if (overrides.daily || overrides.challenge || overrides.standard) {
         const std = FF.Leaderboards ? FF.Leaderboards.standard() : { difficulty: 'normal', length: 'normal', timer: FF.Settings.defaults.timer };
         const meP = FF.Players.me() || FF.Players.get()[0];
         overrides = Object.assign({}, overrides, { mode: 'solo', difficulty: std.difficulty, length: std.length, timer: std.timer, clock: 0, variation: 'standard', soloPlayer: meP });
@@ -453,10 +454,18 @@ window.FF = window.FF || {};
         round: overrides.round || null,
         tournament: !!overrides.tournament,
         daily: overrides.daily || null,       // the daily challenge's date (FF.Daily)
+        challenge: overrides.challenge || null,   // a friend's challenge being played: { id, seed }
+        challengeSeed: null,                  // set in start() when this run can become a challenge
+        standard: !!overrides.standard,       // started from the challenge picker
         onEnd: overrides.onEnd || null,
         room: inRoom,
         roomStartAt: inRoom ? (overrides.roomStartAt || null) : null
       };
+      // A shared deal gives every phone the same content from the seed alone
+      // (games skip this phone's history and saved choices when it is set). Rooms
+      // already share their deal through FF.Race / FF.Parallel.
+      config.sharedDeal = !!(config.daily || config.challenge);
+      if (config.sharedDeal) config.randomOrder = false;
       return config;
     },
 
@@ -465,8 +474,9 @@ window.FF = window.FF || {};
       const def = FF.Games.get(id);
       if (!def) { FF.Nav.go('home'); return; }
       // Room games follow the host; everything else checks the switches, guest access and the paywall.
-      // The daily challenge's game is free to play that day, whatever its tier.
-      if (FF.Access && !(overrides && (overrides.room || overrides.daily)) && !FF.Access.canPlay(id)) {
+      // The daily challenge's game is free to play that day, whatever its tier, and a
+      // friend's challenge unlocks its game for that one run.
+      if (FF.Access && this._checksAccess(overrides) && !FF.Access.canPlay(id)) {
         FF.Access.explain(id);
         return;
       }
@@ -779,6 +789,67 @@ window.FF = window.FF || {};
     },
 
     // Older entry points, now views of the details screen.
+    // Whether a launch goes through the switches, guest access and the paywall.
+    _checksAccess: function (overrides) {
+      return !(overrides && (overrides.room || overrides.daily || overrides.challenge));
+    },
+
+    /* The seed a local run deals from, or null for an unseeded run. A run that can
+       become a friend challenge gets a fresh seed, so a friend can be dealt the same
+       game afterwards; a challenge run deals from the challenge's seed. */
+    _seedFor: function (def, config) {
+      if (config.room) return null;
+      if (config.daily) return FF.Random.roundSeed('daily|' + config.daily, def.id, 'init');
+      if (config.challenge) {
+        config.challengeSeed = config.challenge.seed;
+        return FF.Random.roundSeed('ch|' + config.challenge.seed, def.id, 'init');
+      }
+      if (config.tournament || !FF.Leaderboards || !FF.Leaderboards.challengeable(config)) return null;
+      config.challengeSeed = FF.Random.newSeed();
+      config.sharedDeal = true;
+      config.randomOrder = false;
+      return FF.Random.roundSeed('ch|' + config.challengeSeed, def.id, 'init');
+    },
+
+    // Seed (or clear) the RNG for a run. A local run never carries on an earlier
+    // run's seeded stream, so only seeded runs are deterministic.
+    _applySeed: function (def, config) {
+      if (!FF.Random.seed) return;
+      if (config.room && FF.Room && FF.Room.current()) {
+        const roomMeta = FF.Room.current().meta || {};
+        FF.Random.seed(FF.Random.roundSeed(roomMeta.seed, def.id, 'init'));
+        return;
+      }
+      if (FF.Random.unseed) FF.Random.unseed();
+      // The daily challenge and friend challenges: everyone deals the same rounds.
+      const seed = this._seedFor(def, config);
+      if (seed) FF.Random.seed(seed);
+    },
+
+    // A friend's challenge is one go: no restarting to see the rounds first.
+    _canRestart: function (cur) { return !(cur && cur.config && cur.config.challenge); },
+
+    // Re-launch with the same settings so difficulty/length/timer and any
+    // tournament/room context survive a restart.
+    _restartOverrides: function (cur) {
+      const c = cur.config;
+      return {
+        skipIntro: true,
+        mode: c.mode,
+        variation: c.variation,
+        displaySeconds: c.displaySeconds,
+        difficulty: c.difficulty,
+        length: c.length,
+        timer: c.timer,
+        clock: c.clock,
+        tournament: c.tournament,
+        round: c.round,
+        onEnd: c.onEnd,
+        room: c.room,
+        standard: c.standard
+      };
+    },
+
     showIntro: function (def, config) { this.showDetails(def, config); },
     showGameSettings: function (def, config) { this.showDetails(def, config, { open: 'players' }); },
     showHowTo: function (def) { this.showDetails(def, this.current.config, { open: 'howto' }); },
@@ -794,7 +865,7 @@ window.FF = window.FF || {};
       FF.Scoring.init(config.scorers, config.mode);
       if (FF.Track) FF.Track.play(def.id, !!config.room);
       // Uses up one of today's free plays (limited games only). Room guests play on the host's.
-      if (FF.Access && !config.room && !config.daily) FF.Access.usePlay(def.id);
+      if (FF.Access && !config.room && !config.daily && !config.challenge) FF.Access.usePlay(def.id);
       const api = {
         def: def,
         config: config,
@@ -814,13 +885,7 @@ window.FF = window.FF || {};
       // create question Bags during setup, not just per round, so every
       // device has to start from the same RNG state or they deal
       // different questions from round one.
-      if (config.room && FF.Room && FF.Room.current() && FF.Random.seed) {
-        const roomMeta = FF.Room.current().meta || {};
-        FF.Random.seed(FF.Random.roundSeed(roomMeta.seed, def.id, 'init'));
-      } else if (config.daily && FF.Random.seed) {
-        // The daily challenge: everyone deals the same rounds today.
-        FF.Random.seed(FF.Random.roundSeed('daily|' + config.daily, def.id, 'init'));
-      }
+      this._applySeed(def, config);
 
       const shell = buildShell(def, config, api);
       api.shell = shell;
@@ -1044,7 +1109,19 @@ window.FF = window.FF || {};
         this.showResults(results);
         return;
       }
+      if (cur.config.challengeSeed && FF.Random.unseed) FF.Random.unseed();
+      if (cur.config.challenge && FF.Challenge) {
+        const mineC = this._myResult(results.results);
+        FF.Challenge.finishRun(cur, mineC ? mineC.points : 0, results);
+        results.challenge = cur.config.challenge.id;
+        this.showResults(results);
+        return;
+      }
       if (FF.Leaderboards) FF.Leaderboards.afterGame(cur, results);
+      if (cur.config.challengeSeed) {
+        results.challengeSeed = cur.config.challengeSeed;
+        results.dealOptions = cur.config.dealOptions || null;   // e.g. Quiz Mix topics
+      }
 
       // tournament hook
       if (cur.config.tournament && cur.config.onEnd) {
@@ -1144,8 +1221,23 @@ window.FF = window.FF || {};
           FF.GameFlow.close('leaderboard', { tab: 'daily', highlight: true });
         } }));
         actions.appendChild(FF.UI.button(t('navHome', 'Home'), { class: 'btn-lg btn-ghost', icon: 'house', onClick: function () { FF.GameFlow.exitToHome(); } }));
+      } else if (results.challenge) {
+        // A friend's challenge: the reveal shows who won.
+        actions.appendChild(FF.UI.button(t('chSeeWhoWon', 'See who won'), { class: 'btn-lg btn-primary', icon: 'trophy', onClick: function () {
+          FF.GameFlow.close('challenge', { id: results.challenge, reveal: true });
+        } }));
+        actions.appendChild(FF.UI.button(t('navHome', 'Home'), { class: 'btn-lg btn-ghost', icon: 'house', onClick: function () { FF.GameFlow.exitToHome(); } }));
       } else {
         actions.appendChild(FF.UI.button(t('playAgain', 'Play again'), { class: 'btn-lg btn-primary', icon: 'restart', onClick: function () { FF.Audio.play('roundStart'); FF.GameFlow.launch(FF.GameFlow.current.def.id, { skipIntro: true }); } }));
+        if (results.challengeSeed && FF.Challenge) {
+          actions.appendChild(FF.UI.button(t('challengeFriend', 'Challenge a friend'), { class: 'btn-lg', icon: 'swords', onClick: function () {
+            const cur = FF.GameFlow.current;
+            FF.Access.gate('challenge', function () {
+              const rec = FF.Challenge.fromRun(cur, results);
+              FF.GameFlow.close('challenge', { id: rec.id, fresh: true });
+            });
+          } }));
+        }
         actions.appendChild(FF.UI.button(t('anotherGame', 'Choose another game'), { class: 'btn-lg', icon: 'game-controller', onClick: function () { FF.GameFlow.close('games'); } }));
         actions.appendChild(FF.UI.button(t('navHome', 'Home'), { class: 'btn-lg btn-ghost', icon: 'house', onClick: function () { FF.GameFlow.exitToHome(); } }));
       }
@@ -1245,9 +1337,9 @@ window.FF = window.FF || {};
         actions: [
           { label: t('resume', 'Resume'), primary: true, icon: 'play', onClick: function () { FF.GameFlow.resume(); } },
           { label: t('howToPlay', 'How to play'), icon: 'lightbulb', onClick: function () { FF.GameFlow.showRules(cur.def); } },
-          { label: t('restart', 'Restart'), icon: 'restart', onClick: function () { FF.GameFlow.restart(); } },
+          this._canRestart(cur) ? { label: t('restart', 'Restart'), icon: 'restart', onClick: function () { FF.GameFlow.restart(); } } : null,
           { label: t('exitGame', 'Exit game'), ghost: true, icon: 'close', onClick: function () { FF.GameFlow.exitToHome(); } }
-        ]
+        ].filter(Boolean)
       });
     },
 
@@ -1277,24 +1369,8 @@ window.FF = window.FF || {};
       const overlay = FF.ui.$('.pause-overlay', FF.ui.$('#game-screen'));
       if (overlay) overlay.parentNode.removeChild(overlay);
       const cur = this.current;
-      if (!cur) return;
-      const c = cur.config;
-      // Re-launch with the same settings so difficulty/length/timer and any
-      // tournament/room context survive a restart.
-      FF.GameFlow.launch(cur.def.id, {
-        skipIntro: true,
-        mode: c.mode,
-        variation: c.variation,
-        displaySeconds: c.displaySeconds,
-        difficulty: c.difficulty,
-        length: c.length,
-        timer: c.timer,
-        clock: c.clock,
-        tournament: c.tournament,
-        round: c.round,
-        onEnd: c.onEnd,
-        room: c.room
-      });
+      if (!cur || !this._canRestart(cur)) return;
+      FF.GameFlow.launch(cur.def.id, this._restartOverrides(cur));
     },
 
     // Shared "back" behaviour for the hardware/remote back key and the
@@ -1321,7 +1397,9 @@ window.FF = window.FF || {};
       this._overlay({
         icon: 'alert',
         title: t('leaveGameQ', 'Leave this game?'),
-        sub: t('progressLost', 'Scores from this game will not be saved.'),
+        sub: cur && cur.config && cur.config.challenge
+          ? t('challengeLeaveBody', 'Leaving now ends the challenge with the points you have so far.')
+          : t('progressLost', 'Scores from this game will not be saved.'),
         actions: [
           { label: t('keepPlaying', 'Keep playing'), primary: true, icon: 'play', onClick: function () { FF.GameFlow.resume(); } },
           { label: t('leaveGame', 'Leave game'), danger: true, icon: 'close', onClick: function () { FF.GameFlow.exitToHome(); } }
@@ -1341,6 +1419,16 @@ window.FF = window.FF || {};
           leaving.ended = true;
           const mineQ = this._myResult(FF.Scoring.results().results);
           FF.Daily.finish(leaving.config.daily, leaving.def.id, mineQ ? mineQ.points : 0);
+        }
+      }
+      if (leaving && leaving.config && leaving.config.challengeSeed) {
+        if (FF.Random.unseed) FF.Random.unseed();
+        // Leaving a friend's challenge early: the points so far count.
+        if (leaving.config.challenge && !leaving.ended && FF.Challenge) {
+          leaving.ended = true;
+          const mineX = this._myResult(FF.Scoring.results().results);
+          FF.Challenge.finishRun(leaving, mineX ? mineX.points : 0, {});
+          if (!view || view === 'home') { view = 'challenge'; params = { id: leaving.config.challenge.id }; }
         }
       }
       if (leaving && leaving.config && leaving.config.room && FF.Room && FF.Room.current()) {

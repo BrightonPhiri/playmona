@@ -155,6 +155,13 @@ window.FF = window.FF || {};
     },
     ranked: function (config) { return this.unrankedReason(config) === null; },
 
+    /* A run that can become a friend challenge: the same fair settings as the boards.
+       No account needed here; sending one checks the account separately. */
+    challengeable: function (config) {
+      var why = this.unrankedReason(config);
+      return why === null || why === 'account';
+    },
+
     // One line for the game details screen, or null for games that never count.
     detailsNote: function (def, config) {
       if (!this.active(def)) return null;

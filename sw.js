@@ -5,7 +5,7 @@
    On install it caches the app page (/play) and every file it links to.
    Pages use clean URLs; the server maps /play to play.html.
    ============================================================ */
-var CACHE = 'playmona-v5';
+var CACHE = 'playmona-v6';
 var SDK_HOST = 'https://www.gstatic.com/firebasejs/';
 
 /* Our own files are always rechecked with the server (cheap when unchanged).

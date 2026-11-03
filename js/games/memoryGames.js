@@ -526,6 +526,14 @@ window.FF = window.FF || {};
     return id;
   }
 
+  /* The deck for the next board. A shared deal (daily, challenge) picks it from the
+     seeded random numbers and leaves this phone's last deck alone. */
+  function mmBoardDeck(shared) {
+    if (!shared) return mmSurpriseDeck();
+    var ids = (FF.MemoryDecks || []).map(function (d) { return d.id; }).concat(['']);
+    return FF.util.pick(ids);
+  }
+
   var MM_SECONDS = { easy: 75, normal: 120, hard: 180 };
 
   /* Online: every phone gets the same surprise deck and board each round. */
@@ -564,9 +572,10 @@ window.FF = window.FF || {};
       // Longer games and a game clock deal fresh boards; Normal is one board.
       boards: timed ? FF.GameLength.UNBOUNDED : (FF.GameLength ? FF.GameLength.rounds(api, 1, 0) : 1),
       deal: function () {
-        var id = mmSurpriseDeck();
+        var shared = !!api.config.sharedDeal;
+        var id = mmBoardDeck(shared);
         deck = mmDeck(id);
-        return mmDeal(id, pairs);
+        return mmDeal(id, pairs, shared);
       },
       theme: function () {
         return deck

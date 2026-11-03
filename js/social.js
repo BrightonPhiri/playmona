@@ -206,7 +206,78 @@ window.FF = window.FF || {};
     return JSON.parse(decodeURIComponent(escape(atob(s))));
   }
 
+  var BIG_SCORE = 1000000;   // any game's points (the leaderboard cap); quiz links keep MAX_SCORE
+
+  // FNV-1a, so a challenge picks the same wording on every phone.
+  function hash(str) {
+    var h = 0x811c9dc5;
+    for (var i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+    return h >>> 0;
+  }
+
+  function cleanText(s, max) { return String(s == null ? '' : s).replace(/[<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, max); }
+
   FF.Challenge = {
+    // The invite's headline and main button. Each challenge keeps one pair everywhere.
+    TAGLINES: [
+      ['chTag1', '{name} has challenged you!'],
+      ['chTag2', '{name} dares you to beat this'],
+      ['chTag3', 'You’ve been called out by {name}'],
+      ['chTag4', '{name} thinks they can beat you'],
+      ['chTag5', '{name} set the score. Your move.'],
+      ['chTag6', 'Can you top {name}?'],
+      ['chTag7', '{name} wants a rematch… with you'],
+      ['chTag8', '{name} says you can’t beat this']
+    ],
+    BUTTONS: [
+      ['chBtn1', 'Accept the challenge'],
+      ['chBtn2', 'Take them on'],
+      ['chBtn3', 'I’m in']
+    ],
+    wording: function (id) {
+      var h = hash(String(id || ''));
+      var tg = this.TAGLINES[h % this.TAGLINES.length];
+      var bt = this.BUTTONS[Math.floor(h / this.TAGLINES.length) % this.BUTTONS.length];
+      return { tagline: t(tg[0], tg[1]), button: t(bt[0], bt[1]) };
+    },
+
+    // Up to three highlights from a game's results, for the ticket and the brag image.
+    stats: function (results) {
+      results = results || {};
+      var out = [];
+      if (results.quizCorrect) out.push({ value: String(results.quizCorrect), label: t('stCorrect', 'Correct') });
+      if (results.bestStreak) out.push({ value: String(results.bestStreak), label: t('stStreak', 'Best streak') });
+      if (results.fastest != null && isFinite(results.fastest)) out.push({ value: Number(results.fastest).toFixed(2) + ' s', label: t('stFastest', 'Fastest') });
+      if (results.mostWords) out.push({ value: String(results.mostWords), label: t('stWords', 'Words') });
+      return out.slice(0, 3);
+    },
+
+    // The game a challenge is for (v2), or null for a quiz-topic challenge.
+    gameOf: function (c) { return c && c.game && FF.Games ? FF.Games.get(c.game) || null : null; },
+
+    // Whether this version of PlayMona can play the challenge.
+    playable: function (c) {
+      if (!c) return false;
+      if (c.v !== 2) return true;
+      var def = this.gameOf(c);
+      return !!(def && FF.Leaderboards && FF.Leaderboards.active(def));
+    },
+
+    /* A received link unlocks its game for that run. To stop made-up links from
+       opening paid games without end, a phone gets 3 new unlocks a day. */
+    UNLOCKS_PER_DAY: 3,
+    unlock: function (id, gameId) {
+      if (!FF.Access || FF.Access.canPlay(gameId)) return true;
+      var day = new Date().toISOString().slice(0, 10);
+      var log = FF.Storage.get('chUnlocks', null);
+      if (!log || log.day !== day) log = { day: day, ids: [] };
+      if (log.ids.indexOf(id) !== -1) return true;
+      if (log.ids.length >= this.UNLOCKS_PER_DAY) return false;
+      log.ids.push(id);
+      FF.Storage.set('chUnlocks', log);
+      return true;
+    },
+
     list: function () { return FF.Storage.get('challenges', []) || []; },
     byId: function (id) { return this.list().filter(function (c) { return c.id === id; })[0] || null; },
     _put: function (rec) {
@@ -217,9 +288,16 @@ window.FF = window.FF || {};
     _incoming: {},
 
     // The link a friend opens. Everything needed to replay the run is in it.
-    link: function (rec) {
-      var code = b64encode({ v: 1, i: rec.id, s: rec.seed, k: rec.topic, n: rec.from ? rec.from.name : me().name,
-        a: rec.from ? rec.from.avatar : me().avatar, sc: rec.from ? rec.from.score : rec.me.score, c: rec.from ? rec.from.correct : rec.me.correct });
+    // opts.short: leave out the picture and stats, for a QR code that scans easily.
+    link: function (rec, opts) {
+      var owner = rec.from || { name: me().name, avatar: me().avatar, score: rec.me.score, correct: rec.me.correct, stats: rec.me.stats };
+      var payload = rec.v === 2
+        ? { v: 2, i: rec.id, s: rec.seed, g: rec.game, n: owner.name, a: owner.avatar, sc: owner.score,
+            st: (owner.stats || []).slice(0, 3).map(function (x) { return [x.value, x.label]; }),
+            d: rec.from ? rec.from.at : (rec.at ? Math.floor(rec.at / 3600000) : undefined), o: rec.opts || undefined }
+        : { v: 1, i: rec.id, s: rec.seed, k: rec.topic, n: owner.name, a: owner.avatar, sc: owner.score, c: owner.correct };
+      if (opts && opts.short) { delete payload.st; delete payload.a; }
+      var code = b64encode(payload);
       var base = window.location.protocol === 'file:' ? 'https://playmona.com/play' : window.location.origin + window.location.pathname;
       return base + '#challenge=' + code;
     },
@@ -228,11 +306,31 @@ window.FF = window.FF || {};
     decode: function (code) {
       try {
         var p = b64decode(code);
-        if (!p || p.v !== 1 || typeof p.i !== 'string' || typeof p.s !== 'string') return null;
+        if (!p || (p.v !== 1 && p.v !== 2) || typeof p.i !== 'string' || typeof p.s !== 'string') return null;
         if (!/^[a-z0-9]{6,24}$/.test(p.i) || !/^[a-z0-9]{4,24}$/.test(p.s)) return null;
+        var from = {
+          name: cleanText(p.n || t('aFriend', 'A friend'), 24) || t('aFriend', 'A friend'),
+          avatar: FF.Avatars.has(p.a) ? p.a : FF.Avatars.normalize(p.a, p.n)
+        };
+        if (p.v === 2) {
+          if (typeof p.g !== 'string' || !/^[A-Za-z]{2,40}$/.test(p.g)) return null;
+          from.score = Math.max(0, Math.min(BIG_SCORE, Math.round(Number(p.sc) || 0)));
+          from.stats = (Array.isArray(p.st) ? p.st : []).slice(0, 3).filter(Array.isArray).map(function (x) {
+            return { value: cleanText(x[0], 12), label: cleanText(x[1], 16) };
+          });
+          // d: when it was sent, in hours (never in the future).
+          var hrs = Math.floor(Number(p.d));
+          if (hrs > 0 && hrs * 3600000 <= Date.now() + 3600000) from.at = hrs;
+          var out = { v: 2, id: p.i, seed: p.s, game: p.g, at: from.at ? from.at * 3600000 : null, from: from };
+          // The game's own choices (Quiz Mix topics): plain ids only.
+          if (p.o && Array.isArray(p.o.topics)) {
+            out.opts = { topics: p.o.topics.filter(function (x) { return typeof x === 'string' && /^[a-z]{2,20}$/.test(x); }).slice(0, 12) };
+          }
+          return out;
+        }
         var topic = FF.QuizRun.topic(p.k).id;
         return {
-          id: p.i, seed: p.s, topic: topic,
+          v: 1, id: p.i, seed: p.s, topic: topic,
           from: {
             name: String(p.n || t('aFriend', 'A friend')).replace(/\s+/g, ' ').trim().slice(0, 24),
             avatar: FF.Avatars.has(p.a) ? p.a : FF.Avatars.normalize(p.a, p.n),
@@ -241,6 +339,16 @@ window.FF = window.FF || {};
           }
         };
       } catch (e) { return null; }
+    },
+
+    // One line for the sign-in screen when a challenge link was opened, or null.
+    inviteLine: function (code) {
+      var c = code ? this.decode(code) : null;
+      if (!c) return null;
+      var what = c.v === 2 ? (this.gameOf(c) && FF.Leaderboards ? FF.Leaderboards.gameName(c.game) : null) : t('topic_' + c.topic, FF.QuizRun.topic(c.topic).name);
+      return what
+        ? t('chAuthLine', '{name} has challenged you to {game}! Play as a guest or sign in to take them on.', { name: c.from.name, game: what })
+        : t('chAuthLineAny', '{name} has challenged you! Play as a guest or sign in to take them on.', { name: c.from.name });
     },
 
     codeFromUrl: function () {
@@ -280,6 +388,12 @@ window.FF = window.FF || {};
       var self = this;
       var c = this._incoming[id];
       if (!c) return;
+      if (c.v === 2) {
+        if (!this.playable(c)) { FF.UI.toast(t('chNotHere', 'This game is not in this version of PlayMona. Reload the page to update.'), { type: 'error' }); return; }
+        if (!this.unlock(c.id, c.game)) { FF.Access.explain(c.game); return; }
+        FF.GameFlow.launch(c.game, { challenge: { id: c.id, seed: c.seed, opts: c.opts || null }, skipIntro: true });
+        return;
+      }
       FF.QuizRun.play({
         title: t('challengeFrom', '{name}’s challenge', { name: c.from.name }), icon: 'swords',
         questions: FF.QuizRun.build(c.seed, c.topic),
@@ -295,13 +409,47 @@ window.FF = window.FF || {};
       });
     },
 
+    /* A game just ended on a challenge-ready run: save it as a challenge to send.
+       cur is FF.GameFlow.current; results is what the game ended with. */
+    fromRun: function (cur, results) {
+      results = results || {};
+      var mine = FF.GameFlow && FF.GameFlow._myResult ? FF.GameFlow._myResult(results.results) : (results.results || [])[0];
+      var rec = { id: FF.Random.newSeed() + FF.Random.newSeed(), v: 2, game: cur.def.id,
+        seed: results.challengeSeed || cur.config.challengeSeed, role: 'sent', at: Date.now(), opts: results.dealOptions || undefined,
+        me: { score: Math.max(0, Math.round(mine ? mine.points || 0 : 0)), ms: 0, stats: this.stats(results) } };
+      if (typeof results.quizCorrect === 'number') rec.me.correct = results.quizCorrect;
+      this._put(rec);
+      this._post(rec);
+      return rec;
+    },
+
+    /* A friend's challenge game ended (or was left early: the points so far count). */
+    finishRun: function (cur, points, results) {
+      var id = cur.config.challenge.id;
+      var c = this._incoming[id];
+      if (!c || this.byId(id)) return;
+      var rec = { id: c.id, v: 2, game: c.game, seed: c.seed, opts: c.opts, role: 'received', from: c.from, at: Date.now(),
+        me: { score: Math.max(0, Math.round(points || 0)), ms: 0, stats: this.stats(results) } };
+      if (results && typeof results.quizCorrect === 'number') rec.me.correct = results.quizCorrect;
+      this._put(rec);
+      delete this._incoming[id];
+      this._post(rec);
+    },
+
     // Share results so the sender can see who took them on (accounts only).
     _post: function (rec) {
       if (!FF.Cloud.available()) return;
       var who = me();
-      FF.Cloud.set('challenges/' + rec.id + '/' + who.uid, {
-        name: who.name, avatar: who.avatar, score: Math.min(MAX_SCORE, rec.me.score), correct: rec.me.correct, ms: rec.me.ms, t: Date.now()
-      }).catch(function () {});
+      var row = { name: who.name, avatar: who.avatar, ms: rec.me.ms || 0, t: Date.now() };
+      if (rec.v === 2) {
+        row.score = Math.min(BIG_SCORE, rec.me.score);
+        row.game = rec.game;
+        if (typeof rec.me.correct === 'number') row.correct = Math.min(1000, rec.me.correct);
+      } else {
+        row.score = Math.min(MAX_SCORE, rec.me.score);
+        row.correct = rec.me.correct;
+      }
+      FF.Cloud.set('challenges/' + rec.id + '/' + who.uid, row).catch(function () {});
     },
 
     results: function (id) {
@@ -338,8 +486,186 @@ window.FF = window.FF || {};
     return s;
   }
 
+  // What a challenge is for: the game's name, or the quiz topic.
+  function challengeName(c) {
+    if (c.v === 2) return FF.Games.get(c.game) && FF.Leaderboards ? FF.Leaderboards.gameName(c.game) : c.game;
+    return t('topic_' + c.topic, FF.QuizRun.topic(c.topic).name);
+  }
+
   function loadingRow() {
     return FF.UI.loading(t('loading', 'Loading…'));
+  }
+
+  function allChallengesLink() {
+    return FF.UI.button(t('allChallenges', 'All challenges'), { class: 'btn-ghost btn-sm social-back', icon: 'arrow-left', onClick: function () { FF.Nav.go('challenges'); } });
+  }
+
+  // The cover art behind a challenge: the game's, or Quiz Mix's for a quiz topic.
+  function challengeArt(c) {
+    var def = FF.Challenge.gameOf(c);
+    var id = def ? def.id : 'familyQuiz';
+    return { url: FF.Assets.artUrl('covers', id), wash: FF.Assets.wash(def ? def.category : 'quiz') };
+  }
+
+  function dayText(at) {
+    if (!at) return t('chSentRecently', 'Recently');
+    var d = new Date(at), now = new Date();
+    var days = Math.round((Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) - Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())) / 86400000);
+    if (days <= 0) return t('today', 'Today');
+    if (days === 1) return t('yesterday', 'Yesterday');
+    return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+  }
+
+  /* The golden ticket: game art and name, who sent it and their line, a tear,
+     and the score to beat. who = { name, avatar, score, stats, tagline, at, preview } */
+  function ticket(c, who) {
+    var art = challengeArt(c);
+    var card = FF.ui.el('article', { class: 'ch-ticket' + (who.preview ? ' ch-ticket--preview' : '') });
+    var cover = FF.ui.div('ch-ticket__art');
+    cover.style.setProperty('--art', art.url);
+    cover.style.setProperty('--wash', art.wash);
+    cover.appendChild(FF.ui.span('ch-ticket__chip', challengeName(c)));
+    card.appendChild(cover);
+    var head = FF.ui.div('ch-ticket__head');
+    head.appendChild(FF.Players.avatarEl({ name: who.name, avatar: who.avatar }, 'ch-ticket__ava'));
+    var txt = FF.ui.div('ch-ticket__text');
+    txt.appendChild(FF.ui.el(who.preview ? 'h2' : 'h1', { class: 'ch-ticket__title' }, who.tagline.replace('{name}', who.name)));
+    txt.appendChild(FF.ui.el('p', { class: 'ch-ticket__line' }, t('chLine', 'One go. Same {game}. Winner takes the bragging rights.', { game: challengeName(c) })));
+    head.appendChild(txt);
+    card.appendChild(head);
+    card.appendChild(FF.ui.div('ch-ticket__tear'));
+    var stub = FF.ui.div('ch-ticket__stub');
+    var beat = FF.ui.div('ch-ticket__beat');
+    beat.appendChild(FF.ui.span('ch-ticket__label', t('chScoreToBeat', 'Score to beat')));
+    beat.appendChild(FF.ui.el('strong', { class: 'ch-ticket__score' }, fmt(who.score)));
+    stub.appendChild(beat);
+    var sentAt = FF.ui.div('ch-ticket__sent');
+    sentAt.appendChild(FF.ui.span('ch-ticket__label', t('chSent', 'Sent')));
+    sentAt.appendChild(FF.ui.el('strong', {}, dayText(who.at)));
+    stub.appendChild(sentAt);
+    card.appendChild(stub);
+    if (who.stats && who.stats.length) {
+      var st = FF.ui.el('ul', { class: 'ch-ticket__stats', 'aria-label': t('chTheirStats', 'Their game') });
+      who.stats.forEach(function (s) {
+        var li = FF.ui.el('li', {});
+        li.appendChild(FF.ui.el('strong', {}, s.value));
+        li.appendChild(FF.ui.span('', s.label));
+        st.appendChild(li);
+      });
+      card.appendChild(st);
+    }
+    return card;
+  }
+
+  function reducedMotion() {
+    return !FF.Settings.get('animations') || FF.Settings.get('reduceMotion');
+  }
+
+  // Count a score up from 0. rAF can be throttled (hidden tabs), so a timer finishes it too.
+  function countUp(el, to) {
+    if (reducedMotion() || !to) { el.textContent = fmt(to); return; }
+    var start = Date.now(), dur = 900, done = false;
+    function step() {
+      if (done) return;
+      var p = Math.min(1, (Date.now() - start) / dur);
+      el.textContent = fmt(Math.round(to * (1 - Math.pow(1 - p, 3))));
+      if (p >= 1) { done = true; return; }
+      if (window.requestAnimationFrame) requestAnimationFrame(step);
+    }
+    el.textContent = '0';
+    step();
+    setTimeout(function () { if (!done) { done = true; el.textContent = fmt(to); } }, dur + 200);
+  }
+
+  // Who won a received challenge, and by how much.
+  function outcome(rec) {
+    var mine = rec.me.score, theirs = rec.from.score;
+    var hi = Math.max(mine, theirs);
+    return { won: mine > theirs, lost: mine < theirs, margin: Math.abs(mine - theirs), close: hi > 0 && Math.abs(mine - theirs) <= hi * 0.05 };
+  }
+
+  // Play the same game again and send it back (a new challenge).
+  function challengeBack(rec) {
+    FF.Access.gate('challenge', function () {
+      if (rec.v === 2) FF.GameFlow.launch(rec.game, { standard: true, skipIntro: true });
+      else FF.Challenge.create(rec.topic);
+    });
+  }
+
+  /* After playing a friend's challenge: both scores count up, then the verdict. */
+  function reveal(rec, self, name, fresh) {
+    var o = outcome(rec);
+    var box = FF.ui.el('section', { class: 'ch-reveal' + (o.won ? ' ch-reveal--won' : '') });
+    box.appendChild(FF.ui.span('ch-reveal__kicker', name));
+    var title = o.won ? t('chYouBeat', 'You beat {name}!', { name: rec.from.name })
+      : (o.lost ? t('chHoldsCrown', '{name} holds the crown', { name: rec.from.name }) : t('itsATie', 'It’s a tie!'));
+    var h = FF.ui.el('h1', { class: 'ch-reveal__title' }, title);
+    box.appendChild(h);
+    var duel = FF.ui.div('vs-duel ch-reveal__duel');
+    function side(who, score, win) {
+      var s = FF.ui.div('vs-side' + (win ? ' is-win' : ''));
+      var crown = FF.ui.span('ch-reveal__crown');
+      if (win) crown.appendChild(icon('crown'));
+      s.appendChild(crown);
+      s.appendChild(FF.Players.avatarEl({ name: who.name, avatar: who.avatar }, 'vs-side__ava'));
+      s.appendChild(FF.ui.el('strong', { class: 'vs-side__name' }, who.name));
+      var sc = FF.ui.el('span', { class: 'vs-side__score' }, '0');
+      s.appendChild(sc);
+      countUp(sc, score);
+      return s;
+    }
+    duel.appendChild(side({ name: self.name, avatar: self.avatar }, rec.me.score, o.won));
+    duel.appendChild(FF.ui.span('vs-duel__vs ch-reveal__vs', 'VS'));
+    duel.appendChild(side(rec.from, rec.from.score, o.lost));
+    box.appendChild(duel);
+    var line = o.won ? (o.close ? t('chWonClose', 'Only {n} points in it. Phew!', { n: fmt(o.margin) }) : t('chWonBy', 'You won by {n} points.', { n: fmt(o.margin) }))
+      : (o.lost ? (o.close ? t('chLostClose', 'So close: just {n} points short.', { n: fmt(o.margin) }) : t('chLostBy', '{n} points short. Rematch?', { n: fmt(o.margin) }))
+        : t('chTied', 'Exactly the same score. Go again?'));
+    box.appendChild(FF.ui.el('p', { class: 'ch-reveal__line' }, line));
+    var acts = FF.ui.div('social-actions');
+    acts.appendChild(FF.UI.button(o.lost ? t('chRematch', 'Rematch') : t('challengeBack', 'Challenge them back'), { class: 'btn-lg btn-primary', icon: 'swords', onClick: function () { challengeBack(rec); } }));
+    if (FF.ShareCard) acts.appendChild(FF.UI.button(t('chSaveImage', 'Save image'), { class: 'btn-lg', icon: 'image', onClick: function () { saveBrag(rec, 'result'); } }));
+    acts.appendChild(FF.UI.button(t('shareResult', 'Share result'), { class: 'btn-lg', icon: 'share', onClick: function () {
+      shareOrCopy('PlayMona', t('vsShareGame', 'I scored {a} vs {name}’s {b} in {game} on PlayMona.', { a: fmt(rec.me.score), name: rec.from.name, b: fmt(rec.from.score), game: name }), FF.Challenge.link(rec));
+    } }));
+    box.appendChild(acts);
+    FF.UI.announce(title + '. ' + line);
+    if (fresh && o.won && !reducedMotion() && FF.Confetti) setTimeout(function () { FF.Confetti.burst(140); if (FF.Confetti.sideCannons) FF.Confetti.sideCannons(); }, 700);
+    return box;
+  }
+
+  // The brag image for a challenge (js/shareCard.js). kind: 'dare' (sent) | 'result' (received).
+  function saveBrag(rec, kind) {
+    if (!FF.ShareCard) return;
+    var self = me();
+    var def = FF.Challenge.gameOf(rec);
+    var coverId = def ? def.id : 'familyQuiz';
+    var name = challengeName(rec);
+    var cat = FF.Categories && FF.Categories.meta ? FF.Categories.meta(def ? def.category : 'quiz') : null;
+    var spec = { game: name, cover: FF.Assets.has('covers', coverId) ? FF.Assets.artPath('covers', coverId) : null,
+      tint: cat && cat.color, footer: { url: FF.Challenge.link(rec, { short: true }) } };
+    if (kind === 'dare') {
+      spec.verdict = t('cardScored', '{name} scored {pts}', { name: self.name, pts: fmt(rec.me.score) });
+      spec.sub = FF.Challenge.wording(rec.id).tagline.replace('{name}', self.name);
+      spec.players = [{ name: self.name, avatar: self.avatar, score: rec.me.score, winner: false }, { name: t('you', 'You'), avatar: null, score: null, mystery: true }];
+      spec.stats = rec.me.stats || [];
+      spec.footer.hook = t('cardDareHook', 'Your turn. Same {game}.', { game: name });
+      spec.footer.cta = t('cardScanAccept', 'Scan to accept');
+    } else {
+      var o = outcome(rec);
+      var winner = o.won ? self.name : rec.from.name, loser = o.won ? rec.from.name : self.name;
+      spec.verdict = o.won || o.lost
+        ? (o.close ? t('cardHoldsCrown', '{name} holds the crown', { name: winner }) : t('cardBeat', '{a} beat {b} by {n} points!', { a: winner, b: loser, n: fmt(o.margin) }))
+        : t('cardTie', '{a} and {b} tied!', { a: self.name, b: rec.from.name });
+      spec.sub = t('cardSub', 'Same {game}. One go. No excuses.', { game: name });
+      spec.players = [{ name: self.name, avatar: self.avatar, score: rec.me.score, winner: o.won }, { name: rec.from.name, avatar: rec.from.avatar, score: rec.from.score, winner: o.lost }];
+      spec.stats = rec.me.stats || [];
+      spec.confetti = o.won;
+      spec.footer.hook = o.close && (o.won || o.lost) ? t('cardClose', 'Only {n} points in it', { n: fmt(o.margin) })
+        : t('cardBeatHook', 'Think you can beat {pts}?', { pts: fmt(Math.max(rec.me.score, rec.from.score)) });
+      spec.footer.cta = t('cardScanPlay', 'Scan to play');
+    }
+    FF.ShareCard.choose(spec, 'playmona-' + (rec.game || 'quiz') + '-' + rec.id.slice(0, 6));
   }
 
   var Views = {
@@ -436,10 +762,37 @@ window.FF = window.FF || {};
     challenges: function (main) {
       main.appendChild(backLink());
       main.appendChild(banner('swords', 'pink', t('challengeFriend', 'Challenge a friend'),
-        t('challengeSub', 'Answer 10 questions, then send the link. Your friend gets the same questions and tries to beat your score.')));
+        t('challengeSubAny', 'Play any game, then send the link. Your friend gets the same game and tries to beat your score.')));
 
-      main.appendChild(FF.App.sectionHead(t('pickTopic', 'Pick a topic')));
+      // Pick a game: it plays on the standard settings, and its results screen sends it.
+      main.appendChild(FF.App.sectionHead(t('chPickGame', 'Pick a game')));
+      var games = FF.Leaderboards.games().filter(function (g) { return !FF.Access || FF.Access.canPlay(g.id); });
+      var quizCard = FF.ui.el('button', { type: 'button', class: 'topic-card ch-quiz-card' });
+      var qic = FF.ui.span('topic-card__icon');
+      qic.appendChild(icon('lightbulb'));
+      quizCard.appendChild(qic);
+      quizCard.appendChild(FF.ui.el('strong', { class: 'topic-card__name' }, t('chQuizTopic', 'Quiz by topic')));
+      quizCard.appendChild(FF.ui.span('topic-card__desc', t('chQuizTopicDesc', '10 questions on a topic you pick.')));
+      quizCard.addEventListener('click', function () { Views._topicSheet(); });
+      main.appendChild(quizCard);
+      // Straight into the game on the standard settings (the setup screen could change them).
+      main.appendChild(FF.App.gameGrid(games, { onPlay: function (def) {
+        FF.GameFlow.launch(def.id, { standard: true, skipIntro: true });
+      } }));
+
+      var list = FF.Challenge.list();
+      main.appendChild(FF.App.sectionHead(t('yourChallenges', 'Your challenges')));
+      if (!list.length) {
+        main.appendChild(FF.ui.el('p', { class: 'social-empty' }, t('noChallenges', 'Challenges you send and receive show up here.')));
+        return;
+      }
+      Views._challengeList(main, list);
+    },
+
+    // The old quiz challenge: pick a topic, answer 10 questions.
+    _topicSheet: function () {
       var grid = FF.ui.el('ul', { class: 'topic-grid' });
+      var sheet = null;
       FF.QuizRun.TOPICS.forEach(function (tp) {
         var li = FF.ui.el('li', {});
         var b = FF.ui.el('button', { type: 'button', class: 'topic-card' });
@@ -448,18 +801,14 @@ window.FF = window.FF || {};
         b.appendChild(ic);
         b.appendChild(FF.ui.el('strong', { class: 'topic-card__name' }, t('topic_' + tp.id, tp.name)));
         b.appendChild(FF.ui.span('topic-card__desc', t('topicDesc_' + tp.id, tp.desc)));
-        b.addEventListener('click', function () { FF.Challenge.create(tp.id); });
+        b.addEventListener('click', function () { if (sheet) sheet.close(); FF.Challenge.create(tp.id); });
         li.appendChild(b);
         grid.appendChild(li);
       });
-      main.appendChild(grid);
+      sheet = FF.UI.sheet({ title: t('pickTopic', 'Pick a topic'), body: grid });
+    },
 
-      var list = FF.Challenge.list();
-      main.appendChild(FF.App.sectionHead(t('yourChallenges', 'Your challenges')));
-      if (!list.length) {
-        main.appendChild(FF.ui.el('p', { class: 'social-empty' }, t('noChallenges', 'Challenges you send and receive show up here.')));
-        return;
-      }
+    _challengeList: function (main, list) {
       var ul = FF.ui.el('ul', { class: 'ch-list' });
       list.forEach(function (c) {
         var li = FF.ui.el('li', {});
@@ -467,7 +816,7 @@ window.FF = window.FF || {};
         var other = c.role === 'received' ? c.from : null;
         b.appendChild(FF.Players.avatarEl(other ? { name: other.name, avatar: other.avatar } : { name: me().name, avatar: me().avatar }, 'ch-row__ava'));
         var txt = FF.ui.div('ch-row__text');
-        var topicName = t('topic_' + c.topic, FF.QuizRun.topic(c.topic).name);
+        var topicName = c.v === 2 ? challengeName(c) : t('topic_' + c.topic, FF.QuizRun.topic(c.topic).name);
         if (other) {
           var res = c.me.score > other.score ? 'won' : (c.me.score < other.score ? 'lost' : 'tied');
           txt.appendChild(FF.ui.el('strong', {}, t('vsName', 'You vs {name}', { name: other.name })));
@@ -491,93 +840,78 @@ window.FF = window.FF || {};
       var C = FF.Challenge;
       var rec = C.byId(params.id);
       var incoming = C._incoming[params.id];
-      main.appendChild(FF.UI.button(t('allChallenges', 'All challenges'), { class: 'btn-ghost btn-sm social-back', icon: 'arrow-left', onClick: function () { FF.Nav.go('challenges'); } }));
+      var self = me();
 
       if (!rec && !incoming) {
+        main.appendChild(allChallengesLink());
         main.appendChild(FF.ui.el('p', { class: 'social-empty' }, t('challengeGone', 'This challenge is not on this device. Open the link again to play it.')));
         return;
       }
 
-      // Someone challenged you and you have not played yet.
+      // Someone challenged you and you have not played yet: the golden ticket.
       if (!rec) {
         var c = incoming;
-        var topicName = t('topic_' + c.topic, FF.QuizRun.topic(c.topic).name);
-        var intro = FF.ui.el('section', { class: 'vs-card vs-card--intro' });
-        intro.appendChild(FF.Players.avatarEl({ name: c.from.name, avatar: c.from.avatar }, 'vs-card__hero'));
-        intro.appendChild(FF.ui.el('h1', { class: 'vs-card__title' }, t('challengedYou', '{name} challenged you!', { name: c.from.name })));
-        intro.appendChild(FF.ui.el('p', { class: 'vs-card__sub' }, t('challengeIntro', '{topic}. They scored {pts} points ({n}/10). You get the same 10 questions. Can you beat them?', { topic: topicName, pts: fmt(c.from.score), n: c.from.correct })));
-        intro.appendChild(FF.UI.button(t('acceptChallenge', 'Accept the challenge'), { class: 'btn-lg btn-primary', icon: 'swords', onClick: function () { C.accept(c.id); } }));
-        main.appendChild(intro);
+        var words = C.wording(c.id);
+        var wrap = FF.ui.el('section', { class: 'ch-invite' });
+        wrap.appendChild(ticket(c, { name: c.from.name, avatar: c.from.avatar, score: c.from.score, stats: c.from.stats, tagline: words.tagline, at: c.at }));
+        if (!C.playable(c)) {
+          wrap.appendChild(FF.ui.el('p', { class: 'social-done' }, t('chNotHere', 'This game is not in this version of PlayMona. Reload the page to update.')));
+        } else {
+          wrap.appendChild(FF.UI.button(words.button, { class: 'btn-lg btn-primary btn-block', icon: 'swords', onClick: function () { C.accept(c.id); } }));
+        }
+        wrap.appendChild(FF.UI.button(t('notNow', 'Not now'), { class: 'btn-ghost btn-block', onClick: function () { FF.Nav.go('home'); } }));
+        main.appendChild(wrap);
         return;
       }
 
-      var topicName2 = t('topic_' + rec.topic, FF.QuizRun.topic(rec.topic).name);
-      var self = me();
+      main.appendChild(allChallengesLink());
       var link = C.link(rec);
+      var name = challengeName(rec);
 
       if (rec.role === 'received') {
-        var won = rec.me.score > rec.from.score, lost = rec.me.score < rec.from.score;
-        var vs = FF.ui.el('section', { class: 'vs-card' });
-        vs.appendChild(FF.ui.el('h1', { class: 'vs-card__title' }, won ? t('youWon', 'You won!') : (lost ? t('theyWon', '{name} wins this one', { name: rec.from.name }) : t('itsATie', 'It’s a tie!'))));
-        var duel = FF.ui.div('vs-duel');
-        function side(name, avatar, score, correct, win) {
-          var s = FF.ui.div('vs-side' + (win ? ' is-win' : ''));
-          s.appendChild(FF.Players.avatarEl({ name: name, avatar: avatar }, 'vs-side__ava'));
-          s.appendChild(FF.ui.el('strong', { class: 'vs-side__name' }, name));
-          s.appendChild(FF.ui.el('span', { class: 'vs-side__score' }, fmt(score)));
-          s.appendChild(FF.ui.span('vs-side__meta', t('nOfTen', '{n}/10', { n: correct })));
-          return s;
-        }
-        duel.appendChild(side(self.name, self.avatar, rec.me.score, rec.me.correct, won));
-        duel.appendChild(FF.ui.span('vs-duel__vs', 'VS'));
-        duel.appendChild(side(rec.from.name, rec.from.avatar, rec.from.score, rec.from.correct, lost));
-        vs.appendChild(duel);
-        vs.appendChild(FF.ui.el('p', { class: 'vs-card__sub' }, topicName2));
-        var acts = FF.ui.div('social-actions');
-        acts.appendChild(FF.UI.button(t('challengeBack', 'Challenge them back'), { class: 'btn-primary', icon: 'swords', onClick: function () { C.create(rec.topic); } }));
-        acts.appendChild(FF.UI.button(t('shareResult', 'Share result'), { icon: 'share', onClick: function () {
-          shareOrCopy('PlayMona', t('vsShare', 'I scored {a} vs {name}’s {b} on PlayMona ({topic}).', { a: fmt(rec.me.score), name: rec.from.name, b: fmt(rec.from.score), topic: topicName2 }), siteUrl());
-        } }));
-        vs.appendChild(acts);
-        main.appendChild(vs);
-      } else {
-        var sent = FF.ui.el('section', { class: 'vs-card' });
-        sent.appendChild(FF.ui.el('h1', { class: 'vs-card__title' }, params.fresh ? t('niceRun', 'Nice run!') : t('youChallenged', 'Your challenge')));
-        sent.appendChild(FF.ui.el('p', { class: 'vs-card__big' }, fmt(rec.me.score)));
-        sent.appendChild(FF.ui.el('p', { class: 'vs-card__sub' }, topicName2 + ' · ' + t('nOfTenCorrect', '{n}/10 correct', { n: rec.me.correct })));
-        sent.appendChild(FF.ui.el('p', { class: 'vs-card__lead' }, t('sendLinkLead', 'Send this link. Your friends get the same 10 questions and try to beat {pts}.', { pts: fmt(rec.me.score) })));
-        var text = t('challengeShareText', 'I scored {pts} on PlayMona. Can you beat me?', { pts: fmt(rec.me.score) });
-        var acts2 = FF.ui.div('social-actions');
-        acts2.appendChild(FF.UI.button(t('sendChallenge', 'Send challenge'), { class: 'btn-primary', icon: 'share', onClick: function () { shareOrCopy(t('challengeFriend', 'Challenge a friend'), text, link); } }));
-        var wa = FF.ui.el('a', { class: 'btn btn-wa', href: whatsappUrl(text, link), target: '_blank', rel: 'noopener' });
-        wa.appendChild(icon('chat'));
-        wa.appendChild(FF.ui.span('', 'WhatsApp'));
-        acts2.appendChild(wa);
-        sent.appendChild(acts2);
-        var linkBox = FF.ui.el('input', { class: 'input ch-link', type: 'text', readonly: true, value: link, 'aria-label': t('challengeLink', 'Challenge link') });
-        linkBox.addEventListener('focus', function () { linkBox.select(); });
-        sent.appendChild(linkBox);
-        main.appendChild(sent);
-
-        main.appendChild(FF.App.sectionHead(t('whoPlayed', 'Who took you on')));
-        if (!FF.Cloud.available()) {
-          main.appendChild(FF.ui.el('p', { class: 'social-empty' }, FF.Auth.isGuest()
-            ? t('whoPlayedGuest', 'Create an account to see who played your challenge. Until then, ask friends to send you their score.')
-            : t('whoPlayedNone', 'Results show up here when friends play.')));
-          return;
-        }
-        var holder = FF.ui.div('social-board');
-        holder.appendChild(loadingRow());
-        main.appendChild(holder);
-        C.results(rec.id).then(function (rows) {
-          FF.ui.clear(holder);
-          if (rows.length <= 1) { holder.appendChild(FF.ui.el('p', { class: 'social-empty' }, t('noOneYet', 'Nobody has played it yet. Send the link to a few friends.'))); if (!rows.length) return; }
-          holder.appendChild(board(rows, self.uid));
-        }).catch(function () {
-          FF.ui.clear(holder);
-          holder.appendChild(cloudNote('offline'));
-        });
+        main.appendChild(reveal(rec, self, name, !!params.reveal));
+        return;
       }
+
+      // Your challenge: a preview of the ticket your friends get, and ways to send it.
+      var sent = FF.ui.el('section', { class: 'ch-send' });
+      sent.appendChild(FF.ui.el('h1', { class: 'ch-send__title' }, params.fresh ? t('niceRun', 'Nice run!') : t('youChallenged', 'Your challenge')));
+      sent.appendChild(FF.ui.el('p', { class: 'ch-send__lead' }, t('sendLinkLeadGame', 'Send this to your friends. They play the same {game} and try to beat {pts}.', { game: name, pts: fmt(rec.me.score) })));
+      sent.appendChild(ticket(rec, { name: self.name, avatar: self.avatar, score: rec.me.score, stats: rec.me.stats, tagline: C.wording(rec.id).tagline, at: rec.at, preview: true }));
+      var text = rec.v === 2
+        ? t('chShareTextGame', 'I scored {pts} in {game} on PlayMona. Can you beat me?', { pts: fmt(rec.me.score), game: name })
+        : t('challengeShareText', 'I scored {pts} on PlayMona. Can you beat me?', { pts: fmt(rec.me.score) });
+      var acts = FF.ui.div('social-actions ch-send__actions');
+      acts.appendChild(FF.UI.button(t('sendChallenge', 'Send challenge'), { class: 'btn-lg btn-primary', icon: 'share', onClick: function () { shareOrCopy(t('challengeFriend', 'Challenge a friend'), text, link); } }));
+      var wa = FF.ui.el('a', { class: 'btn btn-lg btn-wa', href: whatsappUrl(text, link), target: '_blank', rel: 'noopener' });
+      wa.appendChild(icon('chat'));
+      wa.appendChild(FF.ui.span('', 'WhatsApp'));
+      acts.appendChild(wa);
+      if (FF.ShareCard) acts.appendChild(FF.UI.button(t('chSaveImage', 'Save image'), { class: 'btn-lg', icon: 'image', onClick: function () { saveBrag(rec, 'dare'); } }));
+      sent.appendChild(acts);
+      var linkBox = FF.ui.el('input', { class: 'input ch-link', type: 'text', readonly: true, value: link, 'aria-label': t('challengeLink', 'Challenge link') });
+      linkBox.addEventListener('focus', function () { linkBox.select(); });
+      sent.appendChild(linkBox);
+      main.appendChild(sent);
+
+      main.appendChild(FF.App.sectionHead(t('whoPlayed', 'Who took you on')));
+      if (!FF.Cloud.available()) {
+        main.appendChild(FF.ui.el('p', { class: 'social-empty' }, FF.Auth.isGuest()
+          ? t('whoPlayedGuest', 'Create an account to see who played your challenge. Until then, ask friends to send you their score.')
+          : t('whoPlayedNone', 'Results show up here when friends play.')));
+        return;
+      }
+      var holder = FF.ui.div('social-board');
+      holder.appendChild(loadingRow());
+      main.appendChild(holder);
+      C.results(rec.id).then(function (rows) {
+        FF.ui.clear(holder);
+        if (rows.length <= 1) { holder.appendChild(FF.ui.el('p', { class: 'social-empty' }, t('noOneYet', 'Nobody has played it yet. Send the link to a few friends.'))); if (!rows.length) return; }
+        holder.appendChild(board(rows, self.uid, { showCorrect: rec.v !== 2 }));
+      }).catch(function () {
+        FF.ui.clear(holder);
+        holder.appendChild(cloudNote('offline'));
+      });
     }
   };
 
