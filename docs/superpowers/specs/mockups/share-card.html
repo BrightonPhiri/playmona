@@ -1,0 +1,96 @@
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  .sc-row { display:flex; flex-wrap:wrap; gap:28px; justify-content:center; font-family:"Nunito",sans-serif; }
+  .sc-col { display:flex; flex-direction:column; align-items:center; gap:10px; }
+  .sc-col .cap { text-align:center; max-width:280px; } .sc-col .cap h3{margin:0 0 4px} .sc-col .cap p{margin:0;color:#888;font-size:14px}
+  .story { width:270px; height:480px; border-radius:18px; overflow:hidden; position:relative; color:#fff;
+           background:radial-gradient(circle at 50% 18%, #2a1f7a 0%, #0b1030 62%); box-shadow:0 18px 48px rgba(0,0,0,.4);
+           display:flex; flex-direction:column; align-items:center; padding:18px 18px 14px; box-sizing:border-box; }
+  .story::before { content:""; position:absolute; inset:-30%; background:conic-gradient(from 20deg, rgba(255,47,143,.16), rgba(30,123,255,.16), rgba(46,200,75,.12), rgba(255,200,61,.16), rgba(255,47,143,.16)); }
+  .story > * { position:relative; }
+  .brand { font:700 15px "Fredoka",sans-serif; letter-spacing:.02em; display:flex; align-items:center; gap:6px; }
+  .dots { display:flex; gap:3px; } .dots i { width:6px; height:6px; border-radius:50%; display:block; }
+  .game { margin-top:12px; width:100%; height:92px; border-radius:14px; background-size:cover; background-position:center; position:relative; overflow:hidden; }
+  .game span { position:absolute; left:8px; bottom:8px; background:#ffc83d; color:#0b1030; font-weight:800; font-size:11px; padding:3px 10px; border-radius:999px; }
+  .verdict { font:700 23px/1.1 "Fredoka",sans-serif; text-align:center; margin:14px 0 4px; }
+  .verdict em { font-style:normal; color:#ffc83d; }
+  .sub { font-size:12px; color:#c9cff0; text-align:center; font-weight:700; }
+  .duel { display:flex; align-items:center; gap:10px; margin:14px 0 10px; }
+  .p { display:flex; flex-direction:column; align-items:center; gap:4px; width:84px; font-weight:800; font-size:12px; }
+  .ava { width:56px; height:56px; border-radius:50%; display:grid; place-items:center; font:700 24px "Fredoka",sans-serif; border:3px solid #fff; }
+  .win .ava { border-color:#ffc83d; box-shadow:0 0 0 4px rgba(255,200,61,.35); }
+  .crown { height:16px; font-size:14px; color:#ffc83d; }
+  .pts { font:700 20px "Fredoka",sans-serif; }
+  .win .pts { color:#ffc83d; }
+  .vs { font:700 13px "Fredoka",sans-serif; background:#ff2f8f; width:32px; height:32px; border-radius:50%; display:grid; place-items:center; transform:rotate(-10deg); }
+  .stats { display:flex; gap:6px; width:100%; justify-content:center; }
+  .stat { background:rgba(255,255,255,.1); border-radius:10px; padding:6px 8px; text-align:center; flex:1; }
+  .stat b { display:block; font:700 15px "Fredoka",sans-serif; } .stat small { font-size:9px; color:#c9cff0; font-weight:800; text-transform:uppercase; letter-spacing:.06em; }
+  .foot { margin-top:auto; width:100%; display:flex; gap:10px; align-items:center; background:#fff; color:#0b1030; border-radius:14px; padding:8px; box-sizing:border-box; }
+  .qr { width:54px; height:54px; flex:none; background:
+        repeating-linear-gradient(90deg,#0b1030 0 4px,transparent 4px 7px),
+        repeating-linear-gradient(0deg,#0b1030 0 3px,transparent 3px 8px); background-blend-mode:multiply; border-radius:4px; opacity:.85; outline:3px solid #fff; }
+  .foot strong { display:block; font:700 14px "Fredoka",sans-serif; } .foot span { font-size:11px; color:#4f587e; font-weight:700; }
+  .conf { position:absolute; inset:0; pointer-events:none; background:
+     radial-gradient(circle at 12% 30%, #ffc83d 0 3px, transparent 4px), radial-gradient(circle at 85% 26%, #ff2f8f 0 3px, transparent 4px),
+     radial-gradient(circle at 22% 52%, #2ec84b 0 2px, transparent 3px), radial-gradient(circle at 78% 48%, #19c3f0 0 3px, transparent 4px),
+     radial-gradient(circle at 90% 62%, #ffc83d 0 2px, transparent 3px), radial-gradient(circle at 8% 66%, #8b3cf7 0 3px, transparent 4px); }
+  .sq { width:300px; height:300px; padding:14px; }
+  .sq .game { height:70px; margin-top:8px; } .sq .verdict { font-size:19px; margin:10px 0 2px; } .sq .duel { margin:8px 0 6px; }
+  .sq .ava { width:44px; height:44px; font-size:19px; } .sq .pts { font-size:17px; } .sq .foot { padding:6px; } .sq .qr { width:40px; height:40px; }
+</style>
+
+<h2>The brag image (download or share)</h2>
+<p class="subtitle">Made on the phone, sized for WhatsApp status and Instagram stories. The bottom strip is the hook for people who've never played: a QR code straight into the same challenge.</p>
+
+<div class="sc-row">
+  <div class="sc-col">
+    <div class="story">
+      <div class="conf"></div>
+      <div class="brand"><span class="dots"><i style="background:#19c3f0"></i><i style="background:#ff2f8f"></i><i style="background:#ffc83d"></i></span>PlayMona</div>
+      <div class="game" style="background-image:url(/files/memoryMatch.webp)"><span>Memory Match</span></div>
+      <div class="verdict">Kuda beat <em>Brighton</em><br>by 320 points!</div>
+      <div class="sub">Same cards. One go. No excuses.</div>
+      <div class="duel">
+        <div class="p win"><div class="crown">♛</div><div class="ava" style="background:linear-gradient(135deg,#ff8a1f,#ff2f8f)">K</div>Kuda<span class="pts">1,560</span></div>
+        <div class="vs">VS</div>
+        <div class="p"><div class="crown"></div><div class="ava" style="background:linear-gradient(135deg,#1e7bff,#8b3cf7)">B</div>Brighton<span class="pts">1,240</span></div>
+      </div>
+      <div class="stats"><div class="stat"><b>0:48</b><small>time</small></div><div class="stat"><b>12/12</b><small>pairs</small></div><div class="stat"><b>×6</b><small>best streak</small></div></div>
+      <div class="foot"><div class="qr"></div><div><strong>Think you can beat 1,560?</strong><span>Scan to play · playmona.com</span></div></div>
+    </div>
+    <div class="cap"><h3>Won it: the brag</h3><p>Crown, confetti, the margin of victory and two or three stats from that game.</p></div>
+  </div>
+
+  <div class="sc-col">
+    <div class="story">
+      <div class="brand"><span class="dots"><i style="background:#19c3f0"></i><i style="background:#ff2f8f"></i><i style="background:#ffc83d"></i></span>PlayMona</div>
+      <div class="game" style="background-image:url(/files/wordScramble.webp)"><span>Word Scramble</span></div>
+      <div class="verdict">Brighton scored <em>1,240</em></div>
+      <div class="sub">Brighton dares you to beat this</div>
+      <div class="duel">
+        <div class="p win"><div class="crown"></div><div class="ava" style="background:linear-gradient(135deg,#1e7bff,#8b3cf7)">B</div>Brighton<span class="pts">1,240</span></div>
+        <div class="vs">VS</div>
+        <div class="p"><div class="crown"></div><div class="ava" style="background:rgba(255,255,255,.08);border-style:dashed">?</div>You<span class="pts">???</span></div>
+      </div>
+      <div class="stats"><div class="stat"><b>8/10</b><small>solved</small></div><div class="stat"><b>4.2s</b><small>fastest</small></div></div>
+      <div class="foot"><div class="qr"></div><div><strong>Your turn. Same puzzles.</strong><span>Scan to accept · playmona.com</span></div></div>
+    </div>
+    <div class="cap"><h3>Sent it: the dare</h3><p>For posting a challenge to a status or group so anyone can take it.</p></div>
+  </div>
+
+  <div class="sc-col">
+    <div class="story sq">
+      <div class="brand"><span class="dots"><i style="background:#19c3f0"></i><i style="background:#ff2f8f"></i><i style="background:#ffc83d"></i></span>PlayMona</div>
+      <div class="game" style="background-image:url(/files/quickTap.webp)"><span>Quick Tap</span></div>
+      <div class="verdict">Brighton holds the crown</div>
+      <div class="duel">
+        <div class="p win"><div class="ava" style="background:linear-gradient(135deg,#1e7bff,#8b3cf7)">B</div><span class="pts">1,410</span></div>
+        <div class="vs">VS</div>
+        <div class="p"><div class="ava" style="background:linear-gradient(135deg,#2ec84b,#19c3f0)">T</div><span class="pts">1,390</span></div>
+      </div>
+      <div class="foot"><div class="qr"></div><div><strong>Only 20 points in it</strong><span>Scan to play · playmona.com</span></div></div>
+    </div>
+    <div class="cap"><h3>Square version</h3><p>Same card for chats and feeds. You'd pick story or square when saving.</p></div>
+  </div>
+</div>
