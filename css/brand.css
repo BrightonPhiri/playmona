@@ -432,6 +432,39 @@ body.auth-open #app { display: none; }
 .look-photo__lead { margin: 0; font-weight: 700; }
 .look-photo__actions { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--sp-2); }
 .look-photo .details__note { margin: 0; }
+
+/* Photo crop step (js/photoCrop.js): the photo moves under a round window. */
+.crop {
+  --crop-d: 260px;
+  position: relative; width: min(340px, 100%); aspect-ratio: 1; margin: 0 auto;
+  overflow: hidden; border-radius: var(--r-md); background: #111;
+  touch-action: none; user-select: none; -webkit-user-select: none; cursor: grab;
+}
+.crop.is-dragging { cursor: grabbing; }
+.crop:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.crop__img {
+  position: absolute; left: 0; top: 0; max-width: none; transform-origin: 0 0;
+  pointer-events: none; -webkit-user-drag: none;
+}
+/* Dims everything outside the circle. */
+.crop__mask, .crop__ring {
+  position: absolute; left: 50%; top: 50%; width: var(--crop-d); height: var(--crop-d);
+  transform: translate(-50%, -50%); border-radius: 50%; pointer-events: none;
+}
+.crop__mask { box-shadow: 0 0 0 999px rgba(0, 0, 0, .58); }
+.crop__ring { border: 2px solid rgba(255, 255, 255, .9); box-shadow: 0 0 0 1px rgba(0, 0, 0, .25); }
+.crop.is-dragging .crop__ring {
+  background:
+    linear-gradient(rgba(255,255,255,.35), rgba(255,255,255,.35)) 33.33% 0 / 1px 100% no-repeat,
+    linear-gradient(rgba(255,255,255,.35), rgba(255,255,255,.35)) 66.66% 0 / 1px 100% no-repeat,
+    linear-gradient(rgba(255,255,255,.35), rgba(255,255,255,.35)) 0 33.33% / 100% 1px no-repeat,
+    linear-gradient(rgba(255,255,255,.35), rgba(255,255,255,.35)) 0 66.66% / 100% 1px no-repeat;
+}
+.crop__controls { display: flex; align-items: center; gap: var(--sp-2); width: min(340px, 100%); margin-left: auto; margin-right: auto; }
+.crop__zoom { flex: 1; width: auto; }
+.crop__step { font-size: var(--fs-xl); font-weight: 800; line-height: 1; }
+.crop__step:disabled { opacity: .4; }
+.ff-dialog__body p.crop__help { margin-left: auto; margin-right: auto; text-align: center; font-size: var(--fs-sm); }
 /* While a photo uploads, the dots circle the picture at the preview's size. */
 .look-preview__loader { --pm-size: 140px; }
 .look-preview__loader .pm-loader__center { inset: 10%; }

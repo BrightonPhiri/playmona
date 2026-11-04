@@ -242,7 +242,8 @@ window.FF = window.FF || {};
       return FF.ui.el('span', { class: cls + ' ff-avatar--initial', 'aria-hidden': 'true' }, name.charAt(0).toUpperCase());
     },
 
-    readPhotoFile: function (file, done) {
+    /* crop: optional { sx, sy, size } in the photo's pixels (from FF.PhotoCrop). */
+    readPhotoFile: function (file, done, crop) {
       if (!file || !file.type || file.type.indexOf('image/') !== 0) {
         if (done) done(null);
         return;
@@ -257,9 +258,8 @@ window.FF = window.FF || {};
           canvas.height = size;
           var ctx = canvas.getContext('2d');
           var side = Math.min(img.width, img.height);
-          var sx = (img.width - side) / 2;
-          var sy = (img.height - side) / 2;
-          ctx.drawImage(img, sx, sy, side, side, 0, 0, size, size);
+          var r = crop && crop.size > 0 ? crop : { sx: (img.width - side) / 2, sy: (img.height - side) / 2, size: side };
+          ctx.drawImage(img, r.sx, r.sy, r.size, r.size, 0, 0, size, size);
           try {
             done(canvas.toDataURL('image/jpeg', 0.72));
           } catch (e) {
@@ -364,7 +364,14 @@ window.FF = window.FF || {};
         });
       }
 
-      function usePhoto(picked) {
+      // Picked a file: let the player frame it in the circle first.
+      function framePhoto(picked) {
+        if (!FF.PhotoCrop) { usePhoto(picked); return; }
+        FF.PhotoCrop.open(picked, function (crop) { usePhoto(picked, crop); })
+          .catch(function (e) { FF.UI.toast(e.message, { type: 'error' }); });
+      }
+
+      function usePhoto(picked, crop) {
         if (!isProfile) {
           FF.Players.readPhotoFile(picked, function (data) {
             if (!data) { FF.UI.toast(FF.t('photoFailed', 'That picture could not be used.'), { type: 'error' }); return; }
@@ -372,12 +379,12 @@ window.FF = window.FF || {};
             else FF.Players.setPhoto(id, data);
             refreshPreview();
             renderPhoto();
-          });
+          }, crop);
           return;
         }
         uploading = true;
         renderPhoto();
-        FF.Photo.shrink(picked).then(function (blob) {
+        FF.Photo.shrink(picked, crop).then(function (blob) {
           var url = URL.createObjectURL(blob);
           showUploading(url);
           return FF.Photo.send(blob).then(function (value) {
@@ -424,7 +431,7 @@ window.FF = window.FF || {};
         var row = FF.ui.div('look-photo__actions');
         var choose = FF.UI.button(has ? FF.t('choosePhotoAgain', 'Choose another photo') : FF.t('choosePhoto', 'Choose a photo'), {
           class: 'btn-primary', icon: 'image',
-          onClick: function () { if (!uploading && FF.Photo) FF.Photo.choose(usePhoto); }
+          onClick: function () { if (!uploading && FF.Photo) FF.Photo.choose(framePhoto); }
         });
         row.appendChild(choose);
         if (has) {
