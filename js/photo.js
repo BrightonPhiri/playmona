@@ -2,7 +2,8 @@
    PLAYMONA — photo.js
    Profile photos.
 
-   The photo is shrunk here first: the middle square is drawn at
+   The photo is shrunk here first: the square the player framed in
+   js/photoCrop.js (or the middle square) is drawn at
    256 px onto a canvas, which also leaves behind hidden photo data
    (such as where it was taken). It goes to POST /api/avatar, which
    checks it, draws it again and answers with an avatar value
@@ -69,8 +70,9 @@ window.FF = window.FF || {};
         !!(FF.Auth && FF.Auth.mode && FF.Auth.mode() === 'firebase' && !FF.Auth.isGuest());
     },
 
-    /* File -> a 256 px square Blob (WebP, or JPEG where the browser cannot make WebP). */
-    shrink: function (file) {
+    /* File -> a 256 px square Blob (WebP, or JPEG where the browser cannot make WebP).
+       crop: optional { sx, sy, size } in the photo's pixels (from FF.PhotoCrop); the middle square otherwise. */
+    shrink: function (file, crop) {
       if (!file || !/^image\//.test(file.type || '')) {
         return Promise.reject(new Error(t('photoUnreadable', 'That file is not a picture we can use. Try a JPG or PNG.')));
       }
@@ -78,7 +80,7 @@ window.FF = window.FF || {};
       return loadImage(file).then(function (loaded) {
         var img = loaded.img;
         var w = img.naturalWidth, h = img.naturalHeight;
-        var side = Math.min(w, h);
+        var r = crop && crop.size > 0 ? crop : { sx: (w - Math.min(w, h)) / 2, sy: (h - Math.min(w, h)) / 2, size: Math.min(w, h) };
         var canvas = document.createElement('canvas');
         canvas.width = SIZE;
         canvas.height = SIZE;
@@ -86,7 +88,7 @@ window.FF = window.FF || {};
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, SIZE, SIZE);
         ctx.imageSmoothingQuality = 'high';
-        ctx.drawImage(img, (w - side) / 2, (h - side) / 2, side, side, 0, 0, SIZE, SIZE);
+        ctx.drawImage(img, r.sx, r.sy, r.size, r.size, 0, 0, SIZE, SIZE);
         loaded.done();
         return toBlob(canvas, 'image/webp', 0.85).then(function (blob) {
           if (blob && blob.type === 'image/webp') return blob;
@@ -107,9 +109,9 @@ window.FF = window.FF || {};
     },
 
     /* Shrinks and uploads in one go. */
-    upload: function (file) {
+    upload: function (file, crop) {
       var self = this;
-      return this.shrink(file).then(function (blob) { return self.send(blob); });
+      return this.shrink(file, crop).then(function (blob) { return self.send(blob); });
     },
 
     /* The player went back to a character: delete the file on the server (best effort). */
