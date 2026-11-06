@@ -410,6 +410,12 @@
                 ".write": "auth != null && $uid === auth.uid && !data.exists()",
                 ".validate": "newData.hasChildren(['correct'])"
               }
+            },
+            "live": {
+              "$uid": {
+                ".write": "auth != null && $uid === auth.uid",
+                ".validate": "newData.hasChildren(['c']) && newData.child('c').isNumber()"
+              }
             }
           }
         },

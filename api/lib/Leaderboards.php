@@ -21,7 +21,7 @@ class Leaderboards
     public const GAMES = [
         'bibleQuiz', 'bibleWhoAmI', 'bibleVerseRush', 'bibleBooks',
         'letterRush', 'memoryMatch', 'pictureMemory', 'whatsMissing', 'rememberSequence',
-        'numberChallenge', 'higherOrLower',
+        'numberChallenge', 'higherOrLower', 'numberRush',
         'picturePuzzle', 'spotDifference', 'hiddenObject', 'visualRiddle',
         'trueOrFalse', 'brainBattle', 'guessWho', 'pictureQuiz', 'familyQuiz',
         'quickTap', 'colorReaction',

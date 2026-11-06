@@ -57,6 +57,7 @@ const ORDER = [
   'js/games/memoryGames.js',
   'js/games/reactionGames.js',
   'js/games/numberGames.js',
+  'js/games/numberRush.js',
   'js/games/creativeGames.js',
   'js/games/partyGames.js',
   'js/games/visualGames.js',

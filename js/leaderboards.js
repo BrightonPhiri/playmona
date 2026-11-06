@@ -148,6 +148,8 @@ window.FF = window.FF || {};
       if (config.room || config.tournament || config.variation === 'display') return 'mode';
       var s = this.standard();
       if (config.difficulty !== s.difficulty || config.length !== s.length || Number(config.timer) !== s.timer || config.clock) return 'settings';
+      // The game's own rules (Number Rush's setup screen) moved off the standard ones.
+      if (config.customRules) return 'settings';
       var scorers = config.scorers || [];
       if (scorers.length !== 1 || !(scorers[0].isMe || scorers[0].id === 'me')) return 'players';
       if (!FF.Cloud || !FF.Cloud.available()) return 'account';

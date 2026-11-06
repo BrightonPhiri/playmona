@@ -92,6 +92,12 @@
   --qt-decoy-b: #f59e0b; --qt-decoy-b-glow: #ffd27a; --qt-decoy-b-deep: #8a4a06; --qt-decoy-b-ink: #2a1500;
   /* Speed ratings and medals (dark text sits on all of them). */
   --qt-lightning: #ffc83d; --qt-rocket: #7dd3fc; --qt-quick: #2ee86b; --qt-steady: #cfd6f6; --qt-sleepy: #c4b5fd;
+  /* Number Rush arena: always dark, neon rings. Numbers are light text on a
+     dark disc; the six neon edges only ever frame them. */
+  --nr-arena: #070a22; --nr-arena-glow: #1a1060; --nr-text: #f5f7ff; --nr-muted: #b4bce6;
+  --nr-num: #141a48; --nr-num-hi: #232c6e; --nr-track: #3a4590; --nr-hub: #0e1338;
+  --nr-good: #2ee86b; --nr-bad: #ff4d6d; --nr-bad-deep: #5a1426; --nr-gold: #ffc83d;
+  --nr-c0: #22d3ee; --nr-c1: #a78bfa; --nr-c2: #f472b6; --nr-c3: #facc15; --nr-c4: #4ade80; --nr-c5: #fb923c;
   --medal-gold: #ffc83d; --medal-silver: #cfd6f6; --medal-bronze: #ff9a52; --medal-ink: #0b1030;
 }
 
