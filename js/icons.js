@@ -132,6 +132,7 @@ window.FF = window.FF || {};
   "drawingChallenge": "pencil",
   "pictionary": "chalkboard",
   "numberChallenge": "hash",
+  "numberRush": "target",
   "higherOrLower": "chart-line",
   "wouldYouRather": "arrows-left-right",
   "thisOrThat": "split-horizontal",

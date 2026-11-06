@@ -25,7 +25,7 @@ window.FF = window.FF || {};
     // phone at once, each player keeps their own score.
     'memoryMatch', 'pictureMemory', 'rememberSequence',
     'picturePuzzle', 'spotDifference', 'hiddenObject',
-    'wordBuilder', 'bibleBooks',
+    'wordBuilder', 'bibleBooks', 'numberRush',
     // Votes: everyone votes on their own phone, then sees the same split.
     'wouldYouRather', 'thisOrThat', 'whoIsMostLikely',
     // Secret words dealt by the server's referee (js/imposters/referee.js).

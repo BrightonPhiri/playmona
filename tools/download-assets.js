@@ -133,7 +133,7 @@ const GAME = {
   charades: 'person-arms-spread', visualCharades: 'image-square',
   dontSayIt: 'x-circle', drawingChallenge: 'pencil', pictionary: 'chalkboard',
   // numbers
-  numberChallenge: 'hash', higherOrLower: 'chart-line',
+  numberChallenge: 'hash', numberRush: 'target', higherOrLower: 'chart-line',
   // party
   wouldYouRather: 'arrows-left-right', thisOrThat: 'split-horizontal',
   whoIsMostLikely: 'target',

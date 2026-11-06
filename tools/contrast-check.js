@@ -71,5 +71,16 @@ function check(label, fg, bg, min) {
   });
 });
 
+// Number Rush arena: always dark, the same in both themes.
+const base = block(function (s) { return s === ':root'; });
+if (base['nr-arena']) {
+  console.log('\n== Number Rush arena ==');
+  check('nr text on arena', base['nr-text'], base['nr-arena'], 4.5);
+  check('nr muted on arena', base['nr-muted'], base['nr-arena'], 4.5);
+  ['nr-num', 'nr-num-hi', 'nr-hub', 'nr-bad-deep'].forEach(function (bg) { check('nr text on ' + bg, base['nr-text'], base[bg], 4.5); });
+  check('nr gold on hub', base['nr-gold'], base['nr-hub'], 3);
+  ['nr-good', 'nr-bad', 'nr-c0', 'nr-c1', 'nr-c2', 'nr-c3', 'nr-c4', 'nr-c5'].forEach(function (c) { check(c + ' edge on arena', base[c], base['nr-arena'], 3); });
+}
+
 console.log('\n' + (failures ? failures + ' failing pair(s)' : 'All pairs pass WCAG AA.'));
 process.exit(failures ? 1 : 0);

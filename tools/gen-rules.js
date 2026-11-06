@@ -285,6 +285,13 @@ const rules = {
                 ".write": "auth != null && $uid === auth.uid && !data.exists()",
                 ".validate": "newData.hasChildren(['correct'])"
               }
+            },
+            // Progress while a round runs (Number Rush): { c: found, m: mistakes, x: out, f: finished }.
+            live: {
+              "$uid": {
+                ".write": "auth != null && $uid === auth.uid",
+                ".validate": "newData.hasChildren(['c']) && newData.child('c').isNumber()"
+              }
             }
           }
         },

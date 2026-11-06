@@ -24,7 +24,7 @@ class Crew
         'guessVehicle', 'familyQuiz', 'trueOrFalse', 'guessWho', 'pictureQuiz', 'quickTap',
         'colorReaction', 'letterRush', 'whatsMissing', 'numberChallenge', 'visualRiddle',
         'higherOrLower', 'wordScramble', 'bibleWhoAmI', 'bibleVerseRush', 'memoryMatch', 'pictureMemory',
-        'rememberSequence', 'picturePuzzle', 'spotDifference', 'hiddenObject', 'wordBuilder', 'bibleBooks',
+        'rememberSequence', 'picturePuzzle', 'spotDifference', 'hiddenObject', 'wordBuilder', 'bibleBooks', 'numberRush',
         'wouldYouRather', 'thisOrThat', 'whoIsMostLikely', 'imposters', 'wordFlow',
     ];
 
