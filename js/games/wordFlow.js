@@ -17,7 +17,9 @@ window.FF = window.FF || {};
 
   var R = FF.WordFlowRules;
   var C = FF.WordFlowClient;
-  var NUDGE_MS = 8000;           // the server this late: ask the API to wake it
+  var NUDGE_MS = 8000;
+  var RENUDGE_MS = 15000;        // still no game: ask again this often
+  var STUCK_MS = 30000;          // this long after the countdown: say so, and let the host go back           // the server this late: ask the API to wake it
   var AUTO_SCORES_MS = 90000;    // the results screen moves on by itself after this
   var FRESH_MS = 2500;           // the newest word is highlighted this long
 
@@ -103,6 +105,7 @@ window.FF = window.FF || {};
     var pending = null;
     var ended = false;
     var nudged = {};
+    var stuck = false;
     var autoScores = null;
     var local = { draft: '', lastCmd: null, localError: null, statuses: {}, turnSeen: null, matchId: null };
     var client = C.create({ room: room, onChange: schedule });
@@ -198,9 +201,9 @@ window.FF = window.FF || {};
       var hadFocus = input && document.activeElement === input;
       FF.ui.clear(root);
 
-      if (!wf || (expectedMatch() && wf.matchId !== expectedMatch())) {
-        root.appendChild(waiting(t('wfGettingReady', 'Getting the game ready…'), t('wfGettingReadySub', 'The game starts on every phone at the same time.')));
-        maybeNudge('start', (room.meta && room.meta.startAt) || 0);
+      if (notHere(wf)) {
+        root.appendChild(stuck ? stuckScreen() : waiting(t('wfGettingReady', 'Getting the game ready…'), t('wfGettingReadySub', 'The game starts on every phone at the same time.')));
+        waitTick();
         return;
       }
       react(wf, v);
@@ -230,6 +233,30 @@ window.FF = window.FF || {};
       else if (wf.phase === 'playing') maybeNudge('t' + wf.turnId, Math.min(wf.turnDeadline, wf.gameDeadline));
       else if (wf.phase === 'judging') maybeNudge('j', wf.wrapDeadline);
       tick();
+    }
+
+    function notHere(wf) { return !wf || (expectedMatch() && wf.matchId !== expectedMatch()); }
+
+    /* No game from the server yet: keep asking the API to start it, and after a while say so. */
+    function waitTick() {
+      var due = (room.meta && room.meta.startAt) || 0;
+      if (!due) return;
+      var late = client.serverNow() - due;
+      if (late >= NUDGE_MS) maybeNudge('start' + Math.floor((late - NUDGE_MS) / RENUDGE_MS), due);
+      if ((late >= STUCK_MS) !== stuck) { stuck = late >= STUCK_MS; schedule(); }
+    }
+
+    function stuckScreen() {
+      var stage = waiting(t('wfStuck', 'Still waiting for the game server…'),
+        room.isHost ? t('wfStuckHost', 'It is taking longer than it should. Keep waiting, or go back to the room and start again.')
+          : t('wfStuckGuest', 'It is taking longer than it should. The host can go back to the room and start again.'));
+      if (room.isHost) {
+        stage.appendChild(FF.UI.button(t('wfBackToRoom', 'Back to the room'), {
+          class: 'btn-soft', icon: 'arrow-left',
+          onClick: function () { FF.Room.playAgain().catch(function () { /* not the host any more */ }); }
+        }));
+      }
+      return stage;
     }
 
     function waiting(title, text) {
@@ -530,7 +557,7 @@ window.FF = window.FF || {};
     function tick() {
       if (ended) return;
       var wf = client.view().wf;
-      if (!wf) return;
+      if (notHere(wf)) { waitTick(); return; }
       var now = client.serverNow();
       var gameLeft = wf.phase === 'starting' ? wf.settings.gameSeconds * 1000
         : wf.phase === 'playing' ? wf.gameDeadline - now : 0;

@@ -10,16 +10,21 @@
  * runner.json (written by the API, mode 0600): apiBase, secret, databaseUrl, serviceAccount, idleMinutes.
  * It follows /crewRuns (written only by the server), plays each match with js/crew/controller.js,
  * checks in with the API every few seconds and reports each finished game.
+ * After a deploy changes its code it starts a fresh copy of itself and exits (lib/stamp.js).
+ * Referees save their state, so the new copy carries on with every game.
  */
 
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { URL } = require('url');
+const { spawn } = require('child_process');
 const loader = require('./lib/loader.js');
+const codeStamp = require('./lib/stamp.js');
 const { Rtdb, tokenSource, roomTransport, request } = require('./lib/rtdb.js');
 
 const HEARTBEAT_MS = 8000;
+const CODE_CHECK_MS = 30000;   // how often to look for a deploy
 
 function log(msg) { process.stdout.write(new Date().toISOString() + ' ' + msg + '\n'); }
 
@@ -51,6 +56,7 @@ async function main() {
   process.on('exit', cleanup);
   ['SIGINT', 'SIGTERM'].forEach((sig) => process.on(sig, () => process.exit(0)));
 
+  const code = codeStamp.watcher(codeStamp.stamp());
   const FF = loader.load();
   const account = JSON.parse(fs.readFileSync(cfg.serviceAccount, 'utf8'));
   const rtdb = new Rtdb(cfg.databaseUrl, tokenSource(account));
@@ -205,7 +211,28 @@ async function main() {
       process.exit(0);
     }
   }
+  /* A deploy changed our code: hand over to a fresh copy. Players' phones see a short pause;
+     the new copy resumes every referee from its saved state and every crew match from crewRuns. */
+  function restart() {
+    log('new code deployed; restarting');
+    runs.close();
+    imposterRuns.close();
+    wordflowRuns.close();
+    playing.forEach((m) => { try { m.transport.close(); } catch (e) { /* gone */ } });
+    referees.forEach((r) => { try { r.ref.stop(); r.transport.close(); } catch (e) { /* gone */ } });
+    wordflows.forEach((r) => { try { r.ref.stop(); r.transport.close(); } catch (e) { /* gone */ } });
+    cleanup();   // free the lock for the new copy
+    try {
+      const child = spawn(process.execPath, process.argv.slice(1), { detached: true, stdio: 'inherit' });
+      child.unref();
+    } catch (e) {
+      log('could not start the new copy (the API starts one when needed): ' + e.message);
+    }
+    process.exit(0);
+  }
+
   setInterval(beat, HEARTBEAT_MS);
+  setInterval(() => { if (code.check()) restart(); }, CODE_CHECK_MS);
   beat();
 }
 
