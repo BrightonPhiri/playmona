@@ -522,10 +522,18 @@ window.FF = window.FF || {};
     },
 
     /* Play with friends: private rooms with a code. */
-    showFriends: function (main) {
+    showFriends: function (main, opts) {
       resetScreen('friends');
       FF.ui.clear(main);
       var self = this;
+      // Names may have changed since this device saved them: check, then
+      // redraw once if any did and the player is still on this screen.
+      if (!(opts && opts.refreshed)) {
+        FF.Room.saved.refresh().then(function (changed) {
+          var still = main.querySelector && main.querySelector('.rm-saved');
+          if (changed && screenName === 'friends' && still && (still.isConnected !== false)) self.showFriends(main, { refreshed: true });
+        });
+      }
       var children = [
         hero('users', FF.t('playWithFriends', 'Play with friends'), FF.t('playTogetherLead', 'Everyone plays the same game at the same time, each on their own phone or tablet. The first correct answer wins the point.'))
       ];

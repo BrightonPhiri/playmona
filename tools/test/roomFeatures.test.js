@@ -225,3 +225,35 @@ test('rooms: setHidePhoto updates the room right away', async function () {
   await A.Room.setHidePhoto(true);   // not in a room: resolves, does nothing
   assert(room.code, 'still fine');
 });
+
+test('rooms: a rename reaches a saved room on any screen while in the room', async function () {
+  const bus = makeBus();
+  const A = phone(bus, 'Ana'), B = phone(bus, 'Ben');
+  const room = await A.Room.create({ dev: true, name: 'Old name' });
+  await B.Room.join(room.code, {}, { dev: true });
+  B.Room.saved.add(room.code, { name: 'Old name' });
+  await A.Room.rename('New name');
+  await tick(30);
+  assertEqual(B.Room.saved.list()[0].name, 'New name', 'no lobby needed');
+  A.Room.leave(); B.Room.leave();
+});
+
+test('rooms: saved names refresh after a rename made while away', async function () {
+  const bus = makeBus();
+  const A = phone(bus, 'Ana'), B = phone(bus, 'Ben');
+  const room = await A.Room.create({ dev: true, name: 'Old name' });
+  await B.Room.join(room.code, {}, { dev: true });
+  B.Room.saved.add(room.code, { name: 'Old name' });
+  B.Room.saved.add('GONE22', { name: 'Gone room' });
+  await B.Room.leave();
+  await tick(20);
+  await A.Room.rename('New name');
+  assertEqual(B.Room.saved.list().filter(function (r) { return r.code === room.code; })[0].name, 'Old name', 'still old while away');
+  assertEqual(await B.Room.saved.refresh({ dev: true }), true, 'a name changed');
+  const names = {};
+  B.Room.saved.list().forEach(function (r) { names[r.code] = r.name; });
+  assertEqual(names[room.code], 'New name', 'new name fetched');
+  assertEqual(names.GONE22, 'Gone room', 'a missing room keeps its name');
+  assertEqual(await B.Room.saved.refresh({ dev: true }), false, 'nothing new the second time');
+  A.Room.leave();
+});
