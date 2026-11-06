@@ -89,6 +89,8 @@ try {
     if ($stale || $faded) echo 'Freed ' . count($stale) . " stale match(es), faded $faded request(s).\n";
     $abandoned = $app->imposters()->sweep($now);
     if ($abandoned) echo "Ended $abandoned abandoned Imposters match(es).\n";
+    $abandonedWf = $app->wordflow()->sweep($now);
+    if ($abandonedWf) echo "Ended $abandonedWf abandoned WordFlow match(es).\n";
 } catch (Throwable $e) {
     fwrite(STDERR, 'Crew cleanup failed: ' . $e->getMessage() . "\n");
 }

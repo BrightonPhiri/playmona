@@ -73,6 +73,11 @@ class App
     {
         return $this->make('imposters', fn () => new Imposters($this->db(), $this->rtdb(), $this->matchmaker(), $this->crew(), $this->runner()));
     }
+    public function wordflow(): WordFlow
+    {
+        return $this->make('wordflow', fn () => new WordFlow($this->db(), $this->rtdb(), $this->matchmaker(), $this->crew(), $this->runner()));
+    }
+    public function wordflowJudge(): WordFlowJudge { return $this->make('wordflowJudge', fn () => new WordFlowJudge($this->ai(), $this->wordflow())); }
     public function leaderboards(): Leaderboards { return $this->make('leaderboards', fn () => new Leaderboards($this->rtdb())); }
     public function friends(): Friends { return $this->make('friends', fn () => new Friends($this->db(), $this->rtdb(), $this->crew())); }
     public function ai(): Ai { return $this->make('ai', fn () => new Ai($this->db(), $this->config, $this->overrides['aiHttp'] ?? new HttpClient())); }

@@ -1,0 +1,21 @@
+{
+  "game": "wordFlow",
+  "prompts": "docs/art/wordFlow-prompts.md",
+  "source": "assets/playmona_assets/wordFlow",
+  "ids": [],
+  "sets": [],
+  "focus": {},
+  "cover": {
+    "from": "cover.png",
+    "to": "assets/images/covers/wordFlow.webp",
+    "size": [
+      1086,
+      1448
+    ],
+    "max_kb": 240,
+    "focus": [
+      0.5,
+      0.46
+    ]
+  }
+}

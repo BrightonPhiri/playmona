@@ -68,8 +68,10 @@ async function main() {
 
   const playing = new Map();   // matchId -> { ctl, transport }
   const referees = new Map();  // Imposters matchId -> { ref, transport }
+  const wordflows = new Map(); // WordFlow matchId -> { ref, transport }
   let lastActive = Date.now();
   const isQuiet = (w) => FF.Words.isQuiet(w);
+  const isWord = (w) => FF.Words.isWord(w);
 
   function startMatch(matchId, run) {
     if (!run || !run.roomCode || !run.crew) return;
@@ -80,7 +82,9 @@ async function main() {
       log: (m) => log(matchId + ': ' + m),
       // Imposters: each crew seat reads its own secret, never anyone else's.
       secretOf: (uid) => (run.crew[uid] ? rtdb.get('imposterSecrets/' + run.roomCode + '/' + uid) : Promise.resolve(null)),
-      isQuiet,
+      isQuiet, isWord,
+      // WordFlow: a crew seat's next word from the AI (null: it uses its word bank).
+      suggestWord: (req) => api('wordflow/word', req).then((r) => (r.suggestion && r.suggestion.word) || null, () => null),
       onStop: () => { transport.close(); playing.delete(matchId); lastActive = Date.now(); }
     });
     playing.set(matchId, { ctl, transport });
@@ -139,21 +143,64 @@ async function main() {
     if (referees.size) lastActive = Date.now();
   }, log);
 
+  /* WordFlow: the runner is the referee for every match the API started (wordflowRuns). */
+  function startWordflow(matchId, run) {
+    if (!run || !run.roomCode || !run.seats) return;
+    const code = run.roomCode;
+    const transport = roomTransport(rtdb, code, serverNow, (m) => log(matchId + ': ' + m));
+    const stopIt = () => {
+      const r = wordflows.get(matchId);
+      if (!r) return;
+      r.ref.stop();
+      transport.close();
+      wordflows.delete(matchId);
+      lastActive = Date.now();
+    };
+    const ref = FF.WordFlowReferee.create({
+      run, room: transport,
+      store: {
+        load: () => rtdb.get('wordflowState/' + matchId),
+        save: (s) => rtdb.set('wordflowState/' + matchId, s)
+      },
+      // The AI judge, through the API. null (no AI, or it failed) means the rules decide.
+      judge: (req) => api('wordflow/judge', req).then((r) => r.verdict || null),
+      randomInt: (n) => crypto.randomInt(n),
+      isWord, isQuiet,
+      log: (m) => log(matchId + ': ' + m),
+      report: (event, payload) => api('report', Object.assign({}, payload, { matchId, event })),
+      onEnd: () => setTimeout(stopIt, 60000)
+    });
+    wordflows.set(matchId, { ref, transport });
+    log('refereeing WordFlow ' + matchId + ' in ' + code);
+    ref.start().catch((e) => { log(matchId + ': referee failed: ' + (e && e.message)); stopIt(); });
+  }
+
+  const wordflowRuns = rtdb.stream('wordflowRuns', (all) => {
+    all = all || {};
+    Object.keys(all).forEach((id) => { if (!wordflows.has(id)) startWordflow(id, all[id]); });
+    if (wordflows.size) lastActive = Date.now();
+  }, log);
+
   async function beat() {
     try {
-      const res = await api('heartbeat', { pid: process.pid, matches: Array.from(playing.keys()), imposters: Array.from(referees.keys()) });
+      const res = await api('heartbeat', { pid: process.pid, matches: Array.from(playing.keys()), imposters: Array.from(referees.keys()), wordflow: Array.from(wordflows.keys()) });
       (res.drop || []).forEach((id) => { const m = playing.get(id); if (m) m.ctl.stop(); });
       (res.dropImposters || []).forEach((id) => {
         const r = referees.get(id);
         if (r) { r.ref.stop(); r.transport.close(); referees.delete(id); }
       });
+      (res.dropWordflow || []).forEach((id) => {
+        const r = wordflows.get(id);
+        if (r) { r.ref.stop(); r.transport.close(); wordflows.delete(id); }
+      });
     } catch (e) {
       log('heartbeat failed: ' + e.message);
     }
-    if (!playing.size && !referees.size && Date.now() - lastActive > (cfg.idleMinutes || 5) * 60000) {
+    if (!playing.size && !referees.size && !wordflows.size && Date.now() - lastActive > (cfg.idleMinutes || 5) * 60000) {
       log('nothing to play; stopping');
       runs.close();
       imposterRuns.close();
+      wordflowRuns.close();
       try { await api('stopped', { pid: process.pid }); } catch (e) { /* the API notices anyway */ }
       process.exit(0);
     }

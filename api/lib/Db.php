@@ -311,6 +311,33 @@ class Db
             PRIMARY KEY (match_id, uid),
             FOREIGN KEY (match_id) REFERENCES imposter_matches (id)
         )$engine");
+        // WordFlow: one row per match the server started, and each seat's record once it ends.
+        $this->pdo->exec("CREATE TABLE IF NOT EXISTS wordflow_matches (
+            id VARCHAR(32) NOT NULL PRIMARY KEY,
+            room_code VARCHAR(12) NOT NULL,
+            host_uid VARCHAR(128) NOT NULL,
+            mode VARCHAR(12) NOT NULL,
+            game_seconds INTEGER NOT NULL,
+            turn_seconds INTEGER NOT NULL,
+            players INTEGER NOT NULL,
+            status VARCHAR(12) NOT NULL,
+            ai_words INTEGER NOT NULL DEFAULT 0,
+            sentences_accepted INTEGER NULL,
+            sentences_rejected INTEGER NULL,
+            total_words INTEGER NULL,
+            created_at BIGINT NOT NULL,
+            ended_at BIGINT NULL
+        )$engine");
+        $this->pdo->exec("CREATE TABLE IF NOT EXISTS wordflow_seats (
+            match_id VARCHAR(32) NOT NULL,
+            uid VARCHAR(128) NOT NULL,
+            crew_id VARCHAR(32) NULL,
+            words INTEGER NOT NULL DEFAULT 0,
+            points INTEGER NOT NULL DEFAULT 0,
+            won INTEGER NOT NULL DEFAULT 0,
+            PRIMARY KEY (match_id, uid),
+            FOREIGN KEY (match_id) REFERENCES wordflow_matches (id)
+        )$engine");
         // Columns added after the first release. Each fails harmlessly once it exists.
         foreach ([
             'ALTER TABLE orders ADD COLUMN mode VARCHAR(8) NULL',
@@ -345,6 +372,8 @@ class Db
             'CREATE INDEX imposters_room ON imposter_matches (room_code, created_at)',
             'CREATE INDEX imposters_status ON imposter_matches (status, created_at)',
             'CREATE INDEX imposter_seats_uid ON imposter_seats (uid)',
+            'CREATE INDEX wordflow_status ON wordflow_matches (status, created_at)',
+            'CREATE INDEX wordflow_seats_uid ON wordflow_seats (uid)',
         ] as $sql) {
             try { $this->pdo->exec($sql); } catch (\PDOException $e) { /* already there */ }
         }
