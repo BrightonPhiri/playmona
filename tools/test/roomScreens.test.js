@@ -399,3 +399,20 @@ test('room screens: joining a room mid-game catches up instead of starting from 
   late.FF.Race.end();
   host.FF.Room.leave(); late.FF.Room.leave();
 });
+
+test('room screens: a rename shows on the other players\' lobby', async function () {
+  const bus = makeBus();
+  const host = phone(bus, 'Ana'), guest = phone(bus, 'Ben');
+  const room = await host.FF.Room.create({ dev: true, name: 'Old name' });
+  await guest.FF.Room.join(room.code, {}, { dev: true });
+  host.FF.RoomUI.showLobby(host.main);
+  guest.FF.RoomUI.showLobby(guest.main);
+  await tick(40);
+  assert(/Old name/.test(text(find(guest.main, 'rm-roomhead'))), 'guest sees the old name first');
+  await host.FF.Room.rename('New name');
+  await tick(80);
+  assertEqual(guest.FF.Room.current().meta.name, 'New name', 'guest has the new name');
+  assert(/New name/.test(text(find(guest.main, 'rm-roomhead'))), 'guest lobby shows the new name');
+  assert(/New name/.test(text(find(host.main, 'rm-roomhead'))), 'host lobby shows the new name');
+  host.FF.Room.leave(); guest.FF.Room.leave();
+});

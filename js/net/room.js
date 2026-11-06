@@ -133,6 +133,8 @@ window.FF = window.FF || {};
       if (!state) return;
       state.meta = v || {};
       state.isHost = state.meta.hostUid === state.uid;
+      // A rename reaches "Your rooms" on every screen, not just the lobby.
+      FF.Room.saved.setName(state.code, state.meta.name || '');
       emit('meta', state.meta);
     }));
     unsubs.push(transport.watch('rounds', function (v) {
@@ -362,6 +364,38 @@ window.FF = window.FF || {};
         if (info && info.mode) hit.mode = info.mode;
         hit.lastUsed = Date.now();
         writeSaved(list);
+      },
+      // Update a saved room's name only (keeps its place in the list).
+      // Returns true when the name changed.
+      setName: function (code, name) {
+        var list = savedList();
+        var hit = list.filter(function (r) { return r.code === code; })[0];
+        name = String(name || '');
+        if (!hit || (hit.name || '') === name) return false;
+        hit.name = name;
+        writeSaved(list);
+        return true;
+      },
+      // Fetch the current names of saved rooms from the database, so a
+      // rename made while this device was away shows up. Resolves true when
+      // any name changed. Rooms that are gone or unreadable keep their name.
+      refresh: function (opts) {
+        var codes = savedList().map(function (r) { return r.code; });
+        if (!codes.length) return Promise.resolve(false);
+        var useDev = !!(opts && opts.dev);
+        return Promise.all(codes.map(function (code) {
+          // The room we are in already keeps its name in step.
+          if (state && state.code === code) return false;
+          return makeTransport(code, useDev).then(function (transport) {
+            return transport.get('meta').then(function (meta) {
+              if (transport.close) transport.close();
+              // A room that is gone keeps the name this device knew.
+              return meta ? FF.Room.saved.setName(code, meta.name || '') : false;
+            });
+          }).catch(function () { return false; });
+        })).then(function (changed) {
+          return changed.some(Boolean);
+        });
       }
     },
 
