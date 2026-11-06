@@ -199,6 +199,22 @@ window.FF = window.FF || {};
       impSeats.start();
     }
 
+    /* WordFlow has no rounds either: its seats add a word when the referee says it is their turn
+       (js/crew/brains/wordFlow.js), asking the API's AI for one when it can (opts.suggestWord). */
+    var wfSeats = null, wfKey = null;
+    function onWordFlow() {
+      var playing = meta && meta.status === 'playing' && meta.gameId === 'wordFlow' && FF.CrewWordFlow;
+      var key = playing ? gameKey() : null;
+      if (wfSeats && wfKey !== key) { wfSeats.stop(); wfSeats = null; }
+      if (!playing || wfSeats) return;
+      wfKey = key;
+      wfSeats = FF.CrewWordFlow.create({
+        transport: T, uids: function () { return uids.filter(present); }, crew: crew, later: later, log: log,
+        suggest: opts.suggestWord || null, isWord: opts.isWord || null, isQuiet: opts.isQuiet || null
+      });
+      wfSeats.start();
+    }
+
     function onMeta(v) {
       meta = v;
       if (!meta) { stop(); return; }
@@ -207,12 +223,14 @@ window.FF = window.FF || {};
       else if (status === 'playing') onRounds();
       else if (status === 'ended') onEnded();
       onImposters();
+      onWordFlow();
     }
 
     function stop() {
       if (stopped) return;
       stopped = true;
       if (impSeats) { impSeats.stop(); impSeats = null; }
+      if (wfSeats) { wfSeats.stop(); wfSeats = null; }
       offs.forEach(function (off) { try { off(); } catch (e) { /* already closed */ } });
       offs = [];
       pending.forEach(function (id) { timers.clearTimeout(id); });

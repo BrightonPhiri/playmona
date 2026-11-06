@@ -125,7 +125,7 @@ class Ai
      * and returns null if it breaks the rules. Returns null when AI is off, over its limit, slow,
      * failing or wrong: the caller then uses its own fallback.
      */
-    public function complete(string $task, array $messages, callable $check, int $maxTokens = 600, bool $cache = true): ?array
+    public function complete(string $task, array $messages, callable $check, int $maxTokens = 600, bool $cache = true, float $temperature = 0.9): ?array
     {
         $rows = $this->db->all("SELECT * FROM ai_providers WHERE kind = 'text' AND enabled = 1 AND model <> '' ORDER BY created_at, id");
         foreach ($rows as $row) {
@@ -138,7 +138,7 @@ class Ai
             }
             if (!$this->underLimit($row)) continue;
             try {
-                $out = $this->call($row, $messages, $maxTokens);
+                $out = $this->call($row, $messages, $maxTokens, $temperature);
                 $clean = is_array($out) ? $check($out) : null;
                 if ($clean === null) { $this->count($row['id'], 0, true, false); continue; }
                 if ($cache) {
@@ -192,11 +192,11 @@ class Ai
 
     /* ---------- internals ---------- */
 
-    private function call(array $row, array $messages, int $maxTokens): ?array
+    private function call(array $row, array $messages, int $maxTokens, float $temperature = 0.9): ?array
     {
         $body = json_encode([
             'model' => $row['model'], 'messages' => $messages, 'response_format' => ['type' => 'json_object'],
-            'max_tokens' => $maxTokens, 'temperature' => 0.9,
+            'max_tokens' => $maxTokens, 'temperature' => $temperature,
         ]);
         [$status, $data] = $this->http->request('POST', rtrim($row['base_url'], '/') . '/chat/completions', $this->authHeaders($row), $body, (int) ceil($row['timeout_ms'] / 1000));
         if ($status !== 200 || !is_array($data)) throw new \RuntimeException("status $status");

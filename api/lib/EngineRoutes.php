@@ -54,6 +54,18 @@ class EngineRoutes
             return Response::json($this->app->imposters()->nudge($this->user($req), $req->json(), $now));
         }
 
+        // WordFlow: the server starts the match; the referee in the runner plays it out.
+        if ($m === 'POST' && $p === '/wordflow/start') {
+            return Response::json($this->app->wordflow()->start($this->user($req), $req->json(), $now));
+        }
+        if ($m === 'POST' && $p === '/wordflow/crew') {
+            $u = $this->user($req);
+            return Response::json($this->app->wordflow()->findPlayers($u, $this->isAdmin($u), $req->json(), $now));
+        }
+        if ($m === 'POST' && $p === '/wordflow/nudge') {
+            return Response::json($this->app->wordflow()->nudge($this->user($req), $req->json(), $now));
+        }
+
         // Friends
         if ($m === 'GET' && $p === '/friends') return Response::json($this->app->friends()->overview($this->user($req)->uid, $now));
         if ($m === 'POST' && str_starts_with($p, '/friends/')) return $this->friendAction($req, substr($p, 9), $now);
@@ -152,13 +164,18 @@ class EngineRoutes
             case 'heartbeat':
                 $drop = $mm->heartbeat((int) ($body['pid'] ?? 0), (array) ($body['matches'] ?? []), $now);
                 $dropImposters = $this->app->imposters()->stillActive((array) ($body['imposters'] ?? []));
+                $dropWordflow = $this->app->wordflow()->stillActive((array) ($body['wordflow'] ?? []));
                 $s = $this->app->crew()->settings();
-                return Response::json(['drop' => $drop, 'dropImposters' => $dropImposters, 'settings' => ['mode' => $s['mode'], 'stopNew' => $s['stopNew']]]);
+                return Response::json(['drop' => $drop, 'dropImposters' => $dropImposters, 'dropWordflow' => $dropWordflow, 'settings' => ['mode' => $s['mode'], 'stopNew' => $s['stopNew']]]);
             case 'report':
                 $matchId = (string) ($body['matchId'] ?? '');
                 $event = (string) ($body['event'] ?? '');
                 if ($event === 'imposters') {
                     $this->app->imposters()->recordResult($body, $now);
+                    return Response::json(['ok' => true]);
+                }
+                if ($event === 'wordflow') {
+                    $this->app->wordflow()->recordResult($body, $now);
                     return Response::json(['ok' => true]);
                 }
                 if ($event === 'game') {
@@ -168,6 +185,11 @@ class EngineRoutes
                 if (!in_array($event, ['leave', 'failed'], true)) throw new HttpError(400, 'Unknown event.', 'bad-event');
                 $mm->endMatch($matchId, $event === 'failed' ? 'failed' : 'ended', $now);
                 return Response::json(['stay' => false]);
+            // WordFlow's AI help. null means no AI answered: the runner falls back to the rules.
+            case 'wordflow/judge':
+                return Response::json(['verdict' => $this->app->wordflowJudge()->judge($body)]);
+            case 'wordflow/word':
+                return Response::json(['suggestion' => $this->app->wordflowJudge()->suggest($body)]);
             case 'stopped':
                 $this->app->runner()->stopped((int) ($body['pid'] ?? 0));
                 return Response::json(['ok' => true]);

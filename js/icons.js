@@ -113,6 +113,7 @@ window.FF = window.FF || {};
   "hiddenObject": "binoculars",
   "visualRiddle": "question",
   "imposters": "detective",
+  "wordFlow": "pencil",
   "guessLandmark": "buildings",
   "guessAnimal": "paw-print",
   "guessFood": "fork-knife",

@@ -14,6 +14,7 @@ FF.AssetManifest = {
     "quickTap": "1020b24c",
     "trueOrFalse": "5e43f26f",
     "wordChain": "89246988",
+    "wordFlow": "8352f80d",
     "wordScramble": "4a450fcf"
   },
   "categories": {

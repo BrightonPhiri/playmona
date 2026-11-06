@@ -41,7 +41,7 @@ function crewGames() {
 test('crew brains: every crew game is online and has a brain', function () {
   const online = onlineGames();
   const games = crewGames();
-  assertEqual(games.length, 23);
+  assertEqual(games.length, 24);
   games.forEach((g) => {
     assert(online.indexOf(g) !== -1, g + ' is not an online game');
     assert(B.forGame(g), 'no brain for ' + g);

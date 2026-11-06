@@ -29,7 +29,9 @@ window.FF = window.FF || {};
     // Votes: everyone votes on their own phone, then sees the same split.
     'wouldYouRather', 'thisOrThat', 'whoIsMostLikely',
     // Secret words dealt by the server's referee (js/imposters/referee.js).
-    'imposters'
+    'imposters',
+    // One word each, turns and judging run by the server's referee (js/wordflow/referee.js).
+    'wordFlow'
     // Brain Battle is deliberately absent: its format is a personal
     // streak run per player, so there is no shared question to race for.
   ];

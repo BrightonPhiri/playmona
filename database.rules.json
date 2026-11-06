@@ -445,6 +445,32 @@
             }
           }
         },
+        "wfInbox": {
+          "$uid": {
+            "$id": {
+              ".write": "auth != null && $uid === auth.uid && !data.exists() && newData.exists() && !root.child('bans').child(auth.uid).exists() && root.child('rooms').child($code).child('wf').child('seats').child(auth.uid).exists()",
+              ".validate": "$id.matches(/^[A-Za-z0-9_-]{6,40}$/) && newData.hasChildren(['type', 'matchId', 'turnId', 'word', 't'])",
+              "type": {
+                ".validate": "newData.isString() && newData.val() === 'word'"
+              },
+              "matchId": {
+                ".validate": "newData.isString() && newData.val() === root.child('rooms').child($code).child('wf').child('matchId').val()"
+              },
+              "turnId": {
+                ".validate": "newData.isNumber()"
+              },
+              "word": {
+                ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 26"
+              },
+              "t": {
+                ".validate": "newData.isNumber() && newData.val() === now"
+              },
+              "$other": {
+                ".validate": false
+              }
+            }
+          }
+        },
         "chat": {
           ".write": "auth != null && !newData.exists() && root.child('rooms').child($code).child('meta').child('hostUid').val() === auth.uid",
           "$id": {

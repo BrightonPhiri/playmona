@@ -28,7 +28,11 @@ const FILES = [
   'js/imposters/modes/word.js',
   'js/imposters/modes/number.js',
   'js/imposters/referee.js',
-  'js/crew/brains/imposters.js'
+  'js/crew/brains/imposters.js',
+  // WordFlow: the referee the runner hosts, and how crew seats play it.
+  'js/wordflow/rules.js',
+  'js/wordflow/referee.js',
+  'js/crew/brains/wordFlow.js'
 ];
 
 function stubElement() {
