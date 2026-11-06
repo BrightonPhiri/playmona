@@ -10,6 +10,7 @@ FF.AssetManifest = {
     "letterRush": "b0eb5db2",
     "memoryMatch": "39b80ff8",
     "miniCrossword": "ca1c3143",
+    "numberRush": "588554f9",
     "pictureQuiz": "ccce77b0",
     "quickTap": "1020b24c",
     "trueOrFalse": "5e43f26f",
