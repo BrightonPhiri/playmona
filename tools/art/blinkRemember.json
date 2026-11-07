@@ -1,0 +1,21 @@
+{
+  "game": "blinkRemember",
+  "prompts": "docs/art/blinkRemember-prompts.md",
+  "source": "assets/playmona_assets/blink-remember",
+  "ids": [],
+  "sets": [],
+  "focus": {},
+  "cover": {
+    "from": "cover.png",
+    "to": "assets/images/covers/blinkRemember.webp",
+    "size": [
+      1086,
+      1448
+    ],
+    "max_kb": 240,
+    "focus": [
+      0.5,
+      0.5
+    ]
+  }
+}

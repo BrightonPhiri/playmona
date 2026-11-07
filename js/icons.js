@@ -134,6 +134,7 @@ window.FF = window.FF || {};
   "numberChallenge": "hash",
   "numberRush": "target",
   "ballSwap": "arrows-left-right",
+  "blinkRemember": "eye",
   "higherOrLower": "chart-line",
   "wouldYouRather": "arrows-left-right",
   "thisOrThat": "split-horizontal",

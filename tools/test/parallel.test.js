@@ -14,6 +14,7 @@ const GAMES = {
   memoryMatch: 'memoryGames.js',
   pictureMemory: 'memoryGames.js',
   rememberSequence: 'sequence.js',
+  blinkRemember: 'blinkRemember.js',
   picturePuzzle: 'puzzleGames.js',
   spotDifference: 'puzzleGames.js',
   hiddenObject: 'puzzleGames.js',
@@ -25,6 +26,7 @@ const GAMES = {
 const EXPOSE = {
   'memoryGames.js': ['matchPoints'],
   'sequence.js': ['sequencePoints', 'rsLength', 'rsSeconds'],
+  'blinkRemember.js': [],
   'puzzleGames.js': ['puzzlePoints', 'spotPoints', 'hiddenPoints'],
   'wordGames.js': ['longestWord'],
   'bibleGames.js': ['booksPoints']
