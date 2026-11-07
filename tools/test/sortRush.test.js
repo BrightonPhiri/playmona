@@ -43,7 +43,9 @@ test('sortrush rules: sanitize keeps known values, levels set the board, and inc
   assert(wide.colours + wide.empty <= R.MAX_HOLDERS, 'never more holders than fit');
   assert(R.isStandard(R.STANDARD));
   assert(R.isStandard(Object.assign({}, R.STANDARD, { style: 'rings' })), 'the style is only a look');
-  assert(!R.isStandard(Object.assign({}, R.STANDARD, { move: 'group' })));
+  assertEqual(R.STANDARD.move, 'group', 'Matching group is the default');
+  assertEqual(R.sanitize({}).move, 'group');
+  assert(!R.isStandard(Object.assign({}, R.STANDARD, { move: 'single' })));
 });
 
 /* ---------- the generator ---------- */

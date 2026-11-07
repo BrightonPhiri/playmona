@@ -2176,33 +2176,49 @@ button.imp-card:focus-visible { outline: 3px solid var(--focus-ring); outline-of
    only. Holders never change look while something is lifted, except the one
    under a dragged object: nothing hints where an object belongs. */
 .srt { gap: var(--sp-3); }
+.srt, .srt-themecard__swatch {
+  /* Four-point sparkles scattered over the sky. */
+  --srt-spark-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='white' d='M12 0C13 8 16 11 24 12C16 13 13 16 12 24C11 16 8 13 0 12C8 11 11 8 12 0Z'/%3E%3C/svg%3E");
+  --srt-sparkles: var(--srt-spark-svg) 6% 12% / 16px 16px no-repeat, var(--srt-spark-svg) 92% 16% / 12px 12px no-repeat,
+    var(--srt-spark-svg) 66% 6% / 9px 9px no-repeat, var(--srt-spark-svg) 22% 40% / 8px 8px no-repeat,
+    var(--srt-spark-svg) 84% 46% / 10px 10px no-repeat, var(--srt-spark-svg) 40% 10% / 7px 7px no-repeat;
+}
 .srt[data-srt-theme="workshop"], .srt-themecard__swatch[data-srt-theme="workshop"] {
-  --srt-board: var(--srt-wk-board); --srt-board-hi: var(--srt-wk-board-hi); --srt-grain: var(--srt-wk-grain); --srt-ink: var(--srt-wk-ink);
-  --srt-metal: var(--srt-wk-metal); --srt-metal-hi: var(--srt-wk-metal-hi); --srt-metal-deep: var(--srt-wk-metal-deep); --srt-glow: var(--srt-wk-glow);
+  --srt-bg-top: var(--srt-wk-bg-top); --srt-bg-bot: var(--srt-wk-bg-bot); --srt-glow: var(--srt-wk-glow);
+  --srt-wood: var(--srt-wk-wood); --srt-wood-hi: var(--srt-wk-wood-hi); --srt-wood-deep: var(--srt-wk-wood-deep);
+  --srt-metal: var(--srt-wk-metal); --srt-metal-hi: var(--srt-wk-metal-hi); --srt-metal-deep: var(--srt-wk-metal-deep);
+  --srt-tray: var(--srt-wk-tray); --srt-tray-hi: var(--srt-wk-tray-hi); --srt-tray-deep: var(--srt-wk-tray-deep);
   --srt-c0: var(--srt-wk-c0); --srt-c1: var(--srt-wk-c1); --srt-c2: var(--srt-wk-c2); --srt-c3: var(--srt-wk-c3); --srt-c4: var(--srt-wk-c4);
   --srt-c5: var(--srt-wk-c5); --srt-c6: var(--srt-wk-c6); --srt-c7: var(--srt-wk-c7); --srt-c8: var(--srt-wk-c8); --srt-c9: var(--srt-wk-c9);
-  --srt-surface: repeating-linear-gradient(97deg, transparent 0 22px, rgba(0, 0, 0, 0.07) 22px 24px, transparent 24px 61px),
-    radial-gradient(120% 90% at 50% 0%, var(--srt-board-hi), var(--srt-board) 70%, var(--srt-grain));
-  --srt-gloss: 0.5;
+  --srt-surface: var(--srt-sparkles),
+    radial-gradient(90% 60% at 50% 0%, rgba(255, 255, 255, 0.35), transparent 70%),
+    radial-gradient(60% 40% at 15% 85%, rgba(255, 255, 255, 0.16), transparent 70%),
+    linear-gradient(var(--srt-bg-top), var(--srt-bg-bot));
 }
 .srt[data-srt-theme="candy"], .srt-themecard__swatch[data-srt-theme="candy"] {
-  --srt-board: var(--srt-cd-board); --srt-board-hi: var(--srt-cd-board-hi); --srt-grain: var(--srt-cd-grain); --srt-ink: var(--srt-cd-ink);
-  --srt-metal: var(--srt-cd-metal); --srt-metal-hi: var(--srt-cd-metal-hi); --srt-metal-deep: var(--srt-cd-metal-deep); --srt-glow: var(--srt-cd-glow);
+  --srt-bg-top: var(--srt-cd-bg-top); --srt-bg-bot: var(--srt-cd-bg-bot); --srt-glow: var(--srt-cd-glow);
+  --srt-wood: var(--srt-cd-wood); --srt-wood-hi: var(--srt-cd-wood-hi); --srt-wood-deep: var(--srt-cd-wood-deep);
+  --srt-metal: var(--srt-cd-metal); --srt-metal-hi: var(--srt-cd-metal-hi); --srt-metal-deep: var(--srt-cd-metal-deep);
+  --srt-tray: var(--srt-cd-tray); --srt-tray-hi: var(--srt-cd-tray-hi); --srt-tray-deep: var(--srt-cd-tray-deep);
   --srt-c0: var(--srt-cd-c0); --srt-c1: var(--srt-cd-c1); --srt-c2: var(--srt-cd-c2); --srt-c3: var(--srt-cd-c3); --srt-c4: var(--srt-cd-c4);
   --srt-c5: var(--srt-cd-c5); --srt-c6: var(--srt-cd-c6); --srt-c7: var(--srt-cd-c7); --srt-c8: var(--srt-cd-c8); --srt-c9: var(--srt-cd-c9);
-  --srt-surface: radial-gradient(circle at 12% 18%, rgba(255, 255, 255, 0.7) 0 6px, transparent 7px) 0 0 / 58px 58px,
-    linear-gradient(160deg, var(--srt-board), var(--srt-board-hi));
-  --srt-gloss: 0.85;
+  --srt-surface: var(--srt-sparkles),
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.55) 0 3px, transparent 4px) 0 0 / 44px 44px,
+    radial-gradient(80% 60% at 80% 0%, rgba(255, 255, 255, 0.45), transparent 70%),
+    linear-gradient(160deg, var(--srt-bg-top), var(--srt-bg-bot));
 }
 .srt[data-srt-theme="neon"], .srt-themecard__swatch[data-srt-theme="neon"] {
-  --srt-board: var(--srt-ne-board); --srt-board-hi: var(--srt-ne-board-hi); --srt-grain: var(--srt-ne-grain); --srt-ink: var(--srt-ne-ink);
-  --srt-metal: var(--srt-ne-metal); --srt-metal-hi: var(--srt-ne-metal-hi); --srt-metal-deep: var(--srt-ne-metal-deep); --srt-glow: var(--srt-ne-glow);
+  --srt-bg-top: var(--srt-ne-bg-top); --srt-bg-bot: var(--srt-ne-bg-bot); --srt-glow: var(--srt-ne-glow);
+  --srt-wood: var(--srt-ne-wood); --srt-wood-hi: var(--srt-ne-wood-hi); --srt-wood-deep: var(--srt-ne-wood-deep);
+  --srt-metal: var(--srt-ne-metal); --srt-metal-hi: var(--srt-ne-metal-hi); --srt-metal-deep: var(--srt-ne-metal-deep);
+  --srt-tray: var(--srt-ne-tray); --srt-tray-hi: var(--srt-ne-tray-hi); --srt-tray-deep: var(--srt-ne-tray-deep);
   --srt-c0: var(--srt-ne-c0); --srt-c1: var(--srt-ne-c1); --srt-c2: var(--srt-ne-c2); --srt-c3: var(--srt-ne-c3); --srt-c4: var(--srt-ne-c4);
   --srt-c5: var(--srt-ne-c5); --srt-c6: var(--srt-ne-c6); --srt-c7: var(--srt-ne-c7); --srt-c8: var(--srt-ne-c8); --srt-c9: var(--srt-ne-c9);
-  --srt-surface: linear-gradient(rgba(124, 247, 255, 0.05) 1px, transparent 1px) 0 0 / 100% 28px,
-    linear-gradient(90deg, rgba(124, 247, 255, 0.05) 1px, transparent 1px) 0 0 / 28px 100%,
-    radial-gradient(110% 80% at 50% 10%, var(--srt-board-hi), var(--srt-board) 65%);
-  --srt-gloss: 0.35;
+  --srt-surface: var(--srt-sparkles),
+    radial-gradient(50% 40% at 20% 10%, rgba(192, 75, 255, 0.35), transparent 70%),
+    radial-gradient(50% 40% at 85% 25%, rgba(46, 238, 255, 0.22), transparent 70%),
+    linear-gradient(rgba(124, 247, 255, 0.06) 1px, transparent 1px) 0 100% / 100% 30px,
+    linear-gradient(var(--srt-bg-top), var(--srt-bg-bot));
 }
 
 /* HUD */
@@ -2265,13 +2281,16 @@ button.imp-card:focus-visible { outline: 3px solid var(--focus-ring); outline-of
   touch-action: none; user-select: none; -webkit-user-select: none; overscroll-behavior: contain;
 }
 .srt-board {
-  display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-end; gap: 10px var(--srt-gap, 12px);
+  display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-end; gap: 18px var(--srt-gap, 12px);
   margin: 0 auto; max-width: 100%;
 }
 .srt-board.is-rows { width: calc(var(--srt-per) * var(--srt-hw) + (var(--srt-per) - 1) * var(--srt-gap)); }
 
-/* A holder: the whole column is the tap target, lift space included. */
+/* A holder: the whole column is the tap target, lift space included.
+   Every part sizes itself from the layout's variables: --srt-ow/oh (object),
+   --srt-base (below the stack, shelf included), --srt-shelf, --srt-cap, --srt-pad. */
 .srt-holder {
+  --col: calc(var(--srt-base) - var(--srt-shelf, 10px) + var(--srt-cap) * var(--srt-oh) + var(--srt-pad));
   position: relative; flex: 0 0 auto; width: var(--srt-hw);
   height: calc(var(--srt-head) + var(--srt-base) + var(--srt-cap) * var(--srt-oh) + var(--srt-pad));
   padding: 0; margin: 0; border: 0; background: none; color: inherit; cursor: pointer;
@@ -2281,99 +2300,121 @@ button.imp-card:focus-visible { outline: 3px solid var(--focus-ring); outline-of
 .srt-holder.is-source { z-index: 9; }
 .srt-holder.is-receiving { z-index: 10; }
 .srt-holder.is-dragging { z-index: 30; }
-.srt-holder.is-over .srt-holder__back { filter: brightness(1.3); }
+.srt-holder.is-over .srt-holder__back, .srt-holder.is-over .srt-holder__foot { filter: brightness(1.18) drop-shadow(0 0 8px var(--srt-glow)); }
 .srt-holder.is-shake { animation: srt-shake 0.38s var(--ease); }
 .srt-holder.is-wave { animation: srt-wave 0.7s var(--ease) var(--wave, 0ms) both; }
+.srt-holder.is-glow .srt-holder__stack { animation: srt-glow 0.9s ease-out; }
 .srt-holder__stack { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
-.srt-holder__back, .srt-holder__front { position: absolute; left: 50%; bottom: 0; pointer-events: none; }
-.srt-holder__back { z-index: 1; }
+.srt-holder__back, .srt-holder__foot, .srt-holder__front { position: absolute; left: 50%; bottom: var(--srt-shelf, 10px); pointer-events: none; }
+.srt-holder__back, .srt-holder__foot { z-index: 1; }
 .srt-holder__front { z-index: 3; }
-.srt-holder__cap { position: absolute; left: 50%; z-index: 4; pointer-events: none; opacity: 0; transform: translate(-50%, -24px); }
-.srt-holder.is-done .srt-holder__cap { opacity: 1; transform: translate(-50%, 0); transition: transform 0.36s cubic-bezier(.3, 1.6, .5, 1), opacity 0.2s; }
-.srt-holder.is-done .srt-holder__back { box-shadow: 0 0 18px 2px color-mix(in srgb, var(--srt-glow) 55%, transparent); }
-.srt-holder.is-glow { animation: srt-glow 0.9s ease-out; }
 
-/* Tubes (balls) */
+/* The shelf: each holder carries its stretch of plank; the rows' ends are rounded. */
+.srt-holder__shelf {
+  position: absolute; z-index: 1; bottom: 0; height: var(--srt-shelf, 10px); pointer-events: none;
+  left: calc(var(--srt-gap, 12px) / -2 - 1px); right: calc(var(--srt-gap, 12px) / -2 - 1px);
+  background: linear-gradient(var(--srt-wood-hi) 0, var(--srt-wood) 30%, var(--srt-wood-deep) 34%, var(--srt-wood) 40%, color-mix(in srgb, var(--srt-wood) 70%, var(--srt-wood-deep)) 100%);
+  box-shadow: 0 14px 16px -10px rgba(24, 14, 60, 0.5);
+}
+.srt-holder.is-row-start .srt-holder__shelf { left: -12px; border-radius: 14px 0 0 14px / 8px 0 0 14px; }
+.srt-holder.is-row-end .srt-holder__shelf { right: -12px; border-radius: 0 14px 14px 0 / 0 8px 14px 0; }
+.srt-holder.is-row-start.is-row-end .srt-holder__shelf { border-radius: 14px / 8px 8px 14px 14px; }
+.srt[data-srt-theme="workshop"] .srt-holder__shelf::after {
+  content: ""; position: absolute; inset: 34% 0 0; border-radius: inherit;
+  background: repeating-linear-gradient(91deg, rgba(120, 60, 10, 0.12) 0 2px, transparent 2px 19px, rgba(255, 255, 255, 0.08) 19px 21px, transparent 21px 37px);
+}
+.srt[data-srt-theme="neon"] .srt-holder__shelf { box-shadow: 0 -1px 0 var(--srt-glow), 0 0 14px color-mix(in srgb, var(--srt-glow) 45%, transparent), 0 14px 16px -10px rgba(0, 0, 0, 0.6); }
+
+/* Finished: a slow burst of light behind the holder (the --cap element). */
+.srt-holder__cap {
+  position: absolute; left: 50%; z-index: 0; pointer-events: none; opacity: 0;
+  bottom: calc(var(--srt-base) + var(--srt-cap) * var(--srt-oh) * 0.85);
+  width: calc(var(--srt-hw) * 1.7); aspect-ratio: 1; border-radius: 50%;
+  translate: -50% 50%; scale: 0.3;   /* not `transform`: the spin uses `rotate`, which applies before it */
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--srt-glow) 85%, white) 0, color-mix(in srgb, var(--srt-glow) 45%, transparent) 38%, transparent 72%),
+    repeating-conic-gradient(color-mix(in srgb, var(--srt-glow) 55%, transparent) 0 7deg, transparent 7deg 24deg);
+  -webkit-mask: radial-gradient(closest-side, #000 30%, transparent 100%); mask: radial-gradient(closest-side, #000 30%, transparent 100%);
+}
+.srt-holder.is-done .srt-holder__cap {
+  opacity: 0.85; scale: 1;
+  transition: scale 0.5s cubic-bezier(.3, 1.4, .5, 1), opacity 0.3s; animation: srt-rays 14s linear infinite;
+}
+
+/* ---- Tubes: clear glass with a thick rim; balls ---- */
 .srt-holder--balls .srt-holder__back, .srt-holder--balls .srt-holder__front {
-  width: calc(var(--srt-ow) + 12px); margin-left: calc((var(--srt-ow) + 12px) / -2);
-  height: calc(var(--srt-base) + var(--srt-cap) * var(--srt-oh) + var(--srt-pad)); border-radius: 8px 8px 999px 999px;
+  width: calc(var(--srt-ow) + 10px); margin-left: calc((var(--srt-ow) + 10px) / -2); height: var(--col);
+  border-radius: 5px 5px calc(var(--srt-ow) * 0.3) calc(var(--srt-ow) * 0.3);
 }
 .srt-holder--balls .srt-holder__back {
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04) 40%, rgba(255, 255, 255, 0.14));
-  border: 2px solid color-mix(in srgb, var(--srt-metal) 65%, transparent); border-top-width: 0;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0.1) 20%, rgba(255, 255, 255, 0.05) 62%, rgba(255, 255, 255, 0.26) 94%);
+  border: 1.5px solid rgba(255, 255, 255, 0.6); border-top: 0;
+  box-shadow: inset 0 -8px 10px rgba(255, 255, 255, 0.2), 0 8px 10px -6px rgba(24, 14, 60, 0.35);
 }
 .srt-holder--balls .srt-holder__back::before {
-  content: ""; position: absolute; left: -5px; right: -5px; top: -4px; height: 8px; border-radius: 6px;
-  background: linear-gradient(var(--srt-metal-hi), var(--srt-metal)); opacity: 0.9;
+  content: ""; position: absolute; left: -3px; right: -3px; top: -5px; height: 10px; border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.85); background: rgba(255, 255, 255, 0.14);
 }
-.srt-holder--balls .srt-holder__front { background: linear-gradient(90deg, transparent 14%, rgba(255, 255, 255, calc(0.32 * var(--srt-gloss))) 18%, transparent 30%); }
-.srt-holder--balls .srt-holder__cap {
-  bottom: calc(var(--srt-base) + var(--srt-cap) * var(--srt-oh) + var(--srt-pad) - 8px);
-  width: calc(var(--srt-ow) * 0.82); height: 16px; border-radius: 4px 4px 6px 6px;
-  background: linear-gradient(color-mix(in srgb, var(--srt-c9) 70%, white), var(--srt-c9) 40%, color-mix(in srgb, var(--srt-c9) 60%, black));
+.srt-holder--balls .srt-holder__front {
+  background: linear-gradient(90deg, transparent 9%, rgba(255, 255, 255, 0.7) 13%, rgba(255, 255, 255, 0.1) 20%, transparent 27%, transparent 78%, rgba(255, 255, 255, 0.35) 84%, transparent 89%);
 }
+.srt-holder--balls .srt-holder__front::after {
+  content: ""; position: absolute; left: 14%; right: 14%; bottom: 2px; height: 7px; border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(255, 255, 255, 0.55), transparent);
+}
+.srt[data-srt-theme="neon"] .srt-holder--balls .srt-holder__back { border-color: color-mix(in srgb, var(--srt-glow) 70%, transparent); box-shadow: 0 0 12px color-mix(in srgb, var(--srt-glow) 35%, transparent); }
 
-/* Bolts (nuts) */
+/* ---- Bolts: a threaded steel bolt on a steel disc; nuts ---- */
 .srt-holder--nuts .srt-holder__back {
-  width: calc(var(--srt-ow) * 0.24); margin-left: calc(var(--srt-ow) * -0.12);
-  bottom: calc(var(--srt-base) - 2px); height: calc(var(--srt-cap) * var(--srt-oh) + var(--srt-pad));
-  border-radius: 6px 6px 0 0;
-  background: repeating-linear-gradient(170deg, var(--srt-metal-deep) 0 2px, var(--srt-metal-hi) 2px 4px, var(--srt-metal) 4px 7px);
-  box-shadow: inset 3px 0 4px rgba(255, 255, 255, 0.35), inset -4px 0 5px rgba(0, 0, 0, 0.35);
+  width: calc(var(--srt-ow) * 0.25); margin-left: calc(var(--srt-ow) * -0.125); height: var(--col);
+  border-radius: 40% 40% 0 0 / 8px 8px 0 0;
+  background: repeating-linear-gradient(172deg, rgba(0, 0, 0, 0.3) 0 1.5px, transparent 1.5px 3.5px, rgba(255, 255, 255, 0.6) 3.5px 4.5px, transparent 4.5px 6px),
+    linear-gradient(90deg, var(--srt-metal-deep), var(--srt-metal-hi) 32%, var(--srt-metal) 58%, var(--srt-metal-deep));
 }
-.srt-holder--nuts .srt-holder__front {
-  width: calc(var(--srt-ow) * 1.06); margin-left: calc(var(--srt-ow) * -0.53); height: var(--srt-base); z-index: 1;
-  clip-path: polygon(8% 0, 92% 0, 100% 40%, 100% 100%, 0 100%, 0 40%);
-  background: linear-gradient(90deg, var(--srt-metal-deep), var(--srt-metal) 20%, var(--srt-metal-hi) 38%, var(--srt-metal) 55%, var(--srt-metal-deep) 80%, var(--srt-metal) 100%);
+.srt-holder--nuts .srt-holder__foot, .srt-holder--rings .srt-holder__foot {
+  width: calc(var(--srt-ow) * 1.06); margin-left: calc(var(--srt-ow) * -0.53); bottom: calc(var(--srt-shelf, 10px) - 2px);
+  height: calc((var(--srt-base) - var(--srt-shelf, 10px)) * 0.62); border-radius: 0 0 50% 50% / 0 0 40% 40%;
+  background: linear-gradient(90deg, var(--srt-metal-deep), var(--srt-metal-hi) 28%, var(--srt-metal) 60%, var(--srt-metal-deep));
+  box-shadow: 0 4px 5px rgba(24, 14, 60, 0.3);
 }
-.srt-holder--nuts .srt-holder__cap {
-  bottom: calc(var(--srt-base) + var(--srt-cap) * var(--srt-oh) + var(--srt-pad) - 4px);
-  width: calc(var(--srt-ow) * 0.42); height: calc(var(--srt-ow) * 0.22); border-radius: 999px 999px 4px 4px;
-  background: radial-gradient(circle at 35% 30%, var(--srt-metal-hi), var(--srt-glow) 55%, color-mix(in srgb, var(--srt-glow) 50%, black));
+.srt-holder--nuts .srt-holder__foot::before, .srt-holder--rings .srt-holder__foot::before {
+  content: ""; position: absolute; left: 0; right: 0; top: -45%; height: 90%; border-radius: 50%;
+  background: radial-gradient(ellipse at 40% 35%, var(--srt-metal-hi), var(--srt-metal) 65%, var(--srt-metal-deep));
 }
 
-/* Pegs (rings) */
+/* ---- Pegs: a rounded wooden peg on a wooden disc; rings ---- */
 .srt-holder--rings .srt-holder__back {
-  width: calc(var(--srt-ow) * 0.16); margin-left: calc(var(--srt-ow) * -0.08);
-  bottom: calc(var(--srt-base) - 2px); height: calc(var(--srt-cap) * var(--srt-oh) + var(--srt-pad)); border-radius: 999px 999px 0 0;
-  background: linear-gradient(90deg, var(--srt-metal-deep), var(--srt-metal-hi) 45%, var(--srt-metal) 60%, var(--srt-metal-deep));
+  width: calc(var(--srt-ow) * 0.18); margin-left: calc(var(--srt-ow) * -0.09); height: var(--col);
+  border-radius: 999px 999px 0 0 / 12px 12px 0 0;
+  background: linear-gradient(90deg, var(--srt-wood-deep), var(--srt-wood-hi) 35%, var(--srt-wood) 62%, var(--srt-wood-deep));
 }
-.srt-holder--rings .srt-holder__front {
-  width: calc(var(--srt-ow) * 1.08); margin-left: calc(var(--srt-ow) * -0.54); height: var(--srt-base); z-index: 1; border-radius: 10px 10px 6px 6px;
-  background: linear-gradient(var(--srt-metal-hi), var(--srt-metal) 35%, var(--srt-metal-deep));
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-}
-.srt-holder--rings .srt-holder__cap {
-  bottom: calc(var(--srt-base) + var(--srt-cap) * var(--srt-oh) + var(--srt-pad) - 8px);
-  width: calc(var(--srt-ow) * 0.26); height: calc(var(--srt-ow) * 0.26); border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, white, var(--srt-glow) 50%, color-mix(in srgb, var(--srt-glow) 50%, black));
-  box-shadow: 0 0 12px var(--srt-glow);
-}
+.srt-holder--rings .srt-holder__foot { background: linear-gradient(90deg, var(--srt-wood-deep), var(--srt-wood-hi) 28%, var(--srt-wood) 60%, var(--srt-wood-deep)); }
+.srt-holder--rings .srt-holder__foot::before { background: radial-gradient(ellipse at 40% 35%, var(--srt-wood-hi), var(--srt-wood) 70%, var(--srt-wood-deep)); }
 
-/* Trays (blocks) */
+/* ---- Trays: a cream tray, with a frosted guide showing how high it stacks; blocks ---- */
 .srt-holder--blocks .srt-holder__back {
-  width: calc(var(--srt-ow) + 16px); margin-left: calc((var(--srt-ow) + 16px) / -2);
-  height: calc(var(--srt-base) + var(--srt-cap) * var(--srt-oh) + var(--srt-pad)); border-radius: 4px 4px 12px 12px;
-  border: 5px solid var(--srt-metal); border-top: 0;
-  background: linear-gradient(rgba(0, 0, 0, 0.16), rgba(0, 0, 0, 0.3));
-  box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.2), 0 4px 10px rgba(0, 0, 0, 0.3);
+  width: calc(var(--srt-ow) * 1.12); margin-left: calc(var(--srt-ow) * -0.56); height: var(--col);
+  border-radius: 10px 10px 4px 4px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.26), rgba(255, 255, 255, 0.08) 28%, rgba(255, 255, 255, 0.06) 70%, rgba(255, 255, 255, 0.2));
+  border: 1.5px solid rgba(255, 255, 255, 0.5);
+}
+.srt-holder--blocks .srt-holder__foot, .srt-holder--blocks .srt-holder__front { width: calc(var(--srt-ow) * 1.3); margin-left: calc(var(--srt-ow) * -0.65); }
+.srt-holder--blocks .srt-holder__foot {
+  height: calc(var(--srt-base) - var(--srt-shelf, 10px) + var(--srt-oh) * 0.34); border-radius: 10px 10px 8px 8px;
+  background: linear-gradient(var(--srt-tray-deep), color-mix(in srgb, var(--srt-tray) 60%, var(--srt-tray-deep)));
 }
 .srt-holder--blocks .srt-holder__front {
-  width: calc(var(--srt-ow) + 16px); margin-left: calc((var(--srt-ow) + 16px) / -2); height: 10px;
-  border-radius: 0 0 12px 12px; background: linear-gradient(var(--srt-metal-hi), var(--srt-metal-deep));
-}
-.srt-holder--blocks .srt-holder__cap {
-  bottom: calc(var(--srt-base) + var(--srt-cap) * var(--srt-oh) + var(--srt-pad) - 4px);
-  width: calc(var(--srt-ow) + 22px); height: 10px; border-radius: 5px;
-  background: linear-gradient(var(--srt-metal-hi), var(--srt-glow));
+  height: calc(var(--srt-base) - var(--srt-shelf, 10px) + var(--srt-oh) * 0.16); border-radius: 4px 4px 12px 12px;
+  background: linear-gradient(var(--srt-tray-hi), var(--srt-tray) 45%, var(--srt-tray-deep));
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.85), inset 0 -3px 5px rgba(0, 0, 0, 0.08), 0 6px 10px -4px rgba(24, 14, 60, 0.35);
 }
 
-/* Objects */
+/* ---- Objects: solid colours, glossy toy plastic ---- */
 .srt-obj {
   --o: var(--srt-c0);
-  --o-hi: color-mix(in srgb, var(--o) 52%, white);
-  --o-deep: color-mix(in srgb, var(--o) 58%, black);
-  --sym: rgba(255, 255, 255, 0.9);
+  --o-hi: color-mix(in srgb, var(--o) 45%, white);
+  --o-lite: color-mix(in srgb, var(--o) 75%, white);
+  --o-deep: color-mix(in srgb, var(--o) 72%, black);
+  --o-dark: color-mix(in srgb, var(--o) 50%, black);
   position: absolute; left: 50%; width: var(--srt-ow); height: var(--srt-oh); margin-left: calc(var(--srt-ow) / -2);
   bottom: calc(var(--srt-base) + var(--i, 0) * var(--srt-oh));
   translate: 0 calc(-1 * var(--lift, 0px));
@@ -2382,72 +2423,93 @@ button.imp-card:focus-visible { outline: 3px solid var(--focus-ring); outline-of
 }
 .srt-obj[data-c="1"] { --o: var(--srt-c1); }
 .srt-obj[data-c="2"] { --o: var(--srt-c2); }
-.srt-obj[data-c="3"] { --o: var(--srt-c3); --sym: rgba(40, 28, 0, 0.62); }
+.srt-obj[data-c="3"] { --o: var(--srt-c3); --o-deep: color-mix(in srgb, var(--o) 78%, #8a4b00); --o-dark: color-mix(in srgb, var(--o) 55%, #7a3a00); }
 .srt-obj[data-c="4"] { --o: var(--srt-c4); }
 .srt-obj[data-c="5"] { --o: var(--srt-c5); }
 .srt-obj[data-c="6"] { --o: var(--srt-c6); }
-.srt-obj[data-c="7"] { --o: var(--srt-c7); --sym: rgba(0, 30, 36, 0.6); }
-.srt-obj[data-c="8"] { --o: var(--srt-c8); --sym: rgba(20, 36, 0, 0.62); }
-.srt-obj[data-c="9"] { --o: var(--srt-c9); }
+.srt-obj[data-c="7"] { --o: var(--srt-c7); }
+.srt-obj[data-c="8"] { --o: var(--srt-c8); }
+.srt-obj[data-c="9"] { --o: var(--srt-c9); --o-deep: color-mix(in srgb, var(--o) 78%, #3a3466); --o-dark: color-mix(in srgb, var(--o) 58%, #3a3466); }
 .srt-obj.is-lifted { z-index: 6; }
-.srt-obj.is-lifted .srt-obj__body, .srt-obj.is-lifted .srt-obj__shine, .srt-obj.is-lifted .srt-sym { animation: srt-bob 1.2s ease-in-out 0.25s infinite; }
+.srt-obj.is-lifted .srt-obj__in { animation: srt-bob 1.2s ease-in-out 0.25s infinite; }
 .srt-obj.is-return { transition-duration: 0.32s; }
 .srt-obj.is-flying { z-index: 20; }
-.srt-obj__body, .srt-obj__shine { position: absolute; inset: 0; pointer-events: none; }
-.srt-sym {
-  position: absolute; left: 50%; top: 50%; width: min(56%, calc(var(--srt-oh) * 0.64)); aspect-ratio: 1; translate: -50% -50%;
-  color: var(--sym); pointer-events: none; filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.25));
-}
-.srt-sym svg { display: block; width: 100%; height: 100%; fill: currentColor; }
-.srt--plain .srt-sym { display: none; }
-.srt[data-srt-theme="neon"] .srt-obj__body { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--o) 75%, transparent)); }
+.srt-obj__in { position: absolute; inset: 0; pointer-events: none; }
+.srt-obj__body, .srt-obj__shine { position: absolute; pointer-events: none; }
+.srt[data-srt-theme="neon"] .srt-obj__in { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--o) 70%, transparent)); }
 
-/* Balls: glossy spheres */
+/* Balls: glossy spheres with a bright highlight and a soft bounce light. */
 .srt-obj--balls .srt-obj__body {
-  inset: 1px; border-radius: 50%;
-  background: radial-gradient(circle at 34% 28%, var(--o-hi) 0 10%, var(--o) 46%, var(--o-deep) 100%);
-  box-shadow: inset 0 -4px 7px rgba(0, 0, 0, 0.28), 0 3px 4px rgba(0, 0, 0, 0.28);
+  inset: 0; border-radius: 50%;
+  background: radial-gradient(circle at 36% 30%, var(--o-lite) 0, var(--o) 36%, var(--o-deep) 84%, var(--o-dark) 100%);
+  box-shadow: inset 0 3px 5px rgba(255, 255, 255, 0.22), 0 3px 5px rgba(24, 14, 60, 0.25);
+}
+.srt-obj--balls .srt-obj__body::after {
+  content: ""; position: absolute; left: 24%; right: 24%; bottom: 6%; height: 16%; border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(255, 255, 255, 0.32), transparent);
 }
 .srt-obj--balls .srt-obj__shine {
-  inset: auto; left: 22%; top: 13%; width: 30%; height: 20%; border-radius: 50%;
-  background: radial-gradient(rgba(255, 255, 255, calc(0.9 * var(--srt-gloss) + 0.1)), transparent 70%); transform: rotate(-24deg);
+  left: 19%; top: 11%; width: 36%; height: 25%; border-radius: 50%; transform: rotate(-30deg);
+  background: radial-gradient(closest-side, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.35) 55%, transparent);
 }
-/* Nuts: a hex nut seen from the side, its faces shaded; the shading slides as it turns */
+
+/* Nuts: a hex nut seen from a little above. The side shows three faces; the
+   top face (shine) is a flattened hexagon with the bolt hole cut through it.
+   Each nut's sides reach down over the top face of the nut below (--t). */
+.srt-obj--nuts { --t: calc(var(--srt-oh) * 0.46); }
 .srt-obj--nuts .srt-obj__body {
-  inset: 1px 0; clip-path: polygon(0 22%, 7% 0, 93% 0, 100% 22%, 100% 78%, 93% 100%, 7% 100%, 0 78%);
-  background: linear-gradient(90deg, var(--o-deep) 0, var(--o) 9%, var(--o-hi) 22%, var(--o) 33%, var(--o) 38%, var(--o-deep) 50%,
-    var(--o) 59%, var(--o-hi) 72%, var(--o) 83%, var(--o) 88%, var(--o-deep) 100%) 0 0 / 200% 100%;
+  left: 0; right: 0; top: calc(var(--t) / 2); height: calc(var(--srt-oh) + var(--t) / 2);
+  clip-path: polygon(0 0, 25% calc(var(--t) / 2), 75% calc(var(--t) / 2), 100% 0, 100% calc(100% - var(--t) / 2), 75% 100%, 25% 100%, 0 calc(100% - var(--t) / 2));
+  background: linear-gradient(rgba(255, 255, 255, 0.16), transparent 30%, transparent 70%, rgba(0, 0, 0, 0.2)),
+    linear-gradient(90deg, var(--o-dark) 0, var(--o-deep) 10%, var(--o) 23%, var(--o-lite) 25.5%, var(--o-hi) 33%, var(--o-lite) 46%, var(--o) 72%, var(--o-dark) 75.5%, var(--o-deep) 84%, var(--o-dark) 100%);
 }
 .srt-obj--nuts .srt-obj__shine {
-  inset: 1px 7% auto; height: 26%;
-  background: linear-gradient(rgba(255, 255, 255, calc(0.45 * var(--srt-gloss) + 0.1)), transparent);
-  border-radius: 2px;
+  left: 0; right: 0; top: 0; height: var(--t);
+  clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
+  background: radial-gradient(ellipse calc(var(--srt-ow) * 0.2) calc(var(--t) * 0.38) at 50% 46%, var(--o-deep) 0 60%, transparent 100%),
+    linear-gradient(165deg, var(--o-hi), var(--o-lite) 55%, var(--o));
+  -webkit-mask: radial-gradient(ellipse calc(var(--srt-ow) * 0.135) calc(var(--t) * 0.26) at 50% 48%, transparent 0 94%, #000 100%);
+  mask: radial-gradient(ellipse calc(var(--srt-ow) * 0.135) calc(var(--t) * 0.26) at 50% 48%, transparent 0 94%, #000 100%);
 }
-.srt-obj--nuts.is-spin .srt-obj__body { animation: srt-unscrew 0.42s linear 1; }
-/* Rings: a torus from the side; the dark slot is where the peg goes through */
+
+/* Rings: a fat glossy donut. The hole is cut through, so the peg shows inside
+   it; each ring reaches down over the one below, hiding that ring's hole. */
 .srt-obj--rings .srt-obj__body {
-  inset: 1px 0; border-radius: 50% / 50%;
-  background: linear-gradient(var(--o-hi), var(--o) 38%, var(--o-deep));
-  box-shadow: inset 0 -3px 5px rgba(0, 0, 0, 0.3), 0 3px 4px rgba(0, 0, 0, 0.25);
+  left: 0; right: 0; top: 0; height: calc(var(--srt-oh) * 2); border-radius: 50%;
+  background: radial-gradient(ellipse calc(var(--srt-ow) * 0.3) calc(var(--srt-oh) * 0.62) at 50% 36%, var(--o-deep) 0 45%, transparent 100%),
+    linear-gradient(var(--o-hi) 0, var(--o-lite) 18%, var(--o) 50%, var(--o-deep) 86%, var(--o-dark) 100%);
+  box-shadow: 0 3px 5px rgba(24, 14, 60, 0.22);
+  -webkit-mask: radial-gradient(ellipse calc(var(--srt-ow) * 0.17) calc(var(--srt-oh) * 0.3) at 50% 36%, transparent 0 94%, #000 100%);
+  mask: radial-gradient(ellipse calc(var(--srt-ow) * 0.17) calc(var(--srt-oh) * 0.3) at 50% 36%, transparent 0 94%, #000 100%);
 }
 .srt-obj--rings .srt-obj__shine {
-  inset: auto; left: 38%; width: 24%; top: 10%; height: 34%; border-radius: 50%;
-  background: radial-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.18) 60%, transparent 72%);
+  left: 13%; top: 8%; width: 30%; height: calc(var(--srt-oh) * 0.7); border-radius: 50%;
+  border-top: 3px solid rgba(255, 255, 255, 0.75); transform: rotate(-14deg); filter: blur(0.4px);
 }
-.srt-obj--rings .srt-sym { left: 21%; width: calc(var(--srt-oh) * 0.62); }
-/* Blocks: bevelled toy blocks */
+
+/* Blocks: rounded glossy cubes. The top face shows on the top block only; each
+   block's front reaches down over the top of the block below. */
+.srt-obj--blocks { --t: calc(var(--srt-oh) * 0.3); }
+.srt-obj--blocks .srt-obj__shine {
+  left: 3%; right: 3%; top: 0; height: calc(var(--t) + 4px); border-radius: 12px 12px 3px 3px / 9px 9px 3px 3px;
+  background: linear-gradient(var(--o-hi), var(--o-lite) 70%, var(--o));
+}
 .srt-obj--blocks .srt-obj__body {
-  inset: 2px; border-radius: 16%;
-  background: linear-gradient(150deg, var(--o-hi), var(--o) 42%, var(--o-deep));
-  box-shadow: inset 3px 3px 0 rgba(255, 255, 255, calc(0.35 * var(--srt-gloss))), inset -4px -5px 0 rgba(0, 0, 0, 0.2), 0 3px 4px rgba(0, 0, 0, 0.28);
+  left: 0; right: 0; top: var(--t); height: var(--srt-oh); border-radius: 4px 4px 16% 16% / 4px 4px 20% 20%;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.2), transparent 16%, transparent 82%, rgba(0, 0, 0, 0.14)),
+    linear-gradient(var(--o) 0, var(--o) 40%, var(--o-deep) 100%);
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.35), inset 0 -3px 6px rgba(0, 0, 0, 0.16), 0 3px 5px rgba(24, 14, 60, 0.22);
 }
-.srt-obj--blocks .srt-obj__shine { inset: 12% 14% auto auto; width: 22%; height: 14%; border-radius: 4px; background: rgba(255, 255, 255, calc(0.5 * var(--srt-gloss))); }
+.srt-obj--blocks .srt-obj__body::after {
+  content: ""; position: absolute; left: 9%; top: 10%; width: 30%; height: 18%; border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(255, 255, 255, 0.5), transparent);
+}
 
 /* Landing: each look settles its own way */
-.srt-obj.is-land--drop .srt-obj__body, .srt-obj.is-land--drop .srt-obj__shine { animation: srt-squash 0.26s ease-out; transform-origin: 50% 100%; }
-.srt-obj.is-land--screw .srt-obj__body { animation: srt-unscrew 0.26s linear reverse, srt-settle 0.26s ease-out; }
-.srt-obj.is-land--slide .srt-obj__body { animation: srt-wobble 0.3s ease-out; }
-.srt-obj.is-land--thud .srt-obj__body { animation: srt-thud 0.24s ease-out; transform-origin: 50% 100%; }
+.srt-obj.is-land--drop .srt-obj__in { animation: srt-squash 0.26s ease-out; transform-origin: 50% 100%; }
+.srt-obj.is-land--screw .srt-obj__in { animation: srt-settle 0.26s ease-out; }
+.srt-obj.is-land--slide .srt-obj__in { animation: srt-wobble 0.3s ease-out; }
+.srt-obj.is-land--thud .srt-obj__in { animation: srt-thud 0.24s ease-out; transform-origin: 50% 100%; }
 
 .srt-spark {
   position: absolute; left: 50%; top: calc(var(--srt-head) - 6px); width: 7px; height: 7px; margin-left: -3px; border-radius: 50%; z-index: 8; pointer-events: none;
@@ -2514,14 +2576,14 @@ button.imp-card:focus-visible { outline: 3px solid var(--focus-ring); outline-of
 .srt-setup__actions { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--sp-2); margin-top: var(--sp-2); }
 .srt-setup__lb:empty { display: none; }
 .srt-preview {
-  --srt-hw: 64px; --srt-ow: 52px; --srt-oh: 52px; --srt-base: 6px; --srt-pad: 10px; --srt-head: 0px; --srt-cap: 3;
-  display: flex; gap: 18px; justify-content: center; align-items: flex-end; padding: 16px 24px 14px; border-radius: var(--r-xl); background: var(--srt-surface);
+  --srt-hw: 66px; --srt-ow: 52px; --srt-oh: 52px; --srt-base: 18px; --srt-shelf: 13px; --srt-pad: 10px; --srt-head: 0px; --srt-cap: 3; --srt-gap: 18px;
+  display: flex; gap: var(--srt-gap); justify-content: center; align-items: flex-end; padding: 22px 30px 18px; border-radius: var(--r-xl); background: var(--srt-surface);
 }
-.srt-preview[data-style="nuts"] { --srt-ow: 60px; --srt-oh: 26px; --srt-base: 14px; }
-.srt-preview[data-style="rings"] { --srt-ow: 62px; --srt-oh: 24px; --srt-base: 12px; --srt-pad: 14px; }
-.srt-preview[data-style="blocks"] { --srt-ow: 44px; --srt-oh: 36px; }
-.srt-preview[data-style="balls"] { --srt-ow: 42px; --srt-oh: 42px; }
-.srt-preview__holder { position: relative; width: var(--srt-hw); height: calc(var(--srt-base) + var(--srt-cap) * var(--srt-oh) + var(--srt-pad)); }
+.srt-preview[data-style="balls"] { --srt-ow: 40px; --srt-oh: 40px; --srt-base: 17px; }
+.srt-preview[data-style="nuts"] { --srt-ow: 58px; --srt-oh: 22px; --srt-base: 28px; --srt-pad: 16px; }
+.srt-preview[data-style="rings"] { --srt-ow: 60px; --srt-oh: 15px; --srt-base: 30px; --srt-pad: 22px; }
+.srt-preview[data-style="blocks"] { --srt-ow: 42px; --srt-oh: 32px; --srt-base: 26px; --srt-pad: 10px; }
+.srt-preview__holder { position: relative; width: var(--srt-hw); height: calc(var(--srt-base) + var(--srt-cap) * var(--srt-oh) + var(--srt-pad)); cursor: default; }
 .srt-wait__spin { width: 46px; height: 46px; border-radius: 50%; border: 4px solid var(--surface-3); border-top-color: var(--accent); animation: srt-spin 0.9s linear infinite; }
 .srt-results__score { font-family: var(--font-display); font-size: var(--fs-4xl); font-weight: 700; line-height: 1; color: var(--accent); }
 .srt-table { list-style: none; margin: 0; padding: 0; width: 100%; max-width: 680px; display: flex; flex-direction: column; gap: var(--sp-2); }
@@ -2558,7 +2620,7 @@ button.imp-card:focus-visible { outline: 3px solid var(--focus-ring); outline-of
 .srt-themecard__dot[data-c="4"] { background-color: var(--srt-c4); }
 
 @keyframes srt-bob { 50% { transform: translateY(-3px); } }
-@keyframes srt-unscrew { from { background-position: 0 0; } to { background-position: 100% 0; } }
+@keyframes srt-rays { to { rotate: 360deg; } }
 @keyframes srt-settle { 0% { transform: translateY(-3px); } 100% { transform: none; } }
 @keyframes srt-squash { 0% { transform: scale(1.1, 0.86); } 45% { transform: scale(0.95, 1.06); } 100% { transform: none; } }
 @keyframes srt-wobble { 0% { transform: rotate(-5deg); } 40% { transform: rotate(4deg); } 70% { transform: rotate(-2deg); } 100% { transform: none; } }

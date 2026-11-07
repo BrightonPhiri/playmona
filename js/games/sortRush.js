@@ -128,35 +128,14 @@ window.FF = window.FF || {};
   }
   function setPref(key, v) { try { if (FF.Storage) FF.Storage.set('sortRush:' + key, v); } catch (e) { /* storage full */ } }
   function theme() { var th = pref('theme', 'workshop'); return R.THEMES.indexOf(th) !== -1 ? th : 'workshop'; }
-  function symbolsOn() { return pref('symbols', true) !== false; }
 
   /* ---------- drawing ---------- */
-
-  /* A small shape per colour, so colour is never the only difference. */
-  var SYMBOLS = [
-    '<circle cx="12" cy="12" r="6.2"/>',
-    '<path d="M12 4.5 20 19H4z"/>',
-    '<rect x="5.5" y="5.5" width="13" height="13" rx="1.5"/>',
-    '<path d="m12 3.5 2.6 5.6 6.1.7-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6-4.5-4.2 6.1-.7z"/>',
-    '<path d="M12 3 21 12 12 21 3 12z"/>',
-    '<path d="M12 20s-7.5-4.6-7.5-10A4.1 4.1 0 0 1 12 7.6 4.1 4.1 0 0 1 19.5 10C19.5 15.4 12 20 12 20z"/>',
-    '<path d="M9.5 4h5v5.5H20v5h-5.5V20h-5v-5.5H4v-5h5.5z"/>',
-    '<path d="M12 3.5 19.4 7.75v8.5L12 20.5l-7.4-4.25v-8.5z"/>',
-    '<path d="M15.5 3.8A8.5 8.5 0 1 0 20.2 15 7 7 0 0 1 15.5 3.8z"/>',
-    '<path d="M12 3.5s6 6.6 6 10.6a6 6 0 0 1-12 0c0-4 6-10.6 6-10.6z"/>'
-  ];
-  function symbolEl(c) {
-    var s = FF.ui.span('srt-sym');
-    s.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">' + (SYMBOLS[c] || '') + '</svg>';
-    return s;
-  }
 
   var GLYPHS = {
     undo: '<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>',
     restart: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>',
     skip: '<path d="m5 4 10 8-10 8z"/><path d="M19 5v14"/>',
-    palette: '<path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.6-.8 1.6-1.6 0-.5-.2-.8-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.7-1.6 1.6-1.6H16a5 5 0 0 0 5-5C21 6.4 17 3 12 3z"/><circle cx="7.5" cy="11" r="1.2"/><circle cx="10.5" cy="7" r="1.2"/><circle cx="15.5" cy="7.5" r="1.2"/>',
-    shapes: '<circle cx="7" cy="7" r="3.5"/><path d="M17 3.5 21 10.5h-8z"/><rect x="3.5" y="13.5" width="7" height="7" rx="1"/><path d="m17 13.5 3.5 3.5-3.5 3.5-3.5-3.5z"/>'
+    palette: '<path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.6-.8 1.6-1.6 0-.5-.2-.8-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.7-1.6 1.6-1.6H16a5 5 0 0 0 5-5C21 6.4 17 3 12 3z"/><circle cx="7.5" cy="11" r="1.2"/><circle cx="10.5" cy="7" r="1.2"/><circle cx="15.5" cy="7.5" r="1.2"/>'
   };
   function glyph(name) {
     var s = FF.ui.span('srt-glyph');
@@ -167,20 +146,37 @@ window.FF = window.FF || {};
   /* Each style's shape: object width as a share of the holder, height per width,
      the holder's base and the gap above the stack, and how objects land. */
   var STYLE = {
-    nuts:   { wf: 0.92, aspect: 0.44, base: 0.22, pad: 0.35, maxW: 108, land: 'screw' },
-    balls:  { wf: 0.74, aspect: 1.00, base: 0.12, pad: 0.30, maxW: 92,  land: 'drop' },
-    rings:  { wf: 0.96, aspect: 0.40, base: 0.20, pad: 0.55, maxW: 112, land: 'slide' },
-    blocks: { wf: 0.80, aspect: 0.80, base: 0.10, pad: 0.12, maxW: 100, land: 'thud' }
+    nuts:   { wf: 0.92, aspect: 0.40, base: 0.44, pad: 0.9, maxW: 108, land: 'screw' },
+    balls:  { wf: 0.74, aspect: 1.00, base: 0.27, pad: 0.30, maxW: 92,  land: 'drop' },
+    rings:  { wf: 0.96, aspect: 0.25, base: 0.48, pad: 1.4, maxW: 112, land: 'slide' },
+    blocks: { wf: 0.80, aspect: 0.74, base: 0.42, pad: 0.30, maxW: 100, land: 'thud' }
   };
 
   function objectEl(style, c) {
     var o = FF.ui.span('srt-obj srt-obj--' + style);
     o.setAttribute('data-c', String(c));
     o.setAttribute('aria-hidden', 'true');
-    o.appendChild(FF.ui.span('srt-obj__body'));
-    o.appendChild(FF.ui.span('srt-obj__shine'));
-    o.appendChild(symbolEl(c));
+    // The inner wrapper bobs and lands as one piece; the outer element lifts and flies.
+    var inner = FF.ui.span('srt-obj__in');
+    inner.appendChild(FF.ui.span('srt-obj__body'));
+    inner.appendChild(FF.ui.span('srt-obj__shine'));
+    o.appendChild(inner);
     return o;
+  }
+
+  /* A holder's drawn parts, back to front: the shelf it stands on, the glow
+     when it is finished, its post or glass (back), its foot, the stack of
+     objects, then anything that sits in front (glass shine, the tray wall). */
+  function holderParts(el) {
+    el.appendChild(FF.ui.span('srt-holder__shelf'));
+    var capEl = FF.ui.span('srt-holder__cap');
+    el.appendChild(capEl);
+    el.appendChild(FF.ui.span('srt-holder__back'));
+    el.appendChild(FF.ui.span('srt-holder__foot'));
+    var stack = FF.ui.span('srt-holder__stack');
+    el.appendChild(stack);
+    el.appendChild(FF.ui.span('srt-holder__front'));
+    return { stack: stack, cap: capEl };
   }
 
   /* ================= the board =================
@@ -207,7 +203,7 @@ window.FF = window.FF || {};
     var focusIdx = 0;
     var ro = null;
 
-    var stage = FF.GameUI.stage({ wide: true, className: 'srt srt--' + style + (symbolsOn() ? '' : ' srt--plain') });
+    var stage = FF.GameUI.stage({ wide: true, className: 'srt srt--' + style });
     stage.setAttribute('data-srt-theme', theme());
     if (opts.turnText) stage.appendChild(FF.GameUI.kicker(opts.turnText));
 
@@ -227,15 +223,6 @@ window.FF = window.FF || {};
     tools.appendChild(undoBtn);
     tools.appendChild(restartBtn);
     if (cfg.mode === 'score') tools.appendChild(tool('skip', t('srtSkip', 'Skip'), function () { command('skip'); }));
-    var symBtn = tool('shapes', t('srtSymbols', 'Shapes'), function () {
-      var on = !symbolsOn();
-      setPref('symbols', on);
-      symBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
-      stage.classList.toggle('srt--plain', !on);
-    });
-    symBtn.setAttribute('aria-pressed', symbolsOn() ? 'true' : 'false');
-    symBtn.setAttribute('aria-label', t('srtSymbolsLong', 'Shapes on the objects'));
-    tools.appendChild(symBtn);
     tools.appendChild(tool('palette', t('srtLook', 'Look'), function () { pickTheme(api, function (th) { stage.setAttribute('data-srt-theme', th); }); }));
     hud.appendChild(tools);
     stage.appendChild(hud);
@@ -292,12 +279,8 @@ window.FF = window.FF || {};
       vis.forEach(function (h, i) {
         var el = FF.ui.el('button', { type: 'button', class: 'srt-holder srt-holder--' + style });
         el._i = i;
-        el.appendChild(FF.ui.span('srt-holder__back'));
-        var stack = FF.ui.span('srt-holder__stack');
-        el.appendChild(stack);
-        el.appendChild(FF.ui.span('srt-holder__front'));
-        var capEl = FF.ui.span('srt-holder__cap');
-        el.appendChild(capEl);
+        var parts = holderParts(el);
+        var stack = parts.stack, capEl = parts.cap;
         el.addEventListener('pointerdown', onDown);
         el.addEventListener('click', function (e) {
           // Taps and drags come in as pointer events; this is the keyboard path.
@@ -360,7 +343,7 @@ window.FF = window.FF || {};
       if (dead || !boardEl.isConnected) return;
       // The content width: clientWidth counts the wrapper's own side padding.
       var wcs = window.getComputedStyle(wrap);
-      var w = Math.max(220, wrap.clientWidth - (parseFloat(wcs.paddingLeft) || 0) - (parseFloat(wcs.paddingRight) || 0) - 2);
+      var w = Math.max(220, wrap.clientWidth - (parseFloat(wcs.paddingLeft) || 0) - (parseFloat(wcs.paddingRight) || 0) - 2 - 24);   // 24: the shelf's rounded ends overhang 12px a side
       var top = wrap.getBoundingClientRect().top;
       var availH = Math.max(150, (window.innerHeight || 640) - Math.max(0, top) - (window.innerHeight < 520 ? 24 : 64));
       var n = vis.length;
@@ -370,7 +353,7 @@ window.FF = window.FF || {};
         var gap = Math.floor(Math.max(6, Math.min(18, w * 0.02)));
         var hw = Math.min(S.maxW, (w - gap * (per - 1)) / per);
         var ow = hw * S.wf, oh = ow * S.aspect;
-        var rowGap = 10;
+        var rowGap = 18;   // matches the board's row gap in CSS
         var fixed = function (o) { return o * (1.25) + 12; };     // the lift space above each holder
         var need = function (o) { return rows * (fixed(o) + hw * S.base + cap * o + o * S.pad) + (rows - 1) * rowGap; };
         if (need(oh) > availH) {
@@ -397,6 +380,12 @@ window.FF = window.FF || {};
       st.setProperty('--srt-cap', String(cap));
       st.setProperty('--srt-gap', Math.round(best.gap) + 'px');
       st.setProperty('--srt-per', String(best.per));
+      st.setProperty('--srt-shelf', Math.max(9, Math.round(best.hw * 0.21)) + 'px');
+      // Each row of holders stands on one shelf: mark where the rows begin and end.
+      H.forEach(function (hh, i) {
+        hh.el.classList.toggle('is-row-start', i % best.per === 0);
+        hh.el.classList.toggle('is-row-end', i % best.per === best.per - 1 || i === H.length - 1);
+      });
       boardEl.classList.toggle('is-rows', best.rows > 1);
       // Keep lifted objects at the right height.
       if (selected !== -1) lift(selected, false);
@@ -956,17 +945,14 @@ window.FF = window.FF || {};
       FF.ui.clear(preview);
       preview.setAttribute('data-style', gs.style);
       var demo = ['aab', 'bc', 'cca'];
-      demo.forEach(function (h) {
-        var col = FF.ui.span('srt-preview__holder srt-holder--' + gs.style);
-        col.appendChild(FF.ui.span('srt-holder__back'));
-        var stack = FF.ui.span('srt-holder__stack');
+      demo.forEach(function (h, n) {
+        var col = FF.ui.span('srt-holder srt-preview__holder srt-holder--' + gs.style + (n === 0 ? ' is-row-start' : '') + (n === demo.length - 1 ? ' is-row-end' : ''));
+        var stack = holderParts(col).stack;
         for (var k = 0; k < h.length; k++) {
           var o = objectEl(gs.style, R.colourOf(h[k]));
           o.style.setProperty('--i', String(k));
           stack.appendChild(o);
         }
-        col.appendChild(stack);
-        col.appendChild(FF.ui.span('srt-holder__front'));
         preview.appendChild(col);
       });
     }
@@ -1557,7 +1543,7 @@ window.FF = window.FF || {};
     leaderboard: true,
     howToPlay: [
       'Holders are filled with mixed colours. Move them until every holder holds just one colour.',
-      'Tap a holder to lift its top object, then tap another holder to drop it there. Or drag it.',
+      'Tap a holder to lift the top colour (every matching piece on top moves together), then tap another holder to drop it there. Or drag it.',
       'An object can go on an empty holder, or on top of the same colour, if there is room. A full holder of one colour is finished and locked.',
       'Race: sort it first. Timed Score: clear as many puzzles as you can before time runs out.',
       'Pick Nuts, Balls, Rings or Blocks, and a board look: Workshop, Candy or Neon.'

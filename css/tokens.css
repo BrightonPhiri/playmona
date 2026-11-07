@@ -109,21 +109,29 @@
   --bs-yellow: #facc15; --bs-yellow-hi: #fff2a6; --bs-yellow-deep: #8a6a00;
   --bs-purple: #a855f7; --bs-purple-hi: #e0bcff; --bs-purple-deep: #4c1784;
   /* SortRush boards: three looks, each the same in light and dark mode (the
-     board is its own surface). Ten object colours per look, in the order
-     red, blue, green, yellow, purple, orange, pink, cyan, lime, brown; each
-     colour also carries a shape. Highlights and shadows are mixed in CSS. */
-  --srt-wk-board: #5e3b1f; --srt-wk-board-hi: #8a5a31; --srt-wk-grain: #4d2f17; --srt-wk-ink: #fff4e4;
-  --srt-wk-metal: #c9ced6; --srt-wk-metal-hi: #f4f6f9; --srt-wk-metal-deep: #646b76; --srt-wk-glow: #ffd36b;
-  --srt-wk-c0: #e03a3a; --srt-wk-c1: #2f6fe0; --srt-wk-c2: #2b9e4b; --srt-wk-c3: #f2c12e; --srt-wk-c4: #8a4fd8;
-  --srt-wk-c5: #f07a1c; --srt-wk-c6: #e2549f; --srt-wk-c7: #1fb2c6; --srt-wk-c8: #98c932; --srt-wk-c9: #8b5a2b;
-  --srt-cd-board: #ffd9ec; --srt-cd-board-hi: #dfe9ff; --srt-cd-grain: #ffc2e0; --srt-cd-ink: #3a1f4f;
-  --srt-cd-metal: #fff7fb; --srt-cd-metal-hi: #ffffff; --srt-cd-metal-deep: #e79cc5; --srt-cd-glow: #ff7ac3;
-  --srt-cd-c0: #ff5c77; --srt-cd-c1: #4f9dff; --srt-cd-c2: #3fcb84; --srt-cd-c3: #ffd24d; --srt-cd-c4: #a97dff;
-  --srt-cd-c5: #ff9b4f; --srt-cd-c6: #ff7fcb; --srt-cd-c7: #45d6dd; --srt-cd-c8: #b9e550; --srt-cd-c9: #bd8a66;
-  --srt-ne-board: #080d22; --srt-ne-board-hi: #1a2463; --srt-ne-grain: #10183f; --srt-ne-ink: #eef3ff;
-  --srt-ne-metal: #3d4a8f; --srt-ne-metal-hi: #8fa2ff; --srt-ne-metal-deep: #151c45; --srt-ne-glow: #7cf7ff;
+     board is its own surface). Workshop matches the game's cover: a lavender
+     sky, a honey wood shelf, steel bolts, wooden pegs, glass tubes and cream
+     trays. Ten solid object colours per look, in the order red, blue, green,
+     yellow, purple, orange, pink, cyan, lime, and white (Workshop, Neon) or
+     chocolate (Candy). Highlights and shadows are mixed in CSS. */
+  --srt-wk-bg-top: #c9b8ff; --srt-wk-bg-bot: #7fa8ff; --srt-wk-glow: #ffe08a;
+  --srt-wk-wood: #e2a457; --srt-wk-wood-hi: #f8d395; --srt-wk-wood-deep: #a6632a;
+  --srt-wk-metal: #c3cad4; --srt-wk-metal-hi: #f6f8fb; --srt-wk-metal-deep: #69717e;
+  --srt-wk-tray: #fbf0dc; --srt-wk-tray-hi: #fffaf1; --srt-wk-tray-deep: #d3bb92;
+  --srt-wk-c0: #ff4336; --srt-wk-c1: #2f6bff; --srt-wk-c2: #2bcf4f; --srt-wk-c3: #ffd21f; --srt-wk-c4: #8a3cff;
+  --srt-wk-c5: #ff8b1f; --srt-wk-c6: #ff4fb0; --srt-wk-c7: #17c9e6; --srt-wk-c8: #a3e01c; --srt-wk-c9: #f4f1ea;
+  --srt-cd-bg-top: #ffd0e6; --srt-cd-bg-bot: #cdd7ff; --srt-cd-glow: #ff9bd6;
+  --srt-cd-wood: #ffb6d6; --srt-cd-wood-hi: #ffe6f1; --srt-cd-wood-deep: #e0709f;
+  --srt-cd-metal: #efe7f6; --srt-cd-metal-hi: #ffffff; --srt-cd-metal-deep: #ad97c2;
+  --srt-cd-tray: #ffffff; --srt-cd-tray-hi: #ffffff; --srt-cd-tray-deep: #f0bfd7;
+  --srt-cd-c0: #ff5f7e; --srt-cd-c1: #4f9dff; --srt-cd-c2: #3fd18a; --srt-cd-c3: #ffd54d; --srt-cd-c4: #a97dff;
+  --srt-cd-c5: #ff9f4f; --srt-cd-c6: #ff80c8; --srt-cd-c7: #46dbe0; --srt-cd-c8: #b8e64f; --srt-cd-c9: #a8704a;
+  --srt-ne-bg-top: #1b1460; --srt-ne-bg-bot: #060924; --srt-ne-glow: #7cf7ff;
+  --srt-ne-wood: #2a3276; --srt-ne-wood-hi: #6271e6; --srt-ne-wood-deep: #0d1238;
+  --srt-ne-metal: #4b58a8; --srt-ne-metal-hi: #b4c0ff; --srt-ne-metal-deep: #171d4d;
+  --srt-ne-tray: #222a6a; --srt-ne-tray-hi: #4552b8; --srt-ne-tray-deep: #0c1036;
   --srt-ne-c0: #ff3b5c; --srt-ne-c1: #3d8bff; --srt-ne-c2: #2bf08a; --srt-ne-c3: #ffe23d; --srt-ne-c4: #c04bff;
-  --srt-ne-c5: #ff8a1f; --srt-ne-c6: #ff4fd8; --srt-ne-c7: #2eeeff; --srt-ne-c8: #b6ff3b; --srt-ne-c9: #e0a868;
+  --srt-ne-c5: #ff8a1f; --srt-ne-c6: #ff4fd8; --srt-ne-c7: #2eeeff; --srt-ne-c8: #b6ff3b; --srt-ne-c9: #f2f2ff;
   --medal-gold: #ffc83d; --medal-silver: #cfd6f6; --medal-bronze: #ff9a52; --medal-ink: #0b1030;
 }
 

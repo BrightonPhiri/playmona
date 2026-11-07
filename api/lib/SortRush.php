@@ -50,7 +50,7 @@ class SortRush
         $s = [
             'mode' => $want('mode', self::MODES, 'race'),
             'style' => $want('style', self::STYLES, 'balls'),
-            'move' => $want('move', self::MOVES, 'single'),
+            'move' => $want('move', self::MOVES, 'group'),
             'level' => $want('level', self::LEVELS, 'medium'),
             'colours' => $want('colours', self::COLOURS, 6),
             'size' => $want('size', self::SIZES, 4),

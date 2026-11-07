@@ -55,3 +55,109 @@ WORKFLOW
 * Look at it. Regenerate if there is any text or digits, if there are not exactly four holders, if the four holders are not the four different kinds (bolt, tube, peg, tray), or if they are not near the vertical middle.
 * Verify the file exists and is a valid image.
 ```
+
+---
+
+## Board backdrops (optional)
+
+The boards are drawn in code and already match the cover: a lavender sky with
+sparkles, a honey wood shelf, glossy pieces. These three painted backdrops are
+an optional upgrade, one for each board look. Each sits behind the shelves and
+is cropped to whatever shape the screen is (wide on a laptop, tall on a phone),
+so the middle must stay plain and every detail must live near the edges.
+
+Generate each with its own request, then tell Claude they are ready.
+
+### Workshop backdrop
+
+```
+Use the image generation capability to generate ONE background image for the "SortRush" colour-sorting puzzle game on the Playmona gaming platform.
+
+It sits BEHIND the game board: wooden shelves and colourful pieces are drawn on top of it, so it must be calm and must not compete with them.
+
+LOOK
+
+* Soft, dreamy, premium mobile-game backdrop in the same style as the game's cover: glossy 3D, gentle light, no hard detail.
+* A smooth vertical gradient from soft lavender (#C9B8FF) at the top to bright periwinkle blue (#7FA8FF) at the bottom.
+* A very soft glow of light from the top centre, like a studio spotlight.
+* Near the edges only: a few tiny four-point sparkles, a few soft out-of-focus bokeh circles, and two or three tiny blurred toy pieces drifting (a hex nut, a ring, a ball) in muted tones.
+* The middle 70 percent of the image (both directions) must be plain gradient with nothing in it.
+* No shelves, no tubes, no holders, no people, no text, letters, numbers, logos, frames or UI.
+
+SIZE
+
+* Square, 2048 x 2048. It will be cropped to wide and tall shapes, so nothing important may sit near the middle.
+
+FILE
+
+Create the directory if it does not exist: assets/playmona_assets/sort-rush/
+Save it as: assets/playmona_assets/sort-rush/bg-workshop.png
+
+WORKFLOW
+
+* One request, not a collage. Regenerate if anything sits in the middle, or if there is any text.
+* Verify the file exists and is a valid image.
+```
+
+### Candy backdrop
+
+```
+Use the image generation capability to generate ONE background image for the "SortRush" colour-sorting puzzle game on the Playmona gaming platform.
+
+It sits BEHIND the game board: glossy pink shelves and colourful pieces are drawn on top of it, so it must be calm and must not compete with them.
+
+LOOK
+
+* Soft, sweet, premium mobile-game backdrop: glossy 3D, pastel, gentle light, no hard detail.
+* A smooth diagonal gradient from candy pink (#FFD0E6) at the top left to soft periwinkle (#CDD7FF) at the bottom right.
+* A faint pattern of soft white polka dots fading out towards the middle.
+* Near the edges only: a few tiny sparkles, soft out-of-focus bokeh, and two or three tiny blurred sweets (a round candy, a swirl lollipop, a gumdrop) in pastel tones.
+* The middle 70 percent of the image (both directions) must be plain gradient with nothing in it.
+* No shelves, no tubes, no people, no text, letters, numbers, logos, frames or UI.
+
+SIZE
+
+* Square, 2048 x 2048. It will be cropped to wide and tall shapes, so nothing important may sit near the middle.
+
+FILE
+
+Create the directory if it does not exist: assets/playmona_assets/sort-rush/
+Save it as: assets/playmona_assets/sort-rush/bg-candy.png
+
+WORKFLOW
+
+* One request, not a collage. Regenerate if anything sits in the middle, or if there is any text.
+* Verify the file exists and is a valid image.
+```
+
+### Neon backdrop
+
+```
+Use the image generation capability to generate ONE background image for the "SortRush" colour-sorting puzzle game on the Playmona gaming platform.
+
+It sits BEHIND the game board: dark glass shelves and glowing coloured pieces are drawn on top of it, so it must be dark and calm and must not compete with them.
+
+LOOK
+
+* Moody, premium neon arcade backdrop: deep and soft, with no hard detail.
+* A vertical gradient from deep indigo (#1B1460) at the top to near-black navy (#060924) at the bottom.
+* Soft glows near the edges: a violet glow (#C04BFF) at the top left and a cyan glow (#2EEEFF) at the top right, fading well before the middle.
+* A faint perspective grid of thin cyan lines on the floor area at the very bottom, fading out upwards.
+* A few tiny sparkles near the edges.
+* The middle 70 percent of the image (both directions) must be dark plain gradient with nothing in it.
+* No shelves, no objects, no people, no text, letters, numbers, logos, frames or UI.
+
+SIZE
+
+* Square, 2048 x 2048. It will be cropped to wide and tall shapes, so nothing important may sit near the middle.
+
+FILE
+
+Create the directory if it does not exist: assets/playmona_assets/sort-rush/
+Save it as: assets/playmona_assets/sort-rush/bg-neon.png
+
+WORKFLOW
+
+* One request, not a collage. Regenerate if anything sits in the middle, or if there is any text.
+* Verify the file exists and is a valid image.
+```

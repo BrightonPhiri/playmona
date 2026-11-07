@@ -55,7 +55,7 @@ window.FF = window.FF || {};
   var NODE_CAP = 40000;
   var HIST_MAX = 200;                  // undo depth
 
-  var STANDARD = { mode: 'race', style: 'balls', move: 'single', level: 'medium', colours: 6, size: 4, empty: 2, seconds: 120, limit: 'off' };
+  var STANDARD = { mode: 'race', style: 'balls', move: 'group', level: 'medium', colours: 6, size: 4, empty: 2, seconds: 120, limit: 'off' };
 
   function pick(list, v, fallback) {
     if (typeof list[0] === 'number' && v != null && v !== '' && !isNaN(Number(v))) v = Number(v);

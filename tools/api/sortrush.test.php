@@ -61,7 +61,7 @@ test('sortrush: settings out of range are refused; good ones are kept and fixed 
     foreach ([['mode' => 'chaos'], ['style' => 'cups'], ['move' => 'all'], ['level' => 'insane'], ['colours' => 11], ['size' => 9], ['empty' => 0], ['seconds' => 7], ['limit' => 'none']] as $bad) {
         eq(400, srStart($w, 'SRAD', ['settings' => $bad])->status, json_encode($bad));
     }
-    eq(['mode' => 'race', 'style' => 'balls', 'move' => 'single', 'level' => 'medium', 'colours' => 6, 'size' => 4, 'empty' => 2, 'seconds' => 120, 'limit' => 'off'], SortRush::settings([]));
+    eq(['mode' => 'race', 'style' => 'balls', 'move' => 'group', 'level' => 'medium', 'colours' => 6, 'size' => 4, 'empty' => 2, 'seconds' => 120, 'limit' => 'off'], SortRush::settings([]));
     $hard = SortRush::settings(['level' => 'hard', 'colours' => 3]);
     eq([8, 4, 2], [$hard['colours'], $hard['size'], $hard['empty']], 'a level decides the board');
     $big = SortRush::settings(['level' => 'custom', 'colours' => '10', 'size' => 6, 'empty' => 1, 'mode' => 'score', 'limit' => 'tight']);
