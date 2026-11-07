@@ -144,6 +144,9 @@ window.FF = window.FF || {};
     var cfg = R.sanitize(opts.settings);
     var calm = reduceMotion();
     var bd = { a: opts.board.a.slice(), b: opts.board.b.slice() };
+    // Which ball sits in which slot on screen. Starts as the board's order, then
+    // every swap stirs it (see stir); only the bowl a ball is in matters to the rules.
+    var disp = { A: bd.a.slice(), B: bd.b.slice() };
     var playing = false;
     var locked = false;
     var selected = null;          // ball id
@@ -335,10 +338,23 @@ window.FF = window.FF || {};
     /* Where each ball has settled around its slot, as a fraction of a ball
        (so it survives resizing). Landings knock these about. */
     var rest = {};
+    /* Keep the screen order in step with the board: a ball that changed bowls
+       takes the slot of the one that left, everyone else stays put. */
+    function reconcile() {
+      ['A', 'B'].forEach(function (side) {
+        var real = side === 'A' ? bd.a : bd.b;
+        var cur = disp[side];
+        if (cur.length !== real.length) { disp[side] = real.slice(); return; }
+        var keep = cur.map(function (id) { return real.indexOf(id) !== -1 ? id : null; });
+        var incoming = real.filter(function (id) { return keep.indexOf(id) === -1; });
+        disp[side] = keep.map(function (id) { return id === null ? incoming.shift() : id; });
+      });
+    }
     function slotOf(id) {
-      var i = bd.a.indexOf(id);
+      var i = disp.A.indexOf(id);
       if (i !== -1) return slots.A[i];
-      return slots.B[bd.b.indexOf(id)];
+      var j = disp.B.indexOf(id);
+      return j !== -1 ? slots.B[j] : null;
     }
     function posOf(id) {
       var p = slotOf(id);
@@ -349,6 +365,7 @@ window.FF = window.FF || {};
     function xf(p, lift) { return 'translate(' + (p.x - D / 2).toFixed(1) + 'px,' + (p.y - D / 2 - (lift || 0)).toFixed(1) + 'px)'; }
 
     function place(animate) {
+      reconcile();
       pz.balls.forEach(function (c, id) {
         var p = posOf(id);
         if (!p) return;
@@ -393,8 +410,11 @@ window.FF = window.FF || {};
         // Right or wrong, the pair trades places; a wrong one also shakes.
         var from = { a: posOf(aId), b: posOf(bId) };
         bd = R.apply(bd, aId, bId);
+        reconcile();
         swapAnim(aId, from.a, posOf(aId), 1);
         swapAnim(bId, from.b, posOf(bId), -1);
+        // As they land, both bowls get stirred up.
+        later(stir, calm ? 0 : SWAP_MS + 60);
         if (verdict === 'ok') api.audio.play('correct');
         else wrong([aId, bId], true);
       } else {
@@ -420,51 +440,74 @@ window.FF = window.FF || {};
       anim.onfinish = function () { b.classList.remove('is-flying'); land(b, to, id); };
     }
 
-    /* The balls near a landing get bumped away from it, bounce back, and
-       settle a little differently than before, like real balls in a bowl.
-       They never leave their own slot by more than a fraction of a ball,
-       so taps and drags still find them. */
-    var JOSTLE_REACH = 2.6;   // in balls
-    var JOSTLE_PUSH = 0.24;   // the biggest bump, in balls
-    var REST_MAX = 0.09;      // how far a settled ball may sit from its slot
-    function jostle(landed, at) {
-      var side = sideOf(landed);
-      var ids = side === 'A' ? bd.a : bd.b;
-      ids.forEach(function (id) {
-        if (id === landed || id === selected) return;
+    /* Stir both bowls: every ball tumbles to a new place, hopping up and
+       over its neighbours, and settles a little off its slot. It makes the
+       board impossible to memorise: after every swap you look again.
+       With reduced motion the balls still move, just without the tumble. */
+    var REST_MAX = 0.08;      // how far a settled ball may sit from its slot, in balls
+    function shuffled(list) {
+      var a = list.slice();
+      for (var i = a.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var x = a[i]; a[i] = a[j]; a[j] = x;
+      }
+      // Never leave a bowl looking untouched.
+      if (a.length > 1 && a.every(function (id, k) { return id === list[k]; })) a.push(a.shift());
+      return a;
+    }
+    function stir() {
+      if (!slots.A.length) return;
+      reconcile();
+      var held = drag ? drag.id : null;
+      var from = {};
+      pz.balls.forEach(function (c, id) { from[id] = posOf(id); });
+      ['A', 'B'].forEach(function (side) {
+        // The ball being dragged keeps its slot; everything else is fair game.
+        var fixedAt = held != null ? disp[side].indexOf(held) : -1;
+        var others = disp[side].filter(function (id) { return id !== held; });
+        var mixed = shuffled(others);
+        if (fixedAt !== -1) mixed.splice(fixedAt, 0, held);
+        disp[side] = mixed;
+      });
+      pz.balls.forEach(function (c, id) {
+        if (id === held) return;
         var b = balls[id];
-        if (!b || !b.animate || b.classList.contains('is-flying')) return;
-        var p = posOf(id);
-        if (!p) return;
-        var dx = p.x - at.x, dy = p.y - at.y;
-        var dist = Math.sqrt(dx * dx + dy * dy) || 1;
-        var near = 1 - dist / (JOSTLE_REACH * D);
-        if (near <= 0) return;
-        var push = JOSTLE_PUSH * near * D;
-        var bump = { x: p.x + dx / dist * push, y: p.y + dy / dist * push * 0.6 };
-        // A new resting spot: drift the way it was pushed, plus a little chance.
-        var old = rest[id] || { x: 0, y: 0 };
-        var nx = old.x + (dx / dist) * near * 0.05 + (Math.random() - 0.5) * 0.06;
-        var ny = old.y + (dy / dist) * near * 0.03 + (Math.random() - 0.5) * 0.04;
-        rest[id] = {
-          x: Math.max(-REST_MAX, Math.min(REST_MAX, nx)),
-          y: Math.max(-REST_MAX, Math.min(REST_MAX, ny))
-        };
-        var to = xf(posOf(id), 0);
+        var p0 = from[id];
+        if (!b || !p0) return;
+        rest[id] = { x: (Math.random() - 0.5) * 2 * REST_MAX, y: (Math.random() - 0.5) * 2 * REST_MAX * 0.7 };
+        var p1 = posOf(id);
+        var to = xf(p1, selected === id ? D * 0.12 : 0);
         b.style.transform = to;
         b._at = to;
+        if (calm || !b.animate) return;
+        // A ball still finishing its swap flight hands over to the tumble.
+        if (b.classList.contains('is-flying') && b.getAnimations) {
+          b.getAnimations().forEach(function (a) { a.cancel(); });
+          b.classList.remove('is-flying');
+        }
+        // Up and over: a hop that is higher the further it travels, with a little sideways swirl.
+        var dist = Math.sqrt((p1.x - p0.x) * (p1.x - p0.x) + (p1.y - p0.y) * (p1.y - p0.y));
+        var hop = D * (0.35 + Math.min(1.4, dist / (D * 3))) * (0.8 + Math.random() * 0.4);
+        var swirl = (Math.random() - 0.5) * D * 0.5;
+        var mid = { x: (p0.x + p1.x) / 2 + swirl, y: Math.min(p0.y, p1.y) - hop };
         b.animate([
-          { transform: xf(p, 0) },
-          { transform: xf(bump, 0), offset: 0.35 },
+          { transform: xf(p0, 0) },
+          { transform: xf(mid, 0) + ' scale(1.06)', offset: 0.45 },
+          { transform: xf({ x: p1.x, y: p1.y + D * 0.06 }, 0) + ' scale(1.04, 0.94)', offset: 0.85 },
           { transform: to }
-        ], { duration: 420 + Math.round(near * 140), easing: 'cubic-bezier(.25,.8,.3,1.15)' });
+        ], {
+          duration: 560 + Math.round(Math.random() * 220),
+          delay: Math.round(Math.random() * 140),
+          easing: 'cubic-bezier(.35,.1,.3,1)',
+          fill: 'backwards'
+        });
       });
+      label();
     }
 
     /* A little squash and a ripple as a ball drops into its new bowl. */
     function land(b, at, id) {
       if (calm) return;
-      if (id != null) jostle(id, at);
       b.classList.remove('is-land');
       void b.offsetWidth;
       b.classList.add('is-land');
@@ -548,10 +591,12 @@ window.FF = window.FF || {};
 
     /* The ball under a point, in the other bowl only. */
     function ballAt(p, side) {
-      var ids = side === 'A' ? bd.a : bd.b;
+      reconcile();
+      var ids = disp[side];
       var hit = null, bestD = D * 0.75;
       ids.forEach(function (id, i) {
-        var s = slots[side][i];
+        var s = posOf(id);
+        if (!s) return;
         var dist = Math.sqrt((s.x - p.x) * (s.x - p.x) + (s.y - p.y) * (s.y - p.y));
         if (dist < bestD) { bestD = dist; hit = id; }
       });
