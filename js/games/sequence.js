@@ -5,8 +5,8 @@
 
    - Sets (what you remember): colours, pictures (the Memory Match card
      art), numbers, shapes, or sounds (the pads stay dark while they play).
-   - Twists (how you recall): grow (the same sequence gets one longer each
-     round), fresh (a new one each round), backwards, shuffle (the pads
+   - Twists (how you recall): fresh (standard: a new sequence each round),
+     grow (the same sequence gets one longer each round), backwards, shuffle (the pads
      swap places before you tap), speed up.
    - Solo: an endless run until your lives run out. Pass and play: every
      player gets the same deal, in turn. "Add one": a party mode on one
@@ -27,7 +27,7 @@ window.FF = window.FF || {};
   /* ================= rules (pure, tested) ================= */
 
   var SETS = ['colours', 'pictures', 'numbers', 'shapes', 'sounds'];
-  var TWISTS = ['grow', 'fresh', 'backwards', 'shuffle', 'speedup'];
+  var TWISTS = ['fresh', 'grow', 'backwards', 'shuffle', 'speedup'];
   var PADS = [4, 6, 9];
   var LIVES = [1, 2, 3];
   var PLAYS = ['turns', 'addone'];
@@ -44,7 +44,7 @@ window.FF = window.FF || {};
   function defaults(difficulty) {
     return {
       set: 'colours',
-      twist: 'grow',
+      twist: 'fresh',
       pads: difficulty === 'easy' ? 4 : difficulty === 'hard' ? 9 : 6,
       lives: 1,
       play: 'turns'
@@ -233,15 +233,15 @@ window.FF = window.FF || {};
   /* Colour pads carry a shape too, so players who cannot tell two colours
      apart can still play. The first four are the classic four. */
   var COLOURS = [
-    { id: 'red', name: 'Red', color: '#ef4444', mark: 'circle' },
-    { id: 'blue', name: 'Blue', color: '#3b82f6', mark: 'square' },
-    { id: 'green', name: 'Green', color: '#10b981', mark: 'triangle' },
-    { id: 'yellow', name: 'Yellow', color: '#eab308', mark: 'star' },
-    { id: 'purple', name: 'Purple', color: '#8b5cf6', mark: 'heart' },
-    { id: 'orange', name: 'Orange', color: '#f97316', mark: 'diamond' },
-    { id: 'pink', name: 'Pink', color: '#ec4899', mark: 'moon' },
-    { id: 'cyan', name: 'Cyan', color: '#06b6d4', mark: 'drop' },
-    { id: 'lime', name: 'Lime', color: '#65a30d', mark: 'bolt' }
+    { id: 'red', name: 'Red', color: '#ff3b3b', mark: 'circle' },
+    { id: 'blue', name: 'Blue', color: '#2f80ff', mark: 'square' },
+    { id: 'green', name: 'Green', color: '#14c97a', mark: 'triangle' },
+    { id: 'yellow', name: 'Yellow', color: '#ffc21a', mark: 'star' },
+    { id: 'purple', name: 'Purple', color: '#9b5cff', mark: 'heart' },
+    { id: 'orange', name: 'Orange', color: '#ff7a1a', mark: 'diamond' },
+    { id: 'pink', name: 'Pink', color: '#ff4fa8', mark: 'moon' },
+    { id: 'cyan', name: 'Cyan', color: '#12c4e8', mark: 'drop' },
+    { id: 'lime', name: 'Lime', color: '#7bcf1b', mark: 'bolt' }
   ];
 
   function shapeUri(id, fill) {

@@ -32,6 +32,7 @@ test('sequence: settings keep to the offered values', function () {
   assertEqual(S.sanitize({ difficulty: 'easy' }).pads, 4);
   assertEqual(S.sanitize({ difficulty: 'hard' }).pads, 9);
   assert(S.isStandard({}), 'defaults are standard');
+  assertEqual(S.STANDARD.twist, 'fresh', 'a new sequence each round is the standard');
   assert(!S.isStandard({ set: 'pictures' }), 'another set is not standard');
   assert(!S.isStandard({ lives: 3 }), 'extra lives are not standard');
 });
