@@ -69,7 +69,10 @@ const ORDER = [
   'js/games/imposters.js',
   'js/wordflow/rules.js',
   'js/wordflow/client.js',
-  'js/games/wordFlow.js'
+  'js/games/wordFlow.js',
+  'js/ballswap/rules.js',
+  'js/ballswap/client.js',
+  'js/games/ballSwap.js'
 ];
 
 const sandbox = {

@@ -477,6 +477,35 @@
             }
           }
         },
+        "bsInbox": {
+          "$uid": {
+            "$id": {
+              ".write": "auth != null && $uid === auth.uid && !data.exists() && newData.exists() && !root.child('bans').child(auth.uid).exists() && root.child('rooms').child($code).child('bs').child('p').child(auth.uid).exists()",
+              ".validate": "$id.matches(/^[A-Za-z0-9_-]{6,40}$/) && newData.hasChildren(['type', 'matchId', 'n', 'a', 'b', 't'])",
+              "type": {
+                ".validate": "newData.isString() && newData.val() === 'swap'"
+              },
+              "matchId": {
+                ".validate": "newData.isString() && newData.val() === root.child('rooms').child($code).child('bs').child('matchId').val()"
+              },
+              "n": {
+                ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100000"
+              },
+              "a": {
+                ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 50"
+              },
+              "b": {
+                ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 50"
+              },
+              "t": {
+                ".validate": "newData.isNumber() && newData.val() === now"
+              },
+              "$other": {
+                ".validate": false
+              }
+            }
+          }
+        },
         "chat": {
           ".write": "auth != null && !newData.exists() && root.child('rooms').child($code).child('meta').child('hostUid').val() === auth.uid",
           "$id": {

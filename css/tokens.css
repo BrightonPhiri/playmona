@@ -98,6 +98,16 @@
   --nr-num: #141a48; --nr-num-hi: #232c6e; --nr-track: #3a4590; --nr-hub: #0e1338;
   --nr-good: #2ee86b; --nr-bad: #ff4d6d; --nr-bad-deep: #5a1426; --nr-gold: #ffc83d;
   --nr-c0: #22d3ee; --nr-c1: #a78bfa; --nr-c2: #f472b6; --nr-c3: #facc15; --nr-c4: #4ade80; --nr-c5: #fb923c;
+  /* Ball Swap arena: always dark, two glass bowls. Text is light on the arena;
+     the five ball colours each carry a symbol, so colour is never the only cue. */
+  --bs-arena: #0b1430; --bs-arena-glow: #1b2a63; --bs-text: #f5f7ff; --bs-muted: #b9c3ea;
+  --bs-glass: rgba(170, 200, 255, 0.10); --bs-glass-edge: rgba(190, 215, 255, 0.42); --bs-pick: #ffffff;
+  --bs-good: #2ee86b; --bs-bad: #ff4d6d; --bs-gold: #ffc83d;
+  --bs-red: #f43f5e; --bs-red-hi: #ff9fb0; --bs-red-deep: #8a1030;
+  --bs-blue: #3b82f6; --bs-blue-hi: #a8c8ff; --bs-blue-deep: #12317a;
+  --bs-green: #22c55e; --bs-green-hi: #a6f2c2; --bs-green-deep: #0d5a2b;
+  --bs-yellow: #facc15; --bs-yellow-hi: #fff2a6; --bs-yellow-deep: #8a6a00;
+  --bs-purple: #a855f7; --bs-purple-hi: #e0bcff; --bs-purple-deep: #4c1784;
   --medal-gold: #ffc83d; --medal-silver: #cfd6f6; --medal-bronze: #ff9a52; --medal-ink: #0b1030;
 }
 

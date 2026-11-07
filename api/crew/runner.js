@@ -75,6 +75,7 @@ async function main() {
   const playing = new Map();   // matchId -> { ctl, transport }
   const referees = new Map();  // Imposters matchId -> { ref, transport }
   const wordflows = new Map(); // WordFlow matchId -> { ref, transport }
+  const ballswaps = new Map(); // Ball Swap matchId -> { ref, transport }
   let lastActive = Date.now();
   const isQuiet = (w) => FF.Words.isQuiet(w);
   const isWord = (w) => FF.Words.isWord(w);
@@ -187,9 +188,44 @@ async function main() {
     if (wordflows.size) lastActive = Date.now();
   }, log);
 
+  /* Ball Swap: the runner is the referee for every match the API started (ballswapRuns). */
+  function startBallswap(matchId, run) {
+    if (!run || !run.roomCode || !run.seats) return;
+    const code = run.roomCode;
+    const transport = roomTransport(rtdb, code, serverNow, (m) => log(matchId + ': ' + m));
+    const stopIt = () => {
+      const r = ballswaps.get(matchId);
+      if (!r) return;
+      r.ref.stop();
+      transport.close();
+      ballswaps.delete(matchId);
+      lastActive = Date.now();
+    };
+    const ref = FF.BallSwapReferee.create({
+      run, room: transport,
+      store: {
+        load: () => rtdb.get('ballswapState/' + matchId),
+        save: (s) => rtdb.set('ballswapState/' + matchId, s)
+      },
+      randomInt: (n) => crypto.randomInt(n),
+      log: (m) => log(matchId + ': ' + m),
+      report: (event, payload) => api('report', Object.assign({}, payload, { matchId, event })),
+      onEnd: () => setTimeout(stopIt, 60000)
+    });
+    ballswaps.set(matchId, { ref, transport });
+    log('refereeing Ball Swap ' + matchId + ' in ' + code);
+    ref.start().catch((e) => { log(matchId + ': referee failed: ' + (e && e.message)); stopIt(); });
+  }
+
+  const ballswapRuns = rtdb.stream('ballswapRuns', (all) => {
+    all = all || {};
+    Object.keys(all).forEach((id) => { if (!ballswaps.has(id)) startBallswap(id, all[id]); });
+    if (ballswaps.size) lastActive = Date.now();
+  }, log);
+
   async function beat() {
     try {
-      const res = await api('heartbeat', { pid: process.pid, matches: Array.from(playing.keys()), imposters: Array.from(referees.keys()), wordflow: Array.from(wordflows.keys()) });
+      const res = await api('heartbeat', { pid: process.pid, matches: Array.from(playing.keys()), imposters: Array.from(referees.keys()), wordflow: Array.from(wordflows.keys()), ballswap: Array.from(ballswaps.keys()) });
       (res.drop || []).forEach((id) => { const m = playing.get(id); if (m) m.ctl.stop(); });
       (res.dropImposters || []).forEach((id) => {
         const r = referees.get(id);
@@ -199,14 +235,19 @@ async function main() {
         const r = wordflows.get(id);
         if (r) { r.ref.stop(); r.transport.close(); wordflows.delete(id); }
       });
+      (res.dropBallswap || []).forEach((id) => {
+        const r = ballswaps.get(id);
+        if (r) { r.ref.stop(); r.transport.close(); ballswaps.delete(id); }
+      });
     } catch (e) {
       log('heartbeat failed: ' + e.message);
     }
-    if (!playing.size && !referees.size && !wordflows.size && Date.now() - lastActive > (cfg.idleMinutes || 5) * 60000) {
+    if (!playing.size && !referees.size && !wordflows.size && !ballswaps.size && Date.now() - lastActive > (cfg.idleMinutes || 5) * 60000) {
       log('nothing to play; stopping');
       runs.close();
       imposterRuns.close();
       wordflowRuns.close();
+      ballswapRuns.close();
       try { await api('stopped', { pid: process.pid }); } catch (e) { /* the API notices anyway */ }
       process.exit(0);
     }
@@ -218,9 +259,11 @@ async function main() {
     runs.close();
     imposterRuns.close();
     wordflowRuns.close();
+    ballswapRuns.close();
     playing.forEach((m) => { try { m.transport.close(); } catch (e) { /* gone */ } });
     referees.forEach((r) => { try { r.ref.stop(); r.transport.close(); } catch (e) { /* gone */ } });
     wordflows.forEach((r) => { try { r.ref.stop(); r.transport.close(); } catch (e) { /* gone */ } });
+    ballswaps.forEach((r) => { try { r.ref.stop(); r.transport.close(); } catch (e) { /* gone */ } });
     cleanup();   // free the lock for the new copy
     try {
       const child = spawn(process.execPath, process.argv.slice(1), { detached: true, stdio: 'inherit' });

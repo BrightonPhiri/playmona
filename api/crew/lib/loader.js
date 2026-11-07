@@ -32,7 +32,10 @@ const FILES = [
   // WordFlow: the referee the runner hosts, and how crew seats play it.
   'js/wordflow/rules.js',
   'js/wordflow/referee.js',
-  'js/crew/brains/wordFlow.js'
+  'js/crew/brains/wordFlow.js',
+  // Ball Swap: the referee the runner hosts (no crew seats play it).
+  'js/ballswap/rules.js',
+  'js/ballswap/referee.js'
 ];
 
 function stubElement() {

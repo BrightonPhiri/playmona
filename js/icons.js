@@ -133,6 +133,7 @@ window.FF = window.FF || {};
   "pictionary": "chalkboard",
   "numberChallenge": "hash",
   "numberRush": "target",
+  "ballSwap": "arrows-left-right",
   "higherOrLower": "chart-line",
   "wouldYouRather": "arrows-left-right",
   "thisOrThat": "split-horizontal",

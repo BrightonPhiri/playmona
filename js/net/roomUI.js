@@ -31,7 +31,9 @@ window.FF = window.FF || {};
     // Secret words dealt by the server's referee (js/imposters/referee.js).
     'imposters',
     // One word each, turns and judging run by the server's referee (js/wordflow/referee.js).
-    'wordFlow'
+    'wordFlow',
+    // Swaps checked by the server's referee (js/ballswap/referee.js), same board for everyone.
+    'ballSwap'
     // Brain Battle is deliberately absent: its format is a personal
     // streak run per player, so there is no shared question to race for.
   ];

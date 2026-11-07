@@ -66,6 +66,14 @@ class EngineRoutes
             return Response::json($this->app->wordflow()->nudge($this->user($req), $req->json(), $now));
         }
 
+        // Ball Swap: the server starts the match; the referee in the runner checks every swap.
+        if ($m === 'POST' && $p === '/ballswap/start') {
+            return Response::json($this->app->ballswap()->start($this->user($req), $req->json(), $now));
+        }
+        if ($m === 'POST' && $p === '/ballswap/nudge') {
+            return Response::json($this->app->ballswap()->nudge($this->user($req), $req->json(), $now));
+        }
+
         // Friends
         if ($m === 'GET' && $p === '/friends') return Response::json($this->app->friends()->overview($this->user($req)->uid, $now));
         if ($m === 'POST' && str_starts_with($p, '/friends/')) return $this->friendAction($req, substr($p, 9), $now);
@@ -165,8 +173,9 @@ class EngineRoutes
                 $drop = $mm->heartbeat((int) ($body['pid'] ?? 0), (array) ($body['matches'] ?? []), $now);
                 $dropImposters = $this->app->imposters()->stillActive((array) ($body['imposters'] ?? []));
                 $dropWordflow = $this->app->wordflow()->stillActive((array) ($body['wordflow'] ?? []));
+                $dropBallswap = $this->app->ballswap()->stillActive((array) ($body['ballswap'] ?? []));
                 $s = $this->app->crew()->settings();
-                return Response::json(['drop' => $drop, 'dropImposters' => $dropImposters, 'dropWordflow' => $dropWordflow, 'settings' => ['mode' => $s['mode'], 'stopNew' => $s['stopNew']]]);
+                return Response::json(['drop' => $drop, 'dropImposters' => $dropImposters, 'dropWordflow' => $dropWordflow, 'dropBallswap' => $dropBallswap, 'settings' => ['mode' => $s['mode'], 'stopNew' => $s['stopNew']]]);
             case 'report':
                 $matchId = (string) ($body['matchId'] ?? '');
                 $event = (string) ($body['event'] ?? '');
@@ -176,6 +185,10 @@ class EngineRoutes
                 }
                 if ($event === 'wordflow') {
                     $this->app->wordflow()->recordResult($body, $now);
+                    return Response::json(['ok' => true]);
+                }
+                if ($event === 'ballswap') {
+                    $this->app->ballswap()->recordResult($body, $now);
                     return Response::json(['ok' => true]);
                 }
                 if ($event === 'game') {

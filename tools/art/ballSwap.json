@@ -1,0 +1,21 @@
+{
+  "game": "ballSwap",
+  "prompts": "docs/art/ballSwap-prompts.md",
+  "source": "assets/playmona_assets/ball-swap",
+  "ids": [],
+  "sets": [],
+  "focus": {},
+  "cover": {
+    "from": "cover.png",
+    "to": "assets/images/covers/ballSwap.webp",
+    "size": [
+      1086,
+      1448
+    ],
+    "max_kb": 240,
+    "focus": [
+      0.5,
+      0.5
+    ]
+  }
+}

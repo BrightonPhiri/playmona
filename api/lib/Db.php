@@ -338,6 +338,37 @@ class Db
             PRIMARY KEY (match_id, uid),
             FOREIGN KEY (match_id) REFERENCES wordflow_matches (id)
         )$engine");
+        // Ball Swap: one row per match the server started, and each seat's record once it ends.
+        $this->pdo->exec("CREATE TABLE IF NOT EXISTS ballswap_matches (
+            id VARCHAR(32) NOT NULL PRIMARY KEY,
+            room_code VARCHAR(12) NOT NULL,
+            host_uid VARCHAR(128) NOT NULL,
+            level VARCHAR(8) NOT NULL,
+            colours INTEGER NOT NULL,
+            seconds INTEGER NOT NULL,
+            mistakes INTEGER NOT NULL,
+            players INTEGER NOT NULL,
+            status VARCHAR(12) NOT NULL,
+            need INTEGER NULL,
+            winner_uid VARCHAR(128) NULL,
+            is_draw INTEGER NOT NULL DEFAULT 0,
+            created_at BIGINT NOT NULL,
+            ended_at BIGINT NULL
+        )$engine");
+        $this->pdo->exec("CREATE TABLE IF NOT EXISTS ballswap_seats (
+            match_id VARCHAR(32) NOT NULL,
+            uid VARCHAR(128) NOT NULL,
+            place INTEGER NOT NULL DEFAULT 0,
+            swaps INTEGER NOT NULL DEFAULT 0,
+            mistakes INTEGER NOT NULL DEFAULT 0,
+            finished INTEGER NOT NULL DEFAULT 0,
+            knocked_out INTEGER NOT NULL DEFAULT 0,
+            used_ms INTEGER NOT NULL DEFAULT 0,
+            points INTEGER NOT NULL DEFAULT 0,
+            won INTEGER NOT NULL DEFAULT 0,
+            PRIMARY KEY (match_id, uid),
+            FOREIGN KEY (match_id) REFERENCES ballswap_matches (id)
+        )$engine");
         // Columns added after the first release. Each fails harmlessly once it exists.
         foreach ([
             'ALTER TABLE orders ADD COLUMN mode VARCHAR(8) NULL',
@@ -374,6 +405,8 @@ class Db
             'CREATE INDEX imposter_seats_uid ON imposter_seats (uid)',
             'CREATE INDEX wordflow_status ON wordflow_matches (status, created_at)',
             'CREATE INDEX wordflow_seats_uid ON wordflow_seats (uid)',
+            'CREATE INDEX ballswap_status ON ballswap_matches (status, created_at)',
+            'CREATE INDEX ballswap_seats_uid ON ballswap_seats (uid)',
         ] as $sql) {
             try { $this->pdo->exec($sql); } catch (\PDOException $e) { /* already there */ }
         }

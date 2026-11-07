@@ -82,5 +82,14 @@ if (base['nr-arena']) {
   ['nr-good', 'nr-bad', 'nr-c0', 'nr-c1', 'nr-c2', 'nr-c3', 'nr-c4', 'nr-c5'].forEach(function (c) { check(c + ' edge on arena', base[c], base['nr-arena'], 3); });
 }
 
+// Ball Swap arena: always dark, the same in both themes.
+if (base['bs-arena']) {
+  console.log('\n== Ball Swap arena ==');
+  check('bs text on arena', base['bs-text'], base['bs-arena'], 4.5);
+  check('bs muted on arena', base['bs-muted'], base['bs-arena'], 4.5);
+  check('bs text on glow', base['bs-text'], base['bs-arena-glow'], 4.5);
+  ['bs-red', 'bs-blue', 'bs-green', 'bs-yellow', 'bs-purple', 'bs-good', 'bs-bad', 'bs-gold'].forEach(function (c) { check(c + ' on arena', base[c], base['bs-arena'], 3); });
+}
+
 console.log('\n' + (failures ? failures + ' failing pair(s)' : 'All pairs pass WCAG AA.'));
 process.exit(failures ? 1 : 0);

@@ -2,6 +2,7 @@
 window.FF = window.FF || {};
 FF.AssetManifest = {
   "covers": {
+    "ballSwap": "0a63ebac",
     "brainBattle": "138a01ea",
     "familyQuiz": "398a13de",
     "guessAnimal": "ff4053a8",

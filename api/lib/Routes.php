@@ -77,6 +77,10 @@ class App
     {
         return $this->make('wordflow', fn () => new WordFlow($this->db(), $this->rtdb(), $this->matchmaker(), $this->crew(), $this->runner()));
     }
+    public function ballswap(): BallSwap
+    {
+        return $this->make('ballswap', fn () => new BallSwap($this->db(), $this->rtdb(), $this->runner()));
+    }
     public function wordflowJudge(): WordFlowJudge { return $this->make('wordflowJudge', fn () => new WordFlowJudge($this->ai(), $this->wordflow())); }
     public function leaderboards(): Leaderboards { return $this->make('leaderboards', fn () => new Leaderboards($this->rtdb())); }
     public function friends(): Friends { return $this->make('friends', fn () => new Friends($this->db(), $this->rtdb(), $this->crew())); }
