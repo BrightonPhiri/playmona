@@ -1382,6 +1382,81 @@ button.wm-opt.wrong { background: var(--danger-soft); border-color: var(--danger
 }
 :root[data-reduce="1"] .qm-double, :root[data-reduce="1"] .qm-ring { animation: none; }
 
+/* ============ Bible Quiz ============
+   Reuses the Quiz Mix card, topic badges, 50:50 and recap (.qm-*).
+   Adds the setup chips, the quote card, the put-in-order board and
+   the verse card shown after every answer. */
+/* Purple for text: the category colour is too dark to read on dark cards. */
+.bq, .bq-recap { --bq-ink: var(--cat-bible); }
+:root[data-theme="dark"] .bq, :root[data-theme="dark"] .bq-recap { --bq-ink: #c4a5ff; }
+.bq-setup { gap: var(--sp-3); }
+.bq-setup__rows { width: 100%; }
+.bq-setup__h { align-self: flex-start; font-size: var(--fs-lg); margin: var(--sp-2) 0 0; }
+.bq-types { display: flex; flex-wrap: wrap; gap: var(--sp-2); width: 100%; }
+.bq-types .chip { min-height: 44px; }
+.bq-setup__foot {
+  flex-direction: column; align-items: stretch; gap: var(--sp-2);
+  padding-top: var(--sp-5); background: linear-gradient(180deg, transparent, var(--bg) var(--sp-4));
+}
+.bq-setup__foot .nr-setup__actions { justify-content: flex-end; }
+
+.bq-card::before { background: linear-gradient(90deg, var(--cat-bible), var(--brand-yellow)); }
+.bq-kind { display: inline-flex; align-items: center; gap: var(--sp-2); color: var(--bq-ink); }
+.bq-kind .icon-svg { font-size: 1.1em; }
+.bq-quote {
+  margin: 0; padding: var(--sp-2) 0 var(--sp-2) var(--sp-4);
+  border-left: 4px solid var(--cat-bible);
+  font-family: var(--font-display); font-size: var(--fs-xl); line-height: 1.35; font-style: italic; color: var(--text);
+}
+
+/* Put in order: numbered slots above, events to tap below. */
+.bq-order { display: flex; flex-direction: column; gap: var(--sp-3); width: 100%; text-align: left; }
+.bq-order__slots { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--sp-2); }
+.bq-slot { display: flex; align-items: center; gap: var(--sp-3); }
+.bq-slot__n {
+  flex: none; width: 36px; height: 36px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-weight: 800; background: var(--surface-3); color: var(--muted);
+}
+.bq-slot__btn {
+  flex: 1; min-height: var(--tap); padding: 8px 14px; text-align: left;
+  font-weight: 700; font-size: var(--fs-md); color: var(--text);
+  background: var(--surface); border: 2px dashed var(--border-strong); border-radius: var(--r-sm);
+}
+.bq-slot.is-filled .bq-slot__n { background: var(--cat-bible); color: #fff; }
+.bq-slot.is-filled .bq-slot__btn { border-style: solid; border-color: var(--cat-bible); }
+.bq-slot.is-right .bq-slot__btn { border-color: var(--success); background: var(--success-soft); }
+.bq-slot.is-right .bq-slot__n { background: var(--success); }
+.bq-slot.is-wrong .bq-slot__btn { border-color: var(--danger); background: var(--danger-soft); }
+.bq-slot.is-wrong .bq-slot__n { background: var(--danger); }
+.bq-slot__btn:disabled { opacity: 1; cursor: default; }
+.bq-order__pool { display: flex; flex-wrap: wrap; gap: var(--sp-2); justify-content: center; }
+.bq-order__pool[hidden], .bq-event[hidden] { display: none; }
+.bq-event { font-size: var(--fs-md); text-align: left; }
+.bq-order__right {
+  margin: 0; padding: var(--sp-3) var(--sp-4) var(--sp-3) calc(var(--sp-4) + 1.2em);
+  background: var(--success-soft); border-radius: var(--r-md); font-weight: 700;
+}
+.bq-order__right li + li { margin-top: 4px; }
+
+/* The verse behind the answer. */
+.bq-verse {
+  width: 100%; max-width: 640px; padding: var(--sp-3) var(--sp-4);
+  background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--cat-bible);
+  border-radius: var(--r-md); text-align: left;
+}
+.bq-verse__head { display: flex; align-items: center; gap: var(--sp-2); color: var(--bq-ink); }
+.bq-verse__ref { font-weight: 800; font-size: var(--fs-sm); letter-spacing: 0.02em; }
+.bq-verse__text { margin: var(--sp-2) 0 0; font-family: var(--font-display); font-style: italic; font-size: var(--fs-lg); line-height: 1.4; color: var(--text); }
+.bq-verse__note { margin: var(--sp-2) 0 0; font-weight: 600; color: var(--muted); }
+.bq-verses { display: flex; flex-direction: column; gap: var(--sp-2); width: 100%; align-items: center; }
+
+@media (max-width: 560px) {
+  .bq-quote { font-size: var(--fs-lg); }
+  .bq-setup__foot .nr-setup__actions { justify-content: stretch; }
+}
+
+
 /* ============ Imposters ============
    Secret card, clue board, the hidden clock, voting, the results
    reveal, and the room chat (net/chat.js) in a sheet behind a

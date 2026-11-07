@@ -1,0 +1,21 @@
+{
+  "game": "bibleQuiz",
+  "prompts": "docs/art/bibleQuiz-prompts.md",
+  "source": "assets/playmona_assets/bible-quiz",
+  "ids": [],
+  "sets": [],
+  "focus": {},
+  "cover": {
+    "from": "cover.png",
+    "to": "assets/images/covers/bibleQuiz.webp",
+    "size": [
+      1086,
+      1448
+    ],
+    "max_kb": 240,
+    "focus": [
+      0.5,
+      0.5
+    ]
+  }
+}
