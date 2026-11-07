@@ -3,8 +3,8 @@
    Ball Swap: two glass bowls, A and B, full of coloured balls.
    The instructions say which colours belong in which bowl. Every
    move is a swap: pick one ball in A and one in B and they trade
-   places at once, but only when both are heading home. Anything
-   else is a mistake, and nothing moves.
+   places at once. They should both be heading home: anything
+   else still swaps, but it is a mistake and has to be undone.
 
    - Solo, with its own setup screen.
    - Online rooms: the server deals one board for everybody and
@@ -332,10 +332,19 @@ window.FF = window.FF || {};
       place(false);
     }
 
-    function posOf(id) {
+    /* Where each ball has settled around its slot, as a fraction of a ball
+       (so it survives resizing). Landings knock these about. */
+    var rest = {};
+    function slotOf(id) {
       var i = bd.a.indexOf(id);
       if (i !== -1) return slots.A[i];
       return slots.B[bd.b.indexOf(id)];
+    }
+    function posOf(id) {
+      var p = slotOf(id);
+      var r = rest[id];
+      if (!p || !r) return p;
+      return { x: p.x + r.x * D, y: p.y + r.y * D };
     }
     function xf(p, lift) { return 'translate(' + (p.x - D / 2).toFixed(1) + 'px,' + (p.y - D / 2 - (lift || 0)).toFixed(1) + 'px)'; }
 
@@ -380,14 +389,14 @@ window.FF = window.FF || {};
       var bId = aId === x ? y : x;
       select(null);
       var verdict = opts.onSwap(aId, bId);
-      if (verdict === 'ok') {
+      if (verdict === 'ok' || verdict === 'wrong') {
+        // Right or wrong, the pair trades places; a wrong one also shakes.
         var from = { a: posOf(aId), b: posOf(bId) };
         bd = R.apply(bd, aId, bId);
         swapAnim(aId, from.a, posOf(aId), 1);
         swapAnim(bId, from.b, posOf(bId), -1);
-        api.audio.play('correct');
-      } else if (verdict === 'wrong') {
-        wrong([aId, bId]);
+        if (verdict === 'ok') api.audio.play('correct');
+        else wrong([aId, bId], true);
       } else {
         place(true);
       }
@@ -400,7 +409,7 @@ window.FF = window.FF || {};
       var end = xf(to, 0);
       b.style.transform = end;
       b._at = end;
-      if (calm || !b.animate || !from) { land(b, to); return; }
+      if (calm || !b.animate || !from) { land(b, to, id); return; }
       var mid = { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 - way * D * 0.9 };
       b.classList.add('is-flying');
       var anim = b.animate([
@@ -408,12 +417,54 @@ window.FF = window.FF || {};
         { transform: xf(mid, 0) + ' scale(1.12)', offset: 0.5 },
         { transform: end }
       ], { duration: SWAP_MS, easing: 'cubic-bezier(.45,.05,.35,1)' });
-      anim.onfinish = function () { b.classList.remove('is-flying'); land(b, to); };
+      anim.onfinish = function () { b.classList.remove('is-flying'); land(b, to, id); };
+    }
+
+    /* The balls near a landing get bumped away from it, bounce back, and
+       settle a little differently than before, like real balls in a bowl.
+       They never leave their own slot by more than a fraction of a ball,
+       so taps and drags still find them. */
+    var JOSTLE_REACH = 2.6;   // in balls
+    var JOSTLE_PUSH = 0.24;   // the biggest bump, in balls
+    var REST_MAX = 0.09;      // how far a settled ball may sit from its slot
+    function jostle(landed, at) {
+      var side = sideOf(landed);
+      var ids = side === 'A' ? bd.a : bd.b;
+      ids.forEach(function (id) {
+        if (id === landed || id === selected) return;
+        var b = balls[id];
+        if (!b || !b.animate || b.classList.contains('is-flying')) return;
+        var p = posOf(id);
+        if (!p) return;
+        var dx = p.x - at.x, dy = p.y - at.y;
+        var dist = Math.sqrt(dx * dx + dy * dy) || 1;
+        var near = 1 - dist / (JOSTLE_REACH * D);
+        if (near <= 0) return;
+        var push = JOSTLE_PUSH * near * D;
+        var bump = { x: p.x + dx / dist * push, y: p.y + dy / dist * push * 0.6 };
+        // A new resting spot: drift the way it was pushed, plus a little chance.
+        var old = rest[id] || { x: 0, y: 0 };
+        var nx = old.x + (dx / dist) * near * 0.05 + (Math.random() - 0.5) * 0.06;
+        var ny = old.y + (dy / dist) * near * 0.03 + (Math.random() - 0.5) * 0.04;
+        rest[id] = {
+          x: Math.max(-REST_MAX, Math.min(REST_MAX, nx)),
+          y: Math.max(-REST_MAX, Math.min(REST_MAX, ny))
+        };
+        var to = xf(posOf(id), 0);
+        b.style.transform = to;
+        b._at = to;
+        b.animate([
+          { transform: xf(p, 0) },
+          { transform: xf(bump, 0), offset: 0.35 },
+          { transform: to }
+        ], { duration: 420 + Math.round(near * 140), easing: 'cubic-bezier(.25,.8,.3,1.15)' });
+      });
     }
 
     /* A little squash and a ripple as a ball drops into its new bowl. */
-    function land(b, at) {
+    function land(b, at, id) {
       if (calm) return;
+      if (id != null) jostle(id, at);
       b.classList.remove('is-land');
       void b.offsetWidth;
       b.classList.add('is-land');
@@ -426,17 +477,21 @@ window.FF = window.FF || {};
     }
 
     /* A mistake: both balls shake the same, so nothing says which was wrong. */
-    function wrong(ids) {
+    function wrong(ids, swapped) {
       api.audio.play('wrong');
       buzz(70);
-      place(true);
-      ids.forEach(function (id) {
-        var b = balls[id];
-        b.classList.remove('is-wrong');
-        void b.offsetWidth;
-        b.classList.add('is-wrong');
-        later(function () { b.classList.remove('is-wrong'); }, 480);
-      });
+      if (!swapped) place(true);
+      // After a swap, the balls shake once they have landed.
+      later(function () {
+        ids.forEach(function (id) {
+          var b = balls[id];
+          if (!b) return;
+          b.classList.remove('is-wrong');
+          void b.offsetWidth;
+          b.classList.add('is-wrong');
+          later(function () { b.classList.remove('is-wrong'); }, 480);
+        });
+      }, swapped && !calm ? SWAP_MS : 0);
       if (!calm) {
         arena.classList.remove('is-shake');
         void arena.offsetWidth;
@@ -579,7 +634,7 @@ window.FF = window.FF || {};
         timeStat.value.textContent = R.clock(Math.max(0, leftMs) + 999);
         timeStat.el.classList.toggle('is-low', playing && leftMs <= 10000);
       },
-      setCounts: function (swaps, mistakes) {
+      setCounts: function (swaps, mistakes) {   // swaps = pairs home now
         swapStat.value.textContent = swaps + '/' + pz.need;
         if (swaps !== shownSwaps && !calm) {
           swapStat.el.classList.remove('is-bump');
@@ -623,7 +678,7 @@ window.FF = window.FF || {};
   function resultsTable(rows) {
     var table = FF.ui.el('ol', { class: 'bs-table' });
     rows.forEach(function (r) {
-      var li = FF.ui.el('li', { class: 'bs-row' + (r.place === 1 && (r.done || r.swaps) ? ' is-winner' : '') + (r.out ? ' is-out' : '') + (r.me ? ' is-me' : '') });
+      var li = FF.ui.el('li', { class: 'bs-row' + (r.place === 1 && (r.done || r.placed) ? ' is-winner' : '') + (r.out ? ' is-out' : '') + (r.me ? ' is-me' : '') });
       if (rows.length > 1) li.appendChild(FF.ui.span('bs-row__rank', String(r.place)));
       li.appendChild(FF.Players.avatarEl(r.who, 'bs-row__ava'));
       var who = FF.ui.span('bs-row__who');
@@ -633,7 +688,7 @@ window.FF = window.FF || {};
       who.appendChild(FF.ui.span('bs-row__status', status));
       li.appendChild(who);
       var nums = FF.ui.span('bs-row__nums');
-      nums.appendChild(cell(t('bsBallsMoved', 'Balls moved'), String(r.swaps * 2)));
+      nums.appendChild(cell(t('bsBallsMoved', 'Balls moved'), String(((r.swaps || 0) + (r.mistakes || 0)) * 2)));
       nums.appendChild(cell(t('bsMistakes', 'Mistakes'), String(r.mistakes)));
       nums.appendChild(cell(t('bsAccuracy', 'Accuracy'), r.accuracy + '%'));
       li.appendChild(nums);
@@ -655,7 +710,7 @@ window.FF = window.FF || {};
       var r = rows[0];
       return r.done ? t('bsSoloDone', 'All swapped!') : r.out ? t('bsSoloOut', 'Eliminated') : t('timesUp', 'Time’s up!');
     }
-    var top = rows.filter(function (x) { return x.place === 1 && (x.done || x.swaps); });
+    var top = rows.filter(function (x) { return x.place === 1 && (x.done || x.placed); });
     if (!top.length) return t('bsNobody', 'Nobody swapped a ball');
     if (top.length > 1) return t('bsDraw', 'It’s a draw!');
     return top[0].me ? t('bsYouWin', 'You win!') : t('bsWins', '{name} wins!', { name: top[0].who.name });
@@ -724,15 +779,16 @@ window.FF = window.FF || {};
       onSwap: function (aId, bId) {
         if (ended) return null;
         var v = R.check(pz, bd, aId, bId);
+        if (v === 'ok' || v === 'wrong') bd = R.apply(bd, aId, bId);   // a wrong pair swaps too
         if (v === 'ok') {
-          bd = R.apply(bd, aId, bId);
           st.swaps++;
           if (R.solved(pz, bd)) { st.done = true; st.used = Math.max(0, g); setTimeout(function () { end('done'); }, SWAP_MS); }
         } else if (v === 'wrong') {
           st.mistakes++;
-          if (R.knockedOut(cfg, st.mistakes)) { st.out = true; setTimeout(function () { end('out'); }, 500); }
+          if (R.knockedOut(cfg, st.mistakes)) { st.out = true; setTimeout(function () { end('out'); }, SWAP_MS + 300); }
         }
-        view.setCounts(st.swaps, st.mistakes);
+        st.placed = R.placed(pz, bd);
+        view.setCounts(st.placed, st.mistakes);
         if (st.done || st.out) view.lock();
         return v;
       }
@@ -796,7 +852,7 @@ window.FF = window.FF || {};
         view.overlay('out', t('bsEliminated', 'Eliminated'), [t('bsTooMany', 'Too many mistakes')]);
       } else {
         api.audio.play('roundEnd');
-        view.overlay('time', t('timesUp', 'Time’s up!'), [t('bsSwapsOf', '{n} of {total} swaps', { n: st.swaps, total: pz.need })]);
+        view.overlay('time', t('timesUp', 'Time’s up!'), [t('bsSwapsOf', '{n} of {total} swaps', { n: st.placed || 0, total: pz.need })]);
       }
       if (FF.UI.announce) FF.UI.announce(kind === 'done' ? t('bsComplete', 'Complete!') : kind === 'out' ? t('bsEliminated', 'Eliminated') : t('timesUp', 'Time’s up!'));
       setTimeout(function () {
@@ -956,7 +1012,7 @@ window.FF = window.FF || {};
         onSwap: function (aId, bId) {
           var verdict = client.swap(aId, bId);
           var now = client.view();
-          view.setCounts(now.swaps, now.mistakes);
+          view.setCounts(now.placed, now.mistakes);
           return verdict;
         }
       });
@@ -967,7 +1023,7 @@ window.FF = window.FF || {};
     function update(bs, v) {
       var me = v.me;
       if (!v.pending && v.board) view.sync(v.board);
-      view.setCounts(v.swaps, v.mistakes);
+      view.setCounts(v.placed, v.mistakes);
       renderRivals(bs, v);
       if (me && (me.done || me.out)) {
         view.lock();
@@ -1001,14 +1057,14 @@ window.FF = window.FF || {};
         body.appendChild(FF.ui.span('bs-rival__name', nameOf(uid)));
         var bar = FF.ui.span('bs-rival__bar');
         var fill = FF.ui.span('bs-rival__fill');
-        fill.style.width = Math.round((r.swaps || 0) / Math.max(1, bs.puzzle.need) * 100) + '%';
+        fill.style.width = Math.round((r.placed || 0) / Math.max(1, bs.puzzle.need) * 100) + '%';
         bar.appendChild(fill);
         body.appendChild(bar);
         chip.appendChild(body);
         var stt = FF.ui.span('bs-rival__state');
         if (r.out) { stt.appendChild(icon('x-circle')); stt.appendChild(document.createTextNode(t('bsOut', 'Out'))); }
         else if (r.done) { stt.appendChild(icon('check')); stt.appendChild(document.createTextNode(R.exactTime(r.used))); }
-        else stt.textContent = (r.swaps || 0) + '/' + bs.puzzle.need + (r.mistakes ? ' · ' + r.mistakes + '✕' : '');
+        else stt.textContent = (r.placed || 0) + '/' + bs.puzzle.need + (r.mistakes ? ' · ' + r.mistakes + '✕' : '');
         chip.appendChild(stt);
         wrap.appendChild(chip);
       });
@@ -1094,7 +1150,7 @@ window.FF = window.FF || {};
       var stage = FF.GameUI.stage({ center: true, className: 'bs bs-results' });
       stage.appendChild(FF.GameUI.kicker(t('bsName', 'Ball Swap') + ' · ' + summary(bs.settings)));
       stage.appendChild(FF.GameUI.prompt(headline(rows, false), 'xl'));
-      var winners = rows.filter(function (r) { return r.place === 1 && (r.done || r.swaps); });
+      var winners = rows.filter(function (r) { return r.place === 1 && (r.done || r.placed); });
       var second = rows.filter(function (r) { return r.place === 2; })[0];
       if (winners.length === 1 && second) stage.appendChild(FF.GameUI.sub(t('bsRunnerUp', 'Runner-up: {name}', { name: second.me ? t('you', 'You') : second.who.name })));
       var why = res.why === 'time' ? t('bsWhyTime', 'Time ran out, so the most swaps counted.')
@@ -1134,7 +1190,7 @@ window.FF = window.FF || {};
     howToPlay: [
       'There are two bowls, A and B. The instructions say which colours belong in which bowl.',
       'Every move is a swap: tap a ball in A, then a ball in B (or drag one onto the other). Both trade places at once.',
-      'A swap only works when both balls are heading home. Otherwise it is one mistake, and nothing moves.',
+      'Both balls should be heading home. A wrong pair still swaps, but it is one mistake and you have to swap them back.',
       'Too many mistakes and you are out. Online, everyone gets the same bowls and the first to finish wins.'
     ],
     room: ROOM,

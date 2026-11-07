@@ -200,12 +200,13 @@ async function match(opts) {
       const pz = m.puzzle(), r = m.row(uid);
       return [r.a.find((id) => pz.target[pz.balls[id]] === 'B'), r.b.find((id) => pz.target[pz.balls[id]] === 'A')];
     },
-    /* A wrong swap: a ball already home in A (there is one once a swap has been made). */
+    /* A wrong swap: a ball already home in A with one already home in B
+       (there are some once a swap has been made), so both leave home. */
     wrongPair(uid) {
       const pz = m.puzzle(), r = m.row(uid);
       const homeInA = r.a.find((id) => pz.target[pz.balls[id]] === 'A');
-      const anyB = r.b[0];
-      return [homeInA, anyB];
+      const homeInB = r.b.find((id) => pz.target[pz.balls[id]] === 'B');
+      return [homeInA, homeInB];
     },
     async solve(uid) {
       while (!m.row(uid).done && !m.row(uid).out) { const [a, b] = m.rightPair(uid); await m.send(uid, a, b); }
@@ -231,7 +232,7 @@ test('ballswap referee: one puzzle for everyone, opened at the start time', asyn
   assertEqual(m.bs().deadline, m.bs().openAt + 60000);
 });
 
-test('ballswap referee: right swaps move both balls; a wrong one is one mistake and moves nothing', async function () {
+test('ballswap referee: right swaps move both balls; a wrong one still swaps but is one mistake and costs progress', async function () {
   const m = await match({ settings: { mistakes: 3 } });
   await m.go();
   const [a, b] = m.rightPair('p1');
@@ -241,11 +242,24 @@ test('ballswap referee: right swaps move both balls; a wrong one is one mistake 
   assert(r1.b.indexOf(a) !== -1 && r1.a.indexOf(b) !== -1, 'they traded places');
   assertEqual(JSON.stringify(m.row('p2').a), JSON.stringify(m.puzzle().a), 'the other board is untouched');
   const [wa, wb] = m.wrongPair('p1');
-  const before = JSON.stringify(m.row('p1').a) + JSON.stringify(m.row('p1').b);
+  assertEqual(m.row('p1').placed, 1, 'one pair home');
   await m.send('p1', wa, wb);
-  assertEqual(m.row('p1').mistakes, 1, 'one mistake for the pair, not two');
-  assertEqual(JSON.stringify(m.row('p1').a) + JSON.stringify(m.row('p1').b), before, 'neither ball moved');
-  assertEqual(m.row('p1').last, 'wrong');
+  const r2 = m.row('p1');
+  assertEqual(r2.mistakes, 1, 'one mistake for the pair, not two');
+  assertEqual(r2.swaps, 1, 'a wrong pair is not a right swap');
+  assert(r2.b.indexOf(wa) !== -1 && r2.a.indexOf(wb) !== -1, 'the wrong pair still traded places');
+  assertEqual(r2.placed, 0, 'and undid the progress');
+  assertEqual(r2.last, 'wrong');
+  await m.send('p1', wb, wa);   // swap them back: a right swap, but no points beyond what was lost
+  assertEqual(m.row('p1').placed, 1, 'swapping back wins the progress back');
+  assertEqual(m.row('p1').mistakes, 1);
+});
+
+test('ballswap rules: making and undoing mistakes never earns points', function () {
+  const R = loadFF(['js/core.js', 'js/ballswap/rules.js']).BallSwapRules;
+  const clean = R.rawPoints({ swaps: 1, placed: 1, mistakes: 0 }, R.STANDARD);
+  const undone = R.rawPoints({ swaps: 6, placed: 1, mistakes: 5 }, R.STANDARD);
+  assert(undone < clean, 'five mistakes undone score less than one clean swap: ' + undone + ' vs ' + clean);
 });
 
 test('ballswap referee: a replayed or double-tapped swap lands once; a stale one is no mistake', async function () {
@@ -265,8 +279,8 @@ test('ballswap referee: a replayed or double-tapped swap lands once; a stale one
 test('ballswap referee: one more mistake than allowed knocks a player out', async function () {
   const m = await match({ settings: { mistakes: 1 } });
   await m.go();
-  const [a, b] = m.rightPair('p1');
-  await m.send('p1', a, b);
+  // Two pairs home first: each wrong swap below sends one pair away again.
+  for (let i = 0; i < 2; i++) { const [a, b] = m.rightPair('p1'); await m.send('p1', a, b); }
   let [wa, wb] = m.wrongPair('p1');
   await m.send('p1', wa, wb);
   assert(!m.row('p1').out, 'one mistake of one allowed');

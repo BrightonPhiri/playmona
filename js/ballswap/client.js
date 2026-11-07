@@ -113,12 +113,9 @@ window.FF = window.FF || {};
       var verdict = R.check(bs.puzzle, mine.board, aId, bId);
       if (verdict === 'stale') return 'stale';
       var n = mine.n++;
-      if (verdict === 'ok') {
-        mine.board = R.apply(mine.board, aId, bId);
-        mine.swaps++;
-      } else {
-        mine.mistakes++;
-      }
+      mine.board = R.apply(mine.board, aId, bId);   // a wrong pair swaps too
+      if (verdict === 'ok') mine.swaps++;
+      else mine.mistakes++;
       var cmd = { type: 'swap', matchId: bs.matchId, n: n, a: aId, b: bId, t: stamp() };
       T.set('bsInbox/' + uid + '/' + cmdId(), cmd).catch(function () {
         // Never reached the referee: take the referee's board back.
@@ -137,6 +134,7 @@ window.FF = window.FF || {};
         me: row,
         board: mine ? mine.board : null,
         swaps: mine ? mine.swaps : 0,
+        placed: mine && bs ? R.placed(bs.puzzle, mine.board) : 0,
         mistakes: mine ? mine.mistakes : 0,
         pending: !!(mine && row && (row.n || 0) < mine.n)
       };

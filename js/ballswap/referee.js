@@ -250,14 +250,16 @@ window.FF = window.FF || {};
       var verdict = R.check(state.puzzle, p, cmd.a, cmd.b);
       p.at = sentAt;
       if (verdict === 'stale') { p.last = 'stale'; return; }     // the phone was behind: it resyncs, no mistake
+      // Right or wrong, the two balls trade places. A wrong pair is a mistake
+      // and has to be swapped back, which costs time.
+      var next = R.apply(p, cmd.a, cmd.b);
+      p.a = next.a;
+      p.b = next.b;
       if (verdict === 'wrong') {
         p.mistakes++;
         p.last = 'wrong';
         if (R.knockedOut(state.settings, p.mistakes)) { p.out = true; p.outAt = sentAt; log(uid + ' is out'); }
       } else {
-        var next = R.apply(p, cmd.a, cmd.b);
-        p.a = next.a;
-        p.b = next.b;
         p.swaps++;
         p.last = 'ok';
         if (R.solved(state.puzzle, p)) {
@@ -279,7 +281,7 @@ window.FF = window.FF || {};
 
     function statsOf(uid) {
       var p = state.players[uid];
-      return { swaps: p.swaps, mistakes: p.mistakes, done: p.done, doneAt: p.doneAt, used: p.used, out: p.out };
+      return { swaps: p.swaps, placed: R.placed(state.puzzle, p), mistakes: p.mistakes, done: p.done, doneAt: p.doneAt, used: p.used, out: p.out };
     }
 
     function finish(why) {
@@ -291,7 +293,7 @@ window.FF = window.FF || {};
       state.result = {
         why: why, need: state.puzzle.need, winners: top, draw: top.length > 1,
         rows: rows.map(function (r) {
-          return { uid: r.uid, place: r.place, points: r.points, swaps: r.swaps, mistakes: r.mistakes, done: r.done, out: r.out, used: r.used, accuracy: r.accuracy };
+          return { uid: r.uid, place: r.place, points: r.points, swaps: r.swaps, placed: r.placed, mistakes: r.mistakes, done: r.done, out: r.out, used: r.used, accuracy: r.accuracy };
         })
       };
       var t = now();
@@ -313,7 +315,7 @@ window.FF = window.FF || {};
       Promise.resolve(report('ballswap', {
         matchId: state.matchId, roomCode: state.roomCode, settings: state.settings, need: state.puzzle.need, why: why,
         seats: rows.map(function (r) {
-          return { uid: r.uid, place: r.place, points: r.points, swaps: r.swaps, mistakes: r.mistakes, done: r.done, out: r.out, used: r.used, won: top.indexOf(r.uid) !== -1 };
+          return { uid: r.uid, place: r.place, points: r.points, swaps: r.swaps, placed: r.placed, mistakes: r.mistakes, done: r.done, out: r.out, used: r.used, won: top.indexOf(r.uid) !== -1 };
         })
       })).catch(function (e) { log('report failed: ' + (e && e.message)); });
       if (typeof opts.onEnd === 'function') opts.onEnd(state.result);
@@ -330,7 +332,7 @@ window.FF = window.FF || {};
     function rowOf(uid) {
       var p = state.players[uid];
       return {
-        a: p.a, b: p.b, n: p.n, swaps: p.swaps, mistakes: p.mistakes,
+        a: p.a, b: p.b, n: p.n, swaps: p.swaps, placed: R.placed(state.puzzle, p), mistakes: p.mistakes,
         done: p.done, out: p.out, doneAt: p.doneAt, used: p.used, last: p.last || '', at: p.at || 0
       };
     }

@@ -9,7 +9,8 @@
    always a swap: one ball from A and one from B trade places at
    once. A swap is right only when both balls are heading home:
    the A ball belongs in B and the B ball belongs in A. Anything
-   else is one mistake and nothing moves. The board is solved
+   else still swaps, but it is one mistake and the player has to
+   swap them back, which costs time. The board is solved
    when every ball is in its own container.
 
    Swaps never change how many balls a container holds, so a
@@ -139,7 +140,7 @@ window.FF = window.FF || {};
   function board(puzzle) { return { a: puzzle.a.slice(), b: puzzle.b.slice() }; }
 
   /* A swap of ball aId (now in A) with ball bId (now in B):
-     'ok' (both go home), 'wrong' (a mistake, nothing moves) or
+     'ok' (both go home), 'wrong' (a mistake; the balls still swap) or
      'stale' (a ball is not where the phone thought: not a mistake). */
   function check(puzzle, bd, aId, bId) {
     if (bd.a.indexOf(aId) === -1 || bd.b.indexOf(bId) === -1) return 'stale';
@@ -161,6 +162,13 @@ window.FF = window.FF || {};
   }
   function solved(puzzle, bd) { return left(puzzle, bd) === 0; }
 
+  /* Progress: how many of the starting pairs are home now. Undoing a wrong
+     swap only wins back what it lost, so mistakes never earn points. */
+  function placed(puzzle, bd) {
+    if (!bd || !bd.a) return 0;
+    return Math.max(0, (puzzle.need || 0) - left(puzzle, bd));
+  }
+
   /* One more mistake than allowed and you are out (never, with no limit). */
   function knockedOut(settings, mistakes) {
     var m = sanitize(settings).mistakes;
@@ -172,10 +180,10 @@ window.FF = window.FF || {};
     return tries ? Math.round((st.swaps || 0) / tries * 100) : 100;
   }
 
-  /* Points before placing: correct swaps, finishing, speed, a clean run, minus mistakes. */
+  /* Points before placing: pairs home, finishing, speed, a clean run, minus mistakes. */
   function rawPoints(st, settings) {
     var s = sanitize(settings);
-    var v = (st.swaps || 0) * POINTS.swap - (st.mistakes || 0) * POINTS.mistake;
+    var v = (st.placed || 0) * POINTS.swap - (st.mistakes || 0) * POINTS.mistake;
     if (st.done) {
       var share = Math.max(0, Math.min(1, 1 - (st.used || 0) / (s.seconds * 1000)));
       v += POINTS.finish + Math.round(POINTS.speed * share);
@@ -191,7 +199,7 @@ window.FF = window.FF || {};
     if (!!x.done !== !!y.done) return x.done ? -1 : 1;
     if (x.done) return (x.doneAt || 0) - (y.doneAt || 0);
     if (!!x.out !== !!y.out) return x.out ? 1 : -1;
-    var px = need ? (x.swaps || 0) / need : 0, py = need ? (y.swaps || 0) / need : 0;
+    var px = need ? (x.placed || 0) / need : 0, py = need ? (y.placed || 0) / need : 0;
     if (px !== py) return py - px;
     var ax = accuracy(x), ay = accuracy(y);
     if (ax !== ay) return ay - ax;
@@ -201,12 +209,12 @@ window.FF = window.FF || {};
   /* Everyone in order with a place (tied players share it) and points that
      never put anyone above someone placed higher, so the platform's
      results screen (it reads points) agrees with the official order.
-     stats: { uid: { swaps, mistakes, done, doneAt, used, out } } */
+     stats: { uid: { swaps, placed, mistakes, done, doneAt, used, out } } */
   function ranked(stats, uids, need, settings) {
     var rows = uids.map(function (uid) {
       var st = stats[uid] || {};
       return {
-        uid: uid, swaps: st.swaps || 0, mistakes: st.mistakes || 0, done: !!st.done, out: !!st.out,
+        uid: uid, swaps: st.swaps || 0, placed: st.done ? need : (st.placed || 0), mistakes: st.mistakes || 0, done: !!st.done, out: !!st.out,
         doneAt: st.doneAt || 0, used: st.used || 0, accuracy: accuracy(st), raw: rawPoints(st, settings)
       };
     });
@@ -229,7 +237,7 @@ window.FF = window.FF || {};
   function winners(rows) {
     if (!rows.length) return [];
     var top = rows.filter(function (r) { return r.place === 1; });
-    if (!top[0].done && !top[0].swaps) return [];
+    if (!top[0].done && !top[0].placed && !top[0].swaps && !top[0].mistakes) return [];
     return top.map(function (r) { return r.uid; });
   }
 
@@ -249,7 +257,7 @@ window.FF = window.FF || {};
     LAST_CALL_MS: LAST_CALL_MS, POINTS: POINTS, STANDARD: STANDARD,
     sanitize: sanitize, isStandard: isStandard,
     deal: deal, instructions: instructions,
-    board: board, check: check, apply: apply, left: left, solved: solved, knockedOut: knockedOut,
+    board: board, check: check, apply: apply, left: left, solved: solved, placed: placed, knockedOut: knockedOut,
     accuracy: accuracy, rawPoints: rawPoints, compare: compare, ranked: ranked, winners: winners,
     clock: clock, exactTime: exactTime
   };
