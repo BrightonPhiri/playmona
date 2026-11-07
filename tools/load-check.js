@@ -51,6 +51,7 @@ const ORDER = [
   'js/data/animals.js',
   'js/data/bible.js',
   'js/games/letterRush.js',
+  'js/games/stacoend.js',
   'js/games/wordGames.js',
   'js/games/quizMix.js',
   'js/games/quizGames.js',

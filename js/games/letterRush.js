@@ -57,7 +57,10 @@ window.FF = window.FF || {};
     LEVELS: LEVELS,
     points: points,
     roundSeconds: function (config) { return roundSeconds({ config: config || {} }); },
-    deal: function (difficulty) { return deal({ config: { difficulty: difficulty } }); }
+    deal: function (difficulty) { return deal({ config: { difficulty: difficulty } }); },
+    // Shared with Stacoend: the word-bank loading screen and the meaning sheet.
+    whenReady: whenReady,
+    showMeaning: showMeaning
   };
 
   function entities(api) {

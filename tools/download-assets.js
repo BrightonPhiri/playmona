@@ -114,7 +114,7 @@ const CATEGORY = {
 };
 const GAME = {
   // words
-  letterRush: 'keyboard', wordScramble: 'shuffle', wordBuilder: 'stack',
+  letterRush: 'keyboard', wordScramble: 'shuffle', wordBuilder: 'stack', stacoend: 'text-aa',
   wordChain: 'link', miniCrossword: 'squares-four',
   // quiz
   familyQuiz: 'brain', trueOrFalse: 'scales', brainBattle: 'lightning',

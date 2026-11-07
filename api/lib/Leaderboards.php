@@ -26,7 +26,7 @@ class Leaderboards
         'trueOrFalse', 'brainBattle', 'guessWho', 'pictureQuiz', 'familyQuiz',
         'quickTap', 'colorReaction',
         'guessCountry', 'guessLandmark', 'guessAnimal', 'guessFood', 'guessObject', 'guessSport', 'guessVehicle',
-        'wordScramble', 'wordBuilder', 'wordChain', 'miniCrossword',
+        'wordScramble', 'wordBuilder', 'stacoend', 'wordChain', 'miniCrossword',
         'whereInWorld', 'mapChallenge', 'capitalChallenge', 'guessFlag',
     ];
     public const REPEAT_DAYS = 14;

@@ -175,6 +175,27 @@ window.FF = window.FF || {};
       return out.sort(function (a, b) { return b.length - a.length || (a < b ? -1 : 1); });
     },
 
+    /* Every word that passes test(word), in bank order (tier by tier).
+       opts: { min (3), maxTier (2), limit }. Quiet words are never listed. */
+    matching: function (test, opts) {
+      opts = opts || {};
+      if (!attach()) return [];
+      var min = opts.min || 3;
+      var cap = opts.limit || Infinity;
+      var out = [];
+      for (var t = 0; t < Math.min(opts.maxTier || 2, 4); t++) {
+        var words = lists[t];
+        for (var i = 0; i < words.length; i++) {
+          var w = words[i];
+          if (w.length >= min && test(w)) {
+            out.push(w);
+            if (out.length >= cap) return out;
+          }
+        }
+      }
+      return out;
+    },
+
     /* A random word. opts: { min, max, maxTier (2), test(word) }.
        Uses FF.util.pick, so it follows the room's seeded random. */
     random: function (opts) {

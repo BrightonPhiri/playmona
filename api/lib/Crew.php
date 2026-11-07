@@ -25,7 +25,7 @@ class Crew
         'colorReaction', 'letterRush', 'whatsMissing', 'numberChallenge', 'visualRiddle',
         'higherOrLower', 'wordScramble', 'bibleWhoAmI', 'bibleVerseRush', 'memoryMatch', 'pictureMemory',
         'rememberSequence', 'picturePuzzle', 'spotDifference', 'hiddenObject', 'wordBuilder', 'bibleBooks', 'numberRush',
-        'wouldYouRather', 'thisOrThat', 'whoIsMostLikely', 'imposters', 'wordFlow', 'ballSwap', 'blinkRemember', 'sortRush',
+        'wouldYouRather', 'thisOrThat', 'whoIsMostLikely', 'imposters', 'wordFlow', 'ballSwap', 'blinkRemember', 'sortRush', 'stacoend',
     ];
 
     /** The online games crew can play (each has a brain in js/crew/brains). Crew are only seated in these. */

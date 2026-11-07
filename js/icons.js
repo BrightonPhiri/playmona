@@ -101,6 +101,7 @@ window.FF = window.FF || {};
   "letterRush": "keyboard",
   "wordScramble": "shuffle",
   "wordBuilder": "stack",
+  "stacoend": "text-aa",
   "wordChain": "link",
   "miniCrossword": "squares-four",
   "familyQuiz": "brain",

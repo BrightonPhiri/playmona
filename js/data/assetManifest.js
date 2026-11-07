@@ -17,6 +17,7 @@ FF.AssetManifest = {
     "quickTap": "1020b24c",
     "rememberSequence": "f1924cf8",
     "sortRush": "50e83102",
+    "stacoend": "4f134bbc",
     "trueOrFalse": "5e43f26f",
     "wordChain": "89246988",
     "wordFlow": "8352f80d",

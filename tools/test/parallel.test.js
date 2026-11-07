@@ -15,6 +15,7 @@ const GAMES = {
   pictureMemory: 'memoryGames.js',
   rememberSequence: 'sequence.js',
   blinkRemember: 'blinkRemember.js',
+  stacoend: 'stacoend.js',
   picturePuzzle: 'puzzleGames.js',
   spotDifference: 'puzzleGames.js',
   hiddenObject: 'puzzleGames.js',
@@ -27,6 +28,7 @@ const EXPOSE = {
   'memoryGames.js': ['matchPoints'],
   'sequence.js': ['sequencePoints', 'rsLength', 'rsSeconds'],
   'blinkRemember.js': [],
+  'stacoend.js': [],
   'puzzleGames.js': ['puzzlePoints', 'spotPoints', 'hiddenPoints'],
   'wordGames.js': ['longestWord'],
   'bibleGames.js': ['booksPoints']
@@ -37,7 +39,7 @@ const EXPOSE = {
 function phone() {
   const FF = loadFF(['js/core.js', 'js/storage.js', 'js/i18n.js', 'js/ui-kit.js', 'js/icons.js', 'js/gameUI.js',
     'js/net/parallel.js', 'js/data/memoryDecks.js', 'js/data/visual.js', 'js/data/visual2.js',
-    'js/data/words.js', 'js/data/bible.js']);
+    'js/data/words.js', 'js/data/bible.js', 'js/data/wordlist.js', 'js/words.js', 'js/data/lexicon.js']);
   const sb = FF.__sandbox;
   sb.getComputedStyle = function () {
     return { paddingLeft: '0', paddingRight: '0', paddingTop: '0', paddingBottom: '0', rowGap: '0' };
