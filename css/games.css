@@ -1456,6 +1456,63 @@ button.wm-opt.wrong { background: var(--danger-soft); border-color: var(--danger
   .bq-setup__foot .nr-setup__actions { justify-content: stretch; }
 }
 
+/* ============ Who Am I?, Verse Rush, Books of the Bible ============
+   Share the Bible Quiz card, setup, verse card and recap (.bq-*, .qm-*). */
+.bg-recap { --bq-ink: var(--cat-bible); }
+:root[data-theme="dark"] .bg-recap { --bq-ink: #c4a5ff; }
+.bg-card__title { margin: 0 0 var(--sp-1); font-family: var(--font-display); font-size: var(--fs-xl); color: var(--text); }
+
+/* Who Am I: the clues, newest highlighted, and what a guess is worth now. */
+.bw-clues { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--sp-2); width: 100%; text-align: left; }
+.bw-clue {
+  display: flex; align-items: flex-start; gap: var(--sp-3); padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-sm); background: var(--surface-2); border: 1px solid var(--border);
+  font-weight: 600; font-size: var(--fs-md); line-height: 1.4; color: var(--text);
+}
+.bw-clue__n {
+  flex: none; width: 28px; height: 28px; margin-top: 1px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--cat-bible); color: #fff; font-weight: 800; font-size: var(--fs-sm);
+}
+.bw-clue--new { border-color: var(--cat-bible); animation: bw-in 320ms var(--ease); }
+.bw-clue--later { opacity: 0.7; }
+.bw-clue--locked { background: transparent; border-style: dashed; color: var(--muted); font-weight: 600; }
+.bw-clue--locked .bw-clue__n { background: var(--surface-3); color: var(--muted); }
+@keyframes bw-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.bw-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-2); width: 100%; }
+.bw-worth { font-weight: 800; color: var(--bq-ink); }
+.bw-met { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--sp-2); justify-content: center; width: 100%; }
+.bw-met li {
+  display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px;
+  font-weight: 700; background: var(--surface); border: 1px solid var(--border); color: var(--text);
+}
+.bw-met li.is-right { border-color: var(--success); background: var(--success-soft); }
+.bw-met li.is-wrong { border-color: var(--danger); background: var(--danger-soft); }
+.bw-met__clue { font-weight: 600; font-size: var(--fs-xs); color: var(--muted); }
+
+/* Verse Rush: the reference, the words around the part to build, right pieces locked. */
+.bv-ref { margin: 0; font-family: var(--font-display); font-size: var(--fs-2xl); color: var(--bq-ink); }
+.bv-context { margin: 0; max-width: 640px; font-family: var(--font-display); font-style: italic; color: var(--muted); text-align: center; }
+.bv-tools { justify-content: center; flex-wrap: wrap; }
+.word-chip--placed.is-right { background: var(--success-soft); color: var(--text); border-color: var(--success); box-shadow: 0 3px 0 var(--success); }
+.word-chip--placed:disabled { opacity: 1; }
+.verse-build--shown { border-style: solid; border-color: var(--border-strong); }
+
+/* Books of the Bible: the book's name, and its facts on the card after an answer. */
+.bb-book { margin: 0; font-family: var(--font-display); font-size: var(--fs-3xl); line-height: 1.1; color: var(--text); }
+.bb-facts { list-style: none; margin: 0 0 var(--sp-2); padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.bb-facts li {
+  padding: 2px 10px; border-radius: 999px; font-size: var(--fs-xs); font-weight: 700;
+  background: var(--surface-2); border: 1px solid var(--border); color: var(--text);
+}
+
+@media (max-width: 560px) {
+  .bb-book { font-size: var(--fs-2xl); }
+  .bv-ref { font-size: var(--fs-xl); }
+}
+@media (prefers-reduced-motion: reduce) { .bw-clue--new { animation: none; } }
+:root[data-reduce="1"] .bw-clue--new { animation: none; }
+
 
 /* ============ Imposters ============
    Secret card, clue board, the hidden clock, voting, the results
