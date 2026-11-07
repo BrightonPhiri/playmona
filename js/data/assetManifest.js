@@ -3,7 +3,10 @@ window.FF = window.FF || {};
 FF.AssetManifest = {
   "covers": {
     "ballSwap": "0a63ebac",
+    "bibleBooks": "8f9f3e67",
     "bibleQuiz": "b98758b6",
+    "bibleVerseRush": "1b79d2f3",
+    "bibleWhoAmI": "9d93644c",
     "blinkRemember": "962f5b00",
     "brainBattle": "138a01ea",
     "familyQuiz": "398a13de",
