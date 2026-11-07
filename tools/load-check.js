@@ -58,6 +58,7 @@ const ORDER = [
   'js/games/reactionGames.js',
   'js/games/numberGames.js',
   'js/games/numberRush.js',
+  'js/games/sequence.js',
   'js/games/creativeGames.js',
   'js/games/partyGames.js',
   'js/games/visualGames.js',

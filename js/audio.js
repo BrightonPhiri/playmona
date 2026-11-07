@@ -130,6 +130,21 @@ window.FF = window.FF || {};
       }
     },
 
+    /* A note from a pentatonic scale for pad i (Remember the Sequence), so
+       any order of pads sounds like a little tune. */
+    NOTES: [523.25, 587.33, 659.25, 783.99, 880.0, 1046.5, 1174.66, 1318.51, 1567.98],
+    note: function (i, dur) {
+      this.plays++;
+      if (!this.effectsEnabled) return;
+      const ctx = this._ensureCtx();
+      if (!ctx) return;
+      const f = this.NOTES[Math.abs(i | 0) % this.NOTES.length];
+      const d = dur || 0.3;
+      const now = ctx.currentTime;
+      this._osc(f, now, d, 'sine', 0.18);
+      this._osc(f * 2, now, d * 0.5, 'triangle', 0.04);
+    },
+
     /* ---------- Music ----------
        Plays on a loop at the Music volume setting while someone is in the app, signed in or as a
        guest (FF.App calls startAppMusic / stopAppMusic). Browsers only allow

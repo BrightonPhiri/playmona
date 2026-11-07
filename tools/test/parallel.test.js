@@ -13,7 +13,7 @@ const ROOT = path.join(__dirname, '..', '..');
 const GAMES = {
   memoryMatch: 'memoryGames.js',
   pictureMemory: 'memoryGames.js',
-  rememberSequence: 'memoryGames.js',
+  rememberSequence: 'sequence.js',
   picturePuzzle: 'puzzleGames.js',
   spotDifference: 'puzzleGames.js',
   hiddenObject: 'puzzleGames.js',
@@ -23,7 +23,8 @@ const GAMES = {
 
 /* Private scoring functions, exposed for this test only. */
 const EXPOSE = {
-  'memoryGames.js': ['matchPoints', 'sequencePoints', 'rsLength', 'rsSeconds'],
+  'memoryGames.js': ['matchPoints'],
+  'sequence.js': ['sequencePoints', 'rsLength', 'rsSeconds'],
   'puzzleGames.js': ['puzzlePoints', 'spotPoints', 'hiddenPoints'],
   'wordGames.js': ['longestWord'],
   'bibleGames.js': ['booksPoints']
