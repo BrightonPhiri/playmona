@@ -108,6 +108,22 @@
   --bs-green: #22c55e; --bs-green-hi: #a6f2c2; --bs-green-deep: #0d5a2b;
   --bs-yellow: #facc15; --bs-yellow-hi: #fff2a6; --bs-yellow-deep: #8a6a00;
   --bs-purple: #a855f7; --bs-purple-hi: #e0bcff; --bs-purple-deep: #4c1784;
+  /* SortRush boards: three looks, each the same in light and dark mode (the
+     board is its own surface). Ten object colours per look, in the order
+     red, blue, green, yellow, purple, orange, pink, cyan, lime, brown; each
+     colour also carries a shape. Highlights and shadows are mixed in CSS. */
+  --srt-wk-board: #5e3b1f; --srt-wk-board-hi: #8a5a31; --srt-wk-grain: #4d2f17; --srt-wk-ink: #fff4e4;
+  --srt-wk-metal: #c9ced6; --srt-wk-metal-hi: #f4f6f9; --srt-wk-metal-deep: #646b76; --srt-wk-glow: #ffd36b;
+  --srt-wk-c0: #e03a3a; --srt-wk-c1: #2f6fe0; --srt-wk-c2: #2b9e4b; --srt-wk-c3: #f2c12e; --srt-wk-c4: #8a4fd8;
+  --srt-wk-c5: #f07a1c; --srt-wk-c6: #e2549f; --srt-wk-c7: #1fb2c6; --srt-wk-c8: #98c932; --srt-wk-c9: #8b5a2b;
+  --srt-cd-board: #ffd9ec; --srt-cd-board-hi: #dfe9ff; --srt-cd-grain: #ffc2e0; --srt-cd-ink: #3a1f4f;
+  --srt-cd-metal: #fff7fb; --srt-cd-metal-hi: #ffffff; --srt-cd-metal-deep: #e79cc5; --srt-cd-glow: #ff7ac3;
+  --srt-cd-c0: #ff5c77; --srt-cd-c1: #4f9dff; --srt-cd-c2: #3fcb84; --srt-cd-c3: #ffd24d; --srt-cd-c4: #a97dff;
+  --srt-cd-c5: #ff9b4f; --srt-cd-c6: #ff7fcb; --srt-cd-c7: #45d6dd; --srt-cd-c8: #b9e550; --srt-cd-c9: #bd8a66;
+  --srt-ne-board: #080d22; --srt-ne-board-hi: #1a2463; --srt-ne-grain: #10183f; --srt-ne-ink: #eef3ff;
+  --srt-ne-metal: #3d4a8f; --srt-ne-metal-hi: #8fa2ff; --srt-ne-metal-deep: #151c45; --srt-ne-glow: #7cf7ff;
+  --srt-ne-c0: #ff3b5c; --srt-ne-c1: #3d8bff; --srt-ne-c2: #2bf08a; --srt-ne-c3: #ffe23d; --srt-ne-c4: #c04bff;
+  --srt-ne-c5: #ff8a1f; --srt-ne-c6: #ff4fd8; --srt-ne-c7: #2eeeff; --srt-ne-c8: #b6ff3b; --srt-ne-c9: #e0a868;
   --medal-gold: #ffc83d; --medal-silver: #cfd6f6; --medal-bronze: #ff9a52; --medal-ink: #0b1030;
 }
 

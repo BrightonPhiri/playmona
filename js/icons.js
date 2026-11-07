@@ -135,6 +135,7 @@ window.FF = window.FF || {};
   "numberRush": "target",
   "ballSwap": "arrows-left-right",
   "blinkRemember": "eye",
+  "sortRush": "stack",
   "higherOrLower": "chart-line",
   "wouldYouRather": "arrows-left-right",
   "thisOrThat": "split-horizontal",

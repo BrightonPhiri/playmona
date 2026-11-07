@@ -35,7 +35,10 @@ const FILES = [
   'js/crew/brains/wordFlow.js',
   // Ball Swap: the referee the runner hosts (no crew seats play it).
   'js/ballswap/rules.js',
-  'js/ballswap/referee.js'
+  'js/ballswap/referee.js',
+  // SortRush: the referee the runner hosts (no crew seats play it).
+  'js/sortrush/rules.js',
+  'js/sortrush/referee.js'
 ];
 
 function stubElement() {

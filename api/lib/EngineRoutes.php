@@ -74,6 +74,14 @@ class EngineRoutes
             return Response::json($this->app->ballswap()->nudge($this->user($req), $req->json(), $now));
         }
 
+        // SortRush: the server starts the match; the referee in the runner checks every move.
+        if ($m === 'POST' && $p === '/sortrush/start') {
+            return Response::json($this->app->sortrush()->start($this->user($req), $req->json(), $now));
+        }
+        if ($m === 'POST' && $p === '/sortrush/nudge') {
+            return Response::json($this->app->sortrush()->nudge($this->user($req), $req->json(), $now));
+        }
+
         // Friends
         if ($m === 'GET' && $p === '/friends') return Response::json($this->app->friends()->overview($this->user($req)->uid, $now));
         if ($m === 'POST' && str_starts_with($p, '/friends/')) return $this->friendAction($req, substr($p, 9), $now);
@@ -174,8 +182,9 @@ class EngineRoutes
                 $dropImposters = $this->app->imposters()->stillActive((array) ($body['imposters'] ?? []));
                 $dropWordflow = $this->app->wordflow()->stillActive((array) ($body['wordflow'] ?? []));
                 $dropBallswap = $this->app->ballswap()->stillActive((array) ($body['ballswap'] ?? []));
+                $dropSortrush = $this->app->sortrush()->stillActive((array) ($body['sortrush'] ?? []));
                 $s = $this->app->crew()->settings();
-                return Response::json(['drop' => $drop, 'dropImposters' => $dropImposters, 'dropWordflow' => $dropWordflow, 'dropBallswap' => $dropBallswap, 'settings' => ['mode' => $s['mode'], 'stopNew' => $s['stopNew']]]);
+                return Response::json(['drop' => $drop, 'dropImposters' => $dropImposters, 'dropWordflow' => $dropWordflow, 'dropBallswap' => $dropBallswap, 'dropSortrush' => $dropSortrush, 'settings' => ['mode' => $s['mode'], 'stopNew' => $s['stopNew']]]);
             case 'report':
                 $matchId = (string) ($body['matchId'] ?? '');
                 $event = (string) ($body['event'] ?? '');
@@ -189,6 +198,10 @@ class EngineRoutes
                 }
                 if ($event === 'ballswap') {
                     $this->app->ballswap()->recordResult($body, $now);
+                    return Response::json(['ok' => true]);
+                }
+                if ($event === 'sortrush') {
+                    $this->app->sortrush()->recordResult($body, $now);
                     return Response::json(['ok' => true]);
                 }
                 if ($event === 'game') {

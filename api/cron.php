@@ -93,6 +93,8 @@ try {
     if ($abandonedWf) echo "Ended $abandonedWf abandoned WordFlow match(es).\n";
     $abandonedBs = $app->ballswap()->sweep($now);
     if ($abandonedBs) echo "Ended $abandonedBs abandoned Ball Swap match(es).\n";
+    $abandonedSr = $app->sortrush()->sweep($now);
+    if ($abandonedSr) echo "Ended $abandonedSr abandoned SortRush match(es).\n";
 } catch (Throwable $e) {
     fwrite(STDERR, 'Crew cleanup failed: ' . $e->getMessage() . "\n");
 }

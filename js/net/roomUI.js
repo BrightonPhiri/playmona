@@ -33,7 +33,9 @@ window.FF = window.FF || {};
     // One word each, turns and judging run by the server's referee (js/wordflow/referee.js).
     'wordFlow',
     // Swaps checked by the server's referee (js/ballswap/referee.js), same board for everyone.
-    'ballSwap'
+    'ballSwap',
+    // Moves checked by the server's referee (js/sortrush/referee.js), same puzzle for everyone.
+    'sortRush'
     // Brain Battle is deliberately absent: its format is a personal
     // streak run per player, so there is no shared question to race for.
   ];
