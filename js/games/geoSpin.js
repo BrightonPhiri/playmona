@@ -209,7 +209,8 @@ window.FF = window.FF || {};
     if (window.innerWidth >= 900 || !f.root.classList.contains('gs--play') || f.root.classList.contains('is-recap')) { host.style.width = ''; return; }
     var cs = window.getComputedStyle(f.root);
     var scroller = f.root.closest ? f.root.closest('.game-shell__content') : null;
-    var top = f.root.getBoundingClientRect().top + (scroller ? scroller.scrollTop : 0) + (window.scrollY || 0);
+    // The game screen is fixed over the page, so the page's own scroll (a long games list) never counts.
+    var top = f.root.getBoundingClientRect().top + (scroller ? scroller.scrollTop : 0);
     var extra = f.stage.offsetHeight - host.offsetHeight;
     var gap = parseFloat(window.getComputedStyle(f.root.querySelector('.gs-main')).rowGap) || 0;
     var used = top + (parseFloat(cs.paddingTop) || 0) + f.top.offsetHeight + (parseFloat(window.getComputedStyle(f.top).marginBottom) || 0) +
