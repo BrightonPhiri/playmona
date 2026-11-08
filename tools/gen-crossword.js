@@ -1,144 +1,290 @@
-/* Generates internally-consistent crossword grids via backtracking + validation.
-   Emits JSON for the FF.data.words.crosswords array.
-   Run: node tools/gen-crossword.js
+/* Generates the Mini Crossword puzzles: js/data/crosswords.js (FF.data.crosswords).
+     node tools/gen-crossword.js            build every puzzle in the recipe, write the file
+     node tools/gen-crossword.js --show ID  print one puzzle with its clues
+     node tools/gen-crossword.js --needs    list words (and levels) that still need a clue
+
+   Words come from two places:
+   - tools/crossword/bank/<pack>.txt: the theme words of each pack, with their clues;
+   - tools/crossword/bank/general.txt: clues for everyday fill words. Which everyday words
+     may fill a grid comes from the site's word lists (js/data/lexicon.js tier 1 and the
+     frequency list js/data/wordlist.js), minus tools/crossword/bank/blocked.txt.
+   Bank line: WORD|levels|easy clue|normal clue|hard clue   (levels: any of e n h)
+
+   Each puzzle is generated on its own from a seed made from its id, so changing one word
+   only changes the puzzles that used it. A puzzle whose words do not all have a clue for
+   its level is left out (and listed by --needs). The file is only written when every
+   puzzle passes tools/crossword/validate.js.
 */
 'use strict';
-var fs = require('fs');
-var path = require('path');
+const fs = require('fs');
+const path = require('path');
+const { loadFF } = require('./test/harness');
+const T = require('./crossword/templates');
+const V = require('./crossword/validate');
 
-var BANK = [
-  ['CAT', 'A furry pet that says meow'], ['DOG', "Man's best friend"], ['SUN', 'The star that lights our day'],
-  ['CAR', 'A four-wheeled vehicle'], ['BEE', 'An insect that makes honey'], ['ANT', 'A tiny hard-working insect'],
-  ['COW', 'A farm animal that gives milk'], ['HAT', 'Worn on your head'], ['CUP', 'You drink tea from it'],
-  ['PEN', 'You write with it'], ['BAG', 'You carry things in it'], ['MAP', 'Shows you where to go'],
-  ['BOX', 'A container made of cardboard'], ['EGG', 'Comes from a chicken'], ['ICE', 'Frozen water'],
-  ['KEY', 'Opens a lock'], ['LEG', 'You walk on it'], ['NUT', 'A hard snack in a shell'],
-  ['OWL', 'A bird that stays up at night'], ['PIG', 'A pink farm animal'], ['SKY', 'Look up to see it'],
-  ['TOY', 'Children play with it'], ['BALL', 'You throw and catch it'], ['FISH', 'Swims in water'],
-  ['TREE', 'Tall with leaves and branches'], ['STAR', 'Twinkles in the night sky'], ['MOON', 'Glows in the night sky'],
-  ['CAKE', 'Sweet treat for birthdays'], ['BOOK', 'You read it'], ['DESK', 'You write at it in school'],
-  ['DOOR', 'You open it to enter'], ['FROG', 'Jumps and says ribbit'], ['GOAT', 'A farm animal with horns'],
-  ['KITE', 'Flies in the wind on a string'], ['LION', 'The king of the jungle'], ['MILK', 'A white drink from cows'],
-  ['NEST', 'A bird builds it'], ['RAIN', 'Falls from clouds'], ['SEED', 'Grows into a plant'],
-  ['SHOE', 'You wear it on your foot'], ['SNOW', 'Cold white flakes in winter'], ['SOUP', 'A warm liquid meal'],
-  ['WAVE', 'Rolls onto the beach'], ['WIND', 'Moves the leaves'], ['APPLE', 'A red or green fruit'],
-  ['BEACH', 'Sand beside the sea'], ['BREAD', 'Baked from flour and yeast'], ['CHAIR', 'You sit on it'],
-  ['CLOCK', 'Tells the time'], ['EARTH', 'Our home planet'], ['GLASS', 'You drink water from it'],
-  ['HORSE', 'People ride this animal'], ['HOUSE', 'A building people live in'], ['MOUSE', 'A small animal with a tail'],
-  ['OCEAN', 'A huge body of salt water'], ['PIANO', 'A musical instrument with keys'], ['PLANT', 'A living thing that grows'],
-  ['RIVER', 'Flowing water'], ['TIGER', 'A big striped cat'], ['WATER', 'You drink it every day'],
-  ['WORLD', 'Our planet and everyone on it'], ['ZEBRA', 'A horse with black and white stripes']
-];
+const ROOT = path.resolve(__dirname, '..');
+const BANK = path.join(__dirname, 'crossword', 'bank');
+const OUT = path.join(ROOT, 'js', 'data', 'crosswords.js');
+const FF = loadFF(['js/core.js', 'js/crossword/rules.js', 'js/data/lexicon.js', 'js/data/wordlist.js', 'js/words.js']);
+const R = FF.CrosswordRules;
+FF.Words.ready();
 
-function clueFor(word) { var b = BANK.find(function (x) { return x[0] === word; }); return b ? b[1] : word; }
+const LEVEL_KEY = { easy: 'e', normal: 'n', hard: 'h' };
+const PACK_CODE = { animals: 'an', food: 'fo', home: 'ho', sport: 'sp', music: 'mu', geography: 'ge', bible: 'bi', nature: 'na', mixed: 'mx' };
+const THEMES = R.PACKS.filter((p) => p !== 'mixed');
 
-function canPlace(grid, word, r, c, dir) {
-  var n = grid.length;
-  var dr = dir === 'across' ? 0 : 1;
-  var dc = dir === 'across' ? 1 : 0;
-  var beforeR = r - dr, beforeC = c - dc;
-  var afterR = r + dr * word.length, afterC = c + dc * word.length;
-  if (beforeR >= 0 && beforeC >= 0 && beforeR < n && beforeC < n && grid[beforeR][beforeC] !== null) return false;
-  if (afterR >= 0 && afterC >= 0 && afterR < n && afterC < n && grid[afterR][afterC] !== null) return false;
-  if (r + dr * (word.length - 1) >= n || c + dc * (word.length - 1) >= n || r + dr * (word.length - 1) < 0 || c + dc * (word.length - 1) < 0) return false;
-  var cross = 0;
-  for (var i = 0; i < word.length; i++) {
-    var rr = r + dr * i, cc = c + dc * i;
-    if (grid[rr][cc] !== null) {
-      if (grid[rr][cc] !== word[i]) return false;
-      cross++;
-    }
-  }
-  return cross > 0;
+/* How many puzzles of each kind per pack and level. Sizes follow R.SIZES. */
+const RECIPE = {
+  easy: [{ size: 5, kind: 'open', n: 4 }, { size: 5, kind: 'dense', n: 4 }],
+  normal: [{ size: 5, kind: 'dense', n: 4 }, { size: 7, kind: 'open', n: 4 }],
+  hard: [{ size: 7, kind: 'dense', n: 3 }, { size: 9, kind: 'open', n: 5 }]
+};
+const THEME_SHARE = { open: 0.4, dense: 0.25 };
+const REUSE_CAP = 4;                // an answer at most this often per pack and level
+
+/* ---------- words ---------- */
+
+function readBank(name) {
+  const file = path.join(BANK, name + '.txt');
+  if (!fs.existsSync(file)) return [];
+  return fs.readFileSync(file, 'utf8').split(/\r?\n/).map((l) => l.trim()).filter((l) => l && l[0] !== '#').map((l) => {
+    const [w, lv, e, n, h] = l.split('|');
+    return { word: (w || '').trim().toUpperCase(), levels: (lv || '').trim(), clue: { easy: (e || '').trim(), normal: (n || '').trim(), hard: (h || '').trim() } };
+  });
 }
 
-function placeWord(grid, word, r, c, dir) {
-  var dr = dir === 'across' ? 0 : 1, dc = dir === 'across' ? 1 : 0;
-  for (var i = 0; i < word.length; i++) grid[r + dr * i][c + dc * i] = word[i];
+const blocked = new Set(readBank('blocked').map((b) => b.word));
+const clues = {};                 // WORD -> { easy, normal, hard }
+function addClues(entries) {
+  entries.forEach((b) => {
+    const c = clues[b.word] || (clues[b.word] = {});
+    R.LEVELS.forEach((lv) => { if (b.clue[lv] && !c[lv]) c[lv] = b.clue[lv]; });
+  });
+}
+const theme = {};
+THEMES.forEach((pk) => { theme[pk] = readBank(pk).filter((b) => !blocked.has(b.word)); addClues(theme[pk]); });
+addClues(readBank('general'));
+
+const freq = FF.data.words.extra;
+const rank = {};
+(Array.isArray(freq) ? freq : String(freq).split(/\s+/)).forEach((w, i) => { if (!(w in rank)) rank[w] = i; });
+const everyday = FF.Words.matching((w) => /^[a-z]{3,9}$/.test(w) && w in rank, { maxTier: 1 })
+  .map((w) => w.toUpperCase()).filter((w) => !blocked.has(w));
+
+function fillPool(level) {
+  if (level === 'easy') return everyday.filter((w) => w.length <= 5 && rank[w.toLowerCase()] < 3000);
+  if (level === 'normal') return everyday.filter((w) => w.length <= 7 && rank[w.toLowerCase()] < 6500);
+  return everyday.slice();
+}
+function themeWords(pack, level) {
+  return (theme[pack] || []).filter((b) => b.levels.indexOf(LEVEL_KEY[level]) >= 0 && /^[A-Z]{3,9}$/.test(b.word)).map((b) => b.word);
 }
 
-function runs(grid) {
-  var n = grid.length, out = [];
-  var r, c, s, rr, cc;
-  for (r = 0; r < n; r++) for (c = 0; c < n; c++) {
-    if (grid[r][c] !== null && (c === 0 || grid[r][c - 1] === null)) {
-      s = ''; cc = c;
-      while (cc < n && grid[r][cc] !== null) { s += grid[r][cc]; cc++; }
-      if (s.length > 1) out.push({ word: s, r: r, c: c, dir: 'across' });
+/* ---------- random ---------- */
+
+function rngFrom(str) {
+  let a = R.hash(str, 0x9e3779b9);
+  return function () {
+    a = (a + 0x6D2B79F5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/* ---------- filling ---------- */
+
+function makeIndex(words) {
+  const byLen = {};
+  words.forEach((w) => { (byLen[w.length] = byLen[w.length] || []).push(w); });
+  const idx = {};
+  Object.keys(byLen).forEach((len) => {
+    const list = byLen[len];
+    const pos = [];
+    for (let i = 0; i < len; i++) {
+      const m = {};
+      list.forEach((w, k) => { (m[w[i]] = m[w[i]] || []).push(k); });
+      pos.push(m);
     }
-  }
-  for (c = 0; c < n; c++) for (r = 0; r < n; r++) {
-    if (grid[r][c] !== null && (r === 0 || grid[r - 1][c] === null)) {
-      s = ''; rr = r;
-      while (rr < n && grid[rr][c] !== null) { s += grid[rr][c]; rr++; }
-      if (s.length > 1) out.push({ word: s, r: r, c: c, dir: 'down' });
-    }
-  }
+    idx[len] = { list, pos };
+  });
+  return idx;
+}
+function intersect(a, b) {
+  const out = []; let i = 0, j = 0;
+  while (i < a.length && j < b.length) { if (a[i] === b[j]) { out.push(a[i]); i++; j++; } else if (a[i] < b[j]) i++; else j++; }
   return out;
 }
-
-function sortKey(a) { return a.r + ',' + a.c + ',' + a.dir + ',' + a.word; }
-
-function valid(grid, placed) {
-  var rs = runs(grid);
-  if (rs.length !== placed.length) return false;
-  var rk = rs.map(sortKey).sort().join('|');
-  var pk = placed.map(sortKey).sort().join('|');
-  return rk === pk;
-}
-
-function build(size, words) {
-  var n = size, i, r, c, di, dir, placedNow;
-  var target = size === 5 ? 5 : (size === 7 ? 7 : 9);
-  for (var attempt = 0; attempt < 20000; attempt++) {
-    var grid = [];
-    for (i = 0; i < n; i++) grid.push(new Array(n).fill(null));
-    var shuffled = words.slice().sort(function () { return Math.random() - 0.5; });
-    placeWord(grid, shuffled[0], 0, 0, 'across');
-    var placed = [{ word: shuffled[0], r: 0, c: 0, dir: 'across' }];
-    var ok = true;
-    for (var w = 1; w < shuffled.length && placed.length < target; w++) {
-      var word = shuffled[w];
-      placedNow = false;
-      for (r = 0; r < n && !placedNow; r++) for (c = 0; c < n && !placedNow; c++) {
-        for (di = 0; di < 2 && !placedNow; di++) {
-          dir = di === 0 ? 'across' : 'down';
-          if (canPlace(grid, word, r, c, dir)) {
-            placeWord(grid, word, r, c, dir);
-            placed.push({ word: word, r: r, c: c, dir: dir });
-            placedNow = true;
-          }
-        }
-      }
-    }
-    if (placed.length >= target && valid(grid, placed)) {
-      // number the cells
-      var num = 0, cellNum = {};
-      for (r = 0; r < n; r++) for (c = 0; c < n; c++) {
-        if (grid[r][c] === null) continue;
-        var sa = grid[r][c] !== null && (c === 0 || grid[r][c - 1] === null);
-        var sd = grid[r][c] !== null && (r === 0 || grid[r - 1][c] === null);
-        if (sa || sd) { num++; cellNum[r + ',' + c] = num; }
-      }
-      var clues = { across: [], down: [] };
-      placed.forEach(function (p) {
-        clues[p.dir].push({ num: cellNum[p.r + ',' + p.c], row: p.r, col: p.c, clue: clueFor(p.word) });
-      });
-      clues.across.sort(function (a, b) { return a.num - b.num; });
-      clues.down.sort(function (a, b) { return a.num - b.num; });
-      return { size: n, grid: grid, clues: clues };
-    }
+function candidates(idx, pattern) {
+  const e = idx[pattern.length];
+  if (!e) return [];
+  let ids = null;
+  for (let i = 0; i < pattern.length; i++) {
+    if (pattern[i] === '.') continue;
+    const l = e.pos[i][pattern[i]] || [];
+    ids = ids ? intersect(ids, l) : l;
+    if (!ids.length) return [];
   }
-  return null;
+  return ids ? ids.map((k) => e.list[k]) : e.list;
 }
 
-var out = [];
-[5, 7, 9].forEach(function (size) {
-  var words = BANK.filter(function (b) { return b[0].length <= size; }).map(function (b) { return b[0]; });
-  var p = build(size, words);
-  if (p) out.push(p);
-});
+/* Fills the template; returns rows of letters or null. pref(word) -> number, higher first. */
+function fill(template, idx, rng, pref, limit) {
+  const n = template.length;
+  const g = template.map((r) => r.split(''));
+  const slots = T.slotsOf(template).map((s, i) => Object.assign({ i }, s));
+  const used = new Set();
+  let nodes = 0;
+  const pat = (s) => s.cells.map(([r, c]) => g[r][c]).join('');
+  const done = (s) => pat(s).indexOf('.') < 0;
+  function step() {
+    if (++nodes > limit) return false;
+    let best = null, bestC = null;
+    for (const s of slots) {
+      if (done(s)) continue;
+      const c = candidates(idx, pat(s)).filter((w) => !used.has(w));
+      if (!c.length) return false;
+      if (!best || c.length < bestC.length) { best = s; bestC = c; }
+    }
+    if (!best) return true;
+    // Look ahead: a word that leaves every crossing word many options goes first.
+    const crossing = best.cells.map(([r, c], k) => {
+      const other = slots.filter((s) => s !== best && !done(s) && s.cells.some(([rr, cc]) => rr === r && cc === c))[0];
+      return other ? { s: other, at: other.cells.findIndex(([rr, cc]) => rr === r && cc === c), k } : null;
+    }).filter(Boolean);
+    const shortlist = bestC.map((w) => [w, pref(w) + rng()]).sort((a, b) => b[1] - a[1]).slice(0, 80);
+    const order = shortlist.map(([w, p]) => {
+      let room = 0;
+      for (const x of crossing) {
+        const pt = pat(x.s).split(''); pt[x.at] = w[x.k];
+        const k = candidates(idx, pt.join('')).length;
+        if (!k) return [w, -Infinity];
+        room += Math.log(k + 1);
+      }
+      return [w, room + p * 2];
+    }).filter((x) => x[1] > -Infinity).sort((a, b) => b[1] - a[1]).slice(0, 30).map((x) => x[0]);
+    for (const w of order) {
+      const before = best.cells.map(([r, c]) => g[r][c]);
+      best.cells.forEach(([r, c], k) => { g[r][c] = w[k]; });
+      used.add(w);
+      // Every completed crossing must be a real word too.
+      const ok = slots.every((s) => !done(s) || s === best || used.has(pat(s)) || candidates(idx, pat(s)).length);
+      if (ok) {
+        const newly = slots.filter((s) => s !== best && done(s) && !used.has(pat(s)));
+        newly.forEach((s) => used.add(pat(s)));
+        if (step()) return true;
+        newly.forEach((s) => used.delete(pat(s)));
+      }
+      used.delete(w);
+      best.cells.forEach(([r, c], k) => { g[r][c] = before[k]; });
+    }
+    return false;
+  }
+  return step() ? g.map((r) => r.join('')) : null;
+}
 
-console.log(JSON.stringify(out));
-fs.writeFileSync(path.join(__dirname, 'crosswords.json'), JSON.stringify(out), 'utf8');
-console.log('\nGenerated ' + out.length + ' puzzles, sizes: ' + out.map(function (p) { return p.size; }).join(', '));
+/* ---------- puzzles ---------- */
+
+function cluesFor(rows, level) {
+  const p = { size: rows.length, rows, clues: {} };
+  const out = {};
+  const missing = [];
+  R.build(p).words.forEach((w) => {
+    const a = R.answer(p, w.id);
+    const c = clues[a] && clues[a][level];
+    if (c) out[w.id] = c; else missing.push(a);
+  });
+  return { clues: out, missing };
+}
+
+function generate() {
+  const puzzles = [];
+  const needs = {};          // WORD -> Set(levels)
+  const usage = {};          // pack|level|WORD -> count
+  const shortfall = [];
+  R.LEVELS.forEach((level) => {
+    const fillWords = fillPool(level);
+    const packs = THEMES.concat(['mixed']);
+    packs.forEach((pack) => {
+      const tw = pack === 'mixed' ? [] : themeWords(pack, level);
+      const tset = new Set(tw);
+      const idx = makeIndex(Array.from(new Set(tw.concat(fillWords))));
+      const recipe = RECIPE[level];   // 'mixed' puzzles are general knowledge, from everyday words only
+      let num = 0;
+      recipe.forEach((rc) => {
+        let made = 0;
+        for (let attempt = 0; made < rc.n && attempt < rc.n * 12; attempt++) {
+          const id = PACK_CODE[pack] + '-' + LEVEL_KEY[level] + '-' + String(num + 1).padStart(3, '0');
+          const rng = rngFrom(id + '|' + rc.size + rc.kind + '|' + attempt);
+          const tpl = T.make(rc.size, rc.kind, rng);
+          if (!tpl) continue;
+          const pref = (w) => {
+            let s = 0;
+            if (tset.has(w)) s += 3;
+            if (clues[w] && clues[w][level]) s += 1.5;
+            s -= (usage[pack + '|' + level + '|' + w] || 0) * 1.2;
+            if (!tset.has(w) && /(S|ED)$/.test(w)) s -= 0.6;
+            return s;
+          };
+          const rows = fill(tpl, idx, rng, pref, 4000);
+          if (!rows) continue;
+          const words = R.build({ size: rows.length, rows, clues: {} }).words.map((w) => R.answer({ rows }, w.id));
+          if (words.some((w) => (usage[pack + '|' + level + '|' + w] || 0) >= REUSE_CAP)) continue;
+          if (pack !== 'mixed' && words.filter((w) => tset.has(w)).length / words.length < THEME_SHARE[rc.kind]) continue;
+          words.forEach((w) => { usage[pack + '|' + level + '|' + w] = (usage[pack + '|' + level + '|' + w] || 0) + 1; });
+          num++; made++;
+          const c = cluesFor(rows, level);
+          c.missing.forEach((w) => { (needs[w] = needs[w] || new Set()).add(level); });
+          if (c.missing.length) continue;
+          puzzles.push({ id, level, pack, size: rc.size, kind: rc.kind, rows, clues: c.clues });
+        }
+        if (made < rc.n) shortfall.push(pack + '/' + level + ' ' + rc.size + rc.kind + ': ' + made + ' of ' + rc.n);
+      });
+    });
+  });
+  return { puzzles, needs, shortfall };
+}
+
+function write(puzzles) {
+  const lines = puzzles.map((p) => '    ' + JSON.stringify(p));
+  const body = '/* ============================================================\n' +
+    '   PLAYMONA — crosswords.js (generated by tools/gen-crossword.js; do not edit)\n' +
+    '   ' + puzzles.length + ' Mini Crossword puzzles. Edit the clue banks in\n' +
+    '   tools/crossword/bank/ and run: node tools/gen-crossword.js\n' +
+    '   ============================================================ */\n' +
+    'window.FF = window.FF || {};\nFF.data = FF.data || {};\nFF.data.crosswords = [\n' + lines.join(',\n') + '\n];\n';
+  fs.writeFileSync(OUT, body);
+}
+
+function show(p) {
+  console.log(p.id + '  ' + p.level + ' / ' + p.pack + ' / ' + p.size + 'x' + p.size + ' ' + p.kind);
+  p.rows.forEach((r) => console.log('   ' + r.split('').join(' ')));
+  R.build(p).words.forEach((w) => console.log('   ' + w.id.padEnd(4) + R.answer(p, w.id).padEnd(10) + p.clues[w.id]));
+}
+
+if (require.main === module) {
+  const arg = process.argv[2];
+  const t0 = Date.now();
+  const { puzzles, needs, shortfall } = generate();
+  if (arg === '--show') {
+    const p = puzzles.filter((x) => x.id === process.argv[3])[0];
+    if (p) show(p); else console.log('No puzzle ' + process.argv[3]);
+    process.exit(0);
+  }
+  if (arg === '--needs') {
+    Object.keys(needs).sort().forEach((w) => console.log(w + '|' + Array.from(needs[w]).map((l) => LEVEL_KEY[l]).sort().join('')));
+    process.exit(0);
+  }
+  const problems = [];
+  puzzles.forEach((p) => V.validatePuzzle(p, R).forEach((m) => problems.push(p.id + ': ' + m)));
+  console.log(puzzles.length + ' puzzles in ' + ((Date.now() - t0) / 1000).toFixed(1) + 's; ' + Object.keys(needs).length + ' words still need a clue');
+  R.LEVELS.forEach((lv) => console.log('  ' + lv + ': ' + puzzles.filter((p) => p.level === lv).length));
+  if (shortfall.length) console.log('Could not make:\n  ' + shortfall.join('\n  '));
+  V.coverage(puzzles, R).forEach((m) => console.log('coverage: ' + m));
+  if (problems.length) { console.log('Not written, problems:\n  ' + problems.slice(0, 30).join('\n  ')); process.exit(1); }
+  write(puzzles);
+  console.log('Wrote ' + path.relative(ROOT, OUT));
+}
+
+module.exports = { generate, fill, makeIndex, rngFrom };
