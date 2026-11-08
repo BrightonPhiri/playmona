@@ -28,6 +28,7 @@ class GeoSpin
     public const LEVELS = ['easy', 'normal', 'hard', 'expert'];
     public const REGIONS = ['world', 'africa', 'europe', 'asia', 'americas', 'oceania'];
     public const ROUNDS = [5, 10, 15];
+    public const MODES = ['write', 'choice'];
 
     public function __construct(private Db $db, private RealtimeDb $rtdb, private Runner $runner) {}
 
@@ -38,6 +39,7 @@ class GeoSpin
             'level' => self::allowed($raw, 'level', self::LEVELS, 'normal'),
             'region' => self::allowed($raw, 'region', self::REGIONS, 'world'),
             'rounds' => self::allowed($raw, 'rounds', self::ROUNDS, 10),
+            'mode' => self::allowed($raw, 'mode', self::MODES, 'write'),
         ];
     }
 

@@ -48,9 +48,14 @@ window.FF = window.FF || {};
     var r = (FF.data.worldFlags.regions || []).filter(function (x) { return x.id === id; })[0];
     return t('gcRegion_' + id, r ? r.name : id);
   }
+  function modeName(m) { return m === 'choice' ? t('gsModeChoice', 'Multiple choice') : t('gsModeWrite', 'Write answers'); }
   function summary(s) {
     var c = R.sanitize(s);
-    return [levelName(c.level), regionName(c.region), t('gsSecs', '{n} s a country', { n: R.secondsFor(c.level) })].join(' · ');
+    return [levelName(c.level), modeName(c.mode), regionName(c.region), t('gsSecs', '{n} s a country', { n: R.secondsFor(c.level) })].join(' · ');
+  }
+  function levelMeta(l, mode) {
+    return mode === 'choice' ? t('gsLevelMetaChoice', '{s} s · {n} answers', { s: R.SECONDS[l], n: R.CHOICES[l] })
+      : t('gsLevelMeta', '{s} s · {m}× letters', { s: R.SECONDS[l], m: R.MULT[l] });
   }
 
   /* Small inline drawings for the arcade buttons (stroke uses currentColor). */
@@ -65,7 +70,8 @@ window.FF = window.FF || {};
     bulb: '<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.6.5 1.1 1.3 1.1 2.2h5c0-.9.5-1.7 1.1-2.2A6 6 0 0 0 12 3z"/>',
     letter: '<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M9 16l3-8 3 8M10 13.5h4"/>',
     minus2: '<rect x="3" y="6" width="8" height="12" rx="2"/><rect x="13" y="6" width="8" height="12" rx="2"/><path d="M5 12h4M15 12h4"/>',
-    globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>'
+    globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
+    list: '<rect x="3" y="4" width="18" height="4" rx="1.5"/><rect x="3" y="10" width="18" height="4" rx="1.5"/><rect x="3" y="16" width="18" height="4" rx="1.5"/>'
   };
   function glyph(name, cls) {
     var s = document.createElement('span');
@@ -187,7 +193,31 @@ window.FF = window.FF || {};
     gs.appendChild(main);
     root.appendChild(gs);
     var globe = globeFor(api, globeHost);
-    return { root: gs, top: top, chips: chips, side: side, stage: stage, panel: panel, globe: globe };
+    var out = { root: gs, top: top, chips: chips, side: side, stage: stage, panel: panel, globe: globe };
+    out.fit = function () { fitPhone(out, globeHost); };
+    function onResize() { if (!gs.isConnected) { window.removeEventListener('resize', onResize); return; } out.fit(); }
+    window.addEventListener('resize', onResize);
+    return out;
+  }
+
+  /* Phones: the globe and the answers share one screen with nothing to scroll.
+     The globe takes whatever height the top bar and the answer panel leave
+     (never smaller than MIN_GLOBE); wide screens use the CSS sizes. */
+  var MIN_GLOBE = 150;
+  function fitPhone(f, host) {
+    if (!f.root.isConnected) return;
+    if (window.innerWidth >= 900 || !f.root.classList.contains('gs--play') || f.root.classList.contains('is-recap')) { host.style.width = ''; return; }
+    var cs = window.getComputedStyle(f.root);
+    var scroller = f.root.closest ? f.root.closest('.game-shell__content') : null;
+    var top = f.root.getBoundingClientRect().top + (scroller ? scroller.scrollTop : 0) + (window.scrollY || 0);
+    var extra = f.stage.offsetHeight - host.offsetHeight;
+    var gap = parseFloat(window.getComputedStyle(f.root.querySelector('.gs-main')).rowGap) || 0;
+    var used = top + (parseFloat(cs.paddingTop) || 0) + f.top.offsetHeight + (parseFloat(window.getComputedStyle(f.top).marginBottom) || 0) +
+      extra + gap + f.panel.offsetHeight + (parseFloat(cs.paddingBottom) || 0);
+    var size = Math.floor(Math.min(f.stage.clientWidth, Math.max(MIN_GLOBE, window.innerHeight - used)));
+    host.style.width = size + 'px';
+    // A new round starts at the top (the last reveal may have scrolled a little).
+    if (scroller && !f.root.classList.contains('is-revealed')) scroller.scrollTop = 0;
   }
 
   function chip(text, cls, icon) {
@@ -473,6 +503,100 @@ window.FF = window.FF || {};
     };
   }
 
+  /* ================= the answer list (multiple choice) ================= */
+
+  /* The answers to pick from, numbered. Tap one (or press its number) to answer
+     straight away. The same face as letterBoard, so a round can use either:
+     open, lock, finish, hints (solo: remove 2 answers, show continent). */
+  function choiceBoard(api, round, opts) {
+    opts = opts || {};
+    var el = FF.ui.div('gs-board gs-board--choice is-waiting');
+    var grid = FF.ui.el('div', { class: 'gs-choices', role: 'group', 'aria-label': t('gsPickCountry', 'Pick the country') });
+    grid.setAttribute('data-n', String(round.choices.length));
+    var open = false, locked = false, picked = null;
+    var still = reduceMotion();
+    var used = { letter: 0, remove: 0, continent: 0 };
+    var items = round.choices.map(function (code, i) {
+      var c = R.countryOf(code) || { name: code };
+      var b = FF.ui.el('button', { type: 'button', class: 'gs-choice' });
+      b.appendChild(FF.ui.span('gs-choice__n', String((i + 1) % 10)));
+      b.appendChild(FF.ui.span('gs-choice__name', c.name));
+      if (!still) b.style.animationDelay = (i * 0.03).toFixed(3) + 's';
+      var it = { el: b, code: code, name: c.name, gone: false };
+      b.addEventListener('click', function () { pick(it); });
+      grid.appendChild(b);
+      return it;
+    });
+    el.appendChild(grid);
+
+    function pick(it) {
+      if (locked || !open || it.gone) return;
+      picked = it;
+      api.audio.play('tap');
+      draw();
+      if (opts.onSubmit) opts.onSubmit(it.code, it.name);
+    }
+    function draw() {
+      items.forEach(function (it) {
+        it.el.disabled = locked || !open || it.gone;
+        it.el.classList.toggle('is-gone', it.gone);
+        it.el.classList.toggle('is-picked', picked === it);
+        it.el.setAttribute('aria-label', it.gone ? t('gsRemoved', 'Removed') : it.name);
+      });
+    }
+    function onKey(e) {
+      if (locked || !document.body.contains(el)) { document.removeEventListener('keydown', onKey, true); return; }
+      if (!open || e.ctrlKey || e.metaKey || e.altKey) return;
+      if (!/^[0-9]$/.test(e.key || '')) return;
+      var i = e.key === '0' ? 9 : Number(e.key) - 1;
+      if (!items[i]) return;
+      e.preventDefault(); e.stopPropagation();
+      pick(items[i]);
+    }
+    document.addEventListener('keydown', onKey, true);
+    draw();
+
+    function spare() { return items.filter(function (it) { return !it.gone && it.code !== round.code; }); }
+    return {
+      el: el,
+      used: used,
+      canHint: function (kind) {
+        if (locked || !open) return false;
+        if (kind === 'remove') return !used.remove && spare().length > 1;
+        if (kind === 'continent') return !used.continent;
+        return false;
+      },
+      hint: function (kind, rand) {
+        if (locked || !open) return false;
+        if (kind === 'remove' && !used.remove) {
+          var go = R.shuffle(spare(), rand).slice(0, R.REMOVE_N);
+          if (!go.length) return false;
+          go.forEach(function (it) { it.gone = true; });
+          used.remove = 1;
+          draw();
+          return true;
+        }
+        if (kind === 'continent' && !used.continent) { used.continent = 1; return true; }
+        return false;
+      },
+      open: function () { open = true; el.classList.remove('is-waiting'); draw(); },
+      lock: function () { locked = true; draw(); document.removeEventListener('keydown', onKey, true); },
+      /* The right answer turns green; a wrong pick turns red. */
+      finish: function (correct) {
+        locked = true; open = true;
+        el.classList.remove('is-waiting');
+        document.removeEventListener('keydown', onKey, true);
+        draw();
+        items.forEach(function (it) {
+          if (it.code === round.code) it.el.classList.add('is-right');
+          else if (picked === it) it.el.classList.add('is-wrong');
+        });
+        el.classList.add(correct ? 'is-correct' : 'is-missed');
+      },
+      destroy: function () { document.removeEventListener('keydown', onKey, true); }
+    };
+  }
+
   /* ================= the reveal card ================= */
 
   function revealCard(info) {
@@ -528,7 +652,7 @@ window.FF = window.FF || {};
     api.shell.hideTimer();
     if (FF.GameLength && FF.GameLength.pause) FF.GameLength.pause();
     var saved = R.sanitize(store().get(SETUP_KEY, null) || R.STANDARD);
-    var level = saved.level, region = saved.region;
+    var level = saved.level, region = saved.region, mode = saved.mode;
     var f = frame(api, { className: 'gs--setup' });
     f.globe.idle();
 
@@ -545,16 +669,31 @@ window.FF = window.FF || {};
     f.side.appendChild(how);
 
     var p = f.panel;
+    p.appendChild(FF.ui.el('h2', { class: 'gs-h' }, t('gsAnswerStyle', 'How do you answer?')));
+    var modes = FF.ui.el('div', { class: 'gs-modes', role: 'group', 'aria-label': t('gsAnswerStyle', 'How do you answer?') });
+    var modeBtns = R.MODES.map(function (m) {
+      var b = FF.ui.el('button', { type: 'button', class: 'gs-mode' });
+      b.appendChild(glyph(m === 'choice' ? 'list' : 'letter'));
+      var txt = FF.ui.span('gs-mode__text');
+      txt.appendChild(FF.ui.span('gs-mode__name', modeName(m)));
+      txt.appendChild(FF.ui.span('gs-mode__meta', m === 'choice' ? t('gsModeChoiceMeta', 'Pick the country from a list') : t('gsModeWriteMeta', 'Spell it with letter tiles')));
+      b.appendChild(txt);
+      b.addEventListener('click', function () { mode = m; api.audio.play('select'); sync(); });
+      modes.appendChild(b);
+      return { el: b, id: m };
+    });
+    p.appendChild(modes);
     p.appendChild(FF.ui.el('h2', { class: 'gs-h' }, t('gsChooseLevel', 'Choose your level')));
     var levels = FF.ui.el('div', { class: 'gs-levels', role: 'group', 'aria-label': t('gcLevel', 'Level') });
     var levelBtns = R.LEVELS.map(function (l) {
       var b = FF.ui.el('button', { type: 'button', class: 'gs-level gs-lv-' + l });
       b.appendChild(levelChip(l));
-      b.appendChild(FF.ui.span('gs-level__meta', t('gsLevelMeta', '{s} s · {m}× letters', { s: R.SECONDS[l], m: R.MULT[l] })));
+      var meta = FF.ui.span('gs-level__meta', '');
+      b.appendChild(meta);
       b.appendChild(FF.ui.span('gs-level__pts', t('gsLevelPts', '{n} pts', { n: R.BASE[l] })));
       b.addEventListener('click', function () { level = l; api.audio.play('select'); sync(); });
       levels.appendChild(b);
-      return { el: b, id: l };
+      return { el: b, id: l, meta: meta };
     });
     p.appendChild(levels);
     var levelNote = FF.ui.el('p', { class: 'gs-note' });
@@ -577,7 +716,7 @@ window.FF = window.FF || {};
     go.appendChild(glyph('globe'));
     go.appendChild(FF.ui.span('', t('gsSpin', 'Spin the globe')));
     go.addEventListener('click', function () {
-      var cfg = R.sanitize({ level: level, region: region });
+      var cfg = R.sanitize({ level: level, region: region, mode: mode });
       try { store().set(SETUP_KEY, cfg); } catch (e) { /* storage full */ }
       api.audio.play('roundStart');
       if (FF.GameLength && FF.GameLength.resume) FF.GameLength.resume();
@@ -587,13 +726,16 @@ window.FF = window.FF || {};
     p.appendChild(foot);
 
     function sync() {
-      levelBtns.forEach(function (x) { x.el.classList.toggle('is-on', x.id === level); x.el.setAttribute('aria-pressed', x.id === level ? 'true' : 'false'); });
+      modeBtns.forEach(function (x) { x.el.classList.toggle('is-on', x.id === mode); x.el.setAttribute('aria-pressed', x.id === mode ? 'true' : 'false'); });
+      levelBtns.forEach(function (x) { x.el.classList.toggle('is-on', x.id === level); x.el.setAttribute('aria-pressed', x.id === level ? 'true' : 'false'); x.meta.textContent = levelMeta(x.id, mode); });
       regionBtns.forEach(function (x) { x.el.classList.toggle('is-on', x.id === region); x.el.setAttribute('aria-pressed', x.id === region ? 'true' : 'false'); });
-      levelNote.textContent = level === 'expert' ? t('gsExpertNote', 'Expert: 15 seconds, every country, and decoy letters that spell other countries too.')
+      levelNote.textContent = mode === 'choice' ? t('gsChoiceNote', 'Multiple choice: pick the right country from {n} answers.', { n: R.CHOICES[level] }) + ' ' +
+          (level === 'hard' || level === 'expert' ? t('gsChoiceHardNote', 'Look-alike names are mixed in.') : t('gsChoiceEasyNote', 'The others are nearby countries.'))
+        : level === 'expert' ? t('gsExpertNote', 'Expert: 15 seconds, every country, and decoy letters that spell other countries too.')
         : level === 'hard' ? t('gsHardNote', 'Hard: every country in the world, tiny ones too, with a locator ring.')
         : level === 'easy' ? t('gsEasyNote', 'Easy: famous countries and plenty of time.')
         : t('gsNormalNote', 'Normal: well-known countries, 25 seconds each.');
-      var cfg = R.sanitize({ level: level, region: region });
+      var cfg = R.sanitize({ level: level, region: region, mode: mode });
       var ranked = FF.Leaderboards && FF.Leaderboards.active && FF.Leaderboards.active(api.def);
       info.textContent = t('gsNReady', '{n} countries ready', { n: R.pool(cfg).length }) + ' · ' + t('gsHintsNote', 'Hints cost points') +
         (ranked && !R.isStandard(cfg) ? ' · ' + t('nrUnranked', 'Leaderboards use the standard settings') : '');
@@ -722,13 +864,16 @@ window.FF = window.FF || {};
       f.panel.appendChild(cont);
       var done = false, started = 0;
       var hintRand = R.rng(R.hash('hint|' + seed + '|' + k));
-      var board = letterBoard(api, info, { onSubmit: function (text) { answer(text, false); }, onChange: syncHints });
+      var choice = cfg.mode === 'choice';
+      var board = choice ? choiceBoard(api, info, { onSubmit: function (code) { answer(code, false); } })
+        : letterBoard(api, info, { onSubmit: function (text) { answer(text, false); }, onChange: syncHints });
       f.panel.appendChild(board.el);
       var hints = FF.ui.div('gs-hints');
-      function hintBtn(kind, icon, label) {
+      function hintBtn(kind, icon, label, short) {
         var b = FF.ui.el('button', { type: 'button', class: 'gs-hint' });
         b.appendChild(glyph(icon));
         b.appendChild(FF.ui.span('gs-hint__label', label));
+        b.appendChild(FF.ui.span('gs-hint__short', short));
         b.appendChild(FF.ui.span('gs-hint__cost', '−' + R.HINTS[kind]));
         b.setAttribute('aria-label', label + ', ' + t('gsCostsN', 'costs {n} points', { n: R.HINTS[kind] }));
         b.addEventListener('click', function () {
@@ -740,12 +885,16 @@ window.FF = window.FF || {};
         hints.appendChild(b);
         return { el: b, kind: kind };
       }
-      var hb = [hintBtn('letter', 'letter', t('gsHintReveal', 'Reveal a letter')), hintBtn('remove', 'minus2', t('gsHintRemove', 'Remove 2 letters')), hintBtn('continent', 'globe', t('gsHintContinent', 'Show continent'))];
+      var hb = choice
+        ? [hintBtn('remove', 'minus2', t('gsHintRemoveAns', 'Remove 2 answers'), t('gsHintRemoveShort', 'Remove 2')), hintBtn('continent', 'globe', t('gsHintContinent', 'Show continent'), t('gsHintContShort', 'Continent'))]
+        : [hintBtn('letter', 'letter', t('gsHintReveal', 'Reveal a letter'), t('gsHintLetterShort', 'Letter')), hintBtn('remove', 'minus2', t('gsHintRemove', 'Remove 2 letters'), t('gsHintRemoveShort', 'Remove 2')), hintBtn('continent', 'globe', t('gsHintContinent', 'Show continent'), t('gsHintContShort', 'Continent'))];
+      hints.setAttribute('data-n', String(hb.length));
       f.panel.appendChild(hints);
       function syncHints() { hb.forEach(function (h) { h.el.disabled = done || !board.canHint(h.kind); }); }
       syncHints();
       var after = FF.ui.div('gs-after');
       f.panel.appendChild(after);
+      f.fit();
 
       api.audio.play('whoosh');
       f.root.classList.add('is-spinning');
@@ -769,7 +918,7 @@ window.FF = window.FF || {};
         api.shell.setOnTick(null);
         api.shell.hideTimer();
         if (timeout) ring.set(0, info.seconds);
-        var res = timeout || !text ? { ok: false } : R.check(text, info.code);
+        var res = timeout || !text ? { ok: false } : choice ? R.checkChoice(info, text) : R.check(text, info.code);
         var st = stats[entity.id];
         st.played++; totals.played++;
         var streak = res.ok ? st.streak + 1 : 0;
@@ -797,7 +946,7 @@ window.FF = window.FF || {};
         api.shell.updateScores(entity.id);
         after.appendChild(revealCard({
           state: res.ok ? 'good' : timeout ? 'late' : 'bad', code: info.code, name: info.name, points: pts.total, breakdown: pts,
-          said: res.ok ? (res.exact ? '' : t('gcSpelt', 'It is spelt {c}.', { c: res.matched || info.name })) : saidLine(text, res)
+          said: res.ok ? (res.exact ? '' : t('gcSpelt', 'It is spelt {c}.', { c: res.matched || info.name })) : saidLine(choice ? res.near : text, res)
         }));
         f.root.classList.add('is-revealed');
         var last = round + 1 >= rounds || (timed && FF.GameLength.timeUp() && (round + 1) % n === 0);
@@ -808,6 +957,7 @@ window.FF = window.FF || {};
           next();
         }, { class: 'gs-btn gs-btn--go gs-next' });
         after.appendChild(nextBtn);
+        f.fit();
         if (after.scrollIntoView && window.innerWidth < 900) { try { after.scrollIntoView({ behavior: animationsOn() ? 'smooth' : 'auto', block: 'nearest' }); } catch (e) { /* old browser */ } }
         if (FF.Nav && FF.Nav.focus) setTimeout(function () { if (document.body.contains(nextBtn)) FF.Nav.focus(nextBtn); }, 400);
       }
@@ -1000,7 +1150,9 @@ window.FF = window.FF || {};
       if (gs.phase === 'starting') {
         globe.idle();
         ring.idle();
-        waiting(t('gsBrief', 'Spin the world. Spot the country.'), t('gsBriefSub', 'Spell each highlighted country with the letter tiles. Faster right answers score more, and streaks multiply your points. No hints online.'));
+        waiting(t('gsBrief', 'Spin the world. Spot the country.'), gs.settings.mode === 'choice'
+          ? t('gsBriefSubChoice', 'Pick each highlighted country from the answers. Faster right answers score more, and streaks multiply your points. No hints online.')
+          : t('gsBriefSub', 'Spell each highlighted country with the letter tiles. Faster right answers score more, and streaks multiply your points. No hints online.'));
         return;
       }
       if (!v.seated) {
@@ -1030,20 +1182,21 @@ window.FF = window.FF || {};
       if (board) board.destroy();
       FF.ui.clear(f.panel);
       f.root.classList.remove('is-revealed');
-      var info = {
+      var choice = !!gs.round.choices;
+      var info = choice ? { code: gs.round.code, choices: String(gs.round.choices).split(',') } : {
         code: gs.round.code, cells: R.layout(gs.round.target), tiles: String(gs.round.tiles || '').split(''),
         letters: R.lettersOf(gs.round.target)
       };
       f.panel.appendChild(FF.ui.el('h2', { class: 'gs-question' }, [
         FF.ui.span('', t('gsWhich1', 'Which ')), FF.ui.span('gs-gold', t('gsWhich2', 'country')), FF.ui.span('', t('gsWhich3', ' is highlighted?'))
       ]));
-      board = letterBoard(api, info, {
-        onSubmit: function (text) {
+      board = (choice ? choiceBoard : letterBoard)(api, info, {
+        onSubmit: function (text, shown) {
           if (board.sent) return;
           var ok = client.send(text);
           if (!ok) return;
           board.sent = true;
-          sentText = text;
+          sentText = shown || text;
           board.lock();
           api.audio.play('select');
           lock.textContent = t('bqLockedIn', 'Answer locked in. Waiting for everyone…');
@@ -1054,6 +1207,7 @@ window.FF = window.FF || {};
       var lock = FF.ui.el('p', { class: 'gs-locked', 'aria-live': 'polite' });
       f.panel.appendChild(lock);
       f.panel.appendChild(FF.ui.div('gs-after'));
+      f.fit();
       var now = client.serverNow();
       var elapsed = Math.max(0, now - gs.spinAt);
       var spinMs = gs.openAt - gs.spinAt;
@@ -1091,6 +1245,7 @@ window.FF = window.FF || {};
       }));
       var nextIn = FF.ui.el('p', { class: 'gs-note gs-nextin' }, gs.k + 1 >= gs.total ? t('gsFinalSoon', 'Final results coming up…') : t('gsNextSoon', 'Next spin in a moment…'));
       after.appendChild(nextIn);
+      f.fit();
     }
 
     function showEnd(gs, v) {
@@ -1160,6 +1315,7 @@ window.FF = window.FF || {};
   function fields() {
     function opt(label, value) { return { label: label, value: value }; }
     return [
+      { key: 'mode', label: t('gsAnswerStyle', 'How do you answer?'), options: R.MODES.map(function (m) { return opt(modeName(m), m); }) },
       { key: 'level', label: t('gcLevel', 'Level'), options: R.LEVELS.map(function (l) { return opt(levelName(l) + ' · ' + R.SECONDS[l] + 's', l); }) },
       { key: 'region', label: t('gcRegions', 'Regions'), options: R.REGIONS.map(function (r) { return opt(regionName(r), r); }) },
       { key: 'rounds', label: t('gsRounds', 'Countries'), options: R.ROUNDS.map(function (n) { return opt(String(n), n); }) }
@@ -1194,6 +1350,7 @@ window.FF = window.FF || {};
     howToPlay: [
       'The globe spins, slows down and lands on a country, which lights up in gold.',
       'Spell the country’s name with the letter tiles: tap a tile to place it, tap a placed letter to send it back. Undo, Clear, then Submit.',
+      'Prefer to pick? Choose Multiple choice: 4 answers on Easy, 6 on Normal, 8 on Hard and 10 on Expert.',
       'Small spelling mistakes are forgiven, and other recognised names count (USA, UK, Holland…).',
       'Easy gives you 30 seconds and Expert only 15, with tricky decoy letters. Faster answers score more, and 3, 5 or 10 right in a row multiply your points.',
       'Stuck? Hints reveal a letter, remove two wrong ones or show the continent, for a few points.'
@@ -1214,5 +1371,5 @@ window.FF = window.FF || {};
     }
   });
 
-  FF.GeoSpinGame = { summary: summary, fields: fields, letterBoard: letterBoard };
+  FF.GeoSpinGame = { summary: summary, fields: fields, letterBoard: letterBoard, choiceBoard: choiceBoard };
 })();

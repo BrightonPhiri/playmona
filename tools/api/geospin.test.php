@@ -51,10 +51,11 @@ test('geospin: only the host of a lobby room with a ready check can start', func
 test('geospin: settings out of range are refused; the PHP lists match FF.GeoSpinRules', function () {
     $w = crewWorld();
     gsRoom($w, 'GSAE', 2);
-    foreach ([['level' => 'insane'], ['region' => 'mars'], ['rounds' => 7]] as $bad) {
+    foreach ([['level' => 'insane'], ['region' => 'mars'], ['rounds' => 7], ['mode' => 'guess']] as $bad) {
         eq(400, gsStart($w, 'GSAE', ['settings' => $bad])->status, json_encode($bad));
     }
-    eq(['level' => 'normal', 'region' => 'world', 'rounds' => 10], GeoSpin::settings([]));
+    eq(['level' => 'normal', 'region' => 'world', 'rounds' => 10, 'mode' => 'write'], GeoSpin::settings([]));
+    eq('choice', GeoSpin::settings(['mode' => 'choice'])['mode']);
     eq(15, GeoSpin::settings(['rounds' => '15'])['rounds']);
     $js = file_get_contents(__DIR__ . '/../../js/geospin/rules.js');
     eq(1, preg_match("/var LEVELS = \\[([^\\]]+)\\]/", $js, $l));
@@ -63,6 +64,8 @@ test('geospin: settings out of range are refused; the PHP lists match FF.GeoSpin
     eq(GeoSpin::REGIONS, array_map(fn ($s) => trim($s, " '"), explode(',', $r[1])));
     eq(1, preg_match('/var ROUNDS = \\[([0-9, ]+)\\]/', $js, $n));
     eq(GeoSpin::ROUNDS, array_map('intval', explode(',', $n[1])));
+    eq(1, preg_match("/var MODES = \\[([^\\]]+)\\]/", $js, $m));
+    eq(GeoSpin::MODES, array_map(fn ($s) => trim($s, " '"), explode(',', $m[1])));
 });
 
 test('geospin: a start hands the match and its seed to the runner and opens the room', function () {
@@ -77,7 +80,7 @@ test('geospin: a start hands the match and its seed to the runner and opens the 
     $run = $w['rtdb']->get('geospinRuns/' . $id);
     eq('GSAF', $run['roomCode']);
     eq(['host1', 'guest2', 'guest3'], $run['seats']);
-    eq(['level' => 'hard', 'region' => 'africa', 'rounds' => 5], $run['settings']);
+    eq(['level' => 'hard', 'region' => 'africa', 'rounds' => 5, 'mode' => 'write'], $run['settings']);
     eq(1, preg_match('/^[0-9a-f]{24}$/', $run['seed']), 'a seed from the server random');
     $room = $w['rtdb']->get('rooms/GSAF');
     eq('playing', $room['meta']['status']);

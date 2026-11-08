@@ -8,7 +8,7 @@
    and points. No DOM, no Math.random: one seed decides a game.
 
      var R = FF.GeoSpinRules;
-     var round = R.roundAt(settings, seed, k);   // { code, target, cells, letters, tiles, ... }
+     var round = R.roundAt(settings, seed, k);   // { code, target, cells, letters, tiles, choices?, ... }
      var res = R.check('zimbabwe', round.code);   // FF.AnswerMatch result
      var pts = R.points({ level, ok, ms, secs, streak, hints });
 
@@ -20,6 +20,8 @@ window.FF = window.FF || {};
   'use strict';
 
   var LEVELS = ['easy', 'normal', 'hard', 'expert'];
+  var MODES = ['write', 'choice'];  // spell the name with tiles, or pick it from a list
+  var CHOICES = { easy: 4, normal: 6, hard: 8, expert: 10 };      // answers to pick from
   var MULT = { easy: 1.5, normal: 1.75, hard: 2, expert: 2 };     // tiles per letter of the answer
   var SECONDS = { easy: 30, normal: 25, hard: 20, expert: 15 };
   var BASE = { easy: 100, normal: 150, hard: 200, expert: 300 };
@@ -31,7 +33,7 @@ window.FF = window.FF || {};
   var LONG_NAME = 16;             // longer names are spelled by a shorter accepted name
   var ROUNDS = [5, 10, 15];
   var REGIONS = ['world', 'africa', 'europe', 'asia', 'americas', 'oceania'];
-  var STANDARD = { level: 'normal', region: 'world', rounds: 10 };
+  var STANDARD = { level: 'normal', region: 'world', rounds: 10, mode: 'write' };
   var MIN_PLAYERS = 2;
   var MAX_PLAYERS = 8;
   var SPIN_MS = 3200;             // the globe spins, slows and lands
@@ -69,14 +71,16 @@ window.FF = window.FF || {};
     return {
       level: LEVELS.indexOf(s.level) !== -1 ? s.level : STANDARD.level,
       region: REGIONS.indexOf(s.region) !== -1 ? s.region : STANDARD.region,
-      rounds: ROUNDS.indexOf(rounds) !== -1 ? rounds : STANDARD.rounds
+      rounds: ROUNDS.indexOf(rounds) !== -1 ? rounds : STANDARD.rounds,
+      mode: MODES.indexOf(s.mode) !== -1 ? s.mode : STANDARD.mode
     };
   }
 
-  /* Rounds are the platform's game length when playing alone, so only level and region count. */
+  /* Rounds are the platform's game length when playing alone, so only level, region and mode count.
+     Multiple choice is easier than spelling, so it never counts for the leaderboards. */
   function isStandard(s) {
     var c = sanitize(s);
-    return c.level === STANDARD.level && c.region === STANDARD.region;
+    return c.level === STANDARD.level && c.region === STANDARD.region && c.mode === STANDARD.mode;
   }
 
   function secondsFor(level) { return SECONDS[level] || SECONDS.normal; }
@@ -285,6 +289,53 @@ window.FF = window.FF || {};
     return { target: target, cells: cells, letters: letters, tiles: tiles };
   }
 
+  /* ---------- multiple choice ---------- */
+
+  /* The answers to pick from: the country and CHOICES[level] - 1 others, shuffled.
+     Easy and Normal pick others from the same region (neighbours first); Hard and
+     Expert start with names that look alike (Niger, Nigeria) so reading matters.
+     No two answers share a name. Country codes, in the order shown. */
+  function choices(code, level, rand) {
+    level = LEVELS.indexOf(level) !== -1 ? level : 'normal';
+    var want = CHOICES[level];
+    var me = countryOf(code);
+    if (!me) return [code];
+    var all = world().countries;
+    var out = [code], names = {};
+    names[plainUpper(me.name)] = true;
+    function add(c) {
+      if (out.length >= want || !c || out.indexOf(c.code) !== -1) return;
+      var key = plainUpper(c.name);
+      if (names[key]) return;
+      names[key] = true;
+      out.push(c.code);
+    }
+    var stripped = plainUpper(me.name).replace(/[^A-Z]/g, '');
+    if (level === 'hard' || level === 'expert') {
+      shuffle(all.filter(function (x) {
+        if (x.code === code) return false;
+        var o = plainUpper(x.name).replace(/[^A-Z]/g, '');
+        if (o.indexOf(stripped) !== -1 || stripped.indexOf(o) !== -1) return true;
+        return FF.AnswerMatch && Math.abs(o.length - stripped.length) <= 2 && FF.AnswerMatch.distance(o, stripped) <= 3;
+      }), rand).slice(0, Math.ceil(want / 3)).forEach(add);
+    }
+    var pl = places()[code];
+    shuffle((pl && pl[4]) || [], rand).slice(0, Math.ceil(want / 2)).forEach(function (n) { add(countryOf(n)); });
+    shuffle(all.filter(function (x) { return x.region === me.region; }), rand).forEach(add);
+    shuffle(all, rand).forEach(add);
+    return shuffle(out, rand);
+  }
+
+  /* A picked answer: right only when it is the round's country and one of its answers. */
+  function checkChoice(round, pick) {
+    pick = String(pick || '');
+    var list = round.choices || [];
+    if (list.indexOf(pick) === -1) return { ok: false, near: '' };
+    if (pick === round.code) return { ok: true, exact: true };
+    var c = countryOf(pick);
+    return { ok: false, near: c ? c.name : '' };
+  }
+
   /* Everything a round needs, the same on every phone and on the referee. */
   function roundAt(cfg, seed, k, codes) {
     var c = sanitize(cfg);
@@ -294,10 +345,13 @@ window.FF = window.FF || {};
     var target = pickFormat(code, rand);
     var b = bank(target, c.level, rand, relatedNames(code, rand));
     var country = countryOf(code) || { name: code };
-    return {
+    var out = {
       k: k, code: code, name: country.name, target: target, cells: b.cells, letters: b.letters, tiles: b.tiles,
-      seconds: secondsFor(c.level), continent: continentOf(code)
+      seconds: secondsFor(c.level), continent: continentOf(code), mode: c.mode
     };
+    // Its own random, so adding the answers never changes the letters a seed deals.
+    if (c.mode === 'choice') out.choices = choices(code, c.level, rng(hash('choice|' + seed + '|' + k)));
+    return out;
   }
 
   function continentOf(code) {
@@ -365,13 +419,13 @@ window.FF = window.FF || {};
   }
 
   FF.GeoSpinRules = {
-    LEVELS: LEVELS, MULT: MULT, SECONDS: SECONDS, BASE: BASE, STREAKS: STREAKS, HINTS: HINTS, REMOVE_N: REMOVE_N,
+    LEVELS: LEVELS, MODES: MODES, CHOICES: CHOICES, MULT: MULT, SECONDS: SECONDS, BASE: BASE, STREAKS: STREAKS, HINTS: HINTS, REMOVE_N: REMOVE_N,
     MAX_TILES: MAX_TILES, ROUNDS: ROUNDS, REGIONS: REGIONS, STANDARD: STANDARD, MIN_PLAYERS: MIN_PLAYERS,
     MAX_PLAYERS: MAX_PLAYERS, SPIN_MS: SPIN_MS, REVEAL_MS: REVEAL_MS, MIN_POOL: MIN_POOL, FORMATS: FORMATS,
     sanitize: sanitize, isStandard: isStandard, secondsFor: secondsFor, pool: pool, hash: hash, rng: rng,
     shuffle: shuffle, deal: deal, layout: layout, spelled: spelled, lettersOf: lettersOf, formats: formats,
     pickFormat: pickFormat, relatedNames: relatedNames, bank: bank, roundAt: roundAt, continentOf: continentOf,
-    countryOf: countryOf, check: check, spareTiles: spareTiles, removable: removable, hintCost: hintCost,
+    countryOf: countryOf, check: check, choices: choices, checkChoice: checkChoice, spareTiles: spareTiles, removable: removable, hintCost: hintCost,
     streakMult: streakMult, points: points
   };
 })();

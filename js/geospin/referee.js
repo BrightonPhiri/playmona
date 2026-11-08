@@ -236,7 +236,14 @@ window.FF = window.FF || {};
       if (sentAt < state.openAt || sentAt > state.closeAt + GRACE_MS) return false;
       var rd = roundOf(state.k);
       var text = String(cmd.text).slice(0, MAX_TEXT);
-      var res = text ? R.check(text, rd.code) : { ok: false };
+      var res;
+      if (state.settings.mode === 'choice') {
+        // A multiple choice answer is the picked country's code; keep its name for the results.
+        res = R.checkChoice(rd, text);
+        text = rd.choices.indexOf(text) !== -1 ? (R.countryOf(text) || {}).name || '' : '';
+      } else {
+        res = text ? R.check(text, rd.code) : { ok: false };
+      }
       var ms = Math.max(0, Math.min(rd.seconds * 1000, sentAt - state.openAt));
       var streak = res.ok ? p.streak + 1 : 0;
       var pts = R.points({ level: state.settings.level, ok: res.ok, ms: ms, secs: rd.seconds, streak: streak });
@@ -335,7 +342,8 @@ window.FF = window.FF || {};
       };
       if (state.k >= 0) {
         var rd = roundOf(state.k);
-        v.round = { k: state.k, code: rd.code, target: rd.target, tiles: rd.tiles.join('') };
+        v.round = rd.choices ? { k: state.k, code: rd.code, choices: rd.choices.join(',') }
+          : { k: state.k, code: rd.code, target: rd.target, tiles: rd.tiles.join('') };
       }
       if (state.phase === 'reveal' && state.reveal) v.reveal = state.reveal;
       if (state.phase === 'ended') v.result = state.result;

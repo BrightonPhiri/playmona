@@ -361,3 +361,66 @@ test('geospin referee: a restarted referee carries on from the saved state with 
   assertEqual(m.gs().phase, 'reveal');
   again.stop();
 });
+
+/* ---------- multiple choice ---------- */
+
+test('geospin choice: 4, 6, 8 or 10 answers by level, the country among them, no repeated names, same seed same list', function () {
+  const R = app().GeoSpinRules;
+  assertEqual(R.sanitize({}).mode, 'write');
+  assertEqual(R.sanitize({ mode: 'choice' }).mode, 'choice');
+  assertEqual(R.sanitize({ mode: 'guess' }).mode, 'write');
+  assert(!R.isStandard({ mode: 'choice' }), 'multiple choice never counts for the leaderboards');
+  const byCode = {};
+  app().data.worldFlags.countries.forEach((c) => { byCode[c.code] = c; });
+  Object.keys(R.CHOICES).forEach((level) => {
+    const cfg = R.sanitize({ level, mode: 'choice', rounds: 15 });
+    for (let k = 0; k < 15; k++) {
+      const rd = R.roundAt(cfg, 'mc' + level, k);
+      assertEqual(rd.choices.length, R.CHOICES[level], level + ' answers');
+      assert(rd.choices.indexOf(rd.code) !== -1, 'the country is one of them');
+      const names = rd.choices.map((c) => byCode[c].name);
+      assertEqual(new Set(names).size, names.length, 'no name twice');
+      assertEqual(rd.choices.join(), R.roundAt(cfg, 'mc' + level, k).choices.join(), 'same seed, same answers');
+    }
+  });
+  assertEqual([R.CHOICES.easy, R.CHOICES.normal, R.CHOICES.hard, R.CHOICES.expert].join(), '4,6,8,10');
+  // Adding the answers never changes the letters a seed deals.
+  const w = R.roundAt(R.sanitize({ level: 'hard' }), 'same', 3);
+  const c = R.roundAt(R.sanitize({ level: 'hard', mode: 'choice' }), 'same', 3);
+  assertEqual(w.tiles.join(''), c.tiles.join(''));
+  assert(!w.choices, 'no answers list when writing');
+  // Hard mixes in look-alikes: Niger and Nigeria.
+  const ng = R.choices('ne', 'hard', R.rng(7));
+  assert(ng.indexOf('ng') !== -1, 'Nigeria is among the answers for Niger');
+});
+
+test('geospin choice: only the right country from the list counts', function () {
+  const R = app().GeoSpinRules;
+  const rd = R.roundAt(R.sanitize({ mode: 'choice' }), 'pick', 0);
+  const wrong = rd.choices.filter((c) => c !== rd.code)[0];
+  assert(R.checkChoice(rd, rd.code).ok);
+  const bad = R.checkChoice(rd, wrong);
+  assert(!bad.ok && bad.near === R.countryOf(wrong).name, 'a wrong pick names the country picked');
+  const off = rd.choices.indexOf('aq') === -1 ? 'aq' : 'zz';
+  assert(!R.checkChoice(rd, off).ok, 'a country that was not offered');
+  assert(!R.checkChoice(rd, R.countryOf(rd.code).name).ok, 'a typed name is not a pick');
+});
+
+test('geospin referee: multiple choice publishes the answers, not the name to spell, and scores picks', async function () {
+  const m = await match({ settings: { mode: 'choice', level: 'hard' } });
+  await m.open();
+  const g = m.gs();
+  const list = String(g.round.choices).split(',');
+  assertEqual(list.length, 8);
+  assert(!g.round.target && !g.round.tiles, 'no letters to spell');
+  const wrong = list.filter((c) => c !== g.round.code)[0];
+  await m.clock.advance(2000);
+  await m.answer('p1', g.round.code);
+  await m.answer('p2', wrong);
+  const r = m.gs();
+  assertEqual(r.phase, 'reveal');
+  assert(r.p.p1.last.ok && r.p.p1.score > 0, 'the right pick scores');
+  assert(!r.p.p2.last.ok && r.p.p2.score === 0);
+  assertEqual(r.p.p2.last.text, m.R.countryOf(wrong).name, 'the results show the name picked');
+  assertEqual(r.p.p2.last.near, m.R.countryOf(wrong).name);
+});
