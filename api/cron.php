@@ -97,6 +97,8 @@ try {
     if ($abandonedSr) echo "Ended $abandonedSr abandoned SortRush match(es).\n";
     $abandonedGs = $app->geospin()->sweep($now);
     if ($abandonedGs) echo "Ended $abandonedGs abandoned GeoSpin match(es).\n";
+    $abandonedWm = $app->whatsmissing()->sweep($now);
+    if ($abandonedWm) echo "Ended $abandonedWm abandoned What's Missing? match(es).\n";
 } catch (Throwable $e) {
     fwrite(STDERR, 'Crew cleanup failed: ' . $e->getMessage() . "\n");
 }

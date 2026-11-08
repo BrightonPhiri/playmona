@@ -47,7 +47,14 @@ const FILES = [
   // GeoSpin: the referee the runner hosts (no crew seats play it). Its checker is the one above.
   'js/geospin/places.js',
   'js/geospin/rules.js',
-  'js/geospin/referee.js'
+  'js/geospin/referee.js',
+  // What's Missing?: the referee the runner hosts. It checks spelled names with the checker
+  // above and deals Expert letter tiles with the shared tiles, from the Memory Match pictures.
+  'js/spellTiles.js',
+  'js/data/memoryDecks.js',
+  'js/data/memoryAliases.js',
+  'js/whatsmissing/rules.js',
+  'js/whatsmissing/referee.js'
 ];
 
 function stubElement() {

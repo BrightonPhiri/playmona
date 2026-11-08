@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace PlayMona;
 
-foreach (['Http', 'Config', 'Db', 'Jwt', 'FirebaseAuth', 'FirebaseDb', 'Linkwa', 'Catalog', 'Store', 'Payments', 'Pdf', 'Invoice', 'Finance', 'Visits', 'Photos', 'Live', 'Crew', 'Runner', 'Matchmaker', 'ImposterWords', 'Imposters', 'WordFlow', 'WordFlowJudge', 'BallSwap', 'SortRush', 'GeoSpin', 'Friends', 'Ai', 'Leaderboards', 'EngineRoutes', 'Routes'] as $class) {
+foreach (['Http', 'Config', 'Db', 'Jwt', 'FirebaseAuth', 'FirebaseDb', 'Linkwa', 'Catalog', 'Store', 'Payments', 'Pdf', 'Invoice', 'Finance', 'Visits', 'Photos', 'Live', 'Crew', 'Runner', 'Matchmaker', 'ImposterWords', 'Imposters', 'WordFlow', 'WordFlowJudge', 'BallSwap', 'SortRush', 'GeoSpin', 'WhatsMissing', 'Friends', 'Ai', 'Leaderboards', 'EngineRoutes', 'Routes'] as $class) {
     require_once __DIR__ . '/' . $class . '.php';
 }
 

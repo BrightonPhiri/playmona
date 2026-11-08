@@ -1101,6 +1101,7 @@ require __DIR__ . '/wordflow.test.php';
 require __DIR__ . '/ballswap.test.php';
 require __DIR__ . '/sortrush.test.php';
 require __DIR__ . '/geospin.test.php';
+require __DIR__ . '/whatsmissing.test.php';
 require __DIR__ . '/leaderboards.test.php';
 
 echo "\n" . ($GLOBALS['count'] - $GLOBALS['failures']) . '/' . $GLOBALS['count'] . " passed\n";

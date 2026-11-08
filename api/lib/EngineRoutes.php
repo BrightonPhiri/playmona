@@ -89,6 +89,13 @@ class EngineRoutes
         if ($m === 'POST' && $p === '/geospin/nudge') {
             return Response::json($this->app->geospin()->nudge($this->user($req), $req->json(), $now));
         }
+        // What's Missing?: the server starts the match; the referee in the runner deals the boards and checks every answer.
+        if ($m === 'POST' && $p === '/whatsmissing/start') {
+            return Response::json($this->app->whatsmissing()->start($this->user($req), $req->json(), $now));
+        }
+        if ($m === 'POST' && $p === '/whatsmissing/nudge') {
+            return Response::json($this->app->whatsmissing()->nudge($this->user($req), $req->json(), $now));
+        }
 
         // Friends
         if ($m === 'GET' && $p === '/friends') return Response::json($this->app->friends()->overview($this->user($req)->uid, $now));
@@ -192,8 +199,9 @@ class EngineRoutes
                 $dropBallswap = $this->app->ballswap()->stillActive((array) ($body['ballswap'] ?? []));
                 $dropSortrush = $this->app->sortrush()->stillActive((array) ($body['sortrush'] ?? []));
                 $dropGeospin = $this->app->geospin()->stillActive((array) ($body['geospin'] ?? []));
+                $dropWhatsmissing = $this->app->whatsmissing()->stillActive((array) ($body['whatsmissing'] ?? []));
                 $s = $this->app->crew()->settings();
-                return Response::json(['drop' => $drop, 'dropImposters' => $dropImposters, 'dropWordflow' => $dropWordflow, 'dropBallswap' => $dropBallswap, 'dropSortrush' => $dropSortrush, 'dropGeospin' => $dropGeospin, 'settings' => ['mode' => $s['mode'], 'stopNew' => $s['stopNew']]]);
+                return Response::json(['drop' => $drop, 'dropImposters' => $dropImposters, 'dropWordflow' => $dropWordflow, 'dropBallswap' => $dropBallswap, 'dropSortrush' => $dropSortrush, 'dropGeospin' => $dropGeospin, 'dropWhatsmissing' => $dropWhatsmissing, 'settings' => ['mode' => $s['mode'], 'stopNew' => $s['stopNew']]]);
             case 'report':
                 $matchId = (string) ($body['matchId'] ?? '');
                 $event = (string) ($body['event'] ?? '');
@@ -215,6 +223,10 @@ class EngineRoutes
                 }
                 if ($event === 'geospin') {
                     $this->app->geospin()->recordResult($body, $now);
+                    return Response::json(['ok' => true]);
+                }
+                if ($event === 'whatsmissing') {
+                    $this->app->whatsmissing()->recordResult($body, $now);
                     return Response::json(['ok' => true]);
                 }
                 if ($event === 'game') {
