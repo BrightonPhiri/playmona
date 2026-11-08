@@ -979,7 +979,7 @@ window.FF = window.FF || {};
     players: [1, 8],
     difficulty: 'Normal',
     duration: 6,
-    tags: ['spelling', 'puzzle', 'online'],
+    tags: ['spelling', 'puzzle'],
     modes: ['solo', 'turn', 'everyone'],
     defaultMode: 'solo',
     leaderboard: true,
