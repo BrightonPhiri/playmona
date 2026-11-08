@@ -64,6 +64,7 @@ const ORDER = [
   'js/games/memoryGames.js',
   'js/data/memoryAliases.js',
   'js/whatsmissing/rules.js',
+  'js/whatsmissing/client.js',
   'js/games/whatsMissing.js',
   'js/games/reactionGames.js',
   'js/games/numberGames.js',

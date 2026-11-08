@@ -57,6 +57,7 @@ window.FF = window.FF || {};
       if (rd.before) rd.before = cells(rd.before, rd.slots);
       if (rd.after) rd.after = cells(rd.after, rd.slots);
       if (rd.choices) rd.choices = list(rd.choices);
+      if (rd.holes) rd.holes = list(rd.holes);
       if (rd.tiles) rd.tiles = list(rd.tiles);
       if (rd.answer) rd.answer = { slots: list(rd.answer.slots), ids: list(rd.answer.ids) };
       rd.gaps = rd.gaps || 1;
@@ -70,6 +71,22 @@ window.FF = window.FF || {};
       if (l.slots) l.slots = list(l.slots);
     });
     return wm;
+  }
+
+  /* Has this phase's round fully arrived? A view can land in pieces (the dev transport
+     delivers a write field by field), and a phase drawn from half a round cannot be redrawn. */
+  function ready(wm) {
+    if (!wm || !wm.settings || typeof wm.phase !== 'string') return false;
+    if (wm.phase === 'starting' || wm.phase === 'ended') return wm.phase !== 'ended' || !!wm.result;
+    var rd = wm.round;
+    if (!rd || rd.k !== wm.k || !rd.slots || !rd.cols) return false;
+    if (wm.phase === 'study') return !!rd.before;
+    if (wm.phase === 'change') return true;
+    if (!rd.after || !rd.twist || !rd.secs) return false;
+    var gone = rd.twist === 'gone' || rd.twist === 'several';
+    if (gone && (!rd.holes || !rd.holes.length || !(rd.spell ? rd.tiles && rd.tiles.length : rd.choices && rd.choices.length))) return false;
+    if (wm.phase === 'reveal') return !!(rd.answer && rd.answer.ids.length && rd.before);
+    return true;
   }
 
   /* An answer as the inbox carries it: one string, so it can never arrive in pieces. */
@@ -174,5 +191,5 @@ window.FF = window.FF || {};
     }
   };
 
-  FF.WhatsMissingClient = { create: create, tidy: tidy, encode: encode };
+  FF.WhatsMissingClient = { create: create, tidy: tidy, encode: encode, ready: ready };
 })();

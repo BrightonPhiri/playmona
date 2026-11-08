@@ -374,6 +374,8 @@ window.FF = window.FF || {};
         v.gaps = rd.gaps;
         v.spell = !!rd.spell;
         v.secs = rd.secs;
+        // Where the gaps are: they are empty on the board anyway, and the answer is what was in them.
+        if (rd.twist === 'gone' || rd.twist === 'several') v.holes = rd.answer.slots;
         if (rd.choices) v.choices = rd.choices;
         if (rd.tiles) v.tiles = rd.tiles;
       }

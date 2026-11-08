@@ -292,17 +292,21 @@ window.FF = window.FF || {};
     setTimeout(function () { if (box.parentNode) box.parentNode.removeChild(box); }, 1500);
   }
 
+  /* The gap slots. Online the answer stays on the server, so the view says where the gaps are. */
+  function holesOf(round) {
+    if (round.twist !== 'gone' && round.twist !== 'several') return [];
+    return round.answer ? round.answer.slots : (round.holes || []);
+  }
+
   /* The flip: every tile turns face down, the board changes underneath, the tiles turn back. */
   function flipTo(board, round, list, done) {
     board.el.classList.add('is-hidden');
     later(function () {
       board.fill(list);
-      if (round.twist === 'gone' || round.twist === 'several') {
-        round.answer.slots.forEach(function (s) { board.mark(s, 'is-gap'); });
-      }
+      holesOf(round).forEach(function (s) { board.mark(s, 'is-gap'); });
       board.el.classList.remove('is-hidden');
       later(function () {
-        if (round.twist === 'gone' || round.twist === 'several') round.answer.slots.forEach(function (s) { sparkle(board.tiles[s]); });
+        holesOf(round).forEach(function (s) { sparkle(board.tiles[s]); });
         done();
       }, FLIP_MS);
     }, FLIP_MS);
@@ -337,7 +341,7 @@ window.FF = window.FF || {};
     }
 
     // Gone and Several gone: one answer per gap, in gap order.
-    var gaps = round.answer.slots;
+    var gaps = holesOf(round);
     var many = gaps.length > 1;
     var active = 0;
     var filled = gaps.map(function () { return null; });
@@ -403,10 +407,9 @@ window.FF = window.FF || {};
       if (sent) return;
       if (spellBoard && spellBoard.destroy) spellBoard.destroy();
       FF.ui.clear(spellHost);
-      var id = round.answer.ids[active];
       var gapNo = active;
       spellHost.appendChild(FF.ui.el('p', { class: 'wm-tip' }, many ? t('wmSpellGapN', 'Spell gap {n} of {m}', { n: gapNo + 1, m: gaps.length }) : t('wmSpellIt', 'Spell the missing picture')));
-      var set = FF.SpellTiles.deal(R.cardOf(id).name, R.rng(R.hash('spell|' + o.seed + '|' + round.k + '|' + gapNo)), { difficulty: api.config.difficulty });
+      var set = o.tiles ? maskedSet(o.tiles[gapNo]) : FF.SpellTiles.deal(R.cardOf(round.answer.ids[gapNo]).name, R.rng(R.hash('spell|' + o.seed + '|' + round.k + '|' + gapNo)), { difficulty: api.config.difficulty });
       spellBoard = FF.SpellTiles.board(set, {
         audio: api.audio,
         onSubmit: function (text) {
@@ -452,8 +455,20 @@ window.FF = window.FF || {};
         if (spellBoard && out[active] == null && typeof spellBoard.text === 'function') out[active] = spellBoard.text() || null;
         return { text: out };
       },
-      finish: function (ok) { if (spellBoard && spellBoard.finish) spellBoard.finish(ok); }
+      // Online tiles carry no letters to show, so the board shows the truth instead.
+      finish: function (ok) { if (spellBoard && spellBoard.finish && !o.tiles) spellBoard.finish(ok); }
     };
+  }
+
+  /* Letter tiles from the referee: the name's shape (_ for each letter) and the tiles, never the name. */
+  function maskedSet(g) {
+    g = g || { shape: '', tiles: '' };
+    var cells = String(g.shape || '').split('').map(function (ch) {
+      if (ch === '_') return { ch: '', letter: true };
+      if (ch === ' ') return { ch: ' ', gap: true };
+      return { ch: ch, fixed: true };
+    });
+    return { target: '', cells: cells, letters: [], tiles: String(g.tiles || '').split('') };
   }
 
   /* After the answer: put the truth on the board. */
@@ -864,6 +879,375 @@ window.FF = window.FF || {};
     next();
   }
 
+
+  /* ================= online =================
+     The referee on the server deals every board and decides every result. Phones draw
+     rooms/<code>/wm by phase: study (the board), change (tiles face down), open (the
+     changed board and the answer controls), reveal (the truth and everyone's results). */
+
+  var NUDGE_MS = 8000;
+  var AUTO_SCORES_MS = 90000;
+
+  function online(api, room) {
+    var f = frame(api, 'wm--play wm--online');
+    api.shell.hideTimer();
+    if (FF.Race && FF.Race.begin) FF.Race.begin(api.def.id, { rounds: 1, mode: 'parallel' });
+    var client = FF.WhatsMissingClient.create({ room: room, onChange: schedule });
+    var ended = false, pending = null, nudged = {}, autoScores = null, finishedShown = false;
+    var autoSent = null;
+    var shown = null;        // matchId|k of the round on screen
+    var phaseShown = null;   // matchId|k|phase drawn
+    var board = null, panel = null, tapHandler = null, sentAnswer = null;
+    var lastScores = {};
+    var roundChip = chip('', 'wm-chip--round');
+    var levelHolder = FF.ui.span('');
+    f.chips.appendChild(roundChip);
+    f.chips.appendChild(levelHolder);
+    var card = FF.ui.div('wm-card wm-leader');
+    var clock = clockBar();
+    var q = FF.ui.el('h2', { class: 'wm-question' }, '');
+    var body = FF.ui.div('wm-body');
+    var after = FF.ui.div('wm-after');
+    var ticker = setInterval(tick, 200);
+
+    function expected() { return room.meta && room.meta.wmMatch; }
+    function who(uid) {
+      var p = (room.players || {})[uid] || {};
+      return { id: uid, uid: uid, name: p.name || t('playerLabel', 'Player'), avatar: p.avatar || null, color: p.color || null };
+    }
+    function schedule() { if (!pending) pending = setTimeout(function () { pending = null; render(); }, 0); }
+    function cleanup() {
+      if (ended) return;
+      ended = true;
+      clearInterval(ticker);
+      if (pending) clearTimeout(pending);
+      if (autoScores) clearTimeout(autoScores);
+      client.stop();
+      if (FF.Race && FF.Race.end) { try { FF.Race.end(); } catch (e) { /* not running */ } }
+    }
+    function finish() { if (ended) return; cleanup(); api.end({}); }
+    function maybeNudge(key, due) {
+      if (nudged[key] || !due) return;
+      if (client.serverNow() - due < NUDGE_MS) return;
+      nudged[key] = true;
+      FF.WhatsMissingApi.nudge(room.code);
+    }
+    function dueOf(wm) {
+      return wm.phase === 'starting' ? wm.studyAt : wm.phase === 'study' ? wm.changeAt : wm.phase === 'change' ? wm.openAt
+        : wm.phase === 'open' ? wm.closeAt : wm.phase === 'reveal' ? wm.nextAt : 0;
+    }
+
+    function tick() {
+      if (ended) return;
+      var wm = client.view().wm;
+      if (!wm || wm.matchId !== expected()) return;
+      var now = client.serverNow();
+      if (wm.phase === 'study') clock.set((wm.changeAt - now) / 1000, wm.settings.seconds, 'study');
+      else if (wm.phase === 'open') {
+        clock.set((wm.closeAt - now) / 1000, (wm.closeAt - wm.openAt) / 1000, 'answer');
+        // Time is up: send what is filled in so far (a Several gone half done still scores its right gaps).
+        var key = wm.matchId + '|' + wm.k;
+        if (panel && !sentAnswer && autoSent !== key && now >= wm.closeAt - 250) {
+          autoSent = key;
+          var cur = panel.current();
+          if (hasAny(cur) && client.send(cur)) sentAnswer = cur;
+        }
+      }
+      var due = dueOf(wm);
+      if (due) maybeNudge(wm.phase + wm.k, due);
+    }
+
+    /* Everyone's score, with a tick for who has answered and their result at the reveal. */
+    function drawLeader(wm, reveal) {
+      FF.ui.clear(card);
+      var list = FF.ui.el('ol', { class: 'wm-list wm-list--room' });
+      var order = (wm.order || []).slice().sort(function (a, b) { return ((wm.p[b] || {}).score || 0) - ((wm.p[a] || {}).score || 0); });
+      order.forEach(function (uid, i) {
+        var row = wm.p[uid] || {};
+        var li = FF.ui.el('li', { class: 'wm-row' + (uid === client.uid ? ' is-me' : '') + (i === 0 && (row.score || 0) > 0 ? ' is-top' : '') });
+        li.appendChild(FF.ui.span('wm-row__place', String(i + 1)));
+        var ava = FF.ui.span('wm-row__ava');
+        if (FF.Players && FF.Players.avatarEl) ava.appendChild(FF.Players.avatarEl(who(uid), ''));
+        li.appendChild(ava);
+        var nm = FF.ui.span('wm-row__name');
+        nm.appendChild(FF.ui.span('', who(uid).name + (uid === client.uid ? ' ' + t('youTag', '(you)') : '')));
+        if (reveal && row.last && row.last.k === wm.k) {
+          var l = row.last;
+          li.classList.add(l.ok ? 'is-good' : l.rightGaps ? 'is-part' : 'is-bad');
+          nm.appendChild(FF.ui.span('wm-row__meta', l.ok ? t('wmRight', 'Spot on!') : l.none ? t('wmTimeUp', 'Time’s up!')
+            : l.rightGaps ? t('wmSome', '{n} of {m} right', { n: l.rightGaps, m: (wm.round && wm.round.gaps) || 1 }) : t('wmWrong', 'Not quite')));
+        } else if (wm.phase === 'open') {
+          nm.appendChild(FF.ui.span('wm-row__meta', row.inK === wm.k ? t('wmAnswered', 'Answered') : t('wmThinking', 'Thinking…')));
+        }
+        li.appendChild(nm);
+        if (wm.phase === 'open' && row.inK === wm.k) li.appendChild(FF.ui.span('wm-row__in', '✓'));
+        var pts = FF.ui.span('wm-row__pts', FF.util.formatNumber(row.score || 0));
+        li.appendChild(pts);
+        if (reveal && row.last && row.last.k === wm.k && lastScores[uid] != null) countUp(pts, lastScores[uid], row.score || 0, 900);
+        if (!reveal || lastScores[uid] == null || (row.last && row.last.k === wm.k)) lastScores[uid] = row.score || 0;
+        list.appendChild(li);
+      });
+      card.appendChild(list);
+    }
+
+    function waiting(title, sub) {
+      FF.ui.clear(f.host);
+      FF.ui.clear(f.panel);
+      board = null;
+      var w = FF.ui.div('wm-wait');
+      w.appendChild(FF.ui.div('wm-wait__spin'));
+      w.appendChild(FF.ui.el('h2', { class: 'wm-h' }, title));
+      if (sub) w.appendChild(FF.ui.el('p', { class: 'wm-note' }, sub));
+      f.panel.appendChild(w);
+    }
+
+    /* The panel for a round: scores, clock, the question, the controls, the result. */
+    function layout() {
+      FF.ui.clear(f.panel);
+      FF.ui.clear(body);
+      FF.ui.clear(after);
+      f.panel.appendChild(card);
+      f.panel.appendChild(clock.el);
+      f.panel.appendChild(q);
+      f.panel.appendChild(body);
+      f.panel.appendChild(after);
+    }
+
+    function render() {
+      if (ended) return;
+      if (!f.root.isConnected) { cleanup(); return; }
+      var v = client.view();
+      var wm = v.wm;
+      if (!wm || (expected() && wm.matchId !== expected())) {
+        waiting(t('wmGettingReady', 'Laying out the tiles…'), t('wmGettingReadySub', 'Everyone sees the same board at the same moment.'));
+        return;
+      }
+      FF.ui.clear(levelHolder);
+      levelHolder.appendChild(chip(levelName(wm.settings.level), 'wm-chip--level wm-lv-' + wm.settings.level));
+      roundChip.textContent = wm.k >= 0 ? t('gsRoundOf', 'Round {r} of {n}', { r: wm.k + 1, n: wm.total }) : t('gsGetReady', 'Get ready');
+      if (wm.phase === 'ended') { if (!finishedShown && FF.WhatsMissingClient.ready(wm)) showEnd(wm, v); return; }
+      if (wm.phase === 'starting') {
+        if (phaseShown !== 'starting') {
+          phaseShown = 'starting';
+          waiting(t('wmBrief', 'Study the board. Spot what changed.'), t('wmBriefSub', 'Everyone studies the same board, then the tiles flip and something changes. Faster right answers score more, and streaks multiply your points.'));
+        }
+        return;
+      }
+      var rd = wm.round;
+      // Half a round (it can arrive in pieces): wait for the rest before drawing this phase.
+      if (!rd || rd.k !== wm.k || !FF.WhatsMissingClient.ready(wm)) return;
+      var key = wm.matchId + '|' + wm.k;
+      var pkey = key + '|' + wm.phase;
+      var seated = v.seated;
+      drawLeader(wm, wm.phase === 'reveal');
+      if (pkey === phaseShown) { lockIfIn(wm, v); return; }
+      var was = phaseShown;
+      phaseShown = pkey;
+
+      if (wm.phase === 'study') { study(wm, rd, key); return; }
+      if (shown !== key) {
+        // Joined (or came back) after the study time: no study board to show.
+        startRound(rd, key);
+        board = makeBoard(rd, rd.after || blankList(rd), { onTap: function (s) { if (tapHandler) tapHandler(s); } });
+        f.host.appendChild(board.el);
+        f.fit();
+      }
+      if (wm.phase === 'change') {
+        clock.idle();
+        q.textContent = t('wmWatch', 'Something is changing…');
+        if (board) board.el.classList.add('is-hidden');
+        api.audio.play('whoosh');
+        return;
+      }
+      if (wm.phase === 'open') { openRound(wm, rd, v, was === key + '|change'); return; }
+      if (wm.phase === 'reveal') showReveal(wm, rd, v);
+    }
+
+    function hasAny(a) {
+      if (!a) return false;
+      var l = a.slots || a.picks || a.text || [];
+      return l.some(function (x) { return x != null && x !== ''; });
+    }
+    function blankList(rd) { var a = []; for (var i = 0; i < rd.slots; i++) a.push(null); return a; }
+
+    function startRound(rd, key) {
+      shown = key;
+      sentAnswer = null;
+      panel = null;
+      tapHandler = null;
+      preload(rd);
+      f.root.classList.remove('is-revealed', 'is-open', 'is-recap');
+      FF.ui.clear(f.host);
+      layout();
+    }
+
+    function study(wm, rd, key) {
+      startRound(rd, key);
+      f.root.classList.add('is-study');
+      q.textContent = t('wmStudy', 'Remember every picture');
+      board = makeBoard(rd, rd.before, { onTap: function (s) { if (tapHandler) tapHandler(s); } });
+      board.el.classList.add('is-popping');
+      f.host.appendChild(board.el);
+      api.audio.play('flip');
+      later(function () { if (board) board.el.classList.remove('is-popping'); }, POP_MS * rd.slots + 500);
+      if (!client.view().seated) body.appendChild(FF.ui.el('p', { class: 'wm-note' }, t('gsWatchingSub', 'You can join the next one.')));
+      f.fit();
+      tick();
+    }
+
+    function openRound(wm, rd, v, flipping) {
+      var go = function () {
+        if (ended || phaseShown !== wm.matchId + '|' + wm.k + '|open') return;
+        f.root.classList.remove('is-study');
+        f.root.classList.add('is-open');
+        q.textContent = question(rd);
+        FF.ui.clear(body);
+        if (!v.seated) { body.appendChild(FF.ui.el('p', { class: 'wm-note' }, t('gsWatching', 'This game started without you'))); f.fit(); return; }
+        panel = answerPanel(api, rd, board, {
+          tiles: rd.tiles || null, onLayout: f.fit,
+          onTap: function (fn) { tapHandler = fn; },
+          onSubmit: function (a) {
+            if (!client.send(a)) return;
+            sentAnswer = a;
+            api.audio.play('select');
+            body.appendChild(FF.ui.el('p', { class: 'wm-locked is-on', 'aria-live': 'polite' }, t('bqLockedIn', 'Answer locked in. Waiting for everyone…')));
+            f.fit();
+          }
+        });
+        body.appendChild(panel.el);
+        lockIfIn(wm, v);
+        f.fit();
+        tick();
+        if (FF.Nav && FF.Nav.focusFirst) FF.Nav.focusFirst(panel.el);
+      };
+      if (flipping && board) {
+        // The tiles are face down from the change phase: turn them over onto the new board.
+        board.fill(rd.after);
+        holesOf(rd).forEach(function (s) { board.mark(s, 'is-gap'); });
+        board.el.classList.remove('is-hidden');
+        later(function () { holesOf(rd).forEach(function (s) { if (board) sparkle(board.tiles[s]); }); }, FLIP_MS);
+        go();
+      } else {
+        if (board) { board.fill(rd.after); holesOf(rd).forEach(function (s) { board.mark(s, 'is-gap'); }); board.el.classList.remove('is-hidden'); }
+        go();
+      }
+    }
+
+    /* Answered on another tab or before a reload: the server already has it. */
+    function lockIfIn(wm, v) {
+      var me = wm.p[v.uid];
+      if (wm.phase !== 'open' || !me || me.inK !== wm.k || !board) return;
+      if (panel && !panel.locked) {
+        panel.locked = true;
+        board.tappable(null);
+        Array.prototype.forEach.call(body.querySelectorAll('button'), function (b) { b.disabled = true; });
+        if (!body.querySelector('.wm-locked')) body.appendChild(FF.ui.el('p', { class: 'wm-locked is-on', 'aria-live': 'polite' }, t('bqLockedIn', 'Answer locked in. Waiting for everyone…')));
+      }
+    }
+
+    function showReveal(wm, rd, v) {
+      if (!board) return;
+      f.root.classList.remove('is-study');
+      f.root.classList.add('is-open', 'is-revealed');
+      clock.idle();
+      tapHandler = null;
+      var me = (wm.p[v.uid] || {}).last;
+      var mine = me && me.k === wm.k ? me : { ok: false, right: [], rightGaps: 0, pts: 0, none: true };
+      var said = { picks: mine.picks, text: mine.text, slots: mine.slots || (sentAnswer && sentAnswer.slots) || [] };
+      var right = rd.answer.ids.map(function (x, i) { return !!(mine.right && mine.right[i]); });
+      if (panel) panel.finish(!!mine.ok);
+      showTruth(board, rd, said, { ok: !!mine.ok, right: right, rightGaps: mine.rightGaps || 0 });
+      FF.ui.clear(body);
+      FF.ui.clear(after);
+      if (!v.seated) { after.appendChild(FF.ui.el('p', { class: 'wm-reveal__said' }, saidLine(rd, {}, { ok: false }))); f.fit(); return; }
+      api.audio.play(mine.ok ? 'correct' : 'wrong');
+      if (mine.ok && animationsOn() && FF.Confetti) FF.Confetti.burst(mine.streak >= 3 ? 60 : 30);
+      var head = mine.ok ? t('wmRight', 'Spot on!') : mine.none ? t('wmTimeUp', 'Time’s up!')
+        : mine.rightGaps ? t('wmSome', '{n} of {m} right', { n: mine.rightGaps, m: rd.gaps }) : t('wmWrong', 'Not quite');
+      var rc = FF.ui.div('wm-reveal is-' + (mine.ok ? 'good' : mine.rightGaps ? 'part' : 'bad'));
+      rc.appendChild(FF.ui.el('p', { class: 'wm-reveal__head' }, head));
+      var line = saidLine(rd, said, { ok: !!mine.ok });
+      if (line) rc.appendChild(FF.ui.el('p', { class: 'wm-reveal__said' }, line));
+      if (mine.pts) {
+        rc.appendChild(FF.ui.el('p', { class: 'wm-reveal__pts' }, '+' + FF.util.formatNumber(mine.pts)));
+        rc.appendChild(FF.ui.el('p', { class: 'wm-reveal__why' }, pointsLine({ base: mine.base || 0, speed: mine.speed || 0, bonus: mine.bonus || 0, mult: mine.mult || 1 })));
+      }
+      after.appendChild(rc);
+      after.appendChild(FF.ui.el('p', { class: 'wm-note wm-nextin' }, wm.k + 1 >= wm.total ? t('gsFinalSoon', 'Final results coming up…') : t('wmNextSoon', 'Next board in a moment…')));
+      f.fit();
+    }
+
+    function showEnd(wm, v) {
+      finishedShown = true;
+      board = null;
+      FF.ui.clear(f.host);
+      FF.ui.clear(f.panel);
+      FF.ui.clear(f.chips);
+      clock.idle();
+      f.root.classList.remove('is-study', 'is-open', 'is-revealed');
+      f.root.classList.add('is-recap');
+      var rows = (wm.result && wm.result.rows) || [];
+      var top = rows[0];
+      var meWon = !!top && top.uid === v.uid && !(rows[1] && rows[1].place === 1);
+      var box = FF.ui.div('wm-recap wm-recap--room');
+      box.appendChild(FF.ui.el('h2', { class: 'wm-h wm-h--xl' }, meWon ? t('wmYouWin', 'You spotted the most!')
+        : top ? t('wmWinner', '{name} spotted the most!', { name: who(top.uid).name }) : t('gsOver', 'Game over')));
+      box.appendChild(FF.ui.el('p', { class: 'wm-note' }, summary(wm.settings)));
+      var list = FF.ui.el('ol', { class: 'wm-list' });
+      rows.forEach(function (r) {
+        var li = FF.ui.el('li', { class: 'wm-row' + (r.place === 1 ? ' is-top' : '') + (r.uid === v.uid ? ' is-me' : '') });
+        li.appendChild(FF.ui.span('wm-row__place', String(r.place)));
+        var ava = FF.ui.span('wm-row__ava');
+        if (FF.Players && FF.Players.avatarEl) ava.appendChild(FF.Players.avatarEl(who(r.uid), ''));
+        li.appendChild(ava);
+        var nm = FF.ui.span('wm-row__name');
+        nm.appendChild(FF.ui.span('', who(r.uid).name));
+        var bits = [t('qmRightOf', '{c}/{a} right', { c: r.right || 0, a: wm.total })];
+        if (r.best > 1) bits.push(t('qmBestStreak', 'best streak {n}', { n: r.best }));
+        nm.appendChild(FF.ui.span('wm-row__meta', bits.join(' · ')));
+        li.appendChild(nm);
+        li.appendChild(FF.ui.span('wm-row__pts', FF.util.formatNumber(r.points || 0)));
+        list.appendChild(li);
+      });
+      box.appendChild(list);
+      var go = FF.ui.el('button', { type: 'button', class: 'wm-btn wm-btn--go wm-btn--big' });
+      if (FF.Icons && FF.Icons.icon) go.appendChild(FF.Icons.icon('trophy'));
+      go.appendChild(FF.ui.span('', t('srtSeeScores', 'See scores')));
+      go.addEventListener('click', function () { api.audio.play('click'); finish(); });
+      box.appendChild(go);
+      f.panel.appendChild(box);
+      api.audio.play(meWon ? 'winner' : 'roundEnd');
+      if (meWon && animationsOn() && FF.Confetti) FF.Confetti.burst(100);
+      if (FF.Nav && FF.Nav.focusFirst) FF.Nav.focusFirst(box);
+      if (!autoScores) autoScores = setTimeout(finish, AUTO_SCORES_MS);
+    }
+
+    render();
+  }
+
+  /* ================= room settings ================= */
+
+  function roomFields() {
+    function opt(label, value) { return { label: label, value: value }; }
+    return [
+      { key: 'level', label: t('gcLevel', 'Level'), options: R.ROOM_LEVELS.map(function (l) { return opt(levelName(l), l); }) },
+      { key: 'theme', label: t('wmTheme', 'Pictures'), options: R.THEMES.map(function (x) { return opt(themeName(x), x); }) },
+      { key: 'seconds', label: t('wmStudyTime', 'Study time'), options: R.SECONDS.map(function (n) { return opt(n + 's', n); }) },
+      { key: 'choices', label: t('wmChoices', 'Answers to pick from'), options: R.CHOICES.map(function (n) { return opt(String(n), n); }) },
+      { key: 'twists', label: t('wmTwists', 'Changes'), options: R.TWISTS.map(function (x) { return opt(x === 'gone' ? t('wmTwistGoneOnly', 'Only gone') : t('wmTwistMix', 'All kinds'), x); }) },
+      { key: 'rounds', label: t('wmRounds', 'Boards'), options: R.ROUNDS.map(function (n) { return opt(String(n), n); }) }
+    ];
+  }
+
+  var ROOM = {
+    minPlayers: R.MIN_PLAYERS,
+    defaults: R.STANDARD,
+    fields: function () { return roomFields(); },
+    sanitize: function (s) { return R.sanitizeRoom(s); },
+    summary: function (s) { var c = R.sanitizeRoom(s); return summary(c) + ' · ' + t('wmNBoards', '{n} boards', { n: c.rounds }); },
+    start: function (room, pick) { return FF.WhatsMissingApi.start(room, pick); }
+  };
+
   /* ================= register ================= */
 
   FF.registerGame({
@@ -879,6 +1263,7 @@ window.FF = window.FF || {};
     modes: ['solo', 'turn'],
     defaultMode: 'solo',
     leaderboard: true,
+    room: ROOM,
     howToPlay: [
       'Study the board of picture tiles before the time runs out (or tap I’m ready).',
       'The tiles flip and one thing changes: a picture is gone, a new one sneaks in, two swap places, or on Hard several go at once.',
@@ -888,7 +1273,7 @@ window.FF = window.FF || {};
     ],
     start: function (api) {
       var room = FF.Room && FF.Room.current();
-      if (racingRoom(api) && room && FF.WhatsMissingGame.online) { FF.WhatsMissingGame.online(api, room); return; }
+      if (racingRoom(api) && room) { online(api, room); return; }
       // One number decides every board, drawn first so a challenge deals the same everywhere.
       var seed = Math.floor(rand0() * 4294967296);
       if (api.config.daily || api.config.challenge) { play(api, R.STANDARD, seed); return; }
@@ -904,6 +1289,6 @@ window.FF = window.FF || {};
     frame: frame, makeBoard: makeBoard, flipTo: flipTo, answerPanel: answerPanel, showTruth: showTruth,
     saidLine: saidLine, pointsLine: pointsLine, question: question, summary: summary, cardName: cardName,
     picEl: picEl, preload: preload, clockBar: clockBar, chip: chip, glyph: glyph, levelName: levelName, twistName: twistName,
-    online: null
+    holesOf: holesOf, maskedSet: maskedSet, roomFields: roomFields, online: online
   };
 })();

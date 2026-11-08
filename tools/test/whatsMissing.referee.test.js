@@ -136,6 +136,9 @@ test('wm referee: seed secret, study then open', async function () {
   assert(!('before' in o.round), 'the study board is gone once answering opens');
   assert(o.round.after && o.round.twist, 'the changed board and twist are there');
   assert(!('answer' in o.round), 'the answer stays hidden');
+  const tr = m.truth();
+  if (tr.twist === 'gone' || tr.twist === 'several') assertEqual(JSON.stringify(o.round.holes), JSON.stringify(tr.answer.slots), 'the gaps are shown (they are empty on the board)');
+  else assert(!o.round.holes, 'no holes to show for a newcomer or a swap');
   assertEqual(o.closeAt, o.openAt + m.truth().secs * 1000);
   assert(JSON.stringify(o).indexOf(m.saved.value.seed) === -1, 'still no seed');
 });
@@ -280,4 +283,31 @@ test('wm client: answers travel as one string each and the view comes back as li
   await m.answer('p1', C.encode(ans));
   await m.answer('p2', C.encode({ picks: ['x'] }));
   assert(m.wm().p.p1.last.ok, 'an encoded right answer scores');
+});
+
+test('wm client: a phase is drawn only once its round has arrived in full', async function () {
+  const FF = loadFF(FILES.concat(['js/whatsmissing/client.js']));
+  const C = FF.WhatsMissingClient;
+  const m = await match();
+  await m.clock.advance(1000 + m.RF.BRIEF_MS + 1);
+  const study = C.tidy(JSON.parse(JSON.stringify(m.wm())));
+  assert(C.ready(study), 'a full study view is ready');
+  const half = JSON.parse(JSON.stringify(m.wm()));
+  delete half.round.before;
+  assert(!C.ready(C.tidy(half)), 'study without its board is not');
+  await m.open();
+  const open = JSON.parse(JSON.stringify(m.wm()));
+  assert(C.ready(C.tidy(JSON.parse(JSON.stringify(open)))), 'a full open view is ready');
+  for (const field of ['after', 'twist', open.round.choices ? 'choices' : 'secs']) {
+    const v = JSON.parse(JSON.stringify(open));
+    delete v.round[field];
+    assert(!C.ready(C.tidy(v)), 'open without ' + field + ' is not ready');
+  }
+  await m.answer('p1', m.right());
+  await m.answer('p2', m.right());
+  const rev = JSON.parse(JSON.stringify(m.wm()));
+  assert(C.ready(C.tidy(JSON.parse(JSON.stringify(rev)))), 'a full reveal is ready');
+  delete rev.round.answer;
+  assert(!C.ready(C.tidy(rev)), 'a reveal without the answer is not');
+  assert(!C.ready(null));
 });
