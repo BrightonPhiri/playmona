@@ -146,6 +146,16 @@
   --wm-s0: #ff9ec7; --wm-s1: #8fd3ff; --wm-s2: #9fe6a0; --wm-s3: #ffd166; --wm-s4: #c4b0ff; --wm-s5: #ffb38a;
   --wm-gold: #ffd54a; --wm-gold-deep: #c98a12; --wm-gold-ink: #3b1f00; --wm-glow: #fff3b0;
   --wm-good: #22c55e; --wm-good-deep: #15803d; --wm-bad: #fb7185; --wm-bad-deep: #be123c;
+  /* Mini Crossword (js/games/crossword.js): a lamp-lit evening at the table, as the cover:
+     deep navy and walnut, cream paper tiles with navy ink, terracotta and warm gold. */
+  --cw-night: #0b1230; --cw-night-2: #141d44; --cw-walnut: #2a1a12; --cw-walnut-2: #4a2e1c;
+  --cw-lamp: #ffb24a; --cw-lamp-soft: #ffd28a;
+  --cw-paper: #fbf3df; --cw-paper-2: #efe0bd; --cw-paper-edge: #b8955e; --cw-paper-word: #ffe7a6; --cw-paper-cross: #f6ead0;
+  --cw-ink: #14204d; --cw-ink-soft: #4b5478;
+  --cw-cream: #fff4dc; --cw-cream-dim: #d8c7a4;
+  --cw-terra: #d4563a; --cw-terra-deep: #9c321f; --cw-gold: #f4b740; --cw-gold-hi: #ffe08a; --cw-gold-deep: #b97c10;
+  --cw-solved: #d8efc2; --cw-solved-ink: #1f5a2a; --cw-green: #3f9e58; --cw-green-deep: #1d6a33;
+  --cw-wrong: #ffd2c8; --cw-wrong-ink: #a5221a; --cw-reveal-ink: #6a3fa8;
   --medal-gold: #ffc83d; --medal-silver: #cfd6f6; --medal-bronze: #ff9a52; --medal-ink: #0b1030;
 }
 

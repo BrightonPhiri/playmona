@@ -98,6 +98,23 @@ if (base['wm-sky-1']) {
 }
 
 // GeoSpin night sky: always dark, the same in both themes.
+if (base['cw-night']) {
+  ['cw-night', 'cw-night-2', 'cw-walnut'].forEach(function (bg) {
+    check('cw cream on ' + bg, base['cw-cream'], base[bg], 4.5);
+    check('cw dim cream on ' + bg, base['cw-cream-dim'], base[bg], 4.5);
+    check('cw gold on ' + bg, base['cw-gold'], base[bg], 4.5);
+  });
+  ['cw-paper', 'cw-paper-2', 'cw-paper-word', 'cw-paper-cross'].forEach(function (bg) {
+    check('cw ink on ' + bg, base['cw-ink'], base[bg], 4.5);
+    check('cw soft ink on ' + bg, base['cw-ink-soft'], base[bg], 4.5);
+    check('cw reveal ink on ' + bg, base['cw-reveal-ink'], base[bg], 4.5);
+  });
+  check('cw solved ink on solved', base['cw-solved-ink'], base['cw-solved'], 4.5);
+  check('cw wrong ink on wrong', base['cw-wrong-ink'], base['cw-wrong'], 4.5);
+  check('cw cream on terra-deep', base['cw-cream'], base['cw-terra-deep'], 4.5);
+  check('cw cream on green-deep', base['cw-cream'], base['cw-green-deep'], 4.5);
+  check('cw ink on gold', base['cw-ink'], base['cw-gold'], 4.5);
+}
 if (base['gs-night']) {
   console.log(' '); console.log('== GeoSpin ==');
   ['gs-night', 'gs-night-2', 'gs-dusk'].forEach(function (bg) {

@@ -281,13 +281,17 @@ FF.data.words = {
   dictionary: [ 'apple', 'banana', ... ],  // 2000+ common English words, 3-9 letters, lowercase, deduplicated, no proper nouns
   scramble:   [ { word, clue, difficulty } ],  // 120+
   categories: [ { category, items:[...] , difficulty } ],  // 15+ categories, 8-20 items each
-  missingLetters: [ { word, hint, difficulty } ],  // 60+
-  crosswords: [ { size, grid: [ [letter|null, ...], ... ], clues: { across:[{num,row,col,clue}], down:[{num,row,col,clue}] } } ]  // 3+ puzzles (5x5/7x7/9x9)
+  missingLetters: [ { word, hint, difficulty } ]  // 60+
 };
 ```
-`grid` is a 2D array of lowercase letters or `null` for blocked cells. `num` starts at 1 and
-increments per starting square; clue objects reference the number at their start cell. Crosswords
-must be internally consistent (shared letters match) and solvable.
+
+### `FF.data.crosswords` (js/data/crosswords.js, generated)
+Mini Crossword puzzles: `{ id, level, pack, size, kind: 'dense'|'open', rows: ['CAMEL', 'O#A#I', ...], clues: { '1A': ..., '2D': ... } }`.
+`#` is a black square; numbers follow standard crossword numbering (`FF.CrosswordRules.build`).
+Never edit this file by hand: edit the clue banks in `tools/crossword/bank/` (format and clue rules in
+its README), then run `node tools/gen-crossword.js`. It fills the grids, checks every puzzle and the
+coverage (200+ puzzles, 60+ per level, 3+ per pack and level) and only writes when everything passes.
+`node tools/gen-crossword.js --needs` lists fill words that still need a clue in `general.txt`.
 
 ### `FF.data.countries` (js/data/countries.js)
 ```js

@@ -59,6 +59,11 @@ const ORDER = [
   'js/games/letterRush.js',
   'js/games/stacoend.js',
   'js/games/wordGames.js',
+  'js/data/crosswords.js',
+  'js/crossword/rules.js',
+  'js/crossword/cursor.js',
+  'js/crossword/keyboard.js',
+  'js/games/crossword.js',
   'js/games/quizMix.js',
   'js/games/quizGames.js',
   'js/games/memoryGames.js',
@@ -166,7 +171,8 @@ try {
     console.log('data namespaces: ' + Object.keys(sandbox.FF.data).join(', '));
     const d = sandbox.FF.data;
     if (d.quiz) console.log('quiz: questions=' + (d.quiz.questions || []).length + ' trueFalse=' + (d.quiz.trueFalse || []).length + ' guessWho=' + (d.quiz.guessWho || []).length + ' pictureQuiz=' + (d.quiz.pictureQuiz || []).length);
-    if (d.words) console.log('words: dictionary=' + (d.words.dictionary || []).length + ' scramble=' + (d.words.scramble || []).length + ' categories=' + (d.words.categories || []).length + ' missingLetters=' + (d.words.missingLetters || []).length + ' crosswords=' + (d.words.crosswords || []).length);
+    if (d.words) console.log('words: dictionary=' + (d.words.dictionary || []).length + ' scramble=' + (d.words.scramble || []).length + ' categories=' + (d.words.categories || []).length + ' missingLetters=' + (d.words.missingLetters || []).length);
+    console.log('crosswords: ' + (d.crosswords || []).length);
     if (d.countries) console.log('countries: ' + d.countries.length);
     if (d.visual) console.log('visual keys: ' + Object.keys(d.visual).map(function (k) { return k + '=' + (d.visual[k] || []).length; }).join(' '));
   }
