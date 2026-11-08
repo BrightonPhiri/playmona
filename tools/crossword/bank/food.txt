@@ -1,0 +1,175 @@
+# Food & drink clue bank: WORD|levels|easy clue|normal clue|hard clue
+# No alcoholic drinks.
+
+# Short words (3-5 letters)
+PIE|enh|Pastry dish with a filling inside|Steak and kidney ___|Humble one is eaten when admitting you were wrong
+TEA|enh|Hot drink made with leaves|Afternoon ___ with scones|Darjeeling or Assam, perhaps
+JAM|enh|Sweet fruit spread for your toast|Strawberry ___ in a Victoria sponge|Fruit preserve, or a traffic snarl-up
+EGG|enh|A hen lays this|Boiled ___ and soldiers|It may be poached or coddled
+BUN|enh|Small round sweet bread roll|Hot cross ___|Chelsea or Bath teatime treat
+PEA|enh|Small green ball that grows in a pod|Mushy ___ with fish and chips|The princess felt one under all her mattresses
+OATS|enh|Grain used to make porridge|Rolled grains in flapjacks and muesli|Dr Johnson said Scots ate what English horses did
+FIG|nh||Soft fruit packed with tiny seeds|Tree whose leaves Adam and Eve sewed together
+HAM|enh|Pink meat from a pig, in sandwiches|Toastie filling with cheese|Cured pork, or an actor who overacts
+RICE|enh|Small white grains often eaten with curry|Grain grown in paddy fields|Arborio or basmati, for example
+SOUP|enh|Hot runny food eaten from a bowl|Minestrone or chicken noodle|Mulligatawny or gazpacho
+CAKE|enh|Sweet treat with candles on your birthday|Victoria sponge, for example|Marie Antoinette supposedly told the hungry to eat it
+MILK|enh|White drink that comes from cows|Pint of ___ on the doorstep|Dairy drink once delivered by a float
+BREAD|enh|You make toast from it|Loaf of ___|Sourdough or soda, for instance
+APPLE|enh|Red or green fruit that grows on trees|Bramley or Granny Smith|Fruit that fell on Newton, so the story goes
+PEAR|enh|Green fruit that is wide at the bottom|Conference or Williams fruit|The partridge sits in this tree in a Christmas carol
+PLUM|enh|Purple fruit with a stone inside|Victoria fruit that dries into a prune|Little Jack Horner pulled one out of his pie
+LIME|enh|Small green fruit that tastes sour|Key ___ pie|Citrus fruit that kept British sailors free of scurvy
+LEMON|enh|Sour yellow fruit|Fruit in a meringue pie|Sharp citrus squeezed over pancakes on Shrove Tuesday
+MANGO|enh|Sweet orange fruit from hot countries|Tropical fruit with a large flat stone|Alphonso is a prized variety of this Indian fruit
+GRAPE|enh|Small round fruit that grows in bunches|Fruit dried to make a raisin|Muscat or Concord, on the vine
+MELON|enh|Big round fruit full of juice|Honeydew or cantaloupe|Galia or Charentais
+PEACH|enh|Soft fruit with fuzzy skin|Fruit in a Melba dessert|James travelled inside a giant one, in Roald Dahl
+BEAN|enh|Seed from a pod, often baked in tomato sauce|Runner or broad vegetable|Coffee seed, or a kidney-shaped pulse
+KALE|nh||Curly green leafy vegetable|Cabbage relative hailed as a superfood
+LEEK|nh||Long green and white vegetable of the onion family|Welsh emblem worn on St David's Day
+TOAST|enh|Bread browned under the grill|Beans on ___|Raise a glass and propose one
+CHIPS|enh|Fried potato strips eaten with fish|Fish and ___|Crisps, to an American
+PASTA|enh|Spaghetti or macaroni|Penne or fusilli|Farfalle or orecchiette
+PIZZA|enh|Flat round dish with cheese and tomato|Margherita, for one|Neapolitan dish baked in a wood-fired oven
+HONEY|enh|Sweet sticky food made by bees|Winnie-the-Pooh's favourite food|Manuka product from New Zealand
+SUGAR|enh|Sweet white stuff that goes in cakes|Caster or demerara|Product refined from cane or beet
+SALT|enh|White stuff you shake on your chips|Crisp flavour paired with vinegar|Sodium chloride
+FLOUR|enh|White powder used to make bread|Self-raising or plain|Ground wheat that sounds like a garden bloom
+CREAM|enh|Thick and white, you pour it on strawberries|Double or clotted|The best of the bunch, as in the ___ of the crop
+JUICE|enh|Drink squeezed from fruit|Orange ___ at breakfast|Liquid from fruit, or slang for electricity
+WATER|enh|Clear drink that comes from the tap|Still or sparkling drink|H2O
+COCOA|enh|Hot chocolate drink|Powder for a milky bedtime drink|Ground seeds of the cacao tree
+LUNCH|enh|Meal in the middle of the day|Packed ___ for school|Ploughman's meal, perhaps
+MEAL|enh|Breakfast, lunch or dinner|Three-course ___|Repast, or coarsely ground grain
+STEW|enh|Meat and vegetables cooked slowly in a pot|Irish ___|Hotpot, or to fret and worry
+BAKE|enh|Cook in the oven|What you do to a cake in a hot oven|Harden in a kiln, or make bread
+STIR|enh|Move a spoon round and round in a pot|Mix tea with a teaspoon|Cause a commotion, or mix the custard
+BOIL|enh|Heat water until it bubbles|Cook an egg in hot water|Reach 100 degrees Celsius, as water does at sea level
+FRY|enh|Cook in a pan with hot oil|Stir-___|Young fish, or cook in fat
+ROAST|enh|Sunday dinner cooked in the oven|Cook a chicken in the oven|Cook a joint, or tease mercilessly
+SLICE|enh|A thin piece of cake or bread|Cut into thin pieces|Pizza portion, or a golfer's curving shot
+SPICE|enh|Strong flavour such as ginger or cinnamon|Sugar and ___ and all things nice|Nutmeg or mace, once traded along historic routes
+CHOP|enh|Cut into pieces with a knife|Lamb ___|Karate blow, or dice the carrots
+GRILL|enh|Cook sausages under the heat|Cook on a barbecue rack|Question intensely
+WHISK|enh|Beat eggs very fast|Kitchen tool for whipping cream|Spirit away, or a balloon tool for egg whites
+DOUGH|enh|Soft mix of flour and water for bread|Pizza base before baking|Slang for money that a baker kneads
+ICING|enh|Sweet topping on a cake|Royal ___ on a Christmas cake|The finishing touch, ___ on the cake
+SCONE|enh|Small cake eaten with jam and cream|Item in a Devon cream tea|Teatime bake, topped jam first in Cornwall
+TART|enh|Pastry case with fruit or jam on top|Bakewell ___|Sharp-tasting, or a treacle bake
+CURRY|enh|Spicy dish often eaten with rice|Korma or vindaloo|Seek approval, as in ___ favour
+NAAN|nh||Indian flatbread baked in a tandoor|Leavened bread served with a korma
+SUSHI|nh||Japanese dish of vinegared rice and raw fish|Nigiri or maki
+BACON|enh|Crispy strips from a pig at breakfast|Rashers in a full English|Francis the philosopher, or a back rasher
+BASIL|nh||Herb crushed to make pesto|Fawlty of Fawlty Towers
+OLIVE|enh|Small green or black fruit, often on pizza|Fruit pressed for a cooking oil|Its branch is held out as a peace offering
+SAUCE|enh|Ketchup is one kind|Bechamel or hollandaise|Cheek, or something poured over pudding
+SALAD|enh|Lettuce and tomato dish|Caesar ___|Your ___ days, when young and green
+STEAK|enh|Thick slice of beef|Sirloin or rump|Diane, in a classic flambeed dish
+JELLY|enh|Wobbly pudding|Party pudding that sets in a mould|Jam, to Americans
+SPOON|enh|You eat soup with it|Wooden ___ for stirring|A wooden one is the booby prize for coming last
+CHEF|enh|Person who cooks in a restaurant|Head cook in a kitchen|Ramsay or Oliver, by trade
+COOK|enh|Make food ready to eat|Person who makes the meals|Captain who charted New Zealand's coast
+OVEN|enh|Hot box in the kitchen|You bake a cake in it|Aga or range compartment for roasting
+POT|enh|Big deep pan for soup|Pan with two handles for stew|It calls the kettle black
+FRUIT|enh|Apples, pears and bananas|Produce sold by a greengrocer|Result of one's labours, as in the Bible
+ONION|enh|Vegetable that makes you cry when you cut it|Red or spring ___|Bulb in layers, cousin of the shallot
+
+# Medium words (6-7 letters)
+BUTTER|nh||Spread churned from cream|Flatter, with "up"
+NOODLE|nh||Long thin strip in a bowl of ramen|Use your ___ (think hard)
+CHEESE|nh||Cheddar or Brie|Say this when posing for a photo
+DINNER|nh||Sunday ___ with roast potatoes|Main meal: in the evening for some, at midday for others
+SUPPER|nh||Light evening meal|The Last one, in Leonardo's painting
+BRUNCH|nh||Meal that combines breakfast and lunch|Portmanteau meal of the late morning
+PICNIC|nh||Meal eaten outdoors on a blanket|Teddy bears have one in the woods, in the song
+BANANA|nh||Long yellow fruit with a peel|Bunched fruit, a monkey's favourite
+ORANGE|nh||Citrus fruit, or a colour|Seville variety is made into marmalade
+CHERRY|nh||Small red fruit with a stone|Bakewell topping, or a tree in a Chekhov orchard
+TOMATO|nh||Red fruit used in ketchup|Love apple, as it was once called
+POTATO|nh||Vegetable for mash or chips|Maris Piper or King Edward
+CARROT|nh||Orange root vegetable|Reward dangled in front of a donkey
+GARLIC|nh||Strong-smelling bulb used in cooking|Bulb said to keep vampires away
+PEPPER|nh||Salt's partner on the table|Capsicum, green, red or yellow
+PARSNIP|nh||Pale root vegetable roasted at Christmas|Cream-coloured relative of the carrot
+SPINACH|nh||Leafy green vegetable that Popeye eats|Leaves in eggs Florentine
+CABBAGE|nh||Leafy vegetable shredded for coleslaw|Sauerkraut is made from it
+LETTUCE|nh||Salad leaf such as iceberg|Romaine or little gem
+AVOCADO|nh||Green fruit mashed to make guacamole|Hass variety, smashed on toast
+COCONUT|nh||Hairy brown nut with milk inside|You may shy at one at the fair
+APRICOT|nh||Small orange fruit with a stone|Its jam glazes a Sachertorte
+RHUBARB|nh||Pink stalks cooked in a crumble|What extras murmur in crowd scenes
+PANCAKE|nh||Flat treat tossed on Shrove Tuesday|Crepe, perhaps
+SAUSAGE|nh||Banger in toad-in-the-hole|Chipolata or Cumberland
+BISCUIT|nh||Crunchy treat to dunk in tea|Garibaldi or bourbon
+MUFFIN|nh||Small cake baked in a paper case|The ___ Man of Drury Lane
+CUSTARD|nh||Yellow sauce poured on pudding|Bird's powder makes it
+PUDDING|nh||Sweet course, in Britain|Yorkshire or Christmas variety
+TRIFLE|nh||Layered dessert with sponge and custard|Something of little importance
+CRUMBLE|nh||Fruit pudding with a crunchy topping|Fall to pieces, or an apple pud
+YOGHURT|nh||Creamy dairy food, often fruity|Greek or natural, made from cultured milk
+COFFEE|nh||Drink made from roasted beans|Espresso or latte
+SQUASH|nh||Fruit drink you add water to|Cordial, or a butternut vegetable
+KETCHUP|nh||Red tomato sauce for chips|Condiment in a squeezy bottle, Heinz's best known
+MUSTARD|nh||Hot yellow sauce for a hot dog|Dijon or English
+VINEGAR|nh||Sour liquid sprinkled on chips|Malt or balsamic
+NUTMEG|nh||Spice grated over custard|Pass the ball through an opponent's legs
+GINGER|nh||Spicy root used in biscuits|Red hair, or a stir-fry root
+PASTRY|nh||Dough for a pie crust|Puff or shortcrust
+LASAGNE|nh||Baked layers of pasta, meat and cheese|Garfield's favourite dish
+RISOTTO|nh||Creamy Italian rice dish|Dish made with arborio rice
+RECIPE|nh||Instructions for cooking a dish|A ___ for disaster
+KITCHEN|nh||Room where food is cooked|Galley, on a ship
+SIMMER|nh||Cook gently, just below the boil|Seethe quietly
+CRISPS|nh||Thin fried potato slices in a packet|What Americans call potato chips
+POPCORN|nh||Snack eaten at the cinema|Kernels that burst when heated
+DESSERT|nh||Sweet course at the end of a meal|Its spelling has one more S than a dry, sandy place
+PEANUT|nh||Nut used to make a spread|Monkey nut, actually a legume
+ALMOND|nh||Nut used to make marzipan|Flavour of a Bakewell tart
+SALMON|nh||Pink fish, often smoked|Fish that swims upstream to spawn
+CHICKEN|nh||Roast bird for Sunday lunch|Game of nerve, or a coward
+TURKEY|nh||Bird eaten at Christmas dinner|Bird, or a country straddling Europe and Asia
+
+# Long words (8-9 letters)
+COURGETTE|nh||Green vegetable like a small marrow|Zucchini, on this side of the Atlantic
+CUCUMBER|nh||Long green vegetable in a teatime sandwich|As cool as one, they say
+BROCCOLI|nh||Green vegetable that looks like tiny trees|Calabrese, by another name
+AUBERGINE|nh||Purple vegetable in moussaka|Eggplant, to Americans
+MUSHROOM|nh||Fungus fried in a full English|Chestnut or button variety
+SWEETCORN|nh||Yellow kernels stripped from a cob|Maize served as a vegetable
+BEETROOT|nh||Purple-red root vegetable|Main root in borscht
+PINEAPPLE|nh||Spiky tropical fruit with a leafy top|Fruit on a Hawaiian pizza
+RASPBERRY|nh||Red soft fruit sold in a punnet|Rude noise blown with the tongue
+BLUEBERRY|nh||Small dark blue fruit in muffins|Violet Beauregarde turned into a giant one
+CRANBERRY|nh||Tart red berry made into a sauce for turkey|Bog-grown fruit traditional at Thanksgiving
+TANGERINE|nh||Small sweet citrus fruit|Mandarin named after a Moroccan port
+SANDWICH|nh||Filling between two slices of bread|Snack named after an Earl
+BREAKFAST|nh||First meal of the day|A full English, for one
+OMELETTE|nh||Folded dish of beaten eggs|You can't make one without breaking eggs
+PORRIDGE|nh||Hot oat breakfast in a bowl|Goldilocks found baby bear's just right
+CHOCOLATE|nh||Sweet treat made from cocoa|Willy Wonka's speciality
+LEMONADE|nh||Fizzy drink made with lemons|When life gives you lemons, make this
+SMOOTHIE|nh||Thick blended fruit drink|Suave charmer, or a blended drink
+MILKSHAKE|nh||Thick drink of milk and ice cream|Diner drink sipped through a straw, perhaps malted
+ESPRESSO|nh||Small strong black coffee|Italian shot from a machine
+BEVERAGE|nh||Any kind of drink|Formal word for a drink
+CINNAMON|nh||Sweet brown spice from tree bark|Bark spice in a Chelsea bun
+MARMALADE|nh||Orange spread for toast|Paddington's favourite sandwich filling
+BAGUETTE|nh||Long thin French loaf|French stick
+CROISSANT|nh||Flaky crescent-shaped pastry|French breakfast roll named after the moon's shape
+DOUGHNUT|nh||Fried ring or ball of sugary dough|Homer Simpson's favourite treat
+FLAPJACK|nh||Oaty bar made with golden syrup|Chewy traybake; a pancake in America
+MERINGUE|nh||Crisp sweet made from egg white and sugar|Base of a pavlova
+SPAGHETTI|nh||Long thin strings of pasta|Bolognese partner
+CASSEROLE|nh||Dish slow-cooked in the oven|Lidded dish, or the stew inside it
+DUMPLING|nh||Ball of dough cooked in a stew|Dim sum item, perhaps steamed
+SAUCEPAN|nh||Pot with a long handle and a lid|Kitchen vessel for boiling
+COLANDER|nh||Bowl with holes for draining pasta|Kitchen strainer
+DELICIOUS|nh||Very tasty|Scrumptious
+MARINATE|nh||Soak meat in a sauce before cooking|Steep in oil and spices
+BARBECUE|nh||Outdoor grill for summer cooking|Cook-out over charcoal
+VEGETABLE|nh||A carrot or a pea|Marrow or swede, for example
+CHESTNUT|nh||Nut roasted on an open fire|An old joke, or a conker's edible cousin
+HAZELNUT|nh||Nut in a chocolate spread|Cobnut or filbert
+MEATBALL|nh||Ball of minced meat|Swedish dish served with lingonberries
+HAMBURGER|nh||Beef patty in a bun|Quarter-pounder, for example

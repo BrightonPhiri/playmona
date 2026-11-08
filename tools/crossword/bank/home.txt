@@ -1,0 +1,170 @@
+# Home & School: rooms, furniture, household things, chores, family, clothes, school
+SOFA|enh|Long soft seat for two or more people|Couch in the living room|Settee, by another name
+LAMP|enh|It gives light on a table|Bedside light with a shade|Aladdin rubbed his to summon a genie
+CHALK|enh|Teachers write on the blackboard with it|White stick for a blackboard|Soft white rock of the cliffs at Dover
+RULER|enh|Straight stick for measuring lines|Classroom tool marked in centimetres|Monarch, or a measuring stick
+ATTIC|enh|Room at the top of a house, under the roof|Loft for storing old things|Garret under the eaves
+BED|enh|You sleep in it at night|Bunk, cot or four-poster|Where a river flows or flowers grow
+MUM|enh|Your mother|Mother, informally|Keep ___ (say nothing)
+DAD|enh|Your father|Father, informally|Pop, or pa
+NAN|enh|Your grandmother|Granny, informally|Grandma, or Indian bread spelt another way
+AUNT|enh|Your mum's or dad's sister|Uncle's wife, perhaps|Sally, in a fairground throwing game
+UNCLE|enh|Your mum's or dad's brother|Aunt's husband, perhaps|Bob's your ___!
+BABY|enh|A very young child|Newborn in a pram|Infant, or the youngest of the family
+DESK|enh|Table you sit at to do schoolwork|Writing table in a classroom|Bureau, or a newsroom department
+PEN|enh|You write with ink using it|Biro, for example|Mightier than the sword, they say
+BOOK|enh|You read stories in it|Novel or textbook|Reserve a table, say
+BAG|enh|You carry your things in it|School satchel, for example|Catch, as a hunter might
+RUG|enh|Small mat on the floor|Covering in front of the hearth|Cut a ___ (dance with energy)
+CUP|enh|You drink tea from it|Saucer's partner|Trophy for the winners
+MUG|enh|Big cup with a handle|Large cup for hot chocolate|Face, informally, or a gullible person
+PAN|enh|You fry eggs in it|Frying ___|Peter who never grew up
+BIN|enh|You put rubbish in it|Wheelie ___|Throw away, informally
+TAP|enh|Turn it on to get water|Fixture over the sink|Light knock on the door
+SINK|enh|You wash dishes in it|Kitchen basin under the tap|Go down, like a stone
+BATH|enh|You wash in it, full of warm water|Tub filled with water for washing|Somerset city famous for its Roman spa
+OVEN|enh|You bake cakes in it|Hot box in the kitchen|Where a Sunday roast is cooked
+FORK|enh|You eat with it, and it has prongs|Knife's partner at dinner|Split in the road
+KNIFE|enh|You cut food with it|Sharp piece of cutlery|Blade at the dinner table
+SPOON|enh|You eat soup with it|Tea or table ___|Wooden one awarded for coming last
+PLATE|enh|You eat your dinner off it|Flat dish for a meal|Number ___ on a car
+BOWL|enh|You eat cereal from it|Deep dish for soup|Deliver the ball in cricket
+CHAIR|enh|You sit on it|Seat with a back and four legs|Lead a meeting
+TABLE|enh|You eat dinner at it|Furniture with legs and a flat top|Times chart learned by heart
+SHELF|enh|Flat board on the wall to put books on|Ledge in a bookcase|Continental ___, at the edge of the sea bed
+DOOR|enh|You open it to go into a room|Way in with a handle|Number Ten's is famously black
+ROOF|enh|Top part of a house|Tiles or thatch cover it|Hit the ___ (get very angry)
+WALL|enh|Side of a room|Humpty Dumpty sat on one|Hadrian had one built across northern England
+FLOOR|enh|You walk on it in a room|Ground level of a room|Astound, informally
+GATE|enh|Door in a fence|Garden entrance|Airport boarding point
+KEY|enh|You unlock the door with it|Lock opener|Piano lever, or a map's guide
+BELL|enh|It rings at the end of school|Ringer by the front door|Alexander Graham, telephone pioneer
+CLOCK|enh|It tells you the time|Grandfather ___|Notice, in slang
+SOAP|enh|You wash your hands with it|Bubbly bar for washing|EastEnders, for one
+TOWEL|enh|You dry yourself with it|Bath sheet|Throw in the ___ (give up)
+BROOM|enh|Brush with a long handle for sweeping|Sweeping tool|Witch's flying machine
+MOP|enh|You clean the floor with it|Tool for a wet floor|Untidy head of hair
+SOCK|enh|You wear it on your foot inside a shoe|Knitted foot covering|Punch, informally
+SHOE|enh|You wear it on your foot|Trainer or sandal|Horse's iron fitting
+BOOT|enh|Tall shoe for wet weather|Wellington, for example|Car's luggage space, in Britain
+HAT|enh|You wear it on your head|Cap or beret|Bowler or trilby
+COAT|enh|You wear it outside when it is cold|Anorak or mac|Layer of paint
+SCARF|enh|You wrap it round your neck|Woolly neck warmer|Football fan's knitted colours
+GLOVE|enh|You wear it on your hand|Hand covering with fingers|Fits like a ___
+SKIRT|enh|Clothing that hangs from the waist|Kilt, for one|Go round, avoid
+DRESS|enh|One-piece outfit with a skirt|Frock|Put on clothes, or bandage a wound
+MATHS|enh|School subject with numbers and sums|Subject with sums and shapes|Arithmetic, algebra and geometry
+ART|enh|Drawing and painting at school|Painting and sculpture|State of the ___ (the very latest)
+GLUE|enh|Sticky stuff for paper|Gum for sticking things|PVA, in the classroom
+PAPER|enh|You draw on it|Sheet for writing|Exam, or a daily newspaper
+SHED|enh|Small hut in the garden|Garden store for tools|Lose, as a snake does its skin
+BRUSH|enh|You do your hair with it|Paint or hair ___|Narrow escape, a ___ with danger
+COT|enh|Bed with sides for a baby|Baby's bed|Crib, or a camp bed
+STOOL|enh|Seat with no back|Kitchen bar seat|Piano player's perch
+SWEEP|enh|Use a broom|Brush the floor clean|Win every game in a series
+APRON|enh|You wear it when cooking|Pinny|Stage area in front of the curtain
+GLOBE|enh|Round map of the world|Classroom sphere|Shakespeare's theatre
+QUIZ|enh|Test with questions|Pub test of general knowledge|Question closely
+LADLE|nh||Big deep spoon for soup|Serve with a deep scoop
+NIECE|nh||Your brother's or sister's daughter|Daughter of a sibling
+PUPIL|nh||Child at school|Learner, or the black centre of the eye
+ATLAS|nh||Book of maps|Titan who held up the sky
+CHORE|nh||Household job|Tedious task
+DRAMA|nh||School subject with acting|Big fuss, or a stage play
+DUVET|nh||Quilt on a bed|Tog-rated bed cover
+EXAM|nh||Test at the end of term|GCSE, for one
+TERM|nh||Part of the school year|Word, or a fixed period
+SLATE|h|||Old classroom writing tablet
+QUILL|h|||Feather pen of old
+PILLOW|nh||Soft cushion for your head in bed|Sleeper's headrest
+SISTER|nh||Girl with the same parents as you|Nun, or a senior nurse
+BROTHER|nh||Boy with the same parents as you|Sibling, or a monk
+COUSIN|nh||Your aunt's or uncle's child|Second ___ once removed
+NEPHEW|nh||Your brother's or sister's son|Niece's male counterpart
+MOTHER|nh||Female parent|Necessity is this of invention
+FATHER|nh||Male parent|Pa, or a parish priest
+KETTLE|nh||It boils water for tea|A pretty ___ of fish
+FRIDGE|nh||Cold cupboard for food|Magnets often decorate its door
+TEAPOT|nh||Pot for brewing a cuppa|Short and stout, in a nursery song
+WINDOW|nh||Glass pane in a wall|Gap in a busy diary
+CARPET|nh||Soft covering for the whole floor|Red one rolled out for stars
+CURTAIN|nh||Cloth drawn across a window|It falls at the end of a play
+CUSHION|nh||Soft pad on a sofa|Soften the blow
+BLANKET|nh||Warm woolly cover on a bed|Thick layer, as of snow
+MIRROR|nh||Glass you see yourself in|Copy exactly
+CEILING|nh||Top surface of a room|Upper limit
+KITCHEN|nh||Room where food is cooked|Galley, on dry land
+CELLAR|nh||Room under the house|Wine store below ground
+GARAGE|nh||Building for a car|Petrol station, or a music genre
+GARDEN|nh||Lawn and flower beds by a house|Eden, for one
+PANTRY|nh||Small room for storing food|Larder
+DRAWER|nh||Sliding box in a chest|One who sketches, or a box that slides
+PENCIL|nh||You draw with it and can rub it out|HB, for one
+CRAYON|nh||Wax stick for colouring|Pastel's waxy cousin
+SCHOOL|nh||Place where children learn|Group of fish
+LESSON|nh||Time spent learning a subject|Bible reading in church
+TEACHER|nh||Adult in charge of a class|Sir or Miss, to a pupil
+SCIENCE|nh||Subject with experiments|Biology, chemistry and physics together
+HISTORY|nh||Subject about the past|Ancient ___ (old news)
+LIBRARY|nh||Place to borrow books|Quiet room full of shelves
+SATCHEL|nh||Leather school bag on a strap|Bag of books worn on the shoulder
+JUMPER|nh||Woolly top|Pullover, or a showjumping horse
+PYJAMAS|nh||Clothes you sleep in|Bananas wear them, on children's TV
+MITTEN|nh||Glove with a thumb but no fingers|One of a pair the three little kittens lost
+JACKET|nh||Short coat|Potato skin, or a book cover
+UNIFORM|nh||Clothes every pupil wears the same|Same throughout
+LAUNDRY|nh||Dirty clothes to be washed|Washerwoman's workplace
+DUSTPAN|nh||Pan you sweep dirt into|Brush's partner
+BUCKET|nh||Pail for water|Rain down hard, informally
+SPONGE|nh||Soft pad for washing up|Victoria ___ (cake)
+STAPLER|nh||It joins sheets with metal clips|Desk gadget that bites paper together
+COMPASS|nh||Tool for drawing circles|North finder
+ENGLISH|nh||School subject of reading and writing|Language of Shakespeare
+BIOLOGY|nh||Science of living things|Life science
+PHYSICS|nh||Science of forces and energy|Newton's subject
+ALGEBRA|h|||Maths with x and y
+CUTLERY|nh||Knives, forks and spoons|A canteen holds a set
+CHIMNEY|nh||Smoke goes up it|Father Christmas comes down it
+NURSERY|nh||Baby's room|Kind of rhyme sung to toddlers
+SLIPPER|nh||Soft indoor shoe|Cinderella lost a glass one
+HOMEWORK|nh||Work set to do after school|The dog ate it, or so the excuse goes
+CUPBOARD|nh||Kitchen storage with doors|Harry Potter slept in one under the stairs
+WARDROBE|nh||Tall cupboard for clothes|Narnia lay beyond one
+TROUSERS|nh||Clothing with two legs|Pants, to Americans
+DAUGHTER|nh||Female child|Son's sister
+SPELLING|nh||Friday ___ test|Orthography
+NOTEBOOK|nh||Pad for jotting things down|Jotter, or a small laptop
+SCISSORS|nh||Tool for cutting paper|Rock, paper, ___
+REGISTER|nh||Morning roll call|Range of a voice
+ASSEMBLY|nh||Whole-school meeting in the hall|Putting together flat-pack parts
+PLAYTIME|nh||Break when children go outside|What Americans call recess
+CLASSROOM|nh||Room where lessons are held|Form room
+TIMETABLE|nh||Chart of lessons for the week|Railway schedule
+GEOGRAPHY|nh||Subject about maps and countries|Study of the earth's surface and peoples
+SHARPENER|nh||Tool to put a point on a pencil|Desk gadget with a hidden blade
+BATHROOM|nh||Room with a tub and basin|Where to wash, or a polite word for the loo
+BOOKCASE|nh||Furniture for holding novels|Shelving unit in a library
+DOORBELL|nh||It rings when visitors arrive|Chime pressed by the postman
+DOORSTEP|nh||Spot just outside the front entrance|Very thick slice of bread
+FIREPLACE|nh||Hearth in the sitting room|Home of the grate and mantelpiece
+STAIRCASE|nh||Flight of steps in a house|It may be spiral
+HAIRBRUSH|nh||Bristly tool for tidying your hair|Grooming tool with a paddle or round head
+ARMCHAIR|nh||Comfy seat with sides to rest on|Kind of critic who only watches
+MATTRESS|nh||Soft pad you sleep on|Sprung part of a bed
+HOUSEWORK|nh||Cleaning and tidying at home|Domestic chores, all together
+GRANDSON|nh||Son of your son or daughter|Boy two generations down
+THESAURUS|h|||Roget's book of synonyms
+ALPHABET|nh||A to Z of letters|Its name comes from two Greek letters
+CHEMISTRY|nh||Science of elements and reactions|Spark between two people
+SAUCEPAN|nh||Deep cooking pot with a long handle|Pot for gravy or custard
+TEASPOON|nh||Small spoon for stirring a cuppa|Recipe measure, tsp for short
+COLANDER|nh||Bowl with holes for draining pasta|Kitchen strainer
+CROCKERY|nh||Plates, cups and saucers|Best china, all together
+PINAFORE|h|||Sleeveless dress worn over a blouse
+CARDIGAN|nh||Jumper that buttons down the front|Knitwear named after an earl
+UMBRELLA|nh||You hold it up in the rain|Brolly
+BANISTER|nh||Handrail beside the stairs|Children love to slide down it
+WALLPAPER|nh||Patterned roll pasted up in a room|Picture behind your computer's icons
+WASHBASIN|h|||Bathroom sink
+BEDSPREAD|h|||Counterpane
+CLASSMATE|nh||Pupil in the same form|Schoolfellow

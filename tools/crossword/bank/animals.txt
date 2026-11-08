@@ -1,0 +1,167 @@
+# Animals: pets, farm, wild, sea, birds, insects and animal words
+# WORD|levels|easy clue|normal clue|hard clue
+CAT|enh|Furry pet that purrs|Tabby or Persian, for example|It is said to have nine lives
+DOG|enh|Pet that barks and wags its tail|Spaniel or terrier, for example|Man's best friend, so they say
+COW|enh|Farm animal that gives us milk|Animal that chews the cud and moos|Friesian or Jersey in the dairy herd
+PIG|enh|Pink farm animal that oinks|Farm animal kept in a sty|Boar or sow, on the farm
+HEN|enh|Farm bird that lays eggs|Female chicken|Bird that broods in the coop
+FOX|enh|Wild animal with a bushy red tail|Sly animal whose female is a vixen|Reynard of the old folk tales
+OWL|enh|Bird that hoots at night|Wise-looking bird of the night|Barn or tawny bird of prey
+BAT|enh|Animal that flies at night and hangs upside down|The only mammal that can truly fly|Flying mammal that hunts by echolocation
+ANT|enh|Tiny insect that lives in a big colony|Insect that may be a worker, a soldier or a queen|Hard worker in Aesop's fable with the grasshopper
+BEE|enh|Buzzing insect that makes honey|Insect that lives in a hive|Busy insect, so they say; drones are the males
+RAT|enh|Animal like a big mouse with a long tail|Rodent that comes first in the Chinese zodiac|The Pied Piper led them out of Hamelin
+EMU|enh|Big bird from Australia that cannot fly|Flightless bird on Australia's coat of arms|Australia's tallest native bird
+APE|enh|Big monkey with no tail|Gorilla or chimpanzee, for example|Mimic; or a primate without a tail
+EEL|enh|Long fish shaped like a snake|Slippery fish that wriggles like a snake|It's slippery, as the saying goes, and may be jellied in London
+RAM|enh|Daddy sheep|Male sheep|Aries is shown as one
+DEN|enh|Home of a fox or a lion|Lair of a wild animal|Cubs' hideaway; or a cosy little study
+CUB|enh|Baby lion or bear|Young fox, bear or lion|Young bear; or a junior Scout
+FOAL|enh|Baby horse|Young horse or pony|Colt or filly in its first year
+LAMB|enh|Baby sheep|Mary had a little ___|Young sheep, a sign of spring
+DUCK|enh|Bird that says quack|Water bird with webbed feet|Mallard, for example; or bend down quickly
+GOAT|enh|Farm animal with horns and a beard|Nanny or billy on the farm|Animal of Capricorn
+BEAR|enh|Big furry animal that loves honey|Grizzly, brown or polar animal|Baloo or Paddington, for example
+LION|enh|Big cat with a shaggy mane|Big cat that lives in a pride|Aslan, in the Narnia stories
+FROG|enh|Green animal that hops and croaks|Amphibian that starts life as a tadpole|Kermit, for one
+TOAD|enh|Bumpy animal like a frog|Amphibian with dry, warty skin|Wind in the Willows character who loved motor cars
+SEAL|enh|Sea animal with flippers that barks|Marine mammal that basks on rocks|Grey or harbour mammal; or a wax stamp on a letter
+CRAB|enh|Sea animal that walks sideways|Shellfish with two big pincers|Creature of Cancer in the zodiac
+MOLE|enh|Small animal that digs under the ground|Velvety digger that leaves hills on lawns|Burrowing mammal; or a spy on the inside
+MOTH|enh|Insect like a butterfly that flies at night|Night-flying insect drawn to lamps|Its larvae may eat holes in woollens
+WASP|enh|Yellow and black insect that stings|Striped insect that loves jam at picnics|Insect with a famously narrow waist
+SWAN|enh|Big white bird with a long neck|Graceful water bird whose young are cygnets|Bird whose male is a cob and female a pen
+DEER|enh|Animal with antlers that lives in the woods|Animal whose young is called a fawn|Stag or hind, in the forest
+HARE|enh|Animal like a big rabbit with long ears|Speedy animal that raced the tortoise|It goes mad in March, they say
+NEWT|nh||Small pond amphibian with a tail|Eye of ___, in the witches' brew
+WOLF|enh|Wild animal that howls at the moon|Wild ancestor of the dog that hunts in packs|Big bad villain of fairy tales
+SHEEP|enh|Woolly farm animal that says baa|Farm animal kept for its wool|Animal counted by those who cannot sleep
+HORSE|enh|Animal you can ride that neighs|Stallion or mare|Animal measured in hands
+ZEBRA|enh|Striped horse of Africa|Black and white grazer of the savannah|Its stripes gave a road crossing its name
+TIGER|enh|Big orange cat with black stripes|Largest of the big cats, found in Asia|Shere Khan of The Jungle Book
+MOUSE|enh|Small squeaky animal that likes cheese|Small rodent; also a computer gadget|It ran up the clock in a nursery rhyme
+SNAKE|enh|Long animal with no legs that hisses|Adder or python, for example|Kaa of The Jungle Book
+SHARK|enh|Big fish with sharp teeth and a fin|Great white predator of the sea|Hammerhead or mako
+WHALE|enh|Biggest animal in the sea|Huge sea mammal that breathes through a blowhole|Moby-Dick, for one
+CAMEL|enh|Desert animal with a hump|Animal that may have one hump or two|Ship of the desert
+LLAMA|enh|Woolly animal from South America that can spit|Andean pack animal, cousin of the alpaca|Spitting relative of the camel
+PANDA|enh|Black and white bear that eats bamboo|Bamboo-eating bear from China|Giant animal on the WWF logo
+KOALA|enh|Furry Australian animal that lives in trees|Marsupial that eats eucalyptus leaves|Often called a bear, though it is a marsupial
+OTTER|enh|River animal that floats on its back|Playful river mammal whose home is a holt|Tarka, in Henry Williamson's tale
+EAGLE|enh|Big bird with a hooked beak|Golden bird of prey|The bald one is the national bird of the USA
+ROBIN|enh|Little bird with a red breast|Garden bird often seen on Christmas cards|Batman's sidekick shares its name
+GOOSE|enh|Big farm bird that honks|Bird whose male is a gander|Golden-egg layer of Aesop's fable
+HIPPO|enh|Big African animal that loves mud|Large African animal that wallows in rivers|River horse, from the Greek
+RHINO|enh|Big animal with a horn on its nose|Thick-skinned animal with one or two horns|Black or white, though both are really grey
+SKUNK|nh||Black and white animal with a smelly spray|American mammal with a famous pong
+SNAIL|enh|Slow animal with a shell on its back|Animal that carries its home on its back|Garden mollusc that leaves a slimy trail
+SLOTH|nh||Very slow animal that hangs from trees|Lazy-sounding tree-dweller of the rainforest
+HERON|nh||Tall grey wading bird that eats fish|Patient fisher standing still in the shallows
+RAVEN|nh||Big black bird of the crow family|Bird said to guard the Tower of London
+MOOSE|enh|Big deer with wide antlers from Canada|Largest member of the deer family|What North Americans call the European elk
+PONY|enh|Small horse|Shetland, for example|Horse no taller than 14.2 hands
+PUPPY|enh|Young dog that loves to play|Young dog in a litter|Young dog; ___ love is a teenage crush
+ORCA|nh||Killer whale|Largest member of the dolphin family
+PUMA|nh||Big wild cat of the Americas|Cougar, or mountain lion
+IBIS|h|||Sacred bird of ancient Egypt
+OKAPI|h|||Striped-legged giraffe relative of the Congo
+HERD|enh|Big group of cows|Group of cattle or elephants|Drive animals together
+HOOF|enh|Hard foot of a horse|Horse's foot|It is cloven on a cow
+MANE|enh|Long hair on a horse's neck|Lion's shaggy neck hair|Something a groom brushes on a pony's neck
+NEST|enh|Bird's home made of twigs|Home that a bird builds|Empty ___, when the children leave home
+FLOCK|enh|Group of sheep|Group of birds or sheep|A shepherd's charge
+BEAK|enh|A bird's hard mouth|Bird's bill|A toucan's big colourful feature
+TUSK|enh|Long tooth of an elephant|Walrus's long ivory tooth|Ivory feature of a narwhal
+SHELL|enh|A tortoise's hard home|Hard covering of an egg or a snail|A hermit crab's borrowed home
+HIVE|enh|Home for bees|Busy box in an apiary|Busy home of a queen and her workers
+RABBIT|nh||Pet with long ears that hops|Peter, of Beatrix Potter fame
+KITTEN|nh||Young cat|Playful young tabby that chases wool
+DONKEY|nh||Animal that says hee-haw|Eeyore, for one
+MONKEY|nh||Animal with a tail that swings through trees|Primate with a tail; or a cheeky child
+PARROT|nh||Colourful bird that can talk|Repeat word for word, as a macaw might
+TURTLE|nh||Reptile with a shell that swims in the sea|Leatherback or loggerhead
+GIRAFFE|nh||African animal with a very long neck|Tallest land animal, browsing on acacia
+LEOPARD|nh||Spotted big cat|It cannot change its spots, they say
+CHEETAH|nh||Fastest animal on land|Spotted sprinter of the savannah
+PENGUIN|nh||Black and white bird that swims but cannot fly|Emperor of the Antarctic
+DOLPHIN|nh||Clever sea mammal that clicks and whistles|Bottlenose, for one
+OSTRICH|nh||Biggest bird in the world|Bird said to bury its head in the sand
+HAMSTER|nh||Small pet that runs on a wheel|Rodent with roomy cheek pouches
+GERBIL|nh||Small desert rodent kept as a pet|Pet rodent from the deserts of Mongolia
+SPIDER|nh||Creature with eight legs that spins a web|Charlotte, in a famous children's book
+BEETLE|nh||Insect with hard wing covers|Ladybird or stag, for example
+LOBSTER|nh||Shellfish that turns red when cooked|Thermidor dish
+OCTOPUS|nh||Sea creature with eight arms|Clever creature with three hearts and blue blood
+SALMON|nh||Pink-fleshed fish, often smoked|Fish that returns upriver to spawn where it hatched
+BADGER|nh||Black and white digger of the woods|Brock of folk tales; or pester
+FERRET|nh||Long thin animal once used to hunt rabbits|Search about; or a tame polecat
+WEASEL|nh||Pop goes the ___|Slippery creature; or wriggle out of something
+FALCON|nh||Fast bird of prey used in hunting|Peregrine, the fastest creature in a dive
+PIGEON|nh||Bird often seen in town squares|Homing bird that carried wartime messages
+PEACOCK|nh||Bird with a big colourful tail|Male bird with an eyed fan of a tail
+SPARROW|nh||Small brown bird|Jack, captain of the Black Pearl
+BUFFALO|nh||Large wild ox|Bison, loosely, on the American plains
+JAGUAR|nh||Spotted big cat of South America|Biggest cat in the Americas; also a car
+GORILLA|nh||Largest of the apes|Silverback, for one
+LIZARD|nh||Reptile with four legs and a long tail|Gecko or iguana
+MAGPIE|nh||Black and white bird of the crow family|One for sorrow, two for joy
+PUFFIN|nh||Seabird with a colourful beak|Sea parrot of the cliffs
+WALRUS|nh||Arctic animal with long tusks|Whiskered beast who walked with the Carpenter
+BURROW|nh||Rabbit's underground home|Dig deep, like a rabbit
+FEATHER|nh||One of the soft things covering a bird|Quill, once used for writing
+ANTLER|nh||Branched horn of a deer|Stag's headgear, shed each year
+TADPOLE|nh||Baby frog with a tail|Polliwog
+CHICKEN|nh||Farm bird that clucks|Coward, in playground slang
+COLLIE|nh||Sheepdog breed|Lassie's breed
+WOMBAT|nh||Australian marsupial that digs burrows|Animal famous for its cube-shaped droppings
+RACCOON|nh||Masked animal of North America|Bandit-faced mammal that seems to wash its food
+CRICKET|nh||Insect that chirps by rubbing its wings|Jiminy, Pinocchio's conscience
+MEERKAT|nh||Small African animal that stands up on lookout|Mongoose relative that lives in mobs
+PELICAN|nh||Bird with a big pouch under its beak|Its bill can hold more than its belly can, says a limerick
+CANARY|nh||Yellow pet bird that sings|Bird once taken down coal mines
+TOUCAN|nh||Bird with a huge colourful beak|Rainforest bird with an outsize bill
+SWALLOW|nh||Bird that flies south in autumn|One doesn't make a summer
+MAMMAL|nh||Warm-blooded animal that feeds its babies milk|Whale or bat, scientifically
+REPTILE|nh||Cold-blooded animal with scaly skin|Snake, lizard or crocodile
+INSECT|nh||Creature with six legs|Bug with three body parts
+ELEPHANT|nh||Biggest land animal, with a trunk|It never forgets, they say
+KANGAROO|nh||Australian animal that hops and has a pouch|Boxing marsupial of the outback
+CROCODILE|nh||Big reptile with snapping jaws|Its tears are said to be insincere
+ALLIGATOR|nh||Reptile like a crocodile, from Florida|See you later, ___
+SQUIRREL|nh||Bushy-tailed animal that buries nuts|Red or grey tree-climber
+HEDGEHOG|nh||Prickly animal that rolls into a ball|Mrs Tiggy-Winkle, for one
+TORTOISE|nh||Slow reptile with a shell|Winner of the race with the hare
+DUCKLING|nh||Baby duck|The ugly one became a swan
+REINDEER|nh||Deer that pulls Santa's sleigh|Rudolph, for one
+STARFISH|nh||Five-armed sea creature|Sea creature that can regrow lost arms
+SEAHORSE|nh||Little fish that swims upright|Fish whose males carry the babies
+JELLYFISH|nh||Sea creature that stings and wobbles|Brainless drifter with stinging tentacles
+BUTTERFLY|nh||Insect with beautiful colourful wings|Red admiral, for one
+LADYBIRD|nh||Red beetle with black spots|Seven-spot beetle loved by gardeners
+DRAGONFLY|nh||Insect with see-through wings, darting over ponds|Darter or hawker of the pond
+FLAMINGO|nh||Pink bird that stands on one leg|Wader whose colour comes from its food
+CHIPMUNK|nh||Small striped squirrel|Alvin, of cartoon fame
+PORCUPINE|nh||Animal covered in long sharp quills|Rodent whose quills, despite the tale, are never fired
+ANTELOPE|nh||Fast deer-like animal of Africa|Gazelle or impala
+ARMADILLO|nh||Animal with armour that can roll up|Armoured mammal of the Americas
+CHAMELEON|nh||Lizard that changes colour|Lizard with a sticky tongue and swivelling eyes
+BLACKBIRD|nh||Garden bird whose male has a yellow beak|Four and twenty were baked in a pie
+ALBATROSS|nh||Huge seabird with very long wings|Burden around the Ancient Mariner's neck
+MOSQUITO|nh||Biting insect that whines|Malaria carrier
+SCORPION|nh||Creature with a stinging tail|Stinging arachnid of the desert
+GOLDFISH|nh||Orange pet fish in a bowl|Fairground prize in a plastic bag
+MACKEREL|nh||Striped sea fish, often smoked|Holy ___! (an old exclamation)
+SHEEPDOG|nh||Dog that rounds up a flock|Border collie at work
+DALMATIAN|nh||Spotted dog breed|One of 101 in a Disney film
+LABRADOR|nh||Popular dog, black, yellow or chocolate|Retriever named after part of Canada
+PARAKEET|nh||Small colourful parrot|Ring-necked bird now common in London parks
+WOODLOUSE|nh||Small grey creature that rolls into a ball|Crustacean that hides under logs
+EARTHWORM|nh||Wriggly creature in the soil|Gardener's friend that Darwin studied
+BUMBLEBEE|nh||Big fuzzy buzzing insect|Its flight inspired Rimsky-Korsakov
+HONEYBEE|nh||Hive insect that makes honey|Worker that does a waggle dance
+PANGOLIN|h|||Scaly mammal that rolls up and eats ants
+AARDVARK|nh||African animal that eats ants with a long tongue|Often the first animal in a dictionary
+PLATYPUS|nh||Australian animal with a duck's bill that lays eggs|Duck-billed monotreme
+AMPHIBIAN|nh||Frog, toad or newt|Animal that lives on land and in water
+DORMOUSE|nh||Sleepy rodent at the Mad Hatter's tea party|Hazel rodent that hibernates for months
+ORANGUTAN|nh||Red-haired ape of Borneo|"Person of the forest", in Malay

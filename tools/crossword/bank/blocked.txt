@@ -1,0 +1,26 @@
+# Words never used in a grid (unsuitable, abbreviations, American spellings)
+ALCOHOL
+BETTING
+CAM
+CENTERS
+CIGARETTE
+COLORED
+DEATH
+DEATHS
+DON
+EXECUTION
+FAVOR
+GAY
+HONOR
+INFO
+INTER
+KEN
+KILLING
+LAB
+LABELED
+MOD
+MOM
+SIC
+SUICIDE
+THEATER
+UPS

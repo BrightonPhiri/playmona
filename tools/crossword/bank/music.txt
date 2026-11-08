@@ -1,0 +1,172 @@
+# Music & Arts: instruments, singing, dance, art, theatre, film, crafts and stories
+# WORD|levels|easy|normal|hard
+DRUM|enh|You bang it with sticks|Instrument you beat to keep time|Snare or kettle, perhaps
+SONG|enh|Music with words that you sing|Lullaby or carol, for example|Track on an album, usually
+TUNE|enh|A melody you can hum|Air you might whistle|Adjust a guitar until it sounds right
+HARP|enh|Big instrument with lots of strings you pluck|Instrument often shown with angels|Instrument on Ireland's coat of arms
+PAINT|enh|Colour you put on with a brush|Watercolour or oil, to an artist|Do as Monet did
+STAGE|enh|Where actors stand in a theatre|Raised platform for performers|"All the world's a ___" (Shakespeare)
+PIANO|enh|Instrument with black and white keys|Grand or upright instrument|Soft, in a musical score
+BAND|enh|Group of people playing music together|Brass or rock group|Strip of rubber, or a group of players
+SING|enh|Use your voice to make music|Perform a carol, say|Croon or warble
+DANCE|enh|Move your body to music|Waltz or tango, for example|Jig, reel or hornpipe
+DRAW|enh|Make a picture with a pencil|Sketch with a crayon|Sketch, or a tied match
+ART|enh|Painting and drawing at school|What fills a gallery|What the Tate collects
+FILM|enh|A movie you watch|Picture shown at the cinema|Oscar contender
+BOOK|enh|You read it page by page|Novel or storybook|Reserve a seat, or something to read
+STORY|enh|A tale like Cinderella|"Once upon a time" begins one|Yarn, fable or myth
+POEM|enh|Words in lines that often rhyme|Verse such as a limerick|Ode or sonnet
+FLUTE|enh|Silver pipe you blow across|Woodwind held out sideways|Tall champagne glass, or a woodwind
+BELL|enh|It goes ding-dong|It rings in a church tower|Big Ben, strictly speaking
+HORN|enh|Brass instrument you blow|French ___ (orchestral brass)|Rhino's feature, or a brass instrument
+CLAP|enh|Hit your hands together|Applaud|Sound of thunder, or show approval
+CHOIR|enh|Group of singers|Singers in church stalls|Its parts are soprano, alto, tenor and bass
+ACTOR|enh|Person who plays a part in a play|Performer on stage or screen|Thespian
+CLAY|enh|Soft stuff you shape into pots|Potter's material|It's fired in a kiln
+NOTE|enh|One sound in music|Crotchet or quaver|Short letter, or a sound on a stave
+BEAT|enh|The steady pulse in music|Rhythm you tap your foot to|A drummer's job is to keep it
+RAP|enh|Fast talking to a beat|Music of spoken rhymes|Knock, or rhyme over a beat
+JAZZ|nh||Music style of Duke Ellington|Swing or bebop, broadly
+OPERA|nh||Play in which the words are sung|La Traviata or Carmen
+DRAMA|enh|Acting lessons at school|Play for the stage or screen|Excitement, or theatre
+PLAY|enh|Story acted out on a stage|Romeo and Juliet, for one|Perform on an instrument, or a drama
+MIME|enh|Acting without any words|Silent acting with gestures|Marcel Marceau's art
+VIOLA|nh||String instrument a bit bigger than a violin|Alto of the strings, or the heroine of Twelfth Night
+CELLO|nh||Big string instrument held between the knees|Instrument played by Yo-Yo Ma
+OBOE|nh||Woodwind with a double reed|It gives the orchestra its tuning note
+TUBA|enh|Huge brass instrument with a deep sound|Biggest instrument in a brass band|Oompah instrument
+BANJO|enh|String instrument with a round, drum-like body|Bluegrass string instrument|Kermit plays one in The Muppet Movie
+KAZOO|enh|Toy you hum into to make a buzz|Buzzing instrument played by humming|Toy instrument with a buzzing membrane
+VOICE|enh|You sing and talk with it|Tenor or soprano, say|Express out loud, or a singer's instrument
+SOLO|enh|A song sung by just one person|Performance by one player|Flying ___ (on your own)
+DUET|enh|Song for two singers|Piece for a pair|Music for a couple
+CHORD|nh||Several notes played together|Triad, for one
+SCALE|enh|Notes going up step by step|Do, re, mi and so on, in order|Major or minor run that pianists practise
+RHYME|enh|Cat and hat make one|Nursery ___|Without ___ or reason
+VERSE|nh||Part of a song between choruses|Poetry, or a stanza
+EASEL|nh||Stand that holds a painting|Painter's tripod
+BRUSH|enh|You paint with it|Painter's tool with bristles|It may be made of sable hair
+CHALK|enh|You draw on the pavement with it|Stick for a blackboard|Limestone stick for drawing
+CRAFT|enh|Making things with your hands|Knitting or weaving, say|Skill, or a boat
+KNIT|enh|Make a scarf with wool and needles|"___ one, purl one"|Join together, as a mended bone does
+MASK|enh|You wear it to hide your face|Face cover for a masquerade|Comedy or tragedy symbol of the theatre
+CLOWN|enh|Funny circus performer with a red nose|Joker in the circus ring|Coco or Pierrot, say
+PHOTO|enh|Picture taken with a camera|Snapshot|Selfie, for one
+SCENE|nh||Part of an act in a play|Fuss, or a stage setting
+ACT|enh|Pretend to be someone in a play|Play a part|One of five in Hamlet
+TAP|enh|Dance with clicking shoes|Dance in shoes with metal plates|Gene Kelly's dance style
+WALTZ|nh||Ballroom dance in three-four time|The Blue Danube, for one
+TANGO|nh||Ballroom dance from Argentina|It takes two to do this, they say
+DISCO|enh|Party with music and flashing lights|Dance music of the 1970s|Saturday Night Fever music
+ARIA|nh||Solo song in an opera|Nessun dorma, for one
+TENOR|nh||High male singing voice|Pavarotti's voice
+TEMPO|nh||Speed of a piece of music|Allegro or adagio
+CAROL|enh|Christmas song|Silent Night, for one|Song sung by waits in winter
+HYMN|nh||Song of praise in church|Amazing Grace, for one
+BLUES|nh||Sad music style from the American South|Music of B.B. King
+ROCK|enh|Loud music with electric guitars|Music of the Rolling Stones|Stone, or Queen's music
+POP|enh|Music in the charts|Kind of music on Top of the Pops|Burst a balloon, or chart music
+KEY|enh|One of the black or white bits on a piano|C major or A minor|Lock opener, or a musical scale
+TALE|enh|A story|Old wives' ___|Yarn, or account
+COMIC|enh|Magazine with picture stories|The Beano, for one|Stand-up performer
+PANTO|enh|Christmas show where you shout "He's behind you!"|Seasonal show with a dame|Aladdin, at Christmas, perhaps
+POET|nh||Writer of verses|Wordsworth or Tennyson
+NOVEL|nh||Long story in a book|Fresh, or a long work of fiction
+FABLE|nh||Story with a moral|The Tortoise and the Hare, for one
+MURAL|nh||Painting on a wall|Diego Rivera's speciality
+HAIKU|nh||Short Japanese poem|Poem of five, seven and five syllables
+BUGLE|nh||Army brass instrument|Instrument that sounds the Last Post
+BALLET|nh||Dance on tiptoe in a tutu|Swan Lake, for one
+CHORUS|nh||Part of a song you repeat|Group of singers, or a refrain
+SKETCH|nh||Quick drawing in pencil|Short comic scene, or a rough drawing
+GUITAR|nh||Instrument with six strings you strum|Jimi Hendrix's instrument
+VIOLIN|nh||String instrument played with a bow under the chin|Stradivarius, for one
+CYMBAL|nh||Brass plate a drummer crashes|Clashing disc in a drum kit
+MARACA|nh||Rattle shaken in Latin music|Gourd shaker, played in pairs
+TRUMPET|nh||Brass instrument with three valves|Elephant's call, or a brass instrument
+PICCOLO|nh||Tiny flute with a high sound|Smallest woodwind in the orchestra
+UKULELE|nh||Small four-stringed guitar from Hawaii|Instrument whose name is said to mean "jumping flea"
+BASSOON|nh||Low woodwind with a double reed|Grandfather's voice in Peter and the Wolf
+DRUMMER|nh||Musician who keeps the beat|Ringo Starr, in the Beatles
+SINGER|nh||Person who performs songs|Vocalist
+DANCER|nh||Person who performs a ballet|One of Santa's reindeer
+PAINTER|nh||Artist who uses a brush|Van Gogh or Turner
+ARTIST|nh||Person who makes pictures|Rembrandt or Picasso
+AUTHOR|nh||Person who writes books|Roald Dahl, for one
+POETRY|nh||Verses and rhymes|Works of Keats and Byron
+THEATRE|nh||Building where plays are put on|The Globe, for one
+CINEMA|nh||Place where you watch films|The pictures
+CAMERA|nh||It takes photographs|"Lights, ___, action!"
+CANVAS|nh||Cloth that artists paint on|Tent fabric, or an oil painting
+PALETTE|nh||Board for mixing paints|Range of colours an artist uses
+CRAYON|nh||Wax stick for colouring|Wax colour from a child's pencil case
+PENCIL|nh||Drawing tool with a lead|Graphite stick in a wooden case
+STATUE|nh||Stone or metal figure|Nelson on his column, say
+COLLAGE|nh||Picture made from bits stuck together|Artwork of glued scraps
+POTTERY|nh||Pots made from clay|Ceramics thrown on a wheel
+ORIGAMI|nh||Japanese art of paper folding|Making cranes from paper
+PUPPET|nh||Toy moved by strings or a hand|Punch or Judy
+CIRCUS|nh||Show with clowns and acrobats|Big top entertainment
+MUSICAL|nh||Show with lots of songs|Cats or Oliver!
+CONCERT|nh||Live music performance|Prom, for one
+ENCORE|nh||Extra song at the end of a show|Audience's call for more
+ANTHEM|nh||Song sung for a country|God Save the King, for one
+LYRICS|nh||Words of a song|What Tim Rice writes for Andrew Lloyd Webber
+OCTAVE|nh||Eight notes from one C to the next|Doh to doh
+RHYTHM|nh||Pattern of beats in music|Beat with no a, e, i, o or u
+MELODY|nh||Tune|Air, in music
+HARMONY|nh||Notes sung together that sound good|Agreement, or a musical blend
+SOPRANO|nh||Highest singing voice|Top part in a choir
+SONNET|nh||Poem of fourteen lines|Shakespeare wrote 154 of them
+CARTOON|nh||Animated film|Funny drawing, or animation
+COMEDY|nh||Funny play or film|A Midsummer Night's Dream, for one
+TRAGEDY|nh||Sad play|Macbeth, for one
+MOSAIC|nh||Picture made of small tiles|Roman floor art
+GALLERY|nh||Building for showing paintings|National ___ (London art museum)
+LULLABY|nh||Song to send a baby to sleep|Rock-a-bye Baby, for one
+KARAOKE|nh||Singing along to backing tracks|Japanese for "empty orchestra"
+COSTUME|nh||Outfit an actor wears|Fancy dress
+CURTAIN|nh||It rises at the start of a play|The final ___ (end of a show)
+FOXTROT|nh||Smooth ballroom dance|Dance, or F in the radio alphabet
+CLARINET|nh||Woodwind with a single reed|The cat's voice in Peter and the Wolf
+TROMBONE|nh||Brass instrument with a slide|Brass instrument you push and pull
+ACCORDION|nh||Instrument with bellows you squeeze|Squeezebox
+BAGPIPES|nh||They're played at Highland games|They skirl at a Burns Night supper
+HARMONICA|nh||Mouth organ|Bob Dylan plays one on a neck rack
+XYLOPHONE|nh||Instrument with wooden bars you hit|X is for this, in many alphabet books
+TRIANGLE|nh||Metal instrument you tap with a stick|Three-cornered percussion
+RECORDER|nh||Wooden pipe played at school|Descant instrument, or a tape machine
+SAXOPHONE|nh||Jazz woodwind with a curved brass body|Belgian-invented instrument of Charlie Parker
+PORTRAIT|nh||Painting of a person|Mona Lisa, for one
+LANDSCAPE|nh||Painting of the countryside|Constable's speciality, or a page orientation
+CONDUCTOR|nh||Person who leads an orchestra|Maestro with a baton, or a bus worker
+ORCHESTRA|nh||Large group of classical musicians|Philharmonic, for one
+COMPOSER|nh||Person who writes music|Mozart or Elgar
+BEETHOVEN|nh||Composer who went deaf|Composer of the Moonlight Sonata
+MUSICIAN|nh||Person who plays music|Busker, for one
+BALLERINA|nh||Dancer on pointe in a tutu|Prima ___ (leading lady of the dance)
+AUDIENCE|nh||People watching a show|Spectators in the stalls
+APPLAUSE|nh||Clapping at the end of a show|Ovation
+SPOTLIGHT|nh||Bright beam on a performer|Centre of attention
+REHEARSAL|nh||Practice before a show|Dress ___
+DIRECTOR|nh||Person in charge of making a film|Spielberg or Hitchcock
+PREMIERE|nh||First showing of a film|Red-carpet opening night
+METRONOME|nh||Device that ticks to keep time|Ticking pyramid on a piano
+CROTCHET|nh||Note worth one beat|Quarter note, in America
+FLAMENCO|nh||Spanish dance with stamping feet|Andalusian dance with guitar and castanets
+NOVELIST|nh||Writer of long fiction|Charles Dickens, for one
+GRAFFITI|nh||Spray-painted writing on walls|Banksy's medium, broadly
+SCULPTURE|nh||Art carved from stone|Michelangelo's David, for one
+CHARCOAL|nh||Black stick for drawing|Burnt wood used for sketching
+KNITTING|nh||Making things with wool and needles|Pastime of plain and purl
+TAPESTRY|nh||Woven picture on cloth|The Bayeux one is actually embroidered
+ANIMATION|nh||Cartoon film-making|Making drawings move
+SYMPHONY|nh||Long piece for an orchestra|Beethoven wrote nine
+CONCERTO|nh||Piece for a soloist and orchestra|Rachmaninov's Second, for one
+OVERTURE|nh||Music at the start of an opera|Opening piece, or an approach
+INTERVAL|nh||Break in the middle of a play|Ice-cream time at the theatre
+FESTIVAL|nh||Big outdoor music event|Glastonbury, for one
+AUDITION|nh||Try-out for a part|Casting test
+PANTOMIME|nh||Family Christmas show with a dame|Show where the audience shouts "Oh no it isn't!"
+FAIRYTALE|nh||Story with magic, like Snow White|Grimm story
+CRESCENDO|nh||Gradual increase in loudness|Musical swell, or a climax

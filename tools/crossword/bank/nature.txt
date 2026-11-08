@@ -1,0 +1,166 @@
+# Nature, weather and space: plants, trees, flowers, seasons, weather, sky, stars, planets, rocks, the garden
+RAIN|enh|Water that falls from the clouds|Wet weather that fills puddles|Precipitation that comes down in drops
+SNOW|enh|Cold white flakes from the sky|You can build a man out of it in winter|What a white Christmas needs
+OAK|enh|Big tree that grows from an acorn|Mighty tree of English woods|Hardwood once used for Nelson's warships
+ROSE|enh|Pretty flower with thorns on its stem|Flower that is England's emblem|Thorny bloom, or got out of bed
+LEAF|enh|Flat green part of a tree|It turns brown and falls in autumn|Page of a book, or part of a plant
+STORM|enh|Very windy, rainy weather|Wild weather, a tempest|Attack a castle suddenly, or a tempest
+FROST|enh|Icy white coating on a cold morning|Jack ___, who nips noses in winter|Rime on the windowpane
+SUN|enh|It shines in the sky in the daytime|The star at the centre of our solar system|Our nearest star
+MOON|enh|It shines in the sky at night|It goes round the Earth about once a month|Luna, to the Romans
+STAR|enh|Twinkling light in the night sky|Twinkle, twinkle, little ___|Glowing ball of hot gas, like the Sun
+SKY|enh|It is blue on a sunny day|The blue above our heads|The heavens, or the firmament
+CLOUD|enh|White fluffy thing in the sky|Cumulus or nimbus, for example|Every one has a silver lining, they say
+WIND|enh|Moving air that flies a kite|A gale or a breeze|Mistral or sirocco, for example
+TREE|enh|Tall plant with a trunk and branches|Oak, ash or elm|Its rings reveal its age
+SEED|enh|Plant it to grow a flower|Small thing that grows into a new plant|Pip, or a ranked tennis player
+ROOT|enh|Part of a plant under the ground|Part of a plant that draws up water|Origin, or a plant's anchor in the soil
+STEM|enh|Stalk of a flower|Part of a plant that holds up its bloom|Stalk, or to stop a flow
+SOIL|enh|Earth that plants grow in|Garden earth, loam or clay|Earth, or to make dirty
+MUD|enh|Wet, sticky earth|Mire left after heavy rain|Clear as ___ (not clear at all)
+ICE|enh|Frozen water|You skate on it at a rink|It forms a berg
+HAIL|enh|Little balls of ice from the sky|Frozen pellets that fall in a storm|Pellets of ice, or call to a taxi
+FOG|enh|Thick mist that is hard to see through|Thick mist that grounds flights|Pea-souper
+MIST|enh|Thin, damp cloud near the ground|Light fog over a lake at dawn|Haze that blurs the view on a damp morning
+POND|enh|Small pool of water in a garden|Small still water where frogs and lilies live|Across the ___, jokingly, the Atlantic
+LAKE|enh|Big area of water with land all around|Windermere, for one|Superior or Victoria, for example
+HILL|enh|Small mountain|Raised land, smaller than a mountain|Tor or knoll
+ROCK|enh|Hard lump of stone|Granite or chalk, for example|Stone, or sway gently to and fro
+SAND|enh|Tiny grains on the beach|You build castles of it at the seaside|Ground-down rock that makes up deserts
+STONE|enh|Small piece of rock|Pebble, or the hard seed of a plum|Unit of weight equal to 14 pounds
+PETAL|enh|Soft coloured part of a flower|One of the parts that make up a bloom|Plucked in "she loves me, she loves me not"
+BUD|enh|Flower before it opens|Unopened bloom on a stem|Nip it in the ___
+TULIP|enh|Spring flower that grows from a bulb|Cup-shaped flower loved by the Dutch|Flower behind a famous 1630s Dutch mania
+DAISY|enh|Little white flower with a yellow middle|You can make a chain of them|Flower whose name comes from "day's eye"
+LILY|enh|Tall white flower with a sweet smell|Water ___, a plant of ponds|To gild the ___ (to over-decorate)
+IVY|enh|Plant that climbs up walls|Evergreen climber on old houses|Holly's partner in a Christmas carol
+MOSS|enh|Soft green plant that grows on stones|A rolling stone gathers no ___|Sphagnum, for one
+FERN|enh|Green plant with feathery leaves|Leafy plant of shady woods that has no flowers|Bracken, for example
+GRASS|enh|Green plant you mow in the garden|Keep off the ___|Bamboo is a giant one
+WEED|enh|Plant you pull up in the garden|Plant growing where it is not wanted|Dandelion, to a proud lawn owner
+TWIG|enh|Tiny branch|Small stick snapped from a tree|Catch on, or a small shoot
+BARK|enh|Rough outside skin of a tree|Tree's woody covering|Dog's call, or a tree's skin
+PINE|enh|Tree with needles and cones|Evergreen tree with cones|Long for, or a conifer
+FIR|enh|Christmas tree|Evergreen with flat needles|Douglas ___, a tall conifer
+DEW|enh|Little drops of water on grass in the morning|Morning moisture on the lawn|Moisture that forms as night air cools
+DUSK|enh|Time when it starts to get dark|Twilight at the end of the day|Gloaming
+DAWN|enh|Early morning when the sun comes up|Daybreak|It breaks at the start of the day
+MARS|enh|The red planet|Fourth planet from the Sun|Planet named after the Roman god of war
+EARTH|enh|The planet we live on|Third planet from the Sun|Soil, or our world
+COMET|enh|Ball of ice in space with a glowing tail|Halley's ___|Dirty snowball of space, as astronomers say
+SPACE|enh|Where astronauts go|Outer ___, beyond the Earth's air|The final frontier, in Star Trek
+HEDGE|enh|Row of bushes round a garden|Privet border|Bet both ways, or a living fence
+LAWN|enh|Grass in the garden that you mow|Stretch of short, neat grass|Wimbledon's original game, ___ tennis
+BLOOM|enh|Another word for a flower|Open into flower|In full ___, as a garden in June
+ACORN|enh|Nut that a squirrel buries|Seed of the oak|Cupped nut from which mighty trees grow
+CONE|enh|Woody thing that falls from a pine tree|Pine ___|Scaly seed case of a conifer
+THORN|enh|Sharp point on a rose stem|Prickle on a bramble|A ___ in one's side (a nuisance)
+FLOOD|enh|When a river spills over its banks|Deluge|Noah's great disaster
+COAL|enh|Black rock you can burn|Fuel mined from deep underground|Fossil fuel formed from ancient plants
+CHALK|enh|White stick for writing on a board|Soft white rock of the Dover cliffs|Like ___ and cheese (very different)
+LAVA|enh|Hot melted rock from a volcano|Molten rock that pours from a crater|It flows down the slopes of Etna
+POPPY|enh|Bright red flower of the fields|Red flower worn in November|Flower of Flanders Fields
+HOLLY|enh|Prickly bush with red berries at Christmas|Evergreen with spiky leaves and red berries|The ___ and the Ivy, a carol
+TRUNK|enh|Main woody part of a tree|Thick main stem of a tree|Tree's main stem, or an elephant's nose
+ELM|nh||Tall tree struck by Dutch disease|Ulmus, to a botanist
+ASH|nh||Tree whose seeds are called keys|What is left after a fire, or a tree
+YEW|nh||Evergreen tree often found in churchyards|Tree whose wood made English longbows
+GALE|nh||Very strong wind|Force 8 on the Beaufort scale
+SLEET|nh||Rain mixed with snow|Icy wintry mix, neither rain nor snow
+THAW|nh||Melting of ice and snow|Melt, or a warming of relations
+VENUS|nh||Second planet from the Sun|Planet named after the goddess of love
+ORBIT|nh||Path of a planet around the Sun|Eye socket, or a planet's path
+BIRCH|nh||Tree with white, peeling bark|Silver ___
+MAPLE|nh||Tree whose leaf is on Canada's flag|Tree tapped for its sweet syrup
+PLUTO|nh||Dwarf planet once called the ninth planet|Icy world demoted from planethood in 2006
+BEECH|nh||Tree with smooth grey bark|Tree whose name sounds like the seaside
+SHOWER|nh||Brief fall of rain|April ___
+SPRING|nh||Season after winter|Coil, or the season of new growth
+SUMMER|nh||Warmest season of the year|One swallow does not make a ___
+AUTUMN|nh||Season when leaves fall from the trees|Season of mists and mellow fruitfulness, to Keats
+WINTER|nh||Coldest season of the year|Season of the December solstice, in Britain
+GARDEN|nh||Place where flowers and vegetables grow|Eden was the first, in Genesis
+PLANET|nh||Big round world that circles a star|Mercury or Neptune, for example
+ROCKET|nh||Vehicle that blasts off into space|Peppery salad leaf, or a space launcher
+GALAXY|nh||Huge group of billions of stars|The Milky Way, for one
+METEOR|nh||Shooting star|Streak of light from a space rock burning up
+SATURN|nh||Planet with bright rings|Sixth planet from the Sun
+JUPITER|nh||Largest planet in the solar system|Planet with the Great Red Spot
+NEPTUNE|nh||Planet farthest from the Sun|Blue planet named after the god of the sea
+MERCURY|nh||Planet closest to the Sun|Liquid metal, or the smallest planet
+SUNSET|nh||When daylight fades in the evening|Ride off into it at the end of a western
+BREEZE|nh||Gentle wind|Something done easily, or a light wind
+TORNADO|nh||Spinning storm shaped like a funnel|Twister
+THUNDER|nh||Loud rumble after lightning|Thor's noise, in Norse myth
+DROUGHT|nh||Long time with no rain|Dry spell that empties reservoirs
+WEATHER|nh||Rain, sun or snow, for example|Survive a storm, or what forecasters predict
+ICICLE|nh||Pointed spike of ice hanging from a roof|Frozen drip from the gutter
+PUDDLE|nh||Small pool of rainwater on the ground|Doctor Foster stepped in one, in a nursery rhyme
+RAINBOW|nh||Arc of colours in the sky after a shower|There is a pot of gold at its end, they say
+BLOSSOM|nh||Flowers on a fruit tree in spring|Cherry ___, celebrated in Japan
+VIOLET|nh||Small purple flower|Shrinking ___, a shy person
+WILLOW|nh||Tree with drooping branches by a river|Weeping tree whose wood makes cricket bats
+BOULDER|nh||Huge rock|Massive rock dropped by a glacier, perhaps
+GRANITE|nh||Hard speckled rock used for worktops|Aberdeen's famous building stone
+MARBLE|nh||Smooth stone used for statues|Michelangelo's David is carved from it
+FOSSIL|nh||Shape of an ancient plant or animal in stone|Ammonite set in rock, for example
+VOLCANO|nh||Mountain that can erupt|Etna or Vesuvius
+POLLEN|nh||Yellow dust made by flowers|Cause of hay fever
+MEADOW|nh||Grassy field full of wild flowers|Lea
+FOREST|nh||Large area of trees|Sherwood or Epping
+ECLIPSE|nh||When the Moon blocks out the Sun|Overshadow, or a solar or lunar event
+CRATER|nh||Bowl-shaped hollow on the Moon|Mouth of a volcano, or a hollow made by a meteorite
+CLOVER|nh||Plant with three leaves; a lucky one has four|In ___, living in luxury
+NETTLE|nh||Plant that stings your legs|Grasp the ___ (tackle a problem boldly)
+THISTLE|nh||Prickly purple flower|Scotland's emblem
+HEATHER|nh||Purple plant of Scottish moors|A lucky white sprig of it is sold for good fortune
+MONSOON|nh||Rainy season in India|Seasonal wind of South Asia
+DRIZZLE|nh||Very light rain|Fine rain, or pour a little oil over
+ICEBERG|nh||Huge floating chunk of ice|The Titanic struck one in 1912
+GLACIER|nh||Slow-moving river of ice|Mass of ice that carved out many valleys
+DIAMOND|nh||Hardest natural gemstone|A girl's best friend, in the song
+TEMPEST|h|||Shakespeare's storm play, The ___
+EQUINOX|h|||When day and night are of equal length
+NEBULA|h|||Cloud of dust and gas where stars are born
+COSMOS|h|||The universe, as an ordered whole
+ZODIAC|h|||Band of twelve star signs
+CHESTNUT|nh||Tree whose spiny cases hold nuts|Old joke, or a reddish-brown tree
+BLIZZARD|nh||Snowstorm with strong winds|Whiteout storm
+SNOWDROP|nh||Small white flower of late winter|Galanthus, first bloom of the year
+RAINDROP|nh||Single bead of water falling from a cloud|Bead on a windowpane during a shower
+DAFFODIL|nh||Yellow trumpet-shaped spring flower|Wordsworth's host of golden flowers
+BLUEBELL|nh||Woodland flower that carpets the ground in May|Hyacinth of English woods
+FOXGLOVE|nh||Tall plant with purple bell-shaped flowers|Source of the heart drug digitalis
+LAVENDER|nh||Purple plant with a lovely scent|Pale purple, or a crop of Provence
+PRIMROSE|nh||Pale yellow spring flower|London park with a famous view, ___ Hill
+SHAMROCK|nh||Three-leaved plant of Ireland|Emblem used by St Patrick, it is said
+HAWTHORN|nh||Hedge shrub with white blossom|Shrub known as the May tree
+SYCAMORE|nh||Tree with seeds that spin like helicopters|Large maple with winged seeds
+SEEDLING|nh||Tiny new plant just sprouted|Plant at the tray stage in a greenhouse
+ASTEROID|nh||Space rock in the belt between Mars and Jupiter|Minor planet, such as Vesta
+UNIVERSE|nh||Everything that exists, all of space|Cosmos
+TWILIGHT|nh||Dim light after sunset|Gloaming
+SUNSHINE|nh||Bright light and warmth on a clear day|You Are My ___, a song
+SNOWBALL|nh||Icy ball thrown in a winter fight|Grow fast, like one rolling downhill
+SAPPHIRE|nh||Blue gemstone|Gem for a 45th anniversary
+CRESCENT|nh||Thin curved shape of the Moon|Curved street, or a new moon's shape
+FORECAST|nh||Report of the weather to come|Prediction from the Met Office
+SOLSTICE|nh||Longest or shortest day of the year|Midsummer moment celebrated at Stonehenge
+GARDENER|nh||Person who looks after plants|Capability Brown, for one
+EVERGREEN|nh||Tree that keeps its leaves all year|Holly or pine, or a song that never dates
+TELESCOPE|nh||Tool for looking at the stars|Hubble, in orbit
+ASTRONAUT|nh||Person who travels into space|Neil Armstrong, for one
+SATELLITE|nh||Machine that circles the Earth|The Moon, to the Earth
+MOONLIGHT|nh||Soft silvery light on a clear night|Nickname of a Beethoven sonata
+STARLIGHT|nh||Twinkling glow in the night sky|Faint glow from distant suns
+LIGHTNING|nh||Flash in the sky during a storm|It never strikes twice in the same place, they say
+HURRICANE|nh||Huge, powerful storm over the Atlantic|Force 12 on the Beaufort scale
+SNOWFLAKE|nh||Single tiny ice crystal falling from the sky|No two are alike, they say
+SUNFLOWER|nh||Very tall yellow flower that turns to face the light|Van Gogh painted them in vases
+DANDELION|nh||Yellow weed with a fluffy seed clock|Its name means "lion's tooth"
+BUTTERCUP|nh||Small shiny yellow wild flower|Ranunculus of the meadow
+MISTLETOE|nh||Plant you kiss under at Christmas|Parasitic plant revered by the druids
+AVALANCHE|nh||Snow crashing down a mountain|Sudden flood of anything, or a snow slide
+HAILSTONE|nh||Lump of ice falling in a storm|Frozen pellet that can dent a car
+METEORITE|nh||Space rock that lands on Earth|Visitor from space often found on Antarctic ice
+SUPERNOVA|h|||Exploding star, briefly brighter than a galaxy

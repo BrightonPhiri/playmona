@@ -1,0 +1,169 @@
+# Bible clue bank: people, places, books, objects and words from well-known King James stories
+# WORD|levels|easy clue|normal clue|hard clue
+NOAH|enh|He built a big boat for the animals|Man who built the ark at God's command|Father of Shem, Ham and Japheth
+ARK|enh|Noah's big boat|Vessel that rode out the Flood|Gopher wood vessel three hundred cubits long
+ADAM|enh|The first man God made|First man, formed from the dust of the ground|He gave names to every beast of the field
+EVE|enh|The first woman|Wife of Adam, mother of all living|Woman made from a rib
+EDEN|enh|Garden where Adam and Eve lived|The garden God planted eastward|Garden guarded by cherubims and a flaming sword
+MOSES|enh|He led God's people out of Egypt|Baby hidden in an ark of bulrushes|Lawgiver whose face shone after speaking with God
+DAVID|enh|Shepherd boy who beat a giant|Psalm-writing king, son of Jesse|He chose five smooth stones out of the brook
+JESUS|enh|Son of God, born in Bethlehem|He fed five thousand with five loaves and two fishes|The good shepherd who giveth his life for the sheep
+MARY|enh|Mother of baby Jesus|Woman of Nazareth visited by the angel Gabriel|Sister of Martha who sat at the Lord's feet
+ANGEL|enh|Messenger from heaven|Gabriel, for one|Heavenly messenger who shut the lions' mouths for Daniel
+MANNA|enh|Food from heaven in the desert|Bread from heaven in the wilderness|It tasted like wafers made with honey
+LAMB|enh|A baby sheep|"Behold the ___ of God"|Passover animal, to be without blemish
+STAR|enh|It shone to show the way to baby Jesus|Wise men followed it from the east|It stood over where the young child was
+DOVE|enh|Bird Noah sent out from the ark|Bird that brought back an olive leaf|The Spirit came down like one at the baptism of Jesus
+GOD|enh|He made the heavens and the earth|"In the beginning ___ created the heaven and the earth"|The Almighty, Alpha and Omega
+LORD|enh|Another name for God|"The ___ is my shepherd"|Title for God, printed in small capitals in the KJV
+CROSS|enh|Jesus died on it|Wooden beam carried to Golgotha|Simon of Cyrene was made to bear it
+TOMB|enh|Grave that was empty on Easter morning|Joseph of Arimathaea's new grave, hewn in rock|Sepulchre sealed with a great stone
+SHEEP|enh|Woolly animals a shepherd looks after|Animals the good shepherd lays down his life for|A man left ninety and nine of them to find one that was lost
+FISH|enh|Peter caught these in his net|Two of them fed the five thousand, with five loaves|Jonah spent three days in the belly of a great one
+BREAD|enh|Jesus broke it at the Last Supper|"Give us this day our daily ___"|Unleavened food eaten at Passover
+WINE|enh|Jesus turned water into this|Drink made from water at a wedding in Cana|Not to be put new into old bottles
+LION|enh|Big cat with a shaggy mane|Beast that Samson tore apart with his bare hands|The ___ of the tribe of Juda, in Revelation
+DEN|enh|Lions' home where Daniel spent a night|Daniel was cast into the ___ of lions|"Ye have made it a ___ of thieves", said Jesus of the temple
+JONAH|enh|He was swallowed by a big fish|Prophet who ran away from going to Nineveh|He sulked in the shade of a gourd outside Nineveh
+RUTH|enh|Loyal daughter-in-law of Naomi|Moabitess who married Boaz|Great-grandmother of King David
+CAIN|enh|Adam and Eve's first son|Brother of Abel, a tiller of the ground|"Am I my brother's keeper?" he asked
+ABEL|enh|Adam's son who kept sheep|Brother killed by Cain|Shepherd whose offering God had respect unto
+ISAAC|enh|Abraham's son, born when he was very old|Son of Abraham and Sarah, whose name means laughter|Father of Esau and Jacob
+JACOB|enh|He had twelve sons|Twin who took Esau's blessing|He served fourteen years for Rachel
+SARAH|enh|Wife of Abraham|She laughed when told she would have a son|Her new name means princess
+SAUL|enh|First king of Israel|Son of Kish, taller than all the people|Name of a Benjamite king, and of Paul before he was called Paul
+PAUL|enh|He wrote many letters in the Bible|Apostle changed on the road to Damascus|Tentmaker of Tarsus who wrote to the Romans
+PETER|enh|Fisherman friend of Jesus who walked on water|Apostle who denied Jesus three times|Brother of Andrew, given the keys of the kingdom
+JOHN|enh|Cousin of Jesus who baptised people in a river|The disciple whom Jesus loved|Apostle on the isle of Patmos who saw the Revelation
+GIANT|enh|Very big man, like Goliath|Goliath of Gath, for one|Og king of Bashan was the last of these
+SLING|enh|David's weapon against Goliath|Shepherd's weapon that hurled a stone at Gath's champion|It sank a stone into a Philistine's forehead
+STONE|enh|David threw one at Goliath|It was rolled away from the tomb|"Let him first cast a ___", said Jesus
+HARP|enh|Instrument David played|David played it to soothe King Saul|Exiles hanged theirs upon the willows of Babylon
+PSALM|enh|A song from the Bible|Song of praise, like the twenty-third|One of a hundred and fifty in the Bible's songbook
+PRAY|enh|Talk to God|Speak to God, as in "Our Father which art in heaven"|"Watch and ___", Jesus told his sleepy disciples
+AMEN|enh|Word said at the end of a prayer|"So be it" at the close of a prayer|The very last word of the Bible
+FAITH|enh|Believing and trusting in God|"Now abideth ___, hope, charity"|The substance of things hoped for, says Hebrews
+HOPE|enh|Wishing and trusting that good will come|"Faith, ___, charity, these three"|Anchor of the soul, says Hebrews
+LOVE|enh|God is this, says the Bible|"God is ___"|The perfect sort casteth out fear
+GRACE|enh|Prayer said before a meal|"For by ___ are ye saved through faith"|Noah found it in the eyes of the Lord
+SIN|enh|Doing wrong against God|"The wages of ___ is death"|Transgression of the law, says John
+KING|enh|David was one|Herod, Saul or Solomon|Title written over the cross: "The ___ of the Jews"
+CROWN|enh|A king wears it on his head|Jesus wore one made of thorns|One "of life" is promised to the faithful unto death
+GOLD|enh|Shiny gift from the wise men|Gift brought with frankincense and myrrh|Aaron's calf was made of it
+EGYPT|enh|Land where Moses grew up|Land of the Pharaohs and the ten plagues|Joseph's brothers went down there to buy corn
+NILE|enh|River in Egypt where baby Moses floated|Egypt's river, turned to blood in the first plague|Pharaoh dreamed of seven kine coming up out of it
+BABEL|enh|Tall tower where people's words got muddled|Tower of ___|City in Shinar where the Lord confounded the language
+FLOOD|enh|Great water that covered the earth in Noah's day|Deluge that Noah rode out in the ark|Waters that prevailed a hundred and fifty days
+FRUIT|enh|Eve ate some from the tree she was told not to|"The ___ of the Spirit is love, joy, peace"|By this a tree is known, said Jesus
+TREE|enh|Zacchaeus climbed one to see Jesus|"The ___ of life" grew in the garden|Of the knowledge of good and evil, it was forbidden
+INN|enh|There was no room in it for Mary and Joseph|"No room for them in the ___"|The good Samaritan paid twopence at one
+COAT|enh|Jacob gave Joseph a colourful one|Joseph's ___ of many colours|Garment without seam that soldiers cast lots for
+SALT|enh|Lot's wife turned into a pillar of this|"Ye are the ___ of the earth"|It is good, but worthless if it has lost its savour
+LIGHT|enh|God made it on the very first day|"Let there be ___"|"I am the ___ of the world", said Jesus
+BUSH|enh|Plant that burned but did not burn up|Burning ___ where Moses heard God speak|It burned with fire at Horeb, yet was not consumed
+SEA|enh|Moses parted the Red one|"Red ___", crossed on dry ground|Jesus walked on that of Galilee
+HOLY|enh|Pure and set apart for God|"___, ___, ___, Lord God Almighty"|Moses was told the ground he stood on was this
+GLORY|enh|Honour and praise given to God|"___ to God in the highest"|That of the Lord shone round about the shepherds
+FROGS|enh|Green hoppers that filled Egypt in a plague|The second plague of Egypt|Pharaoh's magicians brought these up too
+RAVEN|nh||Black bird that fed Elijah by the brook|First bird Noah sent out of the ark
+ESAU|nh||Hairy twin brother of Jacob|Hunter who sold his birthright for red pottage
+AARON|nh||Brother of Moses|First high priest, whose rod budded
+NAOMI|nh||Ruth's mother-in-law|She asked to be called Mara, meaning bitter
+SINAI|nh||Mountain where Moses received the Ten Commandments|Mount wrapped in smoke when the law was given
+JUDAS|nh||Disciple who betrayed Jesus|He sold his Lord for thirty pieces of silver
+HEROD|nh||King of Judaea when Jesus was born|King who was mocked of the wise men
+MYRRH|nh||Wise men's gift with gold and frankincense|Spice that Nicodemus brought, mixed with aloes
+ESTHER|nh||Brave queen who saved her people from Haman's plot|Queen come to the kingdom "for such a time as this"
+SAMSON|nh||Strong man whose strength was in his hair|Danite judge betrayed by Delilah
+SAMUEL|nh||Boy who heard God call his name in the night|Prophet who anointed both Saul and David
+ELIJAH|nh||Prophet who called down fire on Mount Carmel|He went up by a whirlwind into heaven
+DANIEL|nh||Prophet thrown into the lions' den|He read the writing on Belshazzar's wall
+JOSEPH|nh||Son of Jacob with the coat of many colours|Name of Mary's husband and of Jacob's dreaming son
+GIDEON|nh||Judge who beat the Midianites with three hundred men|He laid out a fleece to be wet with dew
+DELILAH|nh||Woman who betrayed Samson|She had a man shave off seven locks while Samson slept
+GOLIATH|nh||Giant beaten by David|Champion of Gath, six cubits and a span tall
+PHARAOH|nh||King of Egypt in Moses's day|Ruler whose heart was hardened against letting Israel go
+SOLOMON|nh||Wise king, son of David|King who offered to divide a baby to find its true mother
+ABRAHAM|nh||Father of many nations, husband of Sarah|Patriarch who left Ur of the Chaldees
+RACHEL|nh||Jacob's favourite wife, mother of Joseph|Jacob served seven years for her, then seven more
+HANNAH|nh||Mother of Samuel|She prayed for a son and lent him to the Lord
+JOSHUA|nh||Leader whose people saw Jericho's walls fall|Son of Nun who bade the sun stand still
+JERICHO|nh||City whose walls fell down flat|City Joshua's army marched round for seven days
+JORDAN|nh||River where Jesus was baptised|River Joshua's people crossed on dry ground
+CALVARY|nh||Hill where Jesus was crucified, as Luke names it|Its name comes from the Latin for skull
+GALILEE|nh||Sea where Jesus calmed a storm|Region of Nazareth and Capernaum
+BABYLON|nh||City where Daniel was taken captive|By its rivers the exiles sat down and wept
+NINEVEH|nh||Great city Jonah was sent to|City that repented in sackcloth at Jonah's warning
+CANAAN|nh||Promised land flowing with milk and honey|Land the twelve spies searched out
+HEAVEN|nh||God's home above|"Our Father which art in ___"
+MANGER|nh||Feeding trough where baby Jesus was laid|"Wrapped in swaddling clothes, lying in a ___"
+GENESIS|nh||First book of the Bible|Book of beginnings, ending with Joseph in a coffin in Egypt
+EXODUS|nh||Book about Israel leaving Egypt|Second book, from the Greek for a way out
+NUMBERS|nh||Fourth book of the Bible|Book named for its counts of Israel's people
+ISAIAH|nh||Prophet who foretold "Unto us a child is born"|Prophet whose lips were touched with a live coal
+APOSTLE|nh||One of the twelve sent out by Jesus|Paul, "called to be" one, writes to the Romans
+PROPHET|nh||Person who speaks God's message|Not without honour, save in his own country
+PARABLE|nh||Story Jesus told to teach a lesson|The sower or the prodigal son, for one
+MIRACLE|nh||Wonderful act only God can do|Water into wine was the first of Jesus's
+SERPENT|nh||Snake that tempted Eve|Moses lifted up one made of brass
+RAINBOW|nh||God's sign of promise after the Flood|Bow set in the cloud as a token
+TEMPLE|nh||House of God that Solomon built|Jesus overturned the moneychangers' tables there
+SABBATH|nh||Day of rest|Seventh day, which God blessed and hallowed
+GOSPEL|nh||Good news about Jesus|Matthew, Mark, Luke or John
+ISRAEL|nh||Nation of the twelve tribes|New name given to Jacob after he wrestled
+LAZARUS|nh||Friend Jesus raised from the dead|Brother of Martha who came forth after four days
+MARTHA|nh||Sister of Mary, busy serving|She was cumbered about much serving
+THOMAS|nh||Disciple who doubted until he saw|Twin called Didymus who said "My Lord and my God"
+MATTHEW|nh||First Gospel in the New Testament|Publican who left the receipt of custom to follow Jesus
+PILATE|nh||Roman governor who washed his hands|Pontius ___
+REPENT|nh||Be sorry and turn away from sin|"___ ye: for the kingdom of heaven is at hand"
+SAVIOUR|nh||Jesus, who saves his people|"Unto you is born this day ... a ___, which is Christ the Lord"
+BAPTIST|nh||John the ___|Title of the voice crying in the wilderness
+LOCUSTS|nh||Insects of the eighth plague|John ate them with wild honey
+KINGDOM|nh||"Thy ___ come"|"Seek ye first the ___ of God"
+ARARAT|nh||Mountains where the ark came to rest|Its mountains held the ark in the seventh month
+GABRIEL|nh||Angel who visited Mary|Angel who told Zacharias of John's birth
+LEVITICUS|h|||Third book, full of laws for priests
+PROVERBS|nh||Book of wise sayings, many of them Solomon's|Book saying "Train up a child in the way he should go"
+DISCIPLE|nh||Follower and learner of Jesus|Thomas or Andrew, for one
+JEREMIAH|nh||Prophet told "Before I formed thee in the belly I knew thee"|Prophet let down into a dungeon of mire
+NAZARETH|nh||Town where Jesus grew up|"Can there any good thing come out of ___?"
+PASSOVER|nh||Feast remembering Israel's escape from Egypt|Feast when the destroyer passed by the blood-marked doors
+GOLGOTHA|nh||Hill of the crucifixion outside Jerusalem|"A place of a skull", in Matthew, Mark and John
+BARABBAS|nh||Prisoner the crowd chose to set free|Robber released instead of Jesus
+ZACCHAEUS|nh||Little man who climbed a sycamore tree|Chief publican of Jericho who gave half his goods to the poor
+NICODEMUS|nh||Ruler who came to Jesus by night|Pharisee told "Ye must be born again"
+NEHEMIAH|h|||King's cupbearer who rebuilt Jerusalem's walls
+EPHESIANS|h|||Letter about the whole armour of God
+GALATIANS|h|||Epistle that lists the fruit of the Spirit
+DAMASCUS|nh||City Saul was travelling to when a light blinded him|City where Saul was let down the wall in a basket
+BETHLEHEM|nh||Town where Jesus was born|City of David, where shepherds found the babe
+JERUSALEM|nh||Holy city where the temple stood|City that Jesus beheld and wept over
+CAPERNAUM|h|||Town by the sea of Galilee where Jesus came to dwell
+SHEPHERD|nh||Person who looks after sheep|"The Lord is my ___"
+COVENANT|nh||Special promise between God and his people|The rainbow was the token of one
+SALVATION|nh||Being saved by God|"The Lord is my light and my ___"
+RIGHTEOUS|nh||Upright and good in God's eyes|"The effectual fervent prayer of a ___ man availeth much"
+EMMANUEL|h|||Name meaning "God with us"
+VINEYARD|nh||Field of grapevines in many parables|Naboth's was coveted by King Ahab
+PRODIGAL|nh||Like the wasteful son in a parable of Jesus|Like the son who wasted his substance with riotous living
+SAMARITAN|nh||The good ___ who helped the wounded man|The woman at Jacob's well was one
+PHARISEE|nh||Strict religious teacher in Jesus's day|Paul was one, and the son of one
+CENTURION|nh||Roman officer over a hundred soldiers|Roman whose servant Jesus healed with a word from afar
+PENTECOST|nh||Day the Holy Ghost came upon the disciples|Feast when cloven tongues like as of fire appeared
+TESTAMENT|nh||Old or New part of the Bible|"This cup is the new ___ in my blood"
+SCRIPTURE|nh||Holy writing of the Bible|"All ___ is given by inspiration of God"
+BENJAMIN|nh||Youngest son of Jacob|Joseph's brother, in whose sack the silver cup was found
+JONATHAN|nh||Son of Saul and best friend of David|He shot arrows to warn David to flee
+ZACHARIAS|h|||Priest struck dumb until his son John was named
+BARNABAS|h|||"Son of consolation" who travelled with Paul
+PHILEMON|h|||Short letter asking a master to welcome back Onesimus
+MATTHIAS|h|||Disciple chosen by lot to replace Judas
+MORDECAI|h|||Esther's cousin who sat in the king's gate
+ISCARIOT|h|||Surname of the disciple who betrayed Jesus
+BEERSHEBA|h|||Southern town, as in "from Dan even to ___"
+HEZEKIAH|h|||King of Judah given fifteen more years of life
+SACRIFICE|nh||Offering made to God on an altar|"To obey is better than ___"
+REDEEMER|nh||One who buys back and sets free, a name for Jesus|"I know that my ___ liveth", said Job
+NATHANAEL|h|||Israelite "in whom is no guile", seen under a fig tree
+FISHERMAN|nh||Simon Peter's trade before he followed Jesus|Andrew's line of work on the sea of Galilee

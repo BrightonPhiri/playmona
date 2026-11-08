@@ -1,0 +1,815 @@
+# General: everyday fill words used across every pack
+# WORD|levels|easy clue|normal clue|hard clue
+ABILITIES|nh||Skills and talents people have|Powers or aptitudes, such as those on a CV
+ABILITY|nh||Being able to do something well|Skill or talent
+ABLE|enh|I am ___ to ride a bike|Capable; having the skill or means|Having what it takes
+ABOVE|nh||Higher than; overhead|Opposite of beneath
+ACCEPTS|nh||Takes what is offered|Says yes to an invitation
+ACCESSED|nh||Got into, as a computer file|Reached or opened up, as data
+ACCIDENTS|nh||Unplanned mishaps, often causing harm|Mishaps that no one meant to happen
+ACHIEVING|nh||Succeeding in reaching a goal|Attaining, as an ambition
+ACID|enh|Sour liquid, like lemon juice|Sharp, sour substance on the pH scale|Litmus paper turns red in this
+ACTIVE|nh||Busy and lively|Opposite of passive
+ACUTE|nh||Less than 90 degrees, as an angle|Sharp or severe
+ADAPTER|nh||Plug converter for travelling abroad|Gadget that lets a foreign socket fit
+ADD|nh||Put on to make more|Plus; find the sum of
+ADDRESSES|nh||Where people live, written on envelopes|Street details on parcels
+ADVANTAGE|nh||A helpful edge over others|Tennis call after deuce
+ADVERSE|nh||Unfavourable, as weather|Harmful or hostile
+AGAINST|nh||Opposed to; the opposite of 'for'|In opposition to
+AGE|nh||How old you are|Years lived, or an era
+AGED|enh|Very old|Elderly|Matured, like a good cheddar
+AGENT|nh||Spy or representative|Someone who acts for you, or a spy
+AGES|enh|Very long times|Takes ___ to get ready|Eras; matures
+AGO|nh||Years ___, in the past|Gone by, as in 'a week ___'
+AGREE|enh|Say yes to the same idea|Think the same as someone|Be of one mind
+AGREEMENT|nh||A deal everyone says yes to|Accord or pact
+AHEAD|enh|In front, not behind|In front; in advance|Leading the pack, or in the future
+AID|nh||Help|Assistance given to those in need
+AIM|nh||Point a bow at a target|Goal or purpose
+AIR|nh||What we breathe|Invisible mix of oxygen and nitrogen
+ALERT|enh|Wide awake and watchful|Watchful and ready|Warn, or on the lookout
+ALIEN|nh||Visitor from outer space|Foreign, or from another planet
+ALIGNMENT|nh||Lined up straight|Lining things up in a row
+ALIVE|enh|Living and breathing|Living, not lifeless|Full of life; ___ and kicking
+ALL|enh|Every one of us|Every one of them|Everything or everyone
+ALPHA|enh|First Greek letter|Opening letter of the Greek system|Beginning, as in '___ and omega'
+ALSO|enh|Too; as well|Besides; in addition|Furthermore
+AMATEUR|nh||Not a professional|One who plays for love, not money
+AMAZING|nh||Wonderful and astonishing|Astonishingly good
+AMBER|nh||Orange-yellow colour of a traffic light|Fossil resin that traps ancient insects
+AMENDMENT|nh||A change to a law or text|Formal alteration to a document
+AMONGST|nh||In the middle of|Surrounded by; in the company of
+AMP|nh||Guitarist's loudspeaker|Unit of electric current, for short
+ANALYST|nh||Person who studies data|Expert who examines the numbers
+ANCIENT|nh||Very, very old|From the dawn of history
+AND|enh|Mum ___ Dad|Rock ___ roll|Fish ___ chips
+ANGLE|enh|Corner where two lines meet|Right ___ measures 90 degrees|Point of view, or fish with a rod
+ANIMALS|nh||Cats, dogs and cows|Creatures great and small
+ANOTHER|nh||One more|Not the same one; an additional one
+ANSWERS|nh||Replies to questions|Solutions to a crossword's clues
+ANY|enh|Is there ___ cake left?|Some, no matter which|Whichever one you like
+APPLICANT|nh||Person who puts in for a job|Candidate for a vacancy
+APPLIES|nh||Puts on, like paint or a rule|Is relevant, or sends in a job request
+APPRAISAL|nh||Judging how good something is|Expert valuation or assessment
+APPROVE|nh||Say yes to; give the thumbs up|Sanction, or think well of
+APT|nh||Suitable, as a remark|Fitting, or likely
+ARC|nh||Curve like a rainbow|Curved part of a circle
+ARCH|nh||Curved top of a doorway|Curve spanning a gap, as in a bridge
+ARCHIVE|nh||Store of old records|Place where historic papers are kept
+ARE|enh|You ___ my sunshine|We ___ the champions|Form of 'to be' with you or we
+AREA|enh|Part of a town or a place|Region or district|Length times width
+AREAS|enh|Parts of a town or a place|Regions or districts|Spaces measured in square metres
+ARENA|nh||Stadium for sport or shows|Large venue; field of competition
+ARISE|nh||Get up; come about|Rise up; 'Sir Lancelot, ___'
+ARISING|nh||Getting up; coming up|Cropping up, as a problem
+ARM|enh|Part you bend at the elbow|Limb with an elbow|Part of the body between shoulder and wrist
+ARMS|enh|Limbs that hug|Elbows are part of these|Upper limbs, with elbows and wrists
+ARMY|enh|Large group of soldiers|Land force of soldiers|Soldiers' land force
+ARTISTS|nh||Painters and sculptors|Creative people with canvas and brush
+ASIDE|nh||To one side|Actor's whisper to the audience
+ASK|nh||Put a question|Request, or enquire
+ASPECTS|nh||Features or sides of a problem|Facets; ways of looking at something
+ASSET|nh||Useful quality or resource|Something valuable you own
+ASSETS|nh||Valuable things that a person or company owns|Items of value on a balance sheet
+ASSISTANT|nh||Person who helps the boss|Helper; deputy
+ASSISTS|nh||Lends a hand|Provides a hand, or sets up a goal
+ASSOCIATE|nh||Link in your mind|Colleague, or connect in the mind
+ASSUMED|nh||Took for granted|Supposed, or took on, as a false name
+ASSUMES|nh||Supposes|Takes for granted
+ASTRONOMY|nh||Science of the night sky|Study of stars and planets
+ATE|enh|Had dinner|Had a meal|Past tense of 'eat'
+ATOM|enh|Tiny building block of everything|Smallest unit of a chemical element|Particle that can be split
+ATOMIC|nh||Relating to the smallest particles|Describing the smallest unit of an element
+ATTACKS|nh||Offensive moves in a game|Assaults; bouts of illness
+ATTEMPT|nh||Give it a go|Try; an effort
+AVERAGE|nh||Typical; the mean of numbers|Ordinary, or the mean
+AWARD|nh||Medal or prize|Prize or trophy
+AWARDED|nh||Given as a prize|Presented with a prize
+AWARE|nh||Knowing about something|Conscious of; in the know
+AWARENESS|nh||Knowing what is going on|Being alert to what is around you
+BAD|enh|Not good|Naughty|Rotten, like an old egg
+BALANCED|nh||Steady on both feet|Evenly weighted; steady
+BAN|nh||Say you must not|Forbid officially
+BAR|enh|Block of chocolate|Metal rod, or a place to order drinks|Keep out; a unit of music
+BASE|nh||Bottom part something stands on|Foundation or headquarters
+BASED|enh|A film ___ on a true story|Having a home or centre|Founded; with headquarters
+BASES|nh||Foundations of towers|Foundations, or four on a baseball diamond
+BASIS|enh|What something is built on|Foundation or starting point|Grounds for an argument
+BEARING|nh||Direction on a compass|Compass direction, or carrying
+BEATS|nh||Drum thumps|Wins against; drum thumps
+BEDS|nh||Places to sleep|Flower plots, or places for sleeping
+BEGIN|nh||Start|Get going
+BELIEVE|nh||Think something is true|Hold to be true
+BELOW|enh|Under; the opposite of above|Lower down than|Beneath
+BETA|enh|Second Greek letter|Test version of software|Greek B, or an early test version
+BETWEEN|nh||In the middle of two|In the gap separating two things
+BIBLE|nh||The holy book with Genesis and Psalms|Book of books, with Old and New Testaments
+BID|nh||Offer a price|Offer at an auction
+BLUE|enh|Colour of the sky|Sad, or the colour of the sea|Primary colour; feeling down
+BOB|enh|Float up and down in water|Short haircut|Name that reads the same backwards
+BOOST|nh||Push up, or a lift|Give a lift
+BOX|nh||Cardboard container|Packing case, or fight with gloves
+BRIEF|nh||Short|Quick and to the point
+BUG|nh||Small insect|Insect, or fault in a program
+BUILT|nh||Put together, like a house|Constructed
+BUNCH|nh||Cluster of grapes|Group, as of flowers
+BUT|nh||Yet; on the other hand|However
+BUY|enh|Pay money to get|Purchase in a shop|Acquire for cash; believe, informally
+BYE|nh||Goodbye|Short farewell, or a run in cricket
+CAN|nh||Metal tin of beans|Tin, or 'is able to'
+CAP|nh||Hat with a peak|Limit; bottle top
+CAR|enh|Vehicle you drive to school|Vehicle with four wheels|Motor vehicle
+CARDS|enh|Birthday ones you send|Game pack of aces and kings|Aces, kings and queens in a pack
+CARE|enh|Look after|Concern; look after|Worry, or tender looking after
+CAREERS|nh||Jobs people do for most of their lives|Long working paths, such as teaching or nursing
+CAREFUL|nh||Watchful not to make mistakes|Cautious
+CARS|enh|Vehicles with wheels on roads|Vehicles in a traffic jam|Motors on the motorway
+CASE|enh|Box for your glasses|Suitcase, or a legal trial|Detective's job to solve
+CATHEDRAL|nh||Big church|Large church with a bishop
+CAUSING|nh||Making happen|Bringing about
+CAUTION|nh||Care to avoid danger|Wet floor sign word
+CHANNEL|nh||TV station you can switch to|TV station, or the sea between England and France
+CHAR|nh||Blacken by burning|Scorch
+CHARTER|nh||Hire a boat or plane|Written grant of rights
+CHEAP|nh||Low in price|Going for a song
+CHEAPER|nh||Costing less|Less expensive
+CHEMICALS|nh||Substances studied in a lab|Substances like chlorine
+CLASS|nh||Group of pupils|Lesson group; or style
+CLASSES|nh||Groups of pupils in school|Lessons, or groups of pupils
+CLASSIC|nh||Timeless and excellent|Of lasting quality
+CLEANING|nh||Washing and scrubbing|Tidying and wiping
+CLEAR|enh|Easy to see through, like clean glass|Plain to understand; free from clouds|Transparent, or to tidy a table after dinner
+COIN|enh|Round piece of money in your pocket|Round piece of money|Make up, as a new word
+COINS|enh|Round pieces of money|Pennies and pounds in your pocket|Metal money, heads or tails
+COLLEAGUE|nh||Fellow worker|Person you work with
+COMES|enh|Arrives|Arrives, as a friend does|Arrives; or happens next
+COMMITTEE|nh||Small group chosen to decide things|Group that makes the decisions
+COMPACT|nh||Small and neat|Tightly packed; also a small mirror case
+COMPANY|nh||Business, or having friends over|Firm, or guests
+COMPARING|nh||Noting likenesses and differences|Looking at how things differ
+CON|nh||Pro and ___: arguments against|Swindle
+CONTACT|nh||Get in touch with|Touching; communication
+CONTAINER|nh||Something that holds things|Box, tub or jar
+COOKIES|nh||Sweet baked biscuits|Chocolate-chip treats, or small web files
+CORNER|nh||Where two walls or roads meet|Spot where two streets join at an angle
+CORRECT|nh||Right; free from mistakes|Put right, as a teacher might mark work
+COSTS|nh||Prices to be paid|Charges; what you pay
+COULD|enh|Was able to|Would be able to|Past of 'can'
+COUNSEL|nh||Advice, or a lawyer|Give advice
+COUNT|enh|Say 1, 2, 3, 4|Add up one by one|Matter, or be reckoned
+COVER|enh|Lid or blanket|Put over to hide|Dust jacket of a book, or hide
+CREATES|nh||Makes something new|Brings into being
+CRY|enh|What you do when you are sad|Shed tears|Weep, or a shout
+CUBIC|nh||Shaped like a box with equal sides|Shaped like a die
+CURRENT|nh||Happening now|Flow of water or electricity
+CUSTOMERS|nh||Shoppers|People who buy in shops
+CUT|enh|Snip with scissors|Slice with a knife|Trim; a director's call to stop filming
+CUTTING|nh||Slicing with scissors or a knife|Sharp-tongued, as a remark; or a clip from a plant
+CYCLE|nh||Ride a bike|Series of repeated events
+CYCLING|nh||Riding a bike|Pedal sport at the Tour de France
+DATA|nh||Information stored on a computer|Facts and figures
+DATE|enh|Sweet brown fruit|Day of the month|Day on the calendar, or sweet fruit
+DATES|nh||Days on the calendar|Sweet fruits from palm trees
+DAY|enh|The time when the sun is up|Twenty-four hours|Opposite of night
+DEALING|nh||Handing out cards|Trading, or handing out playing cards
+DECADES|nh||Periods of ten years|Tens of years
+DECIDED|nh||Made up your mind|Settled on a choice
+DEDICATED|nh||Very committed to a cause|Devoted
+DEEP|nh||Far down|Far below the surface; profound
+DEEPER|nh||Lower in the pool|Further down
+DEFAULT|nh||Setting used unless you change it|Standard setting
+DEGREES|nh||Units of temperature or angle|University awards, or units on a thermometer
+DELAY|enh|Make late|Put off till later|Hold up; a hold-up at the station
+DELAYED|nh||Held up, as a late train|Postponed
+DEPENDENT|nh||Needing support from others|Relying on someone else
+DEPENDING|nh||Relying on something, as in ___ on the weather|Hinging, as on circumstances
+DEPTH|nh||Measurement downward|How deep something is
+DESIGNERS|nh||People who plan how things look|Fashion or furniture creators
+DESIGNS|nh||Plans and patterns|Sketches for a new building
+DESIRABLE|nh||Worth wanting very much|Highly sought after; attractive to own
+DESIRED|nh||Wished for|Longed for
+DESPERATE|nh||Ready to try anything|Frantic for help
+DESPITE|nh||Even though; in spite of|Notwithstanding
+DESTROY|nh||Wreck completely|Knock down and ruin
+DETERMINE|nh||Decide, or work out|Find out, or settle
+DIARY|enh|Book where you write about your day|Daily journal|Anne Frank kept one
+DID|nh||Carried out, as 'I ___ it!'|Past of 'do'
+DIE|nh||Cube with spots for games|Singular of dice
+DIFFERENT|nh||Unlike the others|Not the same
+DIG|enh|Make a hole with a spade|Use a spade to ___ a hole|Excavate, as a dog does for a bone
+DIGIT|nh||Single figure from 0 to 9|A finger or toe, or one numeral
+DIRECTORS|nh||People in charge of making a film or play|Bosses on set who call "Action!"
+DIRT|enh|Muddy stuff on your boots|Mud or dust that needs cleaning off|Grime, or earth in a flowerbed
+DISC|nh||Round, flat object such as a record|Flat circle, like a CD or a hockey puck
+DISCS|nh||Round, flat things like CDs and DVDs|Records or CDs, in a collection
+DISEASE|nh||Illness that spreads through the body|Sickness such as measles or mumps
+DISTANCES|nh||Gaps between places, in miles or km|Measures of how far apart two points are
+DOCUMENTS|nh||Papers or files with written information|Official papers, such as passports and contracts
+DOE|enh|Female deer|Mother deer, perhaps|Female rabbit, hare or deer
+DOWN|enh|Opposite of up|Up and ___|Soft feathers in a pillow
+DRAFT|nh||First rough version of an essay|Cold air through a gap, or a rough copy
+DRAG|nh||Pull something along the ground|Haul along, or a bore
+DREAMS|nh||Pictures in your head while you sleep|Night visions, or hopes for the future
+DRIVERS|nh||People who steer cars and buses|Those at the wheel of a car or lorry
+DROP|enh|Let go so it falls to the floor|Fall, or a single bead of rain|Let fall, or the smallest dribble of liquid
+DROPPED|nh||Let fall by accident|Released so it fell, or left out of a team
+DROVE|nh||Steered a car along the road|Took the wheel, as I did to the shops
+DRY|enh|Not wet|Not damp, like a desert|Parched, or not sweet, said of wine
+DUE|nh||The train is ___ at noon|Owed, or expected to happen
+DUMP|nh||Place where rubbish is taken|Throw down in a heap, or a rubbish tip
+EACH|enh|Every one|Apples are 50p ___|To every one, apiece
+EAR|enh|You hear with it|Lend me your ___|Corn has one, and so do you
+EARLIER|nh||Before now|Previously; ahead of schedule
+EASE|nh||Freedom from difficulty|Relief from pain, or to loosen gradually
+EASTERN|nh||From the sunrise side of the compass|Of the Orient, or lying towards the sunrise
+EASY|enh|Not hard|Simple, needing little effort|Child's play, you might say
+EAT|enh|Chew and swallow food|Have a meal|Have lunch, or dine
+ECHO|enh|Your shout bouncing back from a cliff|Sound that bounces back off a wall|Repeat, as a cave does your shout
+ECOLOGY|nh||Study of living things and their surroundings|Science of how organisms relate to their habitat
+ECONOMIES|nh||Nations' systems of money, trade and jobs|Countries' systems for producing and spending wealth
+EDGE|enh|The side of a table or cliff|Border where something ends|Rim, or the advantage in a close race
+EDGES|nh||Borders where things end|Rims or brinks; sharp sides of blades
+EDIT|enh|Fix mistakes in your writing|Correct and improve a text|Cut and tidy, as a newspaper sub does
+EDITING|nh||Correcting and improving a text|Cutting and tidying a film or article
+EDITORIAL|nh||Newspaper column giving the paper's opinion|Leader article in a paper
+EGGS|enh|Hens lay these|Breakfast items that can be boiled or fried|Oval things laid by hens, perhaps scrambled
+EIGHT|enh|Number after seven|Number of legs on a spider|Double four
+ELECTIONS|nh||Times when people vote for leaders|Votes held to choose representatives
+ELEMENT|nh||Basic part, such as oxygen or iron|One of the basic substances on the periodic table
+ELIMINATE|nh||Get rid of completely|Knock out of a contest, or wipe out
+ELSEWHERE|nh||In some other place|Anywhere but here
+EMERGENCY|nh||A sudden need for urgent help|Crisis demanding quick action, such as 999
+EMOTIONAL|nh||Showing strong feelings|Tearful and moved, perhaps
+EMPIRICAL|h|||Based on observation or experiment, not theory
+EMPTY|enh|Like a cup with nothing in it|Hollow, with nothing inside|Void, as a glass after the last sip
+ENABLES|nh||Makes it possible for|Allows, or gives the means to
+ENCLOSED|nh||Put inside an envelope or fence|Shut in on all sides, or sent along with a letter
+ENCOURAGE|nh||Give someone hope and support|Cheer on, urging someone forward
+END|enh|Where a story finishes|The finish|Close, finale or stop
+ENDED|nh||Finished|Came to a close
+ENEMY|enh|Someone who is against you|A foe in a fight|Foe or adversary
+ENGAGED|nh||Promised to marry|Busy, as a phone line, or betrothed
+ENGINE|nh||Motor that powers a car or train|Locomotive's power unit
+ENGINEERS|nh||Experts who design bridges and machines|Technical designers of bridges, machinery and circuits
+ENLARGE|nh||Make bigger|Blow up a photograph, say
+ENOUGH|nh||Plenty; no more needed|As much as is required
+ENTER|nh||Go in|Come in, or type into a computer
+ENTERED|nh||Went in|Came into a room, or joined a race
+ENTIRE|nh||Whole; complete|Whole, with nothing left out
+ENTRY|nh||A way in, such as a door|Item in a diary or competition
+EPISODE|nh||One part of a TV series|Instalment of a serial
+EQUIPMENT|nh||Tools and gear needed for a job|Kit; apparatus for a sport or task
+ERA|nh||Period of history|Age, such as the Victorian one
+ESSENCE|nh||The most important quality of something|Concentrated extract, such as vanilla
+EVEN|enh|Like 2, 4 and 6|Smooth and flat|Flat and level; not odd
+EVENING|nh||Time of day after afternoon|Close of day, when the sun sets
+EVENT|enh|A party or a race|Something that happens, such as a match|An occasion, or a race in athletics
+EVER|enh|At any time|Have you ___ seen snow?|Always, throughout all time
+EVERY|nh||Not just some days, but ___ day|Without exception, all of the
+EXAMINE|nh||Look at closely and carefully|Inspect or test, as a doctor might
+EXCITED|nh||Full of eager happiness|Thrilled, buzzing with anticipation
+EXCLUDE|nh||Leave out|Keep out, or shut out of a group
+EXECUTIVE|nh||Senior manager in a company|Boss with a briefcase, perhaps
+EXIT|enh|The way out|Way out of a building|Leave the stage
+EXPANDING|nh||Growing bigger|Swelling in size, as a balloon does
+EXPANSION|nh||Growth in size|Spreading out; growth of a business
+EXPERTISE|nh||Great skill in a subject|Specialist know-how
+EXTRACT|nh||Pull out, or a short passage from a book|Take out, as a dentist does a tooth
+EXTREME|nh||Very great or far from the middle|Furthest, as in daring sports
+EXTREMELY|nh||To a very great degree|Very, very much
+EYE|enh|You see with it|Part of the face with a pupil|Hurricane's calm centre
+FAR|enh|Not near|A long way off|Distant; the opposite of near
+FAT|nh||Plump|Greasy substance in meat, or well-padded
+FED|nh||Gave food to|Supplied with a meal
+FEE|nh||Money charged for a service|Charge for entry, or a doctor's price
+FINANCE|nh||Money management|The business of money and banking
+FIT|nh||In good health|Healthy and strong; or the right size and shape
+FLAGS|nh||Banners that fly from poles|Pieces of cloth for countries, ships and rallies
+FLAME|nh||Tongue of fire|Burning part of a candle
+FONTS|nh||Styles of lettering on a computer|Typefaces such as Arial
+FOR|nh||Is this present ___ me?|On behalf of; in favour of
+FORMATS|nh||Layouts or file types|Shapes and layouts of documents
+FRAUD|nh||Trick played to cheat people of money|Swindle, or an impostor
+FREE|nh||Costing nothing|Without charge, or not locked up
+FURNITURE|nh||Tables, chairs and beds|Items such as sofas and wardrobes in a house
+GAP|enh|Hole between two things|Space between two things|Break in a hedge, or in knowledge
+GAS|enh|Stuff in a balloon that floats up|Neither solid nor liquid|Helium or oxygen, but not water
+GATES|nh||Doors in a fence or wall|Entrances in garden fences and airports
+GATEWAY|nh||Entrance to a place|Opening in a wall, or the way into something
+GENE|nh||Unit of heredity passed from parents|Tiny part of DNA that determines traits
+GENERAL|nh||Army officer of high rank|Widespread, or a top soldier
+GENERATOR|nh||Machine that makes electricity|Back-up power producer in a power cut
+GENES|nh||Parts of DNA passed from parents to children|Inherited instructions in your cells
+GENETIC|nh||To do with inherited traits|Passed on through DNA
+GENUINE|nh||Real, not fake|Authentic; the real thing
+GET|enh|Fetch or receive|Obtain|Understand, as a joke
+GIVEN|enh|Presented as a gift|Has been ___ a present|Prone, as in "___ to sulking"
+GIVES|enh|Hands to someone as a present|Hands over|Offers, or bends under pressure
+GOSSIP|nh||Chat about other people's private lives|Idle chatter about others, or the person who spreads it
+GOT|nh||Received or fetched|Obtained; also, understood
+GRAND|nh||Impressive and magnificent|A thousand pounds, in slang, or majestic
+GRAPHIC|nh||Shown in a picture or chart|Vividly detailed; also, a design image
+GREEN|enh|Colour of grass|Colour you get from mixing yellow and blue|Colour of an emerald, or a golf putting area
+GREY|enh|Colour of an elephant|Colour between black and white|Gloomy, as a rainy sky
+GUY|nh||Fellow or chap|Chap; also the rope holding a tent
+HAD|nh||Mary ___ a little lamb|Owned or experienced in the past
+HANDLED|nh||Held and managed|Dealt with a tricky problem
+HAPPY|enh|Feeling glad and smiling|Joyful|Content; a dwarf in Snow White
+HARDER|nh||More difficult, or firmer|More challenging; tougher
+HAS|nh||She ___ a new bike|Possesses
+HASH|nh||The # symbol|Dish of chopped meat and potatoes
+HATE|enh|Dislike very much|Strong dislike|Loathe; love's opposite
+HAVE|enh|Own or hold|I ___ a dream|Possess; or eat, as in "I'll ___ the soup"
+HAY|enh|Dried grass in a barn|Make ___ while the sun shines|Straw's cousin: dried grass for fodder
+HEAR|enh|Notice with your ears|Listen to|Catch a sound; or try a case in court
+HEARTS|nh||Organs that pump blood|Red suit of playing cards
+HEAT|enh|What makes a fire warm|Warmth from the sun or an oven|Opposite of cold, in physics
+HER|nh||I gave it to ___|The woman, as the object of a sentence
+HERE|enh|In this place|Come ___ and sit down|At this very spot
+HERO|enh|Brave person who saves the day|Brave person admired by others|Brave star of a story
+HERSELF|nh||She did it all by ___|That woman and no one else
+HEY|nh||Shout to get someone's attention|Informal hello, or a cry to attract notice
+HIDE|enh|Play ___ and seek|Go where nobody can find you|Conceal; or an animal's skin
+HIERARCHY|nh||Ranking of people from top to bottom|Pecking order
+HIM|enh|Give the book to ___|The man, as the object of a sentence|Not her, but ___
+HIP|enh|Where your leg joins your body|Joint where the leg meets the body|Trendy; fashionable
+HIRE|nh||Pay to use for a short time|Employ someone
+HIS|nh||Hers and ___|Belonging to a boy or man
+HIT|enh|Strike with your hand|Strike|Smash success, or a smack
+HOLE|enh|What a mole digs|Gap or opening in something|Burrow, or a golfer's target
+HOME|enh|Where you live|There's no place like ___|Base in baseball, or where the heart is
+HOMES|enh|Houses where families live|Places where people live|Residences; houses, flats and bungalows
+HOPED|nh||Wished for something to happen|Wished and longed, expecting the best
+HOSPITALS|nh||Places where doctors treat the sick|Buildings with wards and operating theatres
+ICON|nh||Small picture on a screen|Famous symbol; or a sacred painting
+IDEA|enh|A thought in your head|Brainwave|Notion; plan taking shape
+IDEAS|enh|Thoughts that pop into your head|Brainwaves|Notions and plans in a brainstorm
+ILL|enh|Not well|Sick|Unwell, in bed with a fever, perhaps
+IMAGE|nh||A picture or likeness|Picture, or a public reputation
+IMAGINE|nh||Picture something in your mind|Dream up; suppose
+IMPLEMENT|nh||Tool or utensil|Put a plan into action
+IMPROVING|nh||Getting better|Making progress, step by step
+INCH|nh||A twelfth of a foot|Small unit; creep forward slowly
+INITIAL|nh||First letter of a name|At the beginning; first
+INITIALLY|nh||At the start|To begin with
+INK|enh|Pens are filled with it|Liquid in a pen|Squid squirts it
+INPUT|enh|What you put into a computer|Information fed into a machine|Contribution, or what a keyboard supplies
+INSERTION|nh||Act of putting something in|Slotting something into a gap
+INSIGHT|nh||Deep understanding|Flash of understanding
+INSTALL|nh||Set up software or an appliance|Fit and connect, as a plumber does a boiler
+INSURANCE|nh||Cover against loss or damage|Policy to protect your car or home
+INTEGER|nh||A whole number|Number with no fraction, such as 7 or -3
+INTEREST|nh||Curiosity; or money earned in a bank|Money paid on savings, or a hobby
+ION|nh||Atom carrying an electric charge|Charged particle in a battery
+IRON|enh|Hot tool that flattens creases|Hot appliance for pressing clothes|Press creases out of a shirt
+ISSUE|nh||Topic for discussion or a copy of a magazine|Hand out, or a problem
+ISSUES|nh||Problems or topics|Handed out, or editions of a magazine
+ITEM|enh|One thing on a list|Single article|Object in a collection
+ITEMS|enh|Things on a shopping list|Individual articles in a list|Entries in a catalogue
+ITS|nh||The cat licked ___ paw|Possessive, not "it is"
+KEEPING|nh||Holding on to something|Retaining; looking after
+KID|enh|Young goat|Child|Tease; or a young goat
+KIND|enh|Friendly and caring|Gentle and thoughtful|Sort or type; also generous
+LARGE|enh|Very big|Big, like a size beyond medium|Sizeable
+LARGELY|nh||Mostly|To a great extent
+LASER|nh||Narrow beam of intense light|Beam used in surgery and light shows
+LATER|nh||At a time after now|Afterwards
+LATTER|nh||The second of two things named|Second of a pair, opposite of "former"
+LAW|nh||Rule made by a country|Rules the police enforce
+LAWYER|nh||Person who gives legal advice|Barrister or solicitor, say
+LAWYERS|nh||People who give legal advice|Barristers and solicitors
+LAY|enh|Put something down flat|Place down, as a table|What a hen does with an egg
+LEADERS|nh||People in charge|Those at the front of a pack
+LEARN|nh||Pick up knowledge at school|Gain skill or study
+LEAST|enh|Smallest amount; opposite of most|The smallest amount|Minimum; opposite of most
+LEAVE|nh||Go away from|Depart; or time off work
+LECTURE|nh||Long talk given to students|Talk by a professor, or a telling-off
+LED|enh|Went in front and showed the way|Guided; went first|Headed the field
+LEG|enh|Part of your body between hip and foot|You stand on one|Limb with a knee; or part of a table
+LEISURE|nh||Free time for fun and rest|Time off when you are not working
+LET|nh||Allow|Permit; or rent out
+LIBRARIAN|nh||Person who works with books and lends them|Keeper of the shelves and the "Shh!"
+LID|enh|Top of a pot or box|Top you lift off a jar|Cap on a saucepan
+LIE|nh||Untrue statement; or rest flat|Fib; or recline
+LIES|enh|Untrue things said to trick people|Fibs|Falsehoods; or rests flat
+LIFT|enh|Raise up|Hoist; or a ride in someone's car|Elevator, in Britain
+LIKED|nh||Enjoyed or found pleasing|Had a fondness for
+LINE|enh|A straight mark|Row of people waiting|Queue; also what a fisherman casts
+LIP|nh||Fleshy edge of the mouth|Stiff upper one, in the British saying
+LIVE|enh|To be alive and breathing|Reside, as in a house|Dwell, or not recorded
+LOADING|nh||Putting goods onto a van|Putting cargo onto a lorry
+LOANS|enh|Money borrowed from a bank|Sums a bank lends and expects back|Mortgages, for example
+LOG|enh|Thick piece of wood on a fire|Record of a ship's voyage|Captain's daily record
+LOGO|enh|Badge or symbol for a company|Company's emblem on its products|Brand's symbol, such as a swoosh
+LOOPS|nh||Rings made with string or ribbon|Rings of rope that might be tied in a knot
+LOSE|enh|Opposite of win|Misplace, as with keys|Fail to win, or mislay
+LOT|enh|Plenty: I like it a ___|Thanks a ___|Item at an auction
+LOW|nh||Down near the ground|Sound a cow makes, old-fashioned
+LYING|nh||Telling a fib|Telling fibs, or reclining
+MADE|enh|Built or created|Created, as with a cake|Produced, as a bed in the morning
+MAN|enh|Grown-up boy|Adult male|Adult male, or to crew a boat
+MANAGED|nh||Succeeded in doing, just about|Ran a team, or coped
+MANUALS|nh||Books of instructions|Handbooks that tell you how to use a gadget
+MARRIED|nh||Wed, as the happy couple were last summer|United at the altar
+MASSIVE|nh||Enormous or huge|Of vast size and weight
+MAY|enh|Month after April|Word meaning "might": It ___ rain|Hawthorn blossom is named after this month
+MAYOR|enh|Leader of a town or city|Elected head of a city council|Civic leader wearing a chain of office
+MEANT|nh||Intended, as in "I ___ to call you"|Signified or intended
+MEAT|enh|Beef, lamb or pork|Butcher's stock in trade|Vegetarians avoid it
+MEDICAL|nh||Relating to doctors and hospitals|Relating to the treatment of illness
+MEDICINE|nh||Pills and syrups from the chemist|Remedy that a spoonful of sugar helps go down
+MEET|enh|Nice to ___ you|Come together by arrangement|Athletics gathering, or to encounter
+MEETS|nh||Comes together with someone|Greets for the first time
+MEMBERS|nh||People who belong to a club|Those paying subscriptions to a society
+MEN|enh|Grown-up boys|Adult males|Gentlemen, chaps or fellows
+MESSAGE|nh||Note passed to someone|Communication left on an answerphone
+MESSAGES|nh||Texts and notes sent to people|Communications left on a voicemail
+MET|nh||Came together, as friends did at the park|Encountered by chance, perhaps at a station
+METAL|enh|Iron or steel, for example|Hard shiny material such as steel|Hard shiny material that conducts electricity
+METER|nh||Parking device that takes coins|Gas or electricity gauge read each quarter
+METRO|nh||Underground railway in a big city|City's subway system, as in Paris or Newcastle
+MICROWAVE|nh||Kitchen gadget that heats food with a ping|Oven for reheating leftovers in a flash
+MINOR|nh||Not important, as a small problem|Of lesser importance, or under age
+MINUS|enh|Take away; the sign is a short dash|The sign for subtraction|Less; below zero
+MISTAKE|nh||Error or slip|Slip-up that an eraser might fix
+MIXED|nh||Blended together, like paint colours|Combined, or of several kinds
+MODE|enh|Setting on a phone, such as silent ___|Way or manner of doing something|Statistician's most common value
+MONITOR|nh||Computer screen|Keep watch on, or a large lizard
+MONSTER|nh||Giant imaginary creature in a story|Nessie, for example
+MOTOR|enh|Engine in a car|Engine that makes things go|Powered unit under a bonnet
+MOUNTAINS|nh||High peaks with snow on top|Alps and Andes, for example
+MOVE|nh||Change house|Chess player's turn, or to stir emotions
+MOVED|enh|Went to a new house|Shifted from one spot to another|Touched emotionally, or relocated
+MOVIE|enh|Film shown at the cinema|Feature shown with popcorn|Film, in American English
+MUSCLES|nh||Body parts that bulge when you flex|Biceps and triceps
+NAIL|enh|Hit this with a hammer|Thin metal spike|Hammer's target
+NAILS|nh||Thin pointed metal fasteners|Carpenter's fasteners, or fingertip coverings
+NAMED|enh|Called, as in "a dog ___ Rex"|Given a title, as a baby is|Appointed, or christened
+NARROW|nh||Not wide, like a country lane|Slender, like an alley between tall houses
+NATURAL|nh||Found in the wild, not man-made|Not artificial, or a note without sharp or flat
+NECESSARY|nh||Needed, not optional|Required: not just nice to have
+NEED|nh||A friend in ___ is a friend indeed|Require, or want badly
+NEEDS|nh||Requires, as in "she ___ a rest"|Requirements, or lacks
+NEW|enh|Opposite of old|Just bought and unused|Fresh, novel, or unused
+NIL|nh||Zero in a football score|Nought, as a goalless side scores
+NODES|nh||Points where lines meet in a network|Points on a plant stem where leaves grow
+NOR|enh|Neither Jack ___ Jill|Neither here ___ there|"Neither" goes with this word
+NOT|enh|I am ___ hungry|Word that makes a sentence negative|Hamlet's "To be or ___ to be"
+NOTED|enh|Wrote down quickly|Famous or well known|Remarked upon, or jotted down
+NOTES|enh|Short messages left on the fridge|Do, re, mi and the rest in music|Jottings, or musical sounds
+NOTION|nh||Idea in your head|Idea or vague belief
+NOW|enh|At this very moment|Not later, but ___|The present, as opposed to then
+NULL|enh|Zero, or having no value|Void, having no legal force|Invalid: ___ and void
+NURSE|enh|Carer in a hospital wearing a uniform|Medic who looks after patients in a ward|Florence Nightingale's profession
+NUT|enh|Squirrels love to eat this|Almond or pecan, for example|Bolt's partner
+OBTAINING|nh||Getting hold of, as a library card|Acquiring or securing
+OBVIOUSLY|nh||Clearly, as anyone can see|Without any doubt, as plain as day
+OCCUPIED|nh||Taken, as a seat on a bus|Kept busy, or lived in
+ODD|enh|Not even|Peculiar or strange|Out of the ordinary, like a single sock
+OIL|enh|Slippery stuff used for cooking|Cooking liquid made from olives|Black gold pumped from the ground
+OLD|enh|Not new or young|Aged, like grandparents|Of long standing
+OMISSIONS|nh||Things left out by mistake|Gaps where items were skipped or forgotten
+ONE|enh|Number after zero|Number of noses on your face|Smallest whole number above zero
+ONES|enh|Units, not tens or hundreds|"I'll take the red ___"|Single digits in the units column
+ONLY|enh|Just one, and no more|Sole, as in the ___ child|Merely, or solitary
+OPEN|enh|Not closed|Unlocked, as a door|Frank, or unfastened
+OPERATE|nh||Work, as a machine does|Run a machine, or cut as a surgeon
+OPERATION|nh||Hospital procedure by a surgeon|Surgeon's procedure, or a board game with a buzzer
+OPINION|nh||What you think about something|View or belief that is a matter of taste
+OPT|nh||Decide between options|Choose, as in "___ for fish"
+OPTIMAL|nh||Best possible|Most favourable or ideal
+ORAL|nh||Relating to the mouth|Spoken exam, as opposed to a written one
+ORGAN|nh||Kidney, heart or lung, for example|Instrument with pipes and pedals in church
+ORGANIC|nh||Grown without chemical sprays|Farmed without artificial fertilisers
+ORIGIN|nh||Starting point or source|Source of a river, or the start of a graph's axes
+ORIGINS|nh||Starting points of things|Sources, roots or beginnings
+OTHER|enh|Not this one, but the ___ one|Different or additional|The remaining one of two
+OUR|enh|Belonging to us|"___ Father, who art in heaven"|Possessive of "we"
+OUT|enh|Not in|Not at home|Dismissed, in cricket
+OUTLOOK|nh||View of what may happen, like the weather forecast|Prospects, or a view from a window
+OWN|enh|Have as yours|Possess or belong to you|Football blunder: an ___ goal
+OWNERSHIP|nh||State of possessing something|Title deeds prove this
+PACKAGE|nh||Parcel delivered by post|Wrapped box sent through the mail
+PAD|enh|Block of paper to write on|Soft cushion, or a flat in slang|Rocket's launch ___
+PAGE|enh|You turn it in a book|One side of a book's leaf|Boy servant to a knight, or one leaf of a book
+PAGES|enh|Sheets you turn in a book|Leaves of a book|Knights' young attendants, or a book's leaves
+PAIN|nh||Ouch! What you feel when you hurt|Ache, or a nuisance
+PANEL|enh|Flat section of a door|Team of experts on a quiz show|Group of judges
+PARADE|nh||Street procession with floats and bands|Marching procession
+PARTITION|nh||Wall that splits a room in two|Divide, or room divider
+PASS|enh|Succeed in a test|Kick the ball to a teammate|Gap through the mountains
+PASTE|enh|Glue made from flour and water|Copy and ___ on a computer|Wallpaper adhesive, or a smooth spread
+PAT|enh|Gentle tap on a dog's head|Small lump of butter|Glib, or a gentle tap
+PATCH|enh|Piece sewn over a hole in jeans|Small plot of garden|Mend, or a cover for one eye
+PATIENT|nh||Willing to wait calmly|Person under a doctor's care, or calm and tolerant
+PATIENTS|nh||People waiting to see the doctor|Those in the care of doctors
+PAY|enh|Give money for something|Give money for goods|Settle a bill, or wages
+PEER|enh|Look hard at something far away|Equal in age or rank|Member of the House of Lords
+PENALTIES|nh||Spot kicks in football|Fines, or spot kicks
+PENS|enh|Ink-filled writing tools|Ballpoints and felt tips, for example|Enclosures for sheep, or writing tools
+PER|nh||Miles ___ hour|"For every", as on a price tag
+PERFECT|nh||Without any faults|Practice makes ___
+PERHAPS|nh||Maybe|Possibly
+PERMANENT|nh||Not temporary|Lasting for ever, like a tattoo
+PET|enh|Dog or cat at home|Animal you keep and love|Stroke, or a teacher's favourite
+PHASE|nh||Stage in a process|Stage of the moon, say
+PHOTOS|nh||Snaps taken with a camera|Pictures in the family album
+PHRASE|nh||Short group of words|Expression or idiom
+PIECE|nh||Bit of a jigsaw|Bit of a whole, or a chess man
+PILL|nh||Tablet you swallow|Tablet to swallow, or bitter ___ to swallow
+PIN|nh||Sharp point for fastening cloth|Sharp metal fastener, or a bowling target
+PINK|enh|Colour of candyfloss|Colour of a flamingo|Pale red, or a type of carnation
+PIPES|nh||Tubes carrying water|Tubes under the sink, or bagpipe parts
+PIT|nh||Hole in the ground|Deep hole, or a stone in a cherry
+PLAIN|nh||Simple, without decoration|Large flat grassland, or simple and unadorned
+PLAN|enh|Idea for what to do next|Scheme for getting something done|Blueprint, or to arrange in advance
+PLAYING|nh||Having fun with toys or games|Taking part in a game, or making music
+PLEASED|nh||Happy with how things turned out|Delighted or satisfied
+PLOTS|nh||Small patches of garden|Story lines, or secret schemes
+POEMS|nh||Verses with rhyme and rhythm|Verses by Wordsworth or Blake, for example
+POISON|nh||Substance that harms if swallowed|Toxic substance used by a spider, say
+POLISH|nh||Rub until it shines|Make shiny, or from Warsaw
+PORTION|nh||A share or helping of food|A part of a whole; a serving
+POTENTIAL|nh||Possible, but not yet real|Latent ability waiting to be developed
+PRECEDING|nh||Coming just before|Going before in time or order
+PRECIOUS|nh||Very dear and valuable|Of great value, like gold
+PREMISES|nh||Buildings and the land around them|Property occupied by a business
+PREPARE|nh||Get ready|Make ready in advance
+PREPARING|nh||Getting ready|Making ready in advance
+PREVIOUS|nh||Coming before this one|Earlier in time or order
+PRINT|nh||Mark left by a thumb|Put words on paper, or a fingertip mark
+PRIVATE|nh||Not for everyone to see|Secret, or a soldier of the lowest rank
+PRO|nh||Expert, not an amateur|Professional, or the opposite of con
+PROCESS|nh||Series of steps to get something done|Series of actions, or to deal with
+PROCESSES|nh||Series of steps in a factory|Sets of actions leading to a result
+PRODUCE|nh||Make, or fruit and vegetables|Fruit and vegetables, or to bring forth
+PROPERTY|nh||Houses and land|Land and buildings, or what you own
+PROPOSE|nh||Suggest a plan|Suggest, or pop the question
+PROTOTYPE|nh||First model of a new invention|Early trial version of a product
+RADAR|nh||A system that spots planes and ships using radio waves|Palindromic detection system
+RAILWAY|nh||Track for trains|Line with sleepers and signals
+RAISE|enh|Lift up high|Collect, as money for charity|Rear, as a child
+RAISING|nh||Lifting up|Collecting money, or rearing, as a child
+RAN|enh|Went fast on foot|Jogged or sprinted|Operated, as a shop was
+RARE|enh|Not often seen|Uncommon|Lightly cooked, as steak
+RARELY|nh||Not often|Hardly ever
+RATE|enh|Speed at which something happens|Judge, or give a score to|Interest ___ set by the Bank of England
+RAW|enh|Not cooked yet|Uncooked, as some fish|Unprocessed; or sore from rubbing
+RAY|enh|Beam of sunlight|Flat sea fish with a long tail|Manta, for example
+REACHED|nh||Arrived at a place|Stretched out to get; got to
+READER|nh||Person who enjoys books|One who devours novels, say
+READERS|nh||People who enjoy books|Library users with their noses in novels
+REASONING|nh||Working things out logically|Argument based on logic
+RECEIVE|nh||Get, as a letter|Take delivery of
+RECENTLY|nh||In the last few days or weeks|Not long ago
+RECOGNIZE|nh||Spot someone you know|Know again on sight
+RECOVER|nh||Get better after being ill|Regain health, or get back something lost
+RED|enh|Colour of a fire engine|Colour of a postbox|Colour of Rudolph's nose
+REDUCE|nh||Make smaller in number or size|Cut back or lower
+REFERENCE|nh||Note about you from a former employer|Source cited in an essay, or a mention
+REFERS|nh||Mentions or points to something|Directs attention, as to a source
+REFUSED|nh||Said no to|Declined to accept or do
+REGIME|nh||Strict plan of diet and exercise|Daily routine for health, or a system of management
+RELATED|nh||Belonging to the same family|Connected, like cousins
+RELEASE|nh||Set free|Let go, or put out a new album
+RELEASES|nh||Frees from a cage|Lets go, or puts out new records
+RELY|nh||Count on, as in "___ on me"|Place trust in, as a child does a parent
+REMINDER|nh||Note that prompts you to do something|Gentle nudge to the memory
+RENT|enh|Money paid to live in a flat|Money paid each month to a landlord|Tear, or hire out for payment
+REPEAT|nh||Do again|Rerun on television, or say again
+REPLACE|nh||Put something new in the place of another|Substitute for something worn out
+REPLACING|nh||Swapping for a new one|Putting something new in place of
+REPLY|nh||Answer to a question|Answer back
+RESEARCH|nh||Careful study to find facts|Scientist's investigation
+RESET|nh||Put back to the start, like a game console|Restore to the starting position
+RESOLVE|nh||Sort out a problem|Firm determination, or settle
+RESORTS|nh||Holiday places by the sea or on ski slopes|Popular holiday destinations
+RESOURCE|nh||Useful supply, such as water or timber|Source of help or wealth
+RESPECT|nh||Admire and treat kindly|High regard; to hold in esteem
+RESPOND|nh||Answer when asked a question|React to a stimulus
+RESPONSES|nh||Replies to questions|Answers or reactions
+REST|enh|Take a break and relax|What's left over|Pause, or a silence in music
+RESTORE|nh||Bring back to its old state|Renovate, as an old painting
+RESULTS|nh||Scores at the end of a match|Outcomes, or exam grades
+RETAIL|nh||Shop-based selling to customers|Sell to the public, as opposed to wholesale
+RETIRED|nh||No longer working because of age|Stopped working after years
+REVEALED|nh||Showed what was hidden|Let the cat out of the bag
+REVIEWS|nh||Critics' opinions of films and books|Assessments of films or books
+RID|nh||Get ___ of unwanted things|Clear of, as of pests
+RING|enh|Circle you wear on a finger|Telephone sound, or jewellery|Call, or boxer's arena
+RIP|enh|Tear a piece of paper|Tear violently, as a cloth|Tear quickly, as along a seam
+ROADS|enh|Cars drive along these|Streets and motorways|Highways and byways
+ROD|enh|Thin pole for catching fish|Thin straight bar|Spare the ___ and spoil the child
+ROMANCE|nh||Love story, or loving feelings|Tale of hearts and flowers
+ROOM|enh|Part of a house with walls and a door|Part of a house, such as a kitchen|Space available
+ROUND|enh|Shaped like a ball|Circular|Part of a boxing match
+RUNS|enh|Goes fast on foot, as a fox does|Jogs quickly, or is in charge of a company|Scores in cricket, or ladders in tights
+SAD|enh|Not happy|Feeling unhappy|Down in the dumps
+SAFER|nh||Less likely to cause harm|More secure; less risky
+SAKE|nh||For goodness' ___|Japanese rice wine, or a purpose
+SALE|enh|Shop event when prices drop|Event with reduced prices|Bargain event, or a "for ___" sign on a house
+SALES|enh|Shop deals with cheap prices|Bargain events in shops|Price-cutting events, or a firm's takings
+SAMPLE|nh||Small taste of a product|Free taster, or a clip of music reused in a new song
+SAT|enh|Took a seat|Humpty Dumpty ___ on a wall|Posed for a painter
+SAVE|enh|Keep coins in a piggy bank|Put money aside for later|Goalkeeper's heroic stop
+SAW|enh|Tool for cutting wood|I ___ Three Ships|Carpenter's cutting tool, or an old proverb
+SAY|enh|Speak words aloud|Smile and ___ "cheese!"|Utter, or the voice you get in a decision
+SCENE|enh|Part of a play or film|Part of an act in a play|Where a crime happened, or a fuss made in public
+SCHOLAR|nh||Person who studies deeply|Learned academic
+SCOPE|nh||Room to act, or extent of a subject|Range of what is covered
+SEATS|enh|Chairs to sit on|Places to sit in a theatre|Places in a stadium, or constituencies won at an election
+SEE|enh|Look with your eyes|Spot, as in "I ___ what you mean"|Bishop's district, or to spot
+SEGMENT|nh||Slice of an orange, say|Section into which something is divided
+SENTENCES|nh||Groups of words that make complete thoughts|Strings of words ending in full stops
+SERIOUSLY|nh||Without any joking|Gravely, or an incredulous "Really?"
+SERVICE|nh||Church ceremony, or help for customers|Tennis opener, or a regular check on your car
+SET|enh|Group of matching things|Ready, as in "On your marks, get ___"|Tennis group of games, or solidified like jelly
+SETTLED|nh||Made a home somewhere|Resolved, as an argument was
+SEVEN|enh|One more than six|Number of days in a week|Number of wonders of the ancient world
+SHAPE|enh|Circle or square, say|Form or outline|Condition of fitness, as in "in good ___"
+SHARE|enh|Give a piece to a friend|Divide with others|Stock market holding, or a portion
+SHARING|nh||Giving a piece to others|Splitting between people
+SHARP|nh||Having a fine cutting edge|Keen-edged, or a note raised a semitone
+SHE|enh|Girl, in place of her name|Pronoun for a woman|Haggard's novel of an immortal queen
+SHEET|enh|Cover on a bed|Flat piece of paper|Rope on a sail, or thin layer of ice
+SHOT|enh|Attempt at goal, in football|Fired, as a gun was|Photograph, or a small glass of spirit
+SHOWN|nh||Displayed to the audience|Exhibited or proved
+SHUT|enh|Closed|Closed, as a door|Fastened, as lips or a shop for the night
+SIDE|enh|Left or right of something|Team in a match|Edge, or an opposing team
+SIGN|enh|Board showing words by a road|Write your name on|Zodiac symbol, or to autograph
+SINCE|nh||From then until now|Because, or from then onwards
+SINGING|nh||Making music with your voice|Carolling, as a choir does
+SINGLES|nh||Unmarried people|Tennis matches with one player a side
+SIR|enh|What a teacher may be called|Polite word for a man|Knight's title
+SIT|enh|Rest on a chair|Take a seat|Pose for a painter, or take an exam
+SITES|nh||Plots where houses are built|Locations, or places on the web
+SLIP|nh||Slide by accident|Small mistake, or a petticoat
+SMELL|nh||Sense that your nose uses|Scent, or to sniff out
+SMILE|enh|Happy look on your face|Grin|Say "cheese" and you'll make one
+SMITH|nh||Maker of horseshoes|Metalworker at a forge, or a common surname
+SMOKE|enh|Grey cloud from a fire|Rises from a chimney|They say there is no fire without it
+SOCIETY|nh||People living together in a community|Community at large, or a club
+SOLID|nh||Firm, not liquid or gas|Dependable, or not hollow
+SOMEWHERE|nh||Song: "___ over the rainbow"|At some unnamed place
+SON|enh|Boy in a family|Male child|Heir apparent, perhaps, to a father
+SONS|nh||Boys in a family|Male children
+SOUND|enh|What you hear|Noise|Fit and healthy, or a strait
+SPATIAL|nh||Relating to size and position|Type of reasoning used to turn shapes in your head
+SPECIALTY|nh||What a chef is best known for|Dish or skill a person is famous for
+SPECIFIED|nh||Named exactly|Stated clearly, as a requirement
+SPEEDS|nh||Rates of travel|Velocities measured in mph
+SPEND|nh||Use money in a shop|Pay out, or pass time on holiday
+SPENT|nh||Paid out, as money was|Exhausted, or used up
+SPIES|nh||Secret agents|Double agents, for example
+SPONSOR|nh||Pay for an event or runner in return for advertising|Back financially, as a company might a team
+SPOT|enh|Dot, as on a ladybird|Notice|Blemish, or to notice
+SPY|enh|Secret agent|Agent who gathers secrets|Mata Hari, for one
+STABLE|nh||Where a horse lives; steady|Steady and not likely to topple; a horse's home
+STAMPS|nh||Stuck on letters before posting|Collectables on envelopes, or heavy footsteps
+STANDARDS|nh||Levels of quality expected|Flags carried by regiments, or benchmarks
+STARTED|nh||Began|Set off, or jumped in surprise
+STARTER|nh||First course of a meal|Opening dish, or one who gets a race going
+STATE|nh||Say formally|Texas or Ohio, for one
+STATEMENT|nh||Formal declaration|Bank's printed summary of your account
+STAY|enh|Remain in one place|Not leave|Dog-training command, or a night at a hotel
+STAYING|nh||Not leaving|Lodging for a while
+STEP|enh|One footfall when walking|Stair tread|Stage in a process, or part of a dance
+STICK|enh|Twig from a tree|Glue together|Hockey implement, or to adhere
+STOLEN|nh||Taken without permission|Nicked, as a car may be
+STOP|enh|Halt|Red light means ___|Cease, or where a bus lets you off
+STOPS|nh||Comes to a halt|Ceases, or places where buses pull in
+STORAGE|nh||Keeping things in a safe place|Space in a loft or on a hard drive
+STREAMS|nh||Small flowing waters|Brooks, or services you watch online
+STREET|nh||Road with houses|Sesame ___, home of Big Bird
+STRETCH|nh||Pull to make longer|Limber up, or a long expanse of road
+STRINGS|nh||Thin cords, or parts of a guitar|Violin and cello section of an orchestra
+STRUCTURE|nh||Building or framework|Way the parts are arranged
+STYLE|enh|Fashionable way of dressing|Way of doing things|Flair, or fashion
+SUE|nh||Take legal action against|Take to court, or the boy named in Cash's song
+SUGGEST|nh||Put forward an idea|Hint, or propose
+SUNNY|nh||Bright with warm rays|Cheerful, or clear of cloud
+SUPER|enh|Great, brilliant|Fantastic|Excellent, or a building caretaker in the US
+SUPPLIERS|nh||Firms that provide goods for others|Businesses that deliver stock to shops
+SUPPOSE|nh||Think it is likely|Assume, or guess
+SUPREME|nh||Highest in rank|Top court in the land, or the finest
+SURFACE|nh||Top layer|Come up from underwater, or outer face
+SURVEYS|nh||Sets of questions to find out what people think|Polls, or inspections of land
+SUSPECT|nh||Person police think did it|Doubt, or one in a line-up
+SUSPENDED|nh||Hung from above|Temporarily stopped, as a player may be
+SWITCH|nh||Flick it to turn on a light|Change, or a button for the lights
+SYNTHESIS|nh||Combining parts into a whole|Combination of ideas into one
+SYSTEMS|nh||Organised sets of parts|Networks of linked parts, like the solar kind
+TAB|nh||Pull this on a drink can|Key that indents, or a bar bill
+TAKEN|nh||Grabbed or carried away|Not free, as a seat or a person
+TAPE|enh|Sticky strip for wrapping presents|Cassette ribbon|Red ___ in bureaucracy
+TAPES|nh||Old cassettes|Sticky strips, or recorded cassettes
+TARGETS|nh||Things aimed at|Bullseyes, or goals
+TASK|enh|Job to do|Chore|Assignment to complete
+TASKS|nh||Jobs to be done|Chores or assignments
+TEACH|nh||Help pupils learn|Instruct, as a master does a class
+TEAMS|enh|Groups playing together in a match|Sides in a game|Squads that compete
+TEARS|nh||Drops from crying eyes|Weeping drops, or rips in cloth
+TEENAGE|nh||Aged thirteen to nineteen|Describing someone aged 13 to 19
+TEETH|nh||Hard white things in your mouth|Dentist's concern, or what a comb has
+TELLS|enh|Says a story|Relates, as a story|Informs, or a poker player's giveaway
+TEN|enh|Number after nine|Number of fingers you have|Number of Commandments
+TENDER|nh||Soft and gentle|Sore, kind, or an offer to supply
+TERMINALS|nh||Airport buildings|Battery ends, or the ends of a line
+TEST|enh|Exam at school|Try out|Examine, or a cricket match
+TESTING|nh||Trying out|Difficult, as a person's patience can be
+THAN|enh|Word after "bigger"|Taller ___ me|Comparison word following "rather"
+THANK|enh|Say you are grateful to|Express gratitude to|Say "cheers" to
+THE|nh||Most common word in English|Definite article
+THEN|enh|At that time; after that|Next, or at that point in time|Afterwards, in a sequence
+THEREFORE|nh||As a result|Hence
+THESE|enh|Not those, but ___|Plural of this|Ones nearby, not those over there
+THEY|enh|Word for a group of other people|Pronoun for more than one person|Pronoun used for a group
+THIN|enh|Not fat|Slim|Slender, or watery
+THOSE|enh|Pointing word for things over there|Not these, but ___|Plural of "that"
+THY|nh||"Hallowed be ___ name"|Archaic possessive
+TIE|enh|Neckwear worn with a shirt|Knot a lace|Draw level, or a football fixture
+TIES|nh||Neckwear worn with shirts|Draws in a match, or bonds
+TIGHT|nh||Fitting closely|Stingy, or firmly fastened
+TIME|enh|What a clock shows|Tick-tock measure|Father ___, with a scythe
+TIMER|nh||Kitchen clock that rings|Egg-boiling countdown device
+TIMES|nh||Moments or hours on clocks|Multiplied by, or a London newspaper
+TIN|enh|Container for biscuits|Metal can|Metal used in cans, symbol Sn
+TIP|nh||A small gift of money for good service|Pointed end, or useful hint
+TIRED|nh||Needing sleep|Worn out, ready for bed
+TOBACCO|nh||Leaf smoked in pipes|Raleigh's famous import
+TOE|enh|Part of the foot you wiggle|Part of your foot|Big or little digit of the foot
+TON|nh||Heavy weight of 2,000 pounds, or so|Century at cricket, in slang
+TONE|enh|Sound of a bell's note|Quality of a voice|Shade of colour, or musical pitch
+TONIGHT|nh||This evening|After sunset today
+TOO|enh|Also|As well|More than enough
+TOOL|enh|Hammer or spanner|Spanner, for one|Instrument for a job
+TOPIC|enh|Thing to talk about|Subject of a chat|Theme of an essay
+TOTAL|enh|All added up|Sum|Complete, or the result of addition
+TOTALLY|nh||Completely|Entirely
+TOURIST|nh||Holiday visitor|Sightseer with a camera
+TRADE|enh|Swap one thing for another|Barter|Business, or a craft like plumbing
+TRAIL|enh|Path through the woods|Track left behind|Follow behind, or lag
+TRANSIT|nh||Passage from place to place|Passing across, as of goods
+TRANSLATE|nh||Turn into another language|Convert French into English
+TREATED|nh||Gave a special gift|Dealt with, as a patient was
+TRIALS|nh||Court hearings|Tests, or tribulations
+TRIED|enh|Had a go|Made an attempt|Tested in court, or attempted
+TRUE|enh|Right, not false|Correct|Faithful, or accurate
+TRY|enh|Have a go|Attempt|Rugby score, or to taste
+TWENTY|nh||A score|One more than nineteen
+TWICE|nh||Two times|Once and once more
+TWO|enh|Number after one|A pair|Company, according to the saying
+TYPE|enh|Press keys on a keyboard|Sort, or write on a computer|Kind, or what typists do
+TYPICALLY|nh||As a rule|In the usual way
+UGLY|nh||Not pretty|Unattractive, as a certain duckling
+UNION|enh|A joining together|Workers' group|Trade body, or a marriage
+UNIT|enh|One single thing|Single item|Metre or gram, for one
+UNITS|nh||Single items|Metres, grams and litres
+UPGRADE|nh||Move to a better seat|Improve, as an aeroplane ticket
+UPON|enh|Once ___ a time|On top of, in old style|Word meaning "on", often literary
+UPPER|enh|Higher up|Higher, as a floor|Top, as a class or lip
+USAGE|nh||Amount of water or power consumed|Established way a word is employed
+USE|enh|Put to work|Make work of|Employ
+USED|enh|Not new|Second-hand|Employed, as a tool was
+USER|enh|Person on a computer|Person who logs in|Customer of a service
+USES|enh|Jobs a tool can do|Purposes|Employs
+UTILITIES|nh||Gas, water and electricity|Public services such as water and power
+UTILITY|nh||Usefulness|Practical benefit
+VAN|enh|Big vehicle for carrying boxes|Vehicle for deliveries|Transit, perhaps
+VERY|enh|Extremely|The ___ Hungry Caterpillar|To a great degree
+VESSEL|nh||Ship or boat|Container, or blood tube
+VIA|nh||By way of|Travelling through
+VINTAGE|nh||Old but of high quality|Classic, as a wine or old car
+VISIT|nh||Go and see someone|Drop in on
+VOTERS|nh||People at the polling station|Members of the electorate
+WAGE|nh||Pay for work|Carry on, as a war
+WAR|enh|Fighting between countries|Armed conflict|Conflict, or Tolstoy's other half
+WARD|enh|Hospital room with beds|Hospital section|Minor under guardianship
+WARS|enh|Big fights between countries|Armed conflicts|Star ___, George Lucas saga
+WAS|enh|Past tense of "is"|"It ___ a dark and stormy night"|Existed, in the past
+WEAPONS|nh||Swords, spears and bows|Arms used in battle
+WEAR|enh|Put on clothes|Have on your body|Erode, or sport a garment
+WED|enh|Marry|Get married to|Join in matrimony
+WERE|enh|They ___ at home yesterday|Past tense of "are"|"If I ___ a rich man"
+WESTERN|nh||Cowboy film|John Wayne film, often
+WET|enh|Soaked, not dry|Rainy, or not dry|Damp, or drenched
+WHERE|enh|Question about a place|Book: "___ the Wild Things Are"|Question word for location
+WHO|enh|Question about a person|Motto: "___ Dares Wins"|Doctor ___, the time traveller
+WHY|enh|Question asking for a reason|Joke start: "___ did the chicken cross the road?"|Question word seeking a cause
+WIRE|enh|Thin metal thread|Thin metal strand that carries electricity|Fine metal strand for fencing or current
+WITHOUT|nh||Lacking|Minus, or outside
+WITNESS|nh||Person who saw it happen|Court speaker under oath
+WOMEN|enh|Grown-up ladies|Adult females|Half of the human race
+WORKERS|nh||People who do jobs|Hard-working ants, perhaps
+WORLDWIDE|nh||All over the globe|Across the Earth
+WOULD|enh|"I ___ like a cake, please"|Past tense of "will"|How much wood ___ a woodchuck chuck
+WOW|enh|Cry of amazement|Amazing!|Exclamation of astonishment
+YEAR|enh|Twelve months|365 days, usually|Annual cycle of the Earth's orbit
+YEARS|enh|Lots of twelve-month periods|Birthdays passed|Decades are made of them
+YES|enh|Opposite of no|Answer for agreement|Affirmative
+YET|enh|Not so far|Not here ___, but on its way|Even so, or still
+YIELD|nh||Give way|Crop produced, or to surrender
+YOU|enh|Word for the person being spoken to|The person I am talking to|Second person
+YOUR|nh||"Is this ___ coat?"|Belonging to the person addressed
+YOUTH|enh|Young person|Teenager, say|Time of being young

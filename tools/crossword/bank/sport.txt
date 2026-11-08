@@ -1,0 +1,172 @@
+# Sport & games: sports, equipment, positions, scoring, board and card games, playground games, toys
+# WORD|levels|easy clue|normal clue|hard clue
+
+# --- 3 to 5 letters, easy ---
+GOAL|enh|The ball goes in this to score in football|Football score made between the posts|It's scored when the ball crosses the line under the bar
+BAT|enh|You hit the ball with this in cricket|Wooden blade swung by a cricketer|Willow tool at the crease, or a winged night flier
+NET|enh|A tennis ball must go over this|Mesh across the middle of a tennis court|It hangs behind the keeper, waiting to bulge
+BALL|enh|You kick or throw this round toy|Round object used in most team games|Sphere for a game, or a grand dance
+DICE|enh|Spotted cubes you roll in games|Cubes rolled to move counters in board games|They're thrown in Ludo, with one to six spots each
+RACE|enh|Who is the fastest? Have a ___|Contest of speed to the finish line|Sprint or marathon, for example
+KICK|enh|What you do to a football with your foot|Strike with the foot|Penalty or corner, say
+TEAM|enh|A group of players on the same side|Side of players, such as eleven in football|There's no "I" in this, they say
+WIN|enh|Come first in a game|Finish first and take the prize|Triumph, or what a striker plays for
+SKIP|enh|Jump over a rope again and again|Hop lightly, often with a rope|Captain of a curling team, or what you do with a rope
+SWIM|enh|Move through water with your arms and legs|Do the front crawl or breaststroke|Take part in the first leg of a triathlon
+RUN|enh|Go faster than walking|Move quickly on foot|Single point scored in cricket
+JUMP|enh|Go up in the air with both feet|Leap, as over a hurdle|Long or high event in athletics
+KITE|enh|A toy that flies on a string in the wind|Toy that soars on a windy day, held by a line|Box or diamond flier with a tail
+DOLL|enh|A toy that looks like a baby or a person|Toy figure that children dress and care for|Barbie or Sindy, for example
+YOYO|enh|A toy that goes up and down on a string|Spinning toy that climbs back up its string|Toy famed for "walking the dog" and "round the world" tricks
+TOP|enh|A toy that spins round and round|Spinning toy, sometimes whipped|Humming toy that whirls on its point
+BIKE|enh|You ride it with two wheels and pedals|Pedal-powered two-wheeler|Machine raced in the Tour de France, informally
+SKATE|enh|Glide on ice with special boots|Glide on blades or wheels|Move on a rink in boots with blades
+SWING|enh|A seat on ropes you go high on in the park|Playground seat that goes back and forth|Golfer's stroke, or a seat on chains
+SLIDE|enh|You whoosh down this in the playground|Smooth playground chute|What a baseball runner may do into base
+CHESS|enh|A game with kings, queens and pawns|Board game of checkmate|Game played on 64 squares by Kasparov and Carlsen
+CARD|enh|A king or a queen in a pack of 52|One of a pack used for Snap|Ace or joker, say
+GOLF|enh|A game where you hit a small ball into a hole|Game played on 18 holes with clubs|Sport of tees, greens and birdies
+SCORE|enh|How many points you have got|Tally of points in a game|Result such as 2-1, or twenty
+PRIZE|enh|What you get for winning|Reward for the winner|Trophy or cash for coming first
+MEDAL|enh|Gold, silver or bronze for winners|Disc awarded at the Olympics|Gold one for first place, bronze for third
+CUP|enh|A big shiny trophy you can drink from|Trophy shaped like a large drinking vessel|The FA one is football's oldest knockout contest
+GYM|enh|A room with ropes and mats for exercise|Hall for PE and workouts|Place with treadmills and weights
+TAG|enh|A chasing game: "You're it!"|Playground chasing game also called tig or it|Game where one touch makes you the chaser
+HOOP|enh|A big ring you spin round your waist|Ring of a hula toy or a basketball net|Croquet ball goes through one of these
+DART|enh|A small arrow you throw at a board|Pointed missile thrown in a pub game|You throw three per turn trying for treble twenty
+SNAP|enh|A card game where you shout when two match|Card game won by spotting a pair first|Shout when two identical cards are turned over
+KING|enh|The most important chess piece|Chess piece you must protect|Piece that can castle, or a card above the queen
+QUEEN|enh|The most powerful chess piece|Chess piece that can move any distance in any direction|Card between the jack and the king
+LAP|enh|Once round the running track|One circuit of a racecourse|Victory ___ (celebration run after winning)
+POOL|enh|You swim in this|Place for swimming, or a game with cue and balls|Game with stripes and solids potted into pockets
+DIVE|enh|Jump into water head first|Plunge from a springboard|Keeper's leap, or a cheat's fall in the box
+ROW|enh|Move a boat with oars|Propel a boat with blades|Do what Oxford and Cambridge do on the Thames
+OAR|enh|A long pole you use to move a boat|Pole with a blade for rowing|Sculler's blade
+SKI|enh|A long flat runner for sliding on snow|Glide down a slope on runners|Slalom runner
+LUDO|enh|A board game where you race four counters home|Dice game where a six lets a counter out|Board game adapted from the Indian pachisi
+JOKER|enh|A funny extra card in a pack|Card with a jester on it|Wild card in many games
+RUGBY|enh|A game played with an egg-shaped ball|Game with scrums and an oval ball|Game named after a Warwickshire school
+JUDO|enh|A sport where you throw your partner onto a mat|Japanese martial art with coloured belts|Olympic sport whose name means "gentle way"
+GLOVE|enh|A goalkeeper wears this on each hand|Boxer's padded hand covering|Wicketkeeper's protection, or a boxer's
+COACH|enh|The person who trains a team|Trainer of a team or athlete|Manager on the touchline, or a long bus
+MATCH|enh|A game between two teams|Contest such as a football fixture|Test ___ (five-day cricket contest)
+PITCH|enh|A big grass field for football|Field of play in football or cricket|Strip between the wickets, or a baseball throw
+FAN|enh|A person who loves a team and cheers for it|Supporter in the stands|Season-ticket holder, say
+CANOE|enh|A narrow boat you paddle|Light boat moved with a paddle|Open boat paddled by kneeling Olympians
+TEDDY|enh|A soft toy bear|Cuddly bear toy|Toy named after President Roosevelt
+FINAL|enh|The last and biggest game|Deciding match of a tournament|Cup ___ (season showpiece at Wembley, perhaps)
+RINK|enh|Ice where you go skating|Arena for ice hockey|Sheet of ice used for curling
+COURT|enh|Where you play tennis|Playing area for netball or tennis|Centre one at Wimbledon
+
+# --- 3 to 5 letters, normal and hard ---
+ACE|nh||Serve the opponent cannot touch|Card that may count as one or eleven
+PUCK|nh||Rubber disc used in ice hockey|What a hockey player on ice hits, not a ball
+PAWN|nh||Smallest chess piece|Piece that can become a queen on the far rank
+ROOK|nh||Chess piece also called a castle|Chess piece moving in straight lines from the corner
+CLUB|nh||Golfer's stick, such as an iron|Black card suit, or a wood or iron
+PUTT|nh||Gentle golf stroke on the green|Tap towards the hole, perhaps for a birdie
+PAR|nh||Expected number of strokes for a golf hole|Standard score, so "below ___" is good on the course
+BOGEY|nh||One stroke over par in golf|Golf score worse than a birdie and a par
+SERVE|nh||Start a point in tennis|Begin each rally on the court
+LOVE|nh||Nil in tennis|Fifteen-___ (score when the server leads)
+DEUCE|nh||Forty-forty in tennis|Tennis tie that needs two clear points to break
+RALLY|nh||Long exchange of shots in tennis|Back-and-forth on court, or a car race on rough roads
+STUMP|nh||One of the three upright sticks in cricket|Middle one may be knocked out of the ground by a yorker
+CUE|nh||Long stick used in snooker|Snooker player's tool, chalked before a shot
+FOUL|nh||Illegal challenge that earns a free kick|Offence that may bring a yellow card
+RELAY|nh||Race where team members pass a baton|Team race of four legs, such as the 4 x 100 metres
+TRY|nh||Score worth five points in rugby union|Grounding over the line, followed by a conversion
+SCRUM|nh||Rugby restart with packs bound together|Set piece where hookers fight for the ball
+KAYAK|nh||Closed canoe paddled with a double blade|Palindromic Inuit boat
+BINGO|nh||Game of numbers called out, "Eyes down"|Call that comes with a full house
+
+# --- 6 to 7 letters ---
+BISHOP|nh||Chess piece that moves diagonally|Mitred chess piece that keeps to one colour all game
+KNIGHT|nh||Chess piece shaped like a horse|Only chess piece that can jump over others
+CASTLE|nh||Chess move with king and rook|Rook's other name, or a move to tuck the king away
+GAMBIT|h|||Chess opening that sacrifices a pawn, such as the Queen's
+RACKET|nh||Strung frame used in tennis|Badminton bat, or a lot of noise
+HELMET|nh||Hard hat worn by cyclists and batsmen|Jockey's protective headgear
+TROPHY|nh||Cup or shield given to the winner|Silverware lifted by a captain
+SPRINT|nh||Short race run at top speed|The 100 metres, for example
+HURDLE|nh||Barrier jumped in a race|Obstacle on the track, or any difficulty to overcome
+DISCUS|nh||Heavy plate thrown in athletics|Field event in which a disc is hurled from a circle
+HOCKEY|nh||Game played with curved sticks and a small ball|Sport with a puck on ice, or a ball on grass
+TENNIS|nh||Game played at Wimbledon|Sport of deuce and advantage
+TARGET|nh||Rings an archer aims at|Board with a gold centre in archery
+MALLET|nh||Wooden hammer used in croquet|Polo player's long-handled stick
+LEAGUE|nh||Group of teams that play each other in a season|Premier ___ (top tier of English football)
+PLAYER|nh||Member of a team|One on the pitch, or a piece-mover in a board game
+CADDIE|nh||Person who carries a golfer's clubs|Golf bag carrier who may also advise on the putt
+WICKET|nh||Three stumps and two bails|Cricket target, or a dismissal of a batsman
+TACKLE|nh||Win the ball from an opponent|Bring down a rugby runner, or fishing gear
+VOLLEY|nh||Hit the ball before it bounces|Shot struck in the air at the net
+UMPIRE|nh||Official in cricket or tennis|Person who raises a finger to give a batsman out
+KEEPER|nh||Player who guards the goal|Goalie or wicketkeeper, for short
+PUZZLE|nh||Game such as a crossword or a jigsaw|Brainteaser, like the one you are solving
+JIGSAW|nh||Picture puzzle of interlocking pieces|Puzzle with edge pieces you find first
+MARBLES|nh||Little glass balls rolled in a game|They're lost if you go mad, so they say
+SEESAW|nh||Plank that goes up and down in the park|Playground balance board for two
+INNINGS|nh||A team's turn to bat in cricket|Turn at the crease that ends when ten wickets fall
+PENALTY|nh||Kick from the spot in football|Twelve-yard shot after a foul in the box
+OFFSIDE|nh||Rule broken by a striker beyond the last defender|Flag goes up for this football offence
+STRIKER|nh||Player whose job is to score goals|Centre-forward, or a worker who walks out
+CAPTAIN|nh||Leader of a team|Skipper wearing the armband
+REFEREE|nh||Official with a whistle in football|One who shows yellow and red cards
+WHISTLE|nh||The referee blows this|Full-time sound on a pitch
+STADIUM|nh||Large sports ground with seats all round|Arena such as Wembley
+JAVELIN|nh||Spear thrown in athletics|Field event for which a spear is launched
+ATHLETE|nh||Runner, jumper or thrower|Competitor on the track or in the field
+GYMNAST|nh||Sports person who performs on beam and bars|Olympian on the vault, rings or pommel horse
+NETBALL|nh||Seven-a-side game where you cannot run with the ball|Game with goal attack and goal shooter
+CRICKET|nh||Game with bat, ball, stumps and wickets|Sport of overs and ducks, or a chirping insect
+ARCHERY|nh||Sport using a bow and arrows|Robin Hood's sport
+FENCING|nh||Sword sport with masks and white suits|Sport using the foil, sabre and épée
+BOWLING|nh||Game where you knock down ten pins|Delivering in cricket, or ten-pin at the alley
+CROQUET|nh||Lawn game with mallets and hoops|Game played with flamingos in Wonderland
+FAIRWAY|nh||Short grass between the tee and the green|Where a golfer hopes the drive will land
+BATSMAN|nh||Cricketer who scores runs|One facing the bowler at the crease
+DRIBBLE|nh||Run with the ball at your feet|Take the ball past defenders, or let saliva fall
+CURLING|nh||Sport of sliding stones and sweeping ice|Game on ice aiming for the house
+SNOOKER|nh||Cue game with fifteen reds|Game where the black is worth seven
+
+# --- 8 to 9 letters ---
+CHECKMATE|nh||End of a chess game when the king cannot escape|Win in chess, from Persian for "the king is helpless"
+STALEMATE|nh||Chess draw when no legal move is left|Deadlock in which neither side can advance
+TRIATHLON|nh||Race of swimming, cycling and running|Iron man contest in three parts
+DECATHLON|nh||Athletics contest of ten events|Two-day test for the all-round male athlete
+OLYMPICS|nh||Games held every four years with five rings|Sporting festival begun in ancient Greece
+ATHLETICS|nh||Track and field sport|Running, jumping and throwing events collectively
+BADMINTON|nh||Racket game played with a shuttlecock|Sport named after a Gloucestershire stately home
+FOOTBALL|nh||Game played by two teams of eleven with a round ball|Soccer, to most of the world
+BASEBALL|nh||American bat-and-ball game with home runs|Sport of pitchers, catchers and nine innings
+SWIMMING|nh||Sport done in the water|Butterfly or backstroke racing, say
+WRESTLING|nh||Sport of grappling an opponent to the mat|Sumo is a Japanese form of it
+BULLSEYE|nh||Centre of a dartboard|Fifty-point spot at the heart of the board
+DARTBOARD|nh||Target with twenty numbered sectors|Pub target with treble twenty at the top
+DRAUGHTS|nh||Board game where you crown a piece a king|Game called checkers in America
+DOMINOES|nh||Spotted tiles you match end to end|Game whose double-six set has 28 tiles
+PATIENCE|nh||Card game you play on your own|Virtue, or solitaire for one with cards
+CRIBBAGE|nh||Card game scored with pegs on a board|Game where you count "fifteen two"
+SKITTLES|nh||Pub game of knocking down nine pins|Ninepins, or sweets in a rainbow of flavours
+CHARADES|nh||Party game of miming film and book titles|Guessing game where you show the number of words on fingers
+LEAPFROG|nh||Game of jumping over bent backs|Overtake in one bound, as in a playground game
+ROUNDERS|nh||Bat-and-ball game with four posts|School sport thought to be an ancestor of baseball
+DODGEBALL|nh||Game where you avoid being hit by a thrown ball|Playground game of throwing at and swerving from opponents
+PINGPONG|nh||Table tennis, informally|Game named for the sound of the bounce
+TRICYCLE|nh||Three-wheeled bike for a toddler|Trike in full
+TEAMMATE|nh||Player on the same side as you|Fellow member of the squad
+GOALPOST|nh||Upright the keeper stands beside|One of two uprights holding the crossbar
+CROSSBAR|nh||Bar joining the tops of the goalposts|Shot that rattles this has hit the woodwork
+HANDICAP|nh||Golfer's allowance of extra strokes|Weight carried by a racehorse to even the field
+BOUNDARY|nh||Rope around the edge of a cricket field|Four or six, scored by reaching the rope
+HATTRICK|nh||Three goals by one player in a match|Three wickets in three balls
+KNOCKOUT|nh||Punch that wins a boxing match outright|Cup format where the loser goes home
+TOUCHDOWN|nh||Score in American football worth six points|Landing of a plane, or a gridiron score
+TOBOGGAN|nh||Long sledge for sliding downhill|Ride a sled down a snowy slope
+BOBSLEIGH|nh||Sled raced down an ice track by a team|Event in the film Cool Runnings
+SNOWBOARD|nh||Single wide board ridden down the slopes|Ride down a halfpipe on a board
+HOPSCOTCH|nh||Game of hopping along chalk squares|Playground game in which you throw a stone onto a numbered box
+MARATHON|nh||Running race of about 26 miles|Race of 42.195 kilometres named after a Greek town
+CHAMPION|nh||Winner of a competition|Title holder, or a defender of a cause
+DEFENDER|nh||Player who helps stop the other team scoring|Back who marks the forward

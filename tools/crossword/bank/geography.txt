@@ -1,0 +1,169 @@
+# Geography & travel: landforms, water, maps, countries, cities, continents, transport
+# WORD|levels|easy clue|normal clue|hard clue
+
+# --- 3 to 5 letters ---
+HILL|enh|Small mountain|Jack and Jill went up the ___|Rise in the land, lower than a peak
+LAKE|enh|Big pool of water with land all around|Windermere or Kariba, for example|Loch, to a Scot
+MAP|enh|Drawing that shows you the way|Page in an atlas|Chart of the land
+SEA|enh|Big salty water where ships sail|The Red ___ or the Dead ___|Body of salt water smaller than an ocean
+RIVER|enh|Long flow of water to the sea|The Thames or the Zambezi|It has a mouth and banks but never speaks
+CAVE|enh|Dark hole in the side of a hill|Hollow in rock where bats may roost|Grotto
+SAND|enh|You build castles with it on the beach|Grains that cover much of a desert|Stuff that dunes are made of
+BEACH|enh|Sandy place by the sea|Seaside strip where the waves break|Shore for sunbathers
+ROCK|enh|Hard stone|Large stone sticking out of the ground|Granite or basalt, for example
+PARK|enh|Green place in a town with swings|Public garden in a city|Yellowstone is a national one
+ROAD|enh|Cars drive on it|Street or highway|All of them lead to Rome, they say
+SHIP|enh|Very big boat|Ocean liner, for example|Vessel such as a tanker or a liner
+BOAT|enh|It floats on water and carries people|Small vessel such as a rowing ___|Don't rock it, so the saying goes
+TRAIN|enh|It runs on rails|Engine pulling a line of carriages|It may be an express or a sleeper
+PLANE|enh|It flies people through the sky|Jet airliner|Aircraft, or a carpenter's smoothing tool
+BUS|enh|Big road vehicle that stops to pick people up|Double-decker, for example|Coach on a town route
+EAST|enh|Way the sun rises|Opposite of west|The Orient
+WEST|enh|Way the sun sets|Opposite of east|The Occident
+NORTH|enh|Way a compass needle points|Opposite of south|Direction of the Pole Star
+SOUTH|enh|Opposite of north|Down, on most maps|Way to Antarctica from Cape Town
+PARIS|enh|City with the Eiffel Tower|Capital of France|The City of Light
+NILE|enh|Long river in Egypt|Africa's longest river|River with a Blue and a White branch
+ROME|enh|Capital city of Italy|City of the Colosseum|The Eternal City
+CHINA|enh|Huge country in Asia with a Great Wall|Country whose capital is Beijing|Land of the Yangtze, or fine porcelain
+INDIA|enh|Big country in Asia where the Taj Mahal is|Country whose capital is New Delhi|Land of the Ganges
+JAPAN|enh|Country of Tokyo and sushi|Land of the Rising Sun|Island nation whose highest peak is Fuji
+SPAIN|enh|Country next to Portugal|Country whose capital is Madrid|Land of flamenco and the Alhambra
+EGYPT|enh|Country of the pyramids|Country whose capital is Cairo|Land of the pharaohs
+ASIA|enh|The biggest continent|Continent of China and India|Continent divided from Europe by the Urals
+PEAK|enh|Pointy top of a mountain|Summit|Highest point
+CLIFF|enh|High steep rock by the sea|Sheer face of rock|Beachy Head, for one
+COAST|enh|Land next to the sea|Seashore|The ___ is clear
+BAY|enh|Part of the sea that curves into the land|Curve of coastline, like Biscay|Inlet, or a laurel tree
+GLOBE|enh|Ball-shaped map of the world|Round model of the Earth|Shakespeare's theatre, or the world itself
+TRIP|enh|Short journey|Day out or holiday journey|Excursion, or a stumble
+HOTEL|enh|Place where you stay on holiday|Building with rooms for travellers|The Savoy or the Ritz
+OCEAN|enh|Huge salty sea|The Pacific or the Atlantic|Vast expanse of deep water
+WAVE|enh|Water that rises and crashes on the beach|Breaker|Surfer's ride, or a hand gesture
+FERRY|enh|Boat that carries cars across water|Boat that crosses a channel again and again|Cross-Channel vessel
+TENT|enh|Camping home made of cloth|Shelter you pitch at a campsite|Canvas shelter
+CAMP|enh|Place where you sleep in tents|Site for tents|Scouts' outdoor base
+CANOE|enh|Small boat you paddle|Narrow boat moved with a paddle|Dugout, for one
+RAFT|enh|Flat boat made of logs|Floating platform of logs tied together|Kon-Tiki, for one
+HIKE|enh|Long walk in the hills|Trek on foot|Ramble, or a price rise
+CITY|enh|Very big town|London or Lusaka, for example|Metropolis
+TOWN|enh|Place with houses, shops and a school|Place bigger than a village|Borough
+FLAG|enh|Each country has one in its own colours|Banner flown on a pole|Union Jack, for one
+LAND|enh|Ground that is not sea|Dry ___ (what sailors long for)|Terra firma
+WORLD|enh|The Earth and everyone on it|The planet we live on|Everything on Earth
+PILOT|enh|Person who flies a plane|Aircraft captain|One who guides ships into harbour, too
+PERU|nh||South American country of the Incas|Land of Machu Picchu, home of Paddington Bear
+KENYA|nh||East African country whose capital is Nairobi|Safari land of the Maasai Mara
+CAIRO|nh||Capital of Egypt|City near the pyramids of Giza
+MALI|nh||West African country, home of Timbuktu|Land on the Niger once ruled by Mansa Musa
+GHANA|nh||West African country whose capital is Accra|Land once called the Gold Coast
+CONGO|nh||Great river of central Africa|Africa's second-longest river
+OSLO|nh||Capital of Norway|Nordic capital at the head of a fjord
+TOKYO|nh||Capital of Japan|City that hosted the 2020 Olympic Games
+NEPAL|nh||Country of Mount Everest and Kathmandu|Himalayan land whose flag is not a rectangle
+CAPE|nh||Headland, like Good Hope|Point of land, or a cloak
+DUNE|nh||Hill of sand|Desert ridge shaped by the wind
+OASIS|nh||Green spot with water in a desert|Palm-ringed refuge for a camel train
+DELTA|nh||Fan of land at a river's mouth|The Okavango's is inland, in Botswana
+POLE|nh||North or South end of the Earth|Amundsen reached the southern one first, in 1911
+ATLAS|nh||Book of maps|Titan who held up the sky, or North African mountains
+TIDE|nh||Rise and fall of the sea|It ebbs and flows about twice a day
+SUDAN|nh||Country where the Blue and White Nile meet|Land whose capital is Khartoum
+ALPS|nh||Mountains of Switzerland|Range that holds Mont Blanc
+ANDES|nh||Long mountain range of South America|Range where llamas roam and the Incas ruled
+JET|nh||Fast plane with no propellers|Kind of lag felt after a long flight
+VISA|nh||Stamp that lets you enter a country|Travel permit in a passport
+WALES|nh||Country of the red dragon flag|Land whose capital is Cardiff
+CANAL|nh||Man-made waterway|Suez or Panama, for example
+
+# --- 6 to 7 letters ---
+ISLAND|nh||Land with water all around|Madagascar or Zanzibar, for example
+DESERT|nh||Hot, dry place like the Sahara|Arid region where camels roam
+AFRICA|nh||Continent of Zambia and Egypt|Only continent crossed by the equator and both tropics
+EUROPE|nh||Continent of France and Germany|Continent of the Danube and the Rhine
+ZAMBIA|nh||Country whose capital is Lusaka|Land named after the Zambezi
+LUSAKA|nh||Capital city of Zambia|Capital of the Copperbelt nation
+HARARE|nh||Capital city of Zimbabwe|City once called Salisbury
+ZAMBEZI|nh||River that flows over the Victoria Falls|River on the Zambia–Zimbabwe border
+KARIBA|nh||Big man-made lake between Zambia and Zimbabwe|Dam on the Zambezi that made a great lake
+NAIROBI|nh||Capital of Kenya|East African capital with a national park inside the city
+CANADA|nh||Big country north of the USA|Land of the maple leaf
+BRAZIL|nh||Biggest country in South America|Land of samba and the Amazon
+AMAZON|nh||Great river of South America|River that carries the most water on Earth
+LONDON|nh||Capital of the United Kingdom|City of Big Ben
+MADRID|nh||Capital of Spain|City of the Prado
+BERLIN|nh||Capital of Germany|City once split by a wall
+VALLEY|nh||Low land between hills|The Great Rift one runs through East Africa
+VOLCANO|nh||Mountain that can erupt|Vesuvius or Etna
+CANYON|nh||Deep, narrow valley with steep sides|Arizona's Grand one was carved by the Colorado
+JUNGLE|nh||Thick tropical forest|Where Mowgli grew up
+FOREST|nh||Large area full of trees|Sherwood, home of Robin Hood
+COMPASS|nh||Tool with a needle that points north|Navigator's instrument marked N, E, S and W
+EQUATOR|nh||Imaginary line around the middle of the Earth|Zero degrees of latitude
+TROPICS|nh||Hot regions near the equator|Lands between Cancer and Capricorn
+AIRPORT|nh||Place where planes take off and land|Heathrow or Gatwick
+STATION|nh||Place where trains stop|Paddington or King's Cross
+HARBOUR|nh||Sheltered water where boats are safe|Sydney's has a famous bridge
+TUNNEL|nh||Passage under the ground or under water|The Channel one links England and France
+BRIDGE|nh||Road built over a river|Tower or Golden Gate
+GLACIER|nh||River of ice|Slow-moving mass of ice in a mountain valley
+ICEBERG|nh||Floating mountain of ice|What the Titanic struck
+SAVANNA|nh||Grassy plain with scattered trees|Lion country of the Serengeti
+SAHARA|nh||Biggest hot desert in the world|Desert stretching across North Africa
+LESOTHO|nh||Small kingdom surrounded by South Africa|Mountain kingdom whose capital is Maseru
+MALAWI|nh||Country east of Zambia whose capital is Lilongwe|The Warm Heart of Africa
+UGANDA|nh||Country whose capital is Kampala|East African land where the Nile leaves Lake Victoria
+RWANDA|nh||Small country whose capital is Kigali|Land of a Thousand Hills
+ANGOLA|nh||Country west of Zambia whose capital is Luanda|Portuguese-speaking land on southern Africa's Atlantic coast
+NAMIBIA|nh||Country whose capital is Windhoek|Land of Etosha and the Skeleton Coast
+NIGERIA|nh||Country whose capital is Abuja|Africa's most populous nation
+MOROCCO|nh||Country whose capital is Rabat|North African land of Marrakesh
+TUNISIA|nh||North African country between Algeria and Libya|Land of ancient Carthage
+ALGERIA|nh||Largest country in Africa|Land west of Libya and east of Morocco
+SENEGAL|nh||Country whose capital is Dakar|Most westerly country of mainland Africa
+EVEREST|nh||Highest mountain in the world|Peak first climbed by Hillary and Tenzing
+ARCTIC|nh||Icy region around the North Pole|Home of the polar bear
+PACIFIC|nh||Biggest ocean|Ocean named for being peaceful
+ESTUARY|nh||Wide mouth of a river where it meets the tide|Where the Thames widens to meet the sea
+
+# --- 8 to 9 letters ---
+PASSPORT|nh||Little book you need to travel abroad|Document checked at the border
+KALAHARI|nh||Desert in Botswana|Great sandy savanna of southern Africa
+ETHIOPIA|nh||Country whose capital is Addis Ababa|Land where the Blue Nile begins
+ATLANTIC|nh||Ocean between Africa and America|Ocean crossed by the Titanic
+LATITUDE|nh||Distance north or south of the equator, in degrees|Measure marked by parallels on a globe
+LONGITUDE|nh||Distance east or west of Greenwich, in degrees|Measure marked by meridians
+MOUNTAIN|nh||Very high hill|Everest or Kilimanjaro
+WATERFALL|nh||River dropping over a cliff|Cascade such as Angel Falls
+PENINSULA|nh||Land with water on three sides|Italy or Florida, for example
+CONTINENT|nh||Africa or Asia, for example|One of the seven great land masses
+AUSTRALIA|nh||Country and continent of the kangaroo|Land whose capital is Canberra
+ARGENTINA|nh||South American country of the tango|Land whose capital is Buenos Aires
+ZIMBABWE|nh||Country whose capital is Harare|Land once called Southern Rhodesia
+TANZANIA|nh||Country of Mount Kilimanjaro|East African land that includes Zanzibar
+BOTSWANA|nh||Country whose capital is Gaborone|Land of the Okavango Delta
+VICTORIA|nh||Lake ___, Africa's biggest lake|Queen whose name is on Africa's greatest falls
+KINSHASA|nh||Capital of the Democratic Republic of the Congo|Big city on the Congo, across from Brazzaville
+BULAWAYO|nh||Second city of Zimbabwe|City near the Matobo Hills
+EDINBURGH|nh||Capital of Scotland|City with a castle on a volcanic rock
+AMSTERDAM|nh||Capital of the Netherlands|City of canals and bicycles
+STOCKHOLM|nh||Capital of Sweden|Capital built on fourteen islands
+BARCELONA|nh||Spanish city of the Sagrada Família|Catalan city on the Mediterranean
+ISTANBUL|nh||Turkey's largest city|City once called Constantinople
+SINGAPORE|nh||Island city-state in South-East Asia|The Lion City
+ANTARCTIC|nh||Icy region around the South Pole|Home of the emperor penguin
+GREENLAND|nh||World's biggest island|Icy island that belongs to Denmark
+SCOTLAND|nh||Country of kilts and bagpipes|Land of lochs whose capital is Edinburgh
+MOTORWAY|nh||Fast road with several lanes each way|The M1, for example
+AEROPLANE|nh||Flying machine with wings and engines|Airliner, for one
+EXPLORER|nh||Person who travels to discover new places|Livingstone or Columbus
+ITINERARY|nh||Detailed plan for a trip|Travel schedule listing every stop
+SOUVENIR|nh||Keepsake bought on holiday|Memento of a trip
+POSTCARD|nh||Picture card sent home from holiday|"Wish you were here" card
+MERIDIAN|nh||Line of longitude|The Prime one passes through Greenwich
+TRIBUTARY|nh||Small river flowing into a larger one|Feeder of a great river
+NAVIGATOR|nh||Person who plans a ship's route|Crew member who reads the charts
+HIMALAYAS|nh||Mountains that include Everest|Range that is home to the Sherpas
+SERENGETI|nh||Famous Tanzanian plain full of wildlife|East African plain of the great migration
+CARIBBEAN|nh||Sea of Jamaica and Barbados|Sea of the West Indies
+TIMBUKTU|nh||Ancient desert city in Mali|Byword for the remotest place on Earth
