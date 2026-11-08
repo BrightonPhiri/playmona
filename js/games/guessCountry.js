@@ -29,6 +29,8 @@ window.FF = window.FF || {};
   var LEVELS = ['easy', 'normal', 'hard'];
   var TIMES = [3, 5, 8, 12, 0];          // seconds per flag; 0 = no limit
   var LOOKS = ['wave', 'flat'];
+  var OPTIONS = { easy: 4, normal: 6, hard: 8 };   // answers to choose from
+  var FLAG_WAIT_MS = 3000;               // longest a round waits for its flag to load
   var STANDARD = { regions: [], level: 'normal', time: 8, flash: false };   // empty list = whole world
   var FLASH_MS = 1500;                   // Flash: how long the flag shows
   var FLASH_BONUS = 25;
@@ -116,10 +118,13 @@ window.FF = window.FF || {};
     return out;
   }
 
-  /* Three wrong answers. Easy: other well-known countries. Normal: one
-     flag that looks alike, the rest from the same region. Hard: as many
-     lookalikes as there are, then the same region. */
+  function optionCount(level) { return OPTIONS[level] || OPTIONS.normal; }
+
+  /* The wrong answers: 3 on Easy, 5 on Normal, 7 on Hard. Easy: other
+     well-known countries. Normal: up to two flags that look alike, the rest
+     from the same region. Hard: every lookalike there is, then the same region. */
   function decoys(country, countries, level, rand) {
+    var want = optionCount(level) - 1;
     var byCode = {};
     countries.forEach(function (c) { byCode[c.code] = c; });
     var picked = [];
@@ -132,19 +137,19 @@ window.FF = window.FF || {};
     var alike = shuffle(alikeOf(country.code), rand).map(function (code) { return byCode[code]; });
     var sameRegion = shuffle(countries.filter(function (c) { return c.region === country.region; }), rand);
     if (level === 'easy') {
-      take(shuffle(countries.filter(function (c) { return c.tier <= 2; }), rand), 3);
+      take(shuffle(countries.filter(function (c) { return c.tier <= 2; }), rand), want);
     } else if (level === 'hard') {
-      take(alike, 3);
-      take(sameRegion, 3);
+      take(alike, want);
+      take(sameRegion, want);
     } else {
-      take(alike, 1);
-      take(sameRegion, 3);
+      take(alike, 2);
+      take(sameRegion, want);
     }
-    take(shuffle(countries, rand), 3);
+    take(shuffle(countries, rand), want);
     return picked;
   }
 
-  /* A flag ready to show: four names, shuffled, and which one is right. */
+  /* A flag ready to show: its names (4, 6 or 8 by level), shuffled, and which one is right. */
   function prepare(country, countries, level, rand) {
     var opts = shuffle([country].concat(decoys(country, countries, level, rand)), rand);
     return {
@@ -264,6 +269,32 @@ window.FF = window.FF || {};
   /* ================= the flag ================= */
 
   var STRIPS = 40;
+  var flagCache = {};   // code -> { ready: Promise, ratio }
+
+  /* Fetch and decode a flag once; the promise settles when it can be drawn. */
+  function loadFlag(code) {
+    if (flagCache[code]) return flagCache[code].ready;
+    var entry = { ratio: 0, ready: null };
+    flagCache[code] = entry;
+    if (typeof Image !== 'function') { entry.ready = Promise.resolve(); return entry.ready; }
+    entry.ready = new Promise(function (resolve) {
+      var img = new Image();
+      img.decoding = 'async';
+      img.onload = function () {
+        if (img.naturalWidth && img.naturalHeight) entry.ratio = img.naturalWidth / img.naturalHeight;
+        var d = img.decode ? img.decode() : null;
+        if (d && d.then) d.then(resolve, resolve); else resolve();
+      };
+      img.onerror = function () { resolve(); };
+      img.src = flagPath(code);
+    });
+    return entry.ready;
+  }
+
+  /* Wait for a flag, but never longer than FLAG_WAIT_MS. */
+  function flagReady(code) {
+    return Promise.race([loadFlag(code), new Promise(function (r) { setTimeout(r, FLAG_WAIT_MS); })]);
+  }
 
   /* A flag as cloth. "wave": thin slices of the flag ripple and catch
      the light in turn, like fabric in a breeze (a still curve when
@@ -275,14 +306,13 @@ window.FF = window.FF || {};
     var cloth = FF.ui.div('gc-flag__cloth');
     box.appendChild(cloth);
     var src = flagPath(code);
-    // Size the cloth to the flag's own shape once the file has loaded.
-    if (typeof Image === 'function') {
-      var probe = new Image();
-      probe.onload = function () {
-        if (probe.naturalWidth && probe.naturalHeight) box.style.setProperty('--ratio', String(probe.naturalWidth / probe.naturalHeight));
-      };
-      probe.src = src;
+    // Size the cloth to the flag's own shape (known once the file has loaded).
+    function setRatio() {
+      var e = flagCache[code];
+      if (e && e.ratio) box.style.setProperty('--ratio', String(e.ratio));
     }
+    setRatio();
+    loadFlag(code).then(setRatio);
     if (!wave) {
       var img = FF.ui.el('img', { class: 'gc-flag__img', src: src, alt: '', draggable: 'false' });
       cloth.appendChild(img);
@@ -290,9 +320,10 @@ window.FF = window.FF || {};
       var still = reducedMotion();
       for (var i = 0; i < STRIPS; i++) {
         var s = FF.ui.span('gc-flag__strip');
-        s.style.backgroundImage = 'url("' + src + '")';
-        s.style.backgroundSize = (STRIPS * 100) + '% 100%';
-        s.style.backgroundPosition = (i / (STRIPS - 1) * 100) + '% 0';
+        var part = FF.ui.el('img', { class: 'gc-flag__part', src: src, alt: '', draggable: 'false' });
+        part.style.width = (STRIPS * 100) + '%';
+        part.style.left = (-i * 100) + '%';
+        s.appendChild(part);
         if (still) {
           var a = Math.sin(i / STRIPS * Math.PI * 2);
           s.style.transform = 'translateY(' + (a * 2.2).toFixed(2) + '%)';
@@ -361,7 +392,7 @@ window.FF = window.FF || {};
       label: t('gcLevel', 'Level'), value: level,
       options: LEVELS.map(function (l) { return { label: levelName(l), value: l }; }),
       onChange: function (v) { level = v; sync(); }
-    }), t('gcLevelDesc', 'Easy keeps to famous flags. Hard leaves them out and offers flags that look alike.')));
+    }), t('gcLevelDesc', 'Easy: famous flags, 4 answers. Normal: 6 answers. Hard: lesser-known flags, 8 answers with lookalikes.')));
     rows.appendChild(FF.UI.settingRow(t('gcTime', 'Time per flag'), FF.UI.segmented({
       label: t('gcTime', 'Time per flag'), value: String(time),
       options: TIMES.map(function (s) { return { label: timeName(s), value: String(s) }; }),
@@ -486,6 +517,8 @@ window.FF = window.FF || {};
     var want = Math.min(rounds, list.length);
     var deck = deal(countries, cfg, rng(seed), want, shared ? null : seenFor(list, want));
     if (timed) FF.GameLength.manual();
+    // Fetch every flag of the game now, so later rounds show at once.
+    deck.forEach(function (q) { loadFlag(q.code); });
 
     var round = 0;
     var current = null;
@@ -563,6 +596,7 @@ window.FF = window.FF || {};
 
       var card = FF.ui.div('gc-card');
       var flag = clothFlag(q.code, look, t('aFlag', 'A country flag'));
+      flag.classList.add('is-loading');
       card.appendChild(flag);
       var meter = null;
       if (seconds) {
@@ -574,7 +608,7 @@ window.FF = window.FF || {};
       stage.appendChild(card);
       stage.appendChild(FF.GameUI.prompt(t('whichCountry', 'Which country is this?'), 'md'));
 
-      var group = FF.GameUI.options({ columns: 2, className: 'gc-options' });
+      var group = FF.GameUI.options({ columns: 2, className: 'gc-options gc-options--n' + q.options.length });
       var btns = q.options.map(function (label, i) {
         var b = FF.GameUI.option(label, function () { answer(i); }, i, { className: 'gc-opt' });
         group.appendChild(b);
@@ -585,8 +619,12 @@ window.FF = window.FF || {};
       stage.appendChild(after);
       root.appendChild(stage);
 
+      // The clock starts when the flag is on screen, not before.
+      var ready = flagReady(q.code).then(function () { flag.classList.remove('is-loading'); });
+
       function openQuestion() {
         if (done) return;
+        flag.classList.remove('is-loading');
         started = Date.now();
         if (seconds) {
           api.shell.setOnTick(function (rem) { if (meter) meter.set(rem / seconds); });
@@ -595,13 +633,13 @@ window.FF = window.FF || {};
         if (flash) flashTimer = setTimeout(function () { if (!done) flag.classList.add('is-hidden'); }, FLASH_MS);
       }
 
+      var thisRound = round;
       if (race) {
         // For people watching: the flag and the four names (the answer is shared after the round).
         race.describe({ kind: 'choice', text: t('whichCountry', 'Which country is this?'), options: q.options.slice(), image: { flag: q.code } }, q.answer);
-        var thisRound = round;
-        opening.then(function () { race.gate(function () { if (round === thisRound) openQuestion(); }); });
+        Promise.all([opening, ready]).then(function () { race.gate(function () { if (round === thisRound) openQuestion(); }); });
       } else {
-        openQuestion();
+        ready.then(function () { if (round === thisRound) openQuestion(); });
       }
       if (FF.Nav && FF.Nav.focusFirst) FF.Nav.focusFirst(group);
 
@@ -758,7 +796,7 @@ window.FF = window.FF || {};
   /* ================= registration ================= */
 
   FF.GuessCountry = {
-    LEVELS: LEVELS, TIMES: TIMES, STANDARD: STANDARD, MIN_POOL: MIN_POOL, FLASH_BONUS: FLASH_BONUS,
+    LEVELS: LEVELS, TIMES: TIMES, OPTIONS: OPTIONS, STANDARD: STANDARD, optionCount: optionCount, MIN_POOL: MIN_POOL, FLASH_BONUS: FLASH_BONUS,
     sanitize: sanitize, isStandard: isStandard, pool: pool, rng: rng, decoys: decoys, alikeOf: alikeOf,
     prepare: prepare, deal: deal, points: points, roomPoints: roomPoints, summary: summary
   };
@@ -777,7 +815,7 @@ window.FF = window.FF || {};
     modes: ['solo', 'turn', 'team'],
     defaultMode: 'turn',
     howToPlay: [
-      'Pick the regions, a level and how many seconds you get for each flag.',
+      'Pick the regions, a level (4, 6 or 8 answers to choose from) and how many seconds you get for each flag.',
       'A flag waves on screen. Choose its country before the time runs out, or it counts as wrong.',
       'The quicker you answer, the more points. Three right in a row earns a bonus.',
       'Want it harder? Flash hides the flag after a second and a half.'

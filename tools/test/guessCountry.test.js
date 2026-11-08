@@ -94,14 +94,29 @@ test('guess the country: a deal is the same from the same seed, and fair', funct
   const regions = new Set(a.map(function (q) { return q.region; }));
   assertEqual(regions.size, 5, 'regions take turns');
   a.forEach(function (q) {
-    assertEqual(q.options.length, 4, q.code + ' has four answers');
-    assertEqual(new Set(q.options).size, 4, q.code + ' answers are all different');
+    assertEqual(q.options.length, 6, q.code + ' has six answers on Normal');
+    assertEqual(new Set(q.options).size, 6, q.code + ' answers are all different');
     assertEqual(q.options[q.answer], q.name, q.code + ' marks the right answer');
   });
   const seen = {};
   G.pool(ALL, {}).slice(0, 20).forEach(function (c) { seen[c.code] = true; });
   const fresh = G.deal(ALL, {}, G.rng(1), 10, seen);
   assert(fresh.every(function (q) { return !seen[q.code]; }), 'flags already seen wait their turn');
+});
+
+test('guess the country: 4 answers on Easy, 6 on Normal, 8 on Hard, in every region', function () {
+  assertEqual([G.optionCount('easy'), G.optionCount('normal'), G.optionCount('hard')], [4, 6, 8]);
+  ['easy', 'normal', 'hard'].forEach(function (level) {
+    DATA.regions.forEach(function (r) {
+      const deck = G.deal(ALL, { level: level, regions: [r.id] }, G.rng(7), 8);
+      deck.forEach(function (q) {
+        assertEqual(new Set(q.options).size, G.optionCount(level), level + ' / ' + q.code + ' has ' + G.optionCount(level) + ' different answers');
+        assertEqual(q.options[q.answer], q.name, q.code + ' marks the right answer');
+      });
+    });
+  });
+  // Rooms play Normal, and people watching see up to six answers (FF.Race.describe).
+  assert(G.optionCount(G.STANDARD.level) <= 6, 'the standard game fits the watch screen');
 });
 
 test('guess the country: harder levels offer flags that look alike', function () {
@@ -112,6 +127,8 @@ test('guess the country: harder levels offer flags that look alike', function ()
     if (q.options.indexOf('Romania') !== -1) hits++;
   }
   assertEqual(hits, 20, 'Hard always offers Romania beside Chad');
+  const chadNormal = G.prepare(chad, ALL, 'normal', G.rng(3));
+  assert(chadNormal.options.filter(function (n) { return ['Romania', 'Andorra', 'Moldova'].indexOf(n) !== -1; }).length >= 1, 'Normal offers a lookalike too');
   const france = ALL.filter(function (c) { return c.code === 'fr'; })[0];
   for (let s = 1; s <= 10; s++) {
     const q = G.prepare(france, ALL, 'easy', G.rng(s));

@@ -2937,11 +2937,14 @@ button.imp-card:focus-visible { outline: 3px solid var(--focus-ring); outline-of
 .gc-flag--flat .gc-flag__cloth { box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12); overflow: hidden; }
 .gc-flag__img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .gc-flag__strip {
+  position: relative; overflow: hidden;
   flex: 1 1 0; height: 100%; margin-right: -1px;
-  background-repeat: no-repeat;
   animation: gc-wave 2.2s ease-in-out infinite;
   will-change: transform, filter;
 }
+.gc-flag__part { position: absolute; top: 0; height: 100%; max-width: none; display: block; object-fit: fill; }
+.gc-flag.is-loading .gc-flag__cloth { opacity: 0; }
+.gc-flag__cloth { transition: opacity 0.15s var(--ease); }
 .gc-flag__strip:first-child { border-radius: 3px 0 0 3px; }
 .gc-flag__strip:last-child { border-radius: 0 3px 3px 0; }
 @keyframes gc-wave {
@@ -2959,6 +2962,9 @@ button.imp-card:focus-visible { outline: 3px solid var(--focus-ring); outline-of
 @keyframes gc-shake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
 .gc-time { width: 100%; }
 .gc-options { width: 100%; max-width: 640px; }
+.gc-opt .gm-opt__label { overflow-wrap: break-word; word-break: normal; hyphens: auto; }
+/* Six or eight answers: a little tighter. */
+.gc-options--n6 .gc-opt, .gc-options--n8 .gc-opt { min-height: 50px; font-size: var(--fs-md); }
 .gc-after { width: 100%; max-width: 640px; }
 .gc-fact {
   display: flex; gap: var(--sp-3); align-items: flex-start; width: 100%;
@@ -2985,7 +2991,9 @@ button.imp-card:focus-visible { outline: 3px solid var(--focus-ring); outline-of
 @media (max-width: 480px) {
   .gc-card { padding: var(--sp-4) var(--sp-3) var(--sp-3); }
   .gc-flag { width: min(100%, calc(170px * var(--ratio))); }
-  .gc-options.gm-options--2 { grid-template-columns: minmax(0, 1fr); }
+  .gc-options--n4.gm-options--2 { grid-template-columns: minmax(0, 1fr); }
+  .gc-options--n6 .gc-opt, .gc-options--n8 .gc-opt { gap: var(--sp-2); padding: 8px 8px 8px 8px; font-size: var(--fs-sm); min-height: 48px; }
+  .gc-options--n6 .gm-opt__key, .gc-options--n8 .gm-opt__key { width: 26px; height: 26px; font-size: 0.8rem; }
 }
 @media (prefers-reduced-motion: reduce) {
   .gc-flag__strip, .gc-flag.is-timeout .gc-flag__cloth, .gc-flag.is-wrong .gc-flag__cloth { animation: none; }
