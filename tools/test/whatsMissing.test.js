@@ -311,3 +311,31 @@ test('wm points: base, speed, streaks, partial gaps and the Expert bonus', funct
   assertEqual(R.points({ round: gone, res: { ok: false, right: [false], rightGaps: 0 }, ms: 0, secs: 20, streak: 0 }).total, 0);
   assertEqual([R.streakMult(1), R.streakMult(3), R.streakMult(4), R.streakMult(5), R.streakMult(9)].join(), '1,1.2,1.2,1.5,1.5');
 });
+
+test('wm deal: pass and play grows Expert boards by lap (opts.step), each turn its own board', function () {
+  const R = app().WhatsMissingRules;
+  const S = R.sanitize({ level: 'expert' });
+  assertEqual(R.deal(S, 'p', 5, { step: 0 }).n, 10);
+  assertEqual(R.deal(S, 'p', 5, { step: 2 }).n, 12);
+  assert(JSON.stringify(R.deal(S, 'p', 4, { step: 2 }).before) !== JSON.stringify(R.deal(S, 'p', 5, { step: 2 }).before), 'another turn, another board');
+});
+
+/* ---------- registration ---------- */
+
+test('wm registered: its own file, listed everywhere, the old emoji game gone', function () {
+  assert(/id:\s*'whatsMissing'/.test(read('js/games/whatsMissing.js')), 'registered in whatsMissing.js');
+  assert(!/id:\s*'whatsMissing'/.test(read('js/games/memoryGames.js')), 'no longer in memoryGames.js');
+  assert(/leaderboard:\s*true/.test(read('js/games/whatsMissing.js')), 'on the leaderboards');
+  assert(/'whatsMissing'/.test(read('js/net/roomUI.js')), 'listed in ONLINE_GAMES');
+  assert(/'whatsMissing'/.test(read('api/lib/Crew.php')), 'the crew list');
+  assert(/'whatsMissing'/.test(read('api/lib/Leaderboards.php')), 'the server leaderboard list');
+  assert(/"whatsMissing"/.test(read('js/icons.js')), 'has an icon');
+  assert(/"whatsMissing"/.test(read('js/data/assetManifest.js')), 'has a cover');
+  ['play.html', 'admin.html', 'tools/load-check.js', 'tools/test-seed.html'].forEach((f) => {
+    const s = read(f);
+    ['js/data/memoryAliases.js', 'js/whatsmissing/rules.js', 'js/games/whatsMissing.js'].forEach((js) => {
+      assert(s.indexOf(js) !== -1, f + ' loads ' + js);
+    });
+    assert(s.indexOf('js/whatsmissing/rules.js') < s.indexOf('js/games/whatsMissing.js'), f + ': rules before the game');
+  });
+});

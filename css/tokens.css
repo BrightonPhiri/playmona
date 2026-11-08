@@ -139,6 +139,13 @@
   --gs-gold: #ffc940; --gs-gold-hi: #ffe98f; --gs-gold-deep: #cc8418; --gs-gold-ink: #3b1f00;
   --gs-green: #34d65c; --gs-green-hi: #8dff9f; --gs-green-deep: #0f7a2e; --gs-red: #ff5c7a; --gs-red-deep: #b0213f;
   --gs-ink: #ffffff; --gs-ink-soft: #d6d2ff; --gs-ink-dim: #9f9ad6;
+  /* What's Missing? (js/games/whatsMissing.js): the cover's magenta-to-tangerine sky with cream
+     glossy tiles on pastel sides, the same in both themes. */
+  --wm-sky-1: #86198f; --wm-sky-2: #be185d; --wm-sky-3: #c2410c; --wm-plum: #3b0a40; --wm-plum-2: #5b1263;
+  --wm-ink: #ffffff; --wm-ink-soft: #fde7f3; --wm-cream: #fff6ea; --wm-cream-deep: #f3dcc4; --wm-tile-ink: #3b1240;
+  --wm-s0: #ff9ec7; --wm-s1: #8fd3ff; --wm-s2: #9fe6a0; --wm-s3: #ffd166; --wm-s4: #c4b0ff; --wm-s5: #ffb38a;
+  --wm-gold: #ffd54a; --wm-gold-deep: #c98a12; --wm-gold-ink: #3b1f00; --wm-glow: #fff3b0;
+  --wm-good: #22c55e; --wm-good-deep: #15803d; --wm-bad: #fb7185; --wm-bad-deep: #be123c;
   --medal-gold: #ffc83d; --medal-silver: #cfd6f6; --medal-bronze: #ff9a52; --medal-ink: #0b1030;
 }
 

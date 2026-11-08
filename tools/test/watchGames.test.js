@@ -10,7 +10,7 @@ const ROOT = path.join(__dirname, '..', '..');
 
 test('every room game describes its screen', function () {
   // Minimum number of describe calls per file (quizGames has four separate engines).
-  const files = { bibleGames: 2, bibleQuiz: 1, guessCountry: 1, worldGames: 1, visualGames: 1, quizGames: 3, quizMix: 1, reactionGames: 1, letterRush: 1, memoryGames: 1, numberGames: 2, puzzleGames: 1, wordGames: 1, partyGames: 1, imposters: 1 };
+  const files = { bibleGames: 2, bibleQuiz: 1, guessCountry: 1, worldGames: 1, visualGames: 1, quizGames: 3, quizMix: 1, reactionGames: 1, letterRush: 1, numberGames: 2, puzzleGames: 1, wordGames: 1, partyGames: 1, imposters: 1 };
   Object.keys(files).forEach(function (f) {
     const src = fs.readFileSync(path.join(ROOT, 'js/games/' + f + '.js'), 'utf8');
     const n = (src.match(/Race\.describe\(|race\.describe\(/g) || []).length;
@@ -47,9 +47,5 @@ test('games that call race.describe get it from a helper that has it', function 
   assert(/describe: function \(screen, answer\) \{ return self\.describe\(screen, answer\); \}/.test(race), 'forGame passes describe through');
 });
 
-test("What's Missing never shows viewers the whole set (it would give the answer away)", function () {
-  const src = fs.readFileSync(path.join(ROOT, 'js/games/memoryGames.js'), 'utf8');
-  const call = /race\.describe\(([^;]*)\);/.exec(src);
-  assert(call, 'describes its rounds');
-  assert(!/\bshown\b|\.join\(|\{set\}/.test(call[1]), 'the description does not include the emoji');
-});
+/* What's Missing? no longer races in rooms: its server referee (js/whatsmissing/referee.js) keeps the
+   study board and the answer out of the room view at the right moments (tools/test/whatsMissing.referee.test.js). */

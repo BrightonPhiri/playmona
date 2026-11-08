@@ -191,7 +191,8 @@ window.FF = window.FF || {};
 
   function range(n) { var a = []; for (var i = 0; i < n; i++) a.push(i); return a; }
 
-  /* Round k of a game. Endless passes opts { n, prev: [twists so far] }. */
+  /* Round k of a game. Endless passes opts { n, prev: [twists so far] };
+     pass and play passes opts { step } (the lap) so Expert boards grow once per lap. */
   function deal(settings, seed, k, opts) {
     var c = sanitize(settings);
     opts = opts || {};
@@ -199,7 +200,7 @@ window.FF = window.FF || {};
     var pool = poolFor(c);
     var n = level === 'endless'
       ? Math.max(ENDLESS_START, Math.min(opts.n || ENDLESS_START, ENDLESS_MAX))
-      : picturesAt(level, k);
+      : picturesAt(level, typeof opts.step === 'number' ? opts.step : k);   // pass and play: Expert grows by lap
     n = Math.min(n, pool.length - 1);
 
     var twist;
