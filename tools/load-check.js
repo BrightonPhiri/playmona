@@ -84,7 +84,13 @@ const ORDER = [
   'js/games/ballSwap.js',
   'js/sortrush/rules.js',
   'js/sortrush/client.js',
-  'js/games/sortRush.js'
+  'js/games/sortRush.js',
+  'js/geospin/places.js',
+  'js/geospin/facts.js',
+  'js/geospin/rules.js',
+  'js/geospin/globe.js',
+  'js/geospin/client.js',
+  'js/games/geoSpin.js'
 ];
 
 const sandbox = {

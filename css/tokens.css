@@ -132,6 +132,13 @@
   --srt-ne-tray: #222a6a; --srt-ne-tray-hi: #4552b8; --srt-ne-tray-deep: #0c1036;
   --srt-ne-c0: #ff3b5c; --srt-ne-c1: #3d8bff; --srt-ne-c2: #2bf08a; --srt-ne-c3: #ffe23d; --srt-ne-c4: #c04bff;
   --srt-ne-c5: #ff8a1f; --srt-ne-c6: #ff4fd8; --srt-ne-c7: #2eeeff; --srt-ne-c8: #b6ff3b; --srt-ne-c9: #f2f2ff;
+  /* GeoSpin (js/games/geoSpin.js): an arcade night sky that is the same in both themes,
+     as the cover: midnight navy, violet and electric-blue light, gold accents. */
+  --gs-night: #060a2b; --gs-night-2: #111a5c; --gs-dusk: #2a1a6e; --gs-horizon: #8a3d8f;
+  --gs-violet: #8a5cff; --gs-violet-deep: #4a2bb8; --gs-blue: #2f7bff; --gs-blue-deep: #1a3fb0; --gs-cyan: #3ee6ff;
+  --gs-gold: #ffc940; --gs-gold-hi: #ffe98f; --gs-gold-deep: #cc8418; --gs-gold-ink: #3b1f00;
+  --gs-green: #34d65c; --gs-green-hi: #8dff9f; --gs-green-deep: #0f7a2e; --gs-red: #ff5c7a; --gs-red-deep: #b0213f;
+  --gs-ink: #ffffff; --gs-ink-soft: #d6d2ff; --gs-ink-dim: #9f9ad6;
   --medal-gold: #ffc83d; --medal-silver: #cfd6f6; --medal-bronze: #ff9a52; --medal-ink: #0b1030;
 }
 

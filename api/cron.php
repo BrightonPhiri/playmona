@@ -95,6 +95,8 @@ try {
     if ($abandonedBs) echo "Ended $abandonedBs abandoned Ball Swap match(es).\n";
     $abandonedSr = $app->sortrush()->sweep($now);
     if ($abandonedSr) echo "Ended $abandonedSr abandoned SortRush match(es).\n";
+    $abandonedGs = $app->geospin()->sweep($now);
+    if ($abandonedGs) echo "Ended $abandonedGs abandoned GeoSpin match(es).\n";
 } catch (Throwable $e) {
     fwrite(STDERR, 'Crew cleanup failed: ' . $e->getMessage() . "\n");
 }

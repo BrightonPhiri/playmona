@@ -193,23 +193,11 @@ window.FF = window.FF || {};
   function isTyped(level) { return level === 'expert'; }
 
   /* Other accepted names, from the central list (js/data/countryAliases.js). */
-  function aliasesOf(code) {
-    var a = FF.data && FF.data.countryAliases;
-    return (a && a[code]) || [];
-  }
+  function aliasesOf(code) { return FF.CountryNames ? FF.CountryNames.aliases(code) : []; }
 
   /* Every accepted name of every country, checked by the shared
-     FF.AnswerMatch (built once per country list). */
-  var checkerCache = { list: null, checker: null };
-  function checkerFor(countries) {
-    if (checkerCache.list !== countries) {
-      checkerCache.list = countries;
-      checkerCache.checker = FF.AnswerMatch.create({
-        answers: countries.map(function (c) { return { id: c.code, names: [c.name].concat(aliasesOf(c.code)) }; })
-      });
-    }
-    return checkerCache.checker;
-  }
+     FF.AnswerMatch (FF.CountryNames in js/data/countryAliases.js). */
+  function checkerFor(countries) { return FF.CountryNames.checker(countries); }
 
   /* Expert: is a spelled name right? Small spelling mistakes pass; a name
      that is another country, or as close to one, does not. */

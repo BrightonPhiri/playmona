@@ -137,6 +137,7 @@ window.FF = window.FF || {};
   "ballSwap": "arrows-left-right",
   "blinkRemember": "eye",
   "sortRush": "stack",
+  "geoSpin": "globe-hemisphere-west",
   "higherOrLower": "chart-line",
   "wouldYouRather": "arrows-left-right",
   "thisOrThat": "split-horizontal",

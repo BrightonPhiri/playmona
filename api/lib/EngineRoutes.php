@@ -82,6 +82,14 @@ class EngineRoutes
             return Response::json($this->app->sortrush()->nudge($this->user($req), $req->json(), $now));
         }
 
+        // GeoSpin: the server starts the match; the referee in the runner picks the countries and checks every answer.
+        if ($m === 'POST' && $p === '/geospin/start') {
+            return Response::json($this->app->geospin()->start($this->user($req), $req->json(), $now));
+        }
+        if ($m === 'POST' && $p === '/geospin/nudge') {
+            return Response::json($this->app->geospin()->nudge($this->user($req), $req->json(), $now));
+        }
+
         // Friends
         if ($m === 'GET' && $p === '/friends') return Response::json($this->app->friends()->overview($this->user($req)->uid, $now));
         if ($m === 'POST' && str_starts_with($p, '/friends/')) return $this->friendAction($req, substr($p, 9), $now);
@@ -183,8 +191,9 @@ class EngineRoutes
                 $dropWordflow = $this->app->wordflow()->stillActive((array) ($body['wordflow'] ?? []));
                 $dropBallswap = $this->app->ballswap()->stillActive((array) ($body['ballswap'] ?? []));
                 $dropSortrush = $this->app->sortrush()->stillActive((array) ($body['sortrush'] ?? []));
+                $dropGeospin = $this->app->geospin()->stillActive((array) ($body['geospin'] ?? []));
                 $s = $this->app->crew()->settings();
-                return Response::json(['drop' => $drop, 'dropImposters' => $dropImposters, 'dropWordflow' => $dropWordflow, 'dropBallswap' => $dropBallswap, 'dropSortrush' => $dropSortrush, 'settings' => ['mode' => $s['mode'], 'stopNew' => $s['stopNew']]]);
+                return Response::json(['drop' => $drop, 'dropImposters' => $dropImposters, 'dropWordflow' => $dropWordflow, 'dropBallswap' => $dropBallswap, 'dropSortrush' => $dropSortrush, 'dropGeospin' => $dropGeospin, 'settings' => ['mode' => $s['mode'], 'stopNew' => $s['stopNew']]]);
             case 'report':
                 $matchId = (string) ($body['matchId'] ?? '');
                 $event = (string) ($body['event'] ?? '');
@@ -202,6 +211,10 @@ class EngineRoutes
                 }
                 if ($event === 'sortrush') {
                     $this->app->sortrush()->recordResult($body, $now);
+                    return Response::json(['ok' => true]);
+                }
+                if ($event === 'geospin') {
+                    $this->app->geospin()->recordResult($body, $now);
                     return Response::json(['ok' => true]);
                 }
                 if ($event === 'game') {

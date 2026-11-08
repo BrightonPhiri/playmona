@@ -77,6 +77,7 @@ async function main() {
   const wordflows = new Map(); // WordFlow matchId -> { ref, transport }
   const ballswaps = new Map(); // Ball Swap matchId -> { ref, transport }
   const sortrushes = new Map(); // SortRush matchId -> { ref, transport }
+  const geospins = new Map();   // GeoSpin matchId -> { ref, transport }
   let lastActive = Date.now();
   const isQuiet = (w) => FF.Words.isQuiet(w);
   const isWord = (w) => FF.Words.isWord(w);
@@ -259,9 +260,44 @@ async function main() {
     if (sortrushes.size) lastActive = Date.now();
   }, log);
 
+  /* GeoSpin: the runner is the referee for every match the API started (geospinRuns). */
+  function startGeospin(matchId, run) {
+    if (!run || !run.roomCode || !run.seats) return;
+    const code = run.roomCode;
+    const transport = roomTransport(rtdb, code, serverNow, (m) => log(matchId + ': ' + m));
+    const stopIt = () => {
+      const r = geospins.get(matchId);
+      if (!r) return;
+      r.ref.stop();
+      transport.close();
+      geospins.delete(matchId);
+      lastActive = Date.now();
+    };
+    const ref = FF.GeoSpinReferee.create({
+      run, room: transport,
+      store: {
+        load: () => rtdb.get('geospinState/' + matchId),
+        save: (s) => rtdb.set('geospinState/' + matchId, s)
+      },
+      randomInt: (n) => crypto.randomInt(n),
+      log: (m) => log(matchId + ': ' + m),
+      report: (event, payload) => api('report', Object.assign({}, payload, { matchId, event })),
+      onEnd: () => setTimeout(stopIt, 60000)
+    });
+    geospins.set(matchId, { ref, transport });
+    log('refereeing GeoSpin ' + matchId + ' in ' + code);
+    ref.start().catch((e) => { log(matchId + ': referee failed: ' + (e && e.message)); stopIt(); });
+  }
+
+  const geospinRuns = rtdb.stream('geospinRuns', (all) => {
+    all = all || {};
+    Object.keys(all).forEach((id) => { if (!geospins.has(id)) startGeospin(id, all[id]); });
+    if (geospins.size) lastActive = Date.now();
+  }, log);
+
   async function beat() {
     try {
-      const res = await api('heartbeat', { pid: process.pid, matches: Array.from(playing.keys()), imposters: Array.from(referees.keys()), wordflow: Array.from(wordflows.keys()), ballswap: Array.from(ballswaps.keys()), sortrush: Array.from(sortrushes.keys()) });
+      const res = await api('heartbeat', { pid: process.pid, matches: Array.from(playing.keys()), imposters: Array.from(referees.keys()), wordflow: Array.from(wordflows.keys()), ballswap: Array.from(ballswaps.keys()), sortrush: Array.from(sortrushes.keys()), geospin: Array.from(geospins.keys()) });
       (res.drop || []).forEach((id) => { const m = playing.get(id); if (m) m.ctl.stop(); });
       (res.dropImposters || []).forEach((id) => {
         const r = referees.get(id);
@@ -279,16 +315,21 @@ async function main() {
         const r = sortrushes.get(id);
         if (r) { r.ref.stop(); r.transport.close(); sortrushes.delete(id); }
       });
+      (res.dropGeospin || []).forEach((id) => {
+        const r = geospins.get(id);
+        if (r) { r.ref.stop(); r.transport.close(); geospins.delete(id); }
+      });
     } catch (e) {
       log('heartbeat failed: ' + e.message);
     }
-    if (!playing.size && !referees.size && !wordflows.size && !ballswaps.size && !sortrushes.size && Date.now() - lastActive > (cfg.idleMinutes || 5) * 60000) {
+    if (!playing.size && !referees.size && !wordflows.size && !ballswaps.size && !sortrushes.size && !geospins.size && Date.now() - lastActive > (cfg.idleMinutes || 5) * 60000) {
       log('nothing to play; stopping');
       runs.close();
       imposterRuns.close();
       wordflowRuns.close();
       ballswapRuns.close();
       sortrushRuns.close();
+      geospinRuns.close();
       try { await api('stopped', { pid: process.pid }); } catch (e) { /* the API notices anyway */ }
       process.exit(0);
     }
@@ -302,11 +343,13 @@ async function main() {
     wordflowRuns.close();
     ballswapRuns.close();
     sortrushRuns.close();
+    geospinRuns.close();
     playing.forEach((m) => { try { m.transport.close(); } catch (e) { /* gone */ } });
     referees.forEach((r) => { try { r.ref.stop(); r.transport.close(); } catch (e) { /* gone */ } });
     wordflows.forEach((r) => { try { r.ref.stop(); r.transport.close(); } catch (e) { /* gone */ } });
     ballswaps.forEach((r) => { try { r.ref.stop(); r.transport.close(); } catch (e) { /* gone */ } });
     sortrushes.forEach((r) => { try { r.ref.stop(); r.transport.close(); } catch (e) { /* gone */ } });
+    geospins.forEach((r) => { try { r.ref.stop(); r.transport.close(); } catch (e) { /* gone */ } });
     cleanup();   // free the lock for the new copy
     try {
       const child = spawn(process.execPath, process.argv.slice(1), { detached: true, stdio: 'inherit' });

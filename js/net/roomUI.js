@@ -35,7 +35,9 @@ window.FF = window.FF || {};
     // Swaps checked by the server's referee (js/ballswap/referee.js), same board for everyone.
     'ballSwap',
     // Moves checked by the server's referee (js/sortrush/referee.js), same puzzle for everyone.
-    'sortRush'
+    'sortRush',
+    // Countries picked and answers checked by the server's referee (js/geospin/referee.js).
+    'geoSpin'
     // Brain Battle is deliberately absent: its format is a personal
     // streak run per player, so there is no shared question to race for.
   ];

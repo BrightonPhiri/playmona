@@ -22,7 +22,9 @@ window.FF = window.FF || {};
     flip:      { f: 520,  d: 0.05, type: 'triangle', v: 0.08 },
     tick:      { f: 1000, d: 0.03, type: 'square',   v: 0.05 },
     heartbeat: { f: 70,   d: 0.18, type: 'sine',     v: 0.16 },
-    streak:    { f: 900,  d: 0.1,  type: 'triangle', v: 0.12, chord: [900, 1200] }
+    streak:    { f: 900,  d: 0.1,  type: 'triangle', v: 0.12, chord: [900, 1200] },
+    whoosh:    { f: 620,  d: 0.9,  type: 'sine',     v: 0.07, slide: 140 },
+    land:      { f: 660,  d: 0.22, type: 'triangle', v: 0.1,  chord: [990, 1320] }
   };
 
   FF.Audio = {

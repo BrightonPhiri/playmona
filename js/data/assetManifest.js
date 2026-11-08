@@ -10,6 +10,7 @@ FF.AssetManifest = {
     "blinkRemember": "962f5b00",
     "brainBattle": "138a01ea",
     "familyQuiz": "398a13de",
+    "geoSpin": "8e264823",
     "guessAnimal": "ff4053a8",
     "guessCountry": "8ffd2163",
     "guessWho": "06291604",

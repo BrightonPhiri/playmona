@@ -82,6 +82,24 @@ if (base['nr-arena']) {
   ['nr-good', 'nr-bad', 'nr-c0', 'nr-c1', 'nr-c2', 'nr-c3', 'nr-c4', 'nr-c5'].forEach(function (c) { check(c + ' edge on arena', base[c], base['nr-arena'], 3); });
 }
 
+// GeoSpin night sky: always dark, the same in both themes.
+if (base['gs-night']) {
+  console.log(' '); console.log('== GeoSpin ==');
+  ['gs-night', 'gs-night-2', 'gs-dusk'].forEach(function (bg) {
+    check('gs ink on ' + bg, base['gs-ink'], base[bg], 4.5);
+    check('gs soft ink on ' + bg, base['gs-ink-soft'], base[bg], 4.5);
+    check('gs gold on ' + bg, base['gs-gold'], base[bg], 4.5);
+    check('gs cyan on ' + bg, base['gs-cyan'], base[bg], 4.5);
+  });
+  check('gs dim ink on night-2', base['gs-ink-dim'], base['gs-night-2'], 4.5);
+  check('gs tile letter on gold', base['gs-gold-ink'], base['gs-gold'], 4.5);
+  check('gs tile letter on gold-deep', base['gs-gold-ink'], base['gs-gold-deep'], 4.5);
+  check('gs ink on green-deep', base['gs-ink'], base['gs-green-deep'], 4.5);
+  check('gs ink on red-deep', base['gs-ink'], base['gs-red-deep'], 4.5);
+  check('gs ink on blue-deep', base['gs-ink'], base['gs-blue-deep'], 4.5);
+  check('gs ink on violet-deep', base['gs-ink'], base['gs-violet-deep'], 4.5);
+}
+
 // Ball Swap arena: always dark, the same in both themes.
 if (base['bs-arena']) {
   console.log('\n== Ball Swap arena ==');

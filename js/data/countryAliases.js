@@ -9,6 +9,10 @@
    spaces, hyphens, apostrophes, full stops ("U.S.A." is "USA"), a
    leading "the", "&" for "and" and "St" for "Saint".
    Never list a name here that belongs to another country too.
+
+   FF.CountryNames (below) is the one way games read these: names(code)
+   and checker(), a shared FF.AnswerMatch over every country's accepted
+   names, used by Guess the Country, GeoSpin and the GeoSpin referee.
    Classic script, ES5.
    ============================================================ */
 window.FF = window.FF || {};
@@ -51,5 +55,30 @@ window.FF = window.FF || {};
     lk: ['Ceylon'],
     nz: ['Aotearoa'],
     ie: ['Eire']
+  };
+
+  /* ---- the shared country checker ---- */
+  var cache = { list: null, checker: null };
+  function countries() { return (FF.data.worldFlags && FF.data.worldFlags.countries) || []; }
+
+  FF.CountryNames = {
+    /* Other accepted names for a country. */
+    aliases: function (code) { return FF.data.countryAliases[code] || []; },
+    /* Every accepted name: the country's own name first. */
+    names: function (code) {
+      var c = countries().filter(function (x) { return x.code === code; })[0];
+      return (c ? [c.name] : []).concat(FF.CountryNames.aliases(code));
+    },
+    /* FF.AnswerMatch over every country (or the list given), built once per list. */
+    checker: function (list) {
+      list = list || countries();
+      if (cache.list !== list) {
+        cache.list = list;
+        cache.checker = FF.AnswerMatch.create({
+          answers: list.map(function (c) { return { id: c.code, names: [c.name].concat(FF.CountryNames.aliases(c.code)) }; })
+        });
+      }
+      return cache.checker;
+    }
   };
 })();

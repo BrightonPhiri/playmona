@@ -43,7 +43,11 @@ const FILES = [
   // so a referee can check a spelled answer exactly as a phone does.
   'js/answerMatch.js',
   'js/data/worldFlags.js',
-  'js/data/countryAliases.js'
+  'js/data/countryAliases.js',
+  // GeoSpin: the referee the runner hosts (no crew seats play it). Its checker is the one above.
+  'js/geospin/places.js',
+  'js/geospin/rules.js',
+  'js/geospin/referee.js'
 ];
 
 function stubElement() {

@@ -406,6 +406,32 @@ class Db
             PRIMARY KEY (match_id, uid),
             FOREIGN KEY (match_id) REFERENCES sortrush_matches (id)
         )$engine");
+        // GeoSpin: one row per match the server started, and each seat's record once it ends.
+        $this->pdo->exec("CREATE TABLE IF NOT EXISTS geospin_matches (
+            id VARCHAR(32) NOT NULL PRIMARY KEY,
+            room_code VARCHAR(12) NOT NULL,
+            host_uid VARCHAR(128) NOT NULL,
+            level VARCHAR(8) NOT NULL,
+            region VARCHAR(12) NOT NULL,
+            rounds INTEGER NOT NULL,
+            players INTEGER NOT NULL,
+            status VARCHAR(12) NOT NULL,
+            winner_uid VARCHAR(128) NULL,
+            is_draw INTEGER NOT NULL DEFAULT 0,
+            created_at BIGINT NOT NULL,
+            ended_at BIGINT NULL
+        )$engine");
+        $this->pdo->exec("CREATE TABLE IF NOT EXISTS geospin_seats (
+            match_id VARCHAR(32) NOT NULL,
+            uid VARCHAR(128) NOT NULL,
+            place INTEGER NOT NULL DEFAULT 0,
+            points INTEGER NOT NULL DEFAULT 0,
+            correct INTEGER NOT NULL DEFAULT 0,
+            best_streak INTEGER NOT NULL DEFAULT 0,
+            won INTEGER NOT NULL DEFAULT 0,
+            PRIMARY KEY (match_id, uid),
+            FOREIGN KEY (match_id) REFERENCES geospin_matches (id)
+        )$engine");
         // Columns added after the first release. Each fails harmlessly once it exists.
         foreach ([
             'ALTER TABLE orders ADD COLUMN mode VARCHAR(8) NULL',
@@ -446,6 +472,8 @@ class Db
             'CREATE INDEX ballswap_seats_uid ON ballswap_seats (uid)',
             'CREATE INDEX sortrush_status ON sortrush_matches (status, created_at)',
             'CREATE INDEX sortrush_seats_uid ON sortrush_seats (uid)',
+            'CREATE INDEX geospin_status ON geospin_matches (status, created_at)',
+            'CREATE INDEX geospin_seats_uid ON geospin_seats (uid)',
         ] as $sql) {
             try { $this->pdo->exec($sql); } catch (\PDOException $e) { /* already there */ }
         }

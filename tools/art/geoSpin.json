@@ -1,0 +1,21 @@
+{
+  "game": "geoSpin",
+  "prompts": "",
+  "source": "assets/playmona_assets/GeoSpin",
+  "ids": [],
+  "sets": [],
+  "focus": {},
+  "cover": {
+    "from": "cover.png",
+    "to": "assets/images/covers/geoSpin.webp",
+    "size": [
+      1086,
+      1448
+    ],
+    "max_kb": 240,
+    "focus": [
+      0.42,
+      0.5
+    ]
+  }
+}
