@@ -215,6 +215,21 @@ window.FF = window.FF || {};
       wfSeats.start();
     }
 
+    /* What's Missing? online is refereed by the server: its seats remember the study board and
+       answer through the inbox when the changed board opens (js/crew/brains/whatsMissing.js). */
+    var wmSeats = null, wmKey = null;
+    function onWhatsMissing() {
+      var playing = meta && meta.status === 'playing' && meta.gameId === 'whatsMissing' && meta.wmMatch && FF.CrewWhatsMissing;
+      var key = playing ? gameKey() : null;
+      if (wmSeats && wmKey !== key) { wmSeats.stop(); wmSeats = null; }
+      if (!playing || wmSeats) return;
+      wmKey = key;
+      wmSeats = FF.CrewWhatsMissing.create({
+        transport: T, uids: function () { return uids.filter(present); }, crew: crew, later: later, log: log
+      });
+      wmSeats.start();
+    }
+
     function onMeta(v) {
       meta = v;
       if (!meta) { stop(); return; }
@@ -224,6 +239,7 @@ window.FF = window.FF || {};
       else if (status === 'ended') onEnded();
       onImposters();
       onWordFlow();
+      onWhatsMissing();
     }
 
     function stop() {
@@ -231,6 +247,7 @@ window.FF = window.FF || {};
       stopped = true;
       if (impSeats) { impSeats.stop(); impSeats = null; }
       if (wfSeats) { wfSeats.stop(); wfSeats = null; }
+      if (wmSeats) { wmSeats.stop(); wmSeats = null; }
       offs.forEach(function (off) { try { off(); } catch (e) { /* already closed */ } });
       offs = [];
       pending.forEach(function (id) { timers.clearTimeout(id); });

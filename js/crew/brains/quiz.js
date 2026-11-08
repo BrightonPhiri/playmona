@@ -14,7 +14,7 @@ window.FF = window.FF || {};
   'use strict';
 
   var GAMES = [
-    'bibleQuiz', 'trueOrFalse', 'guessWho', 'pictureQuiz', 'familyQuiz', 'whatsMissing',
+    'bibleQuiz', 'trueOrFalse', 'guessWho', 'pictureQuiz', 'familyQuiz',
     'numberChallenge', 'visualRiddle', 'colorReaction',
     'guessCountry', 'guessLandmark', 'guessAnimal', 'guessFood', 'guessObject', 'guessSport', 'guessVehicle',
     'whereInWorld', 'mapChallenge', 'capitalChallenge', 'guessFlag'

@@ -54,7 +54,9 @@ const FILES = [
   'js/data/memoryDecks.js',
   'js/data/memoryAliases.js',
   'js/whatsmissing/rules.js',
-  'js/whatsmissing/referee.js'
+  'js/whatsmissing/client.js',
+  'js/whatsmissing/referee.js',
+  'js/crew/brains/whatsMissing.js'
 ];
 
 function stubElement() {

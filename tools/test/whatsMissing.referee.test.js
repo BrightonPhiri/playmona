@@ -311,3 +311,29 @@ test('wm client: a phase is drawn only once its round has arrived in full', asyn
   assert(!C.ready(C.tidy(rev)), 'a reveal without the answer is not');
   assert(!C.ready(null));
 });
+
+test('wm crew seat: plays a whole match through the inbox and is scored by the referee', async function () {
+  const FF = loadFF(FILES.concat(['js/whatsmissing/client.js', 'js/crew/levels.js', 'js/crew/brains/whatsMissing.js']));
+  const m = await match({ settings: { rounds: 5, level: 'hard' } });
+  // The crew seat watches the same room through its own transport, with the same clock.
+  const T = FF.Transport.dev({ bus: m.bus, root: 'rooms/ROOM01' });
+  await T.connect();
+  T.serverNow = () => m.clock.now;
+  const seat = FF.CrewWhatsMissing.create({
+    transport: T, uids: ['p2'], crew: { p2: { persona: { accuracy: 100, reaction: 80 }, skills: { whatsMissing: { skill: 100, level: 'hard' } } } },
+    later: (fn, ms) => m.clock.setTimeout(fn, ms), random: () => 0.01
+  });
+  seat.start();
+  for (let k = 0; k < 5; k++) {
+    await m.open();
+    const g = m.wm();
+    await m.clock.advance(g.closeAt - m.clock.now - 500);
+    assertEqual(m.wm().p.p2.inK, k, 'the crew seat answered round ' + (k + 1) + ' before the clock');
+    await m.answer('p1', m.wrong());
+    assertEqual(m.wm().phase, 'reveal');
+    assert(m.wm().p.p2.last.ok, 'a sure crew seat is right in round ' + (k + 1) + ' (' + m.truth().twist + ')');
+  }
+  await m.clock.advance(m.RF.REVEAL_MS + 10);
+  assertEqual(m.wm().result.winners.join(), 'p2');
+  seat.stop();
+});
