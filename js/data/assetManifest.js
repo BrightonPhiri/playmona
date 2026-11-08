@@ -11,6 +11,7 @@ FF.AssetManifest = {
     "brainBattle": "138a01ea",
     "familyQuiz": "398a13de",
     "guessAnimal": "ff4053a8",
+    "guessCountry": "8ffd2163",
     "guessWho": "06291604",
     "imposters": "1275cfc4",
     "letterRush": "b0eb5db2",
