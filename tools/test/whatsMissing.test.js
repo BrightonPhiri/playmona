@@ -198,3 +198,116 @@ test('wm secs: 20 seconds, +6 on Expert, +5 for each extra gap', function () {
     assertEqual(e.secs, 26 + 5 * (e.gaps - 1));
   }
 });
+
+/* ---------- checks, points and Expert names ---------- */
+
+/* The first round of a seed with the wanted twist. */
+function findRound(R, settings, twist, gaps) {
+  for (let i = 0; i < 400; i++) {
+    for (let k = 0; k < 10; k++) {
+      const r = R.deal(R.sanitize(settings), 'f' + i, k);
+      if (r.twist === twist && (!gaps || r.gaps === gaps)) return r;
+    }
+  }
+  throw new Error('no ' + twist + ' round found');
+}
+function wrongPick(r) { return r.choices.filter((id) => r.answer.ids.indexOf(id) === -1)[0]; }
+
+test('wm check: Gone takes the right pick; Added takes the newcomer slot only', function () {
+  const R = app().WhatsMissingRules;
+  const g = findRound(R, { level: 'normal' }, 'gone');
+  assert(R.check(g, { picks: g.answer.ids }).ok);
+  const bad = R.check(g, { picks: [wrongPick(g)] });
+  assert(!bad.ok && bad.rightGaps === 0);
+  const a = findRound(R, { level: 'normal' }, 'added');
+  assert(R.check(a, { slots: a.answer.slots }).ok);
+  const other = a.after.findIndex((id, s) => id != null && s !== a.answer.slots[0]);
+  assert(!R.check(a, { slots: [other] }).ok, 'another picture');
+  const blank = a.after.indexOf(null);
+  assert(!R.check(a, { slots: [blank] }).ok, 'an empty slot');
+});
+
+test('wm check: Swapped in either order; anything else is wrong and never throws', function () {
+  const R = app().WhatsMissingRules;
+  const r = findRound(R, { level: 'normal' }, 'swapped');
+  const [a, b] = r.answer.slots;
+  assert(R.check(r, { slots: [a, b] }).ok);
+  assert(R.check(r, { slots: [b, a] }).ok);
+  const c = r.after.findIndex((id, s) => id != null && s !== a && s !== b);
+  const half = R.check(r, { slots: [a, c] });
+  assert(!half.ok && half.rightGaps === 0, 'all or nothing');
+  [[a, a], [a, 99], [], [-1, a], null].forEach((slots) => {
+    const res = R.check(r, { slots });
+    assert(!res.ok, 'not ok: ' + JSON.stringify(slots));
+  });
+  assert(!R.check(r, null).ok, 'no answer at all');
+});
+
+test('wm check: Several gone scores each gap; missing gaps are wrong', function () {
+  const R = app().WhatsMissingRules;
+  const r = findRound(R, { level: 'expert', theme: 'mix' }, 'several', 3);
+  const r6 = findRound(R, { level: 'hard', choices: 6 }, 'several', 2);
+  assert(R.check(r6, { picks: r6.answer.ids }).ok);
+  const ids = r.answer.ids;
+  const names = ids.map((id) => R.cardOf(id).name);
+  const two = R.check(r, { text: [names[0], names[1], 'zzzz'] });
+  assertEqual(JSON.stringify(two.right), '[true,true,false]');
+  assertEqual(two.rightGaps, 2);
+  assert(!two.ok);
+  const short = R.check(r, { text: [names[0]] });
+  assertEqual(JSON.stringify(short.right), '[true,false,false]');
+  assertEqual(short.rightGaps, 1);
+  const swappedOrder = R.check(r6, { picks: [r6.answer.ids[1], r6.answer.ids[0]] });
+  assertEqual(swappedOrder.rightGaps, 0, 'each gap has its own picture');
+});
+
+test('wm check: Expert names forgive spaces, other names and small mistakes', function () {
+  const R = app().WhatsMissingRules;
+  assert(R.checkName('hotdog', 'hot-dog').ok);
+  assert(R.checkName('Ice-Cream', 'ice-cream').ok);
+  assert(R.checkName('dougnut', 'donut').ok, 'Doughnut with a slip');
+  assert(R.checkName('Aeroplane', 'airplane').ok);
+  assert(R.checkName('Football', 'soccer-ball').ok);
+  assert(!R.checkName('cat', 'dog').ok);
+  assert(!R.checkName('car', 'cat').ok, 'another picture never counts');
+  assert(!R.checkName('', 'cat').ok);
+});
+
+test('wm aliases: every alias is a known card, unique, and never another card\'s name', function () {
+  const FF = app();
+  const R = FF.WhatsMissingRules;
+  const norm = (s) => String(s).toLowerCase().normalize('NFD').replace(/[^a-z]/g, '');
+  const own = {};
+  R.cards().forEach((c) => { own[norm(c.name)] = c.id; });
+  const seen = {};
+  Object.keys(FF.data.memoryAliases).forEach((id) => {
+    assert(R.cardOf(id), id + ' is a card');
+    FF.data.memoryAliases[id].forEach((name) => {
+      const n = norm(name);
+      assert(!own[n] || own[n] === id, name + ' is another card\'s name');
+      assert(!seen[n] || seen[n] === id, name + ' belongs to two cards');
+      seen[n] = id;
+    });
+  });
+  assert(Object.keys(FF.data.memoryAliases).length >= 10, 'a useful list');
+});
+
+test('wm points: base, speed, streaks, partial gaps and the Expert bonus', function () {
+  const R = app().WhatsMissingRules;
+  const gone = findRound(R, { level: 'normal' }, 'gone');
+  const sw = findRound(R, { level: 'normal' }, 'swapped');
+  const sev = findRound(R, { level: 'expert' }, 'several', 3);
+  const eg = findRound(R, { level: 'expert' }, 'gone');
+  const ok1 = { ok: true, right: [true], rightGaps: 1 };
+  assertEqual(R.points({ round: gone, res: ok1, ms: 0, secs: 20, streak: 1 }).total, 150);
+  assertEqual(R.points({ round: gone, res: ok1, ms: 20000, secs: 20, streak: 1 }).total, 100);
+  assertEqual(R.points({ round: gone, res: ok1, ms: 10000, secs: 20, streak: 1 }).total, 125);
+  assertEqual(R.points({ round: sw, res: { ok: true, right: [true, true], rightGaps: 2 }, ms: 0, secs: 20, streak: 3 }).total, 240);
+  const part = R.points({ round: findRound(R, { level: 'hard' }, 'several', 2), res: { ok: false, right: [true, false], rightGaps: 1 }, ms: 0, secs: 25, streak: 0 });
+  assertEqual(JSON.stringify([part.base, part.speed, part.mult, part.total]), '[100,0,1,100]');
+  const sevPart = R.points({ round: sev, res: { ok: false, right: [true, true, false], rightGaps: 2 }, ms: 0, secs: 36, streak: 0 });
+  assertEqual(JSON.stringify([sevPart.base, sevPart.bonus, sevPart.total]), '[200,100,300]', 'Expert bonus per right gap');
+  assertEqual(R.points({ round: eg, res: ok1, ms: 0, secs: 26, streak: 5 }).total, 300);
+  assertEqual(R.points({ round: gone, res: { ok: false, right: [false], rightGaps: 0 }, ms: 0, secs: 20, streak: 0 }).total, 0);
+  assertEqual([R.streakMult(1), R.streakMult(3), R.streakMult(4), R.streakMult(5), R.streakMult(9)].join(), '1,1.2,1.2,1.5,1.5');
+});

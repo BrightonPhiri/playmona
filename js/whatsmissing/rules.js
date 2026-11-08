@@ -273,6 +273,82 @@ window.FF = window.FF || {};
     return shuffle(answerIds.concat(decoys.map(function (x) { return x.id; })), rand);
   }
 
+  /* ---------- checking ---------- */
+
+  var matcher = null;
+  /* Expert: a spelled name, with other names (js/data/memoryAliases.js) and small mistakes allowed. */
+  function checkName(text, id) {
+    if (!matcher) {
+      var aliases = (FF.data && FF.data.memoryAliases) || {};
+      matcher = FF.AnswerMatch.create({
+        answers: cards().map(function (c) { return { id: c.id, names: [c.name].concat(aliases[c.id] || []) }; })
+      });
+    }
+    return matcher.check(String(text == null ? '' : text), id);
+  }
+
+  function isSlot(round, s) { return typeof s === 'number' && s % 1 === 0 && s >= 0 && s < round.slots; }
+
+  /* What was right. Gone and Several gone: each gap in order (picks or spelled text);
+     Added: the newcomer's slot; Swapped: both slots, in either order. */
+  function check(round, answer) {
+    var a = answer || {};
+    var want = round.answer;
+    var right = [];
+    if (round.twist === 'gone' || round.twist === 'several') {
+      var text = Array.isArray(a.text) ? a.text : null;
+      var picks = Array.isArray(a.picks) ? a.picks : [];
+      right = want.ids.map(function (id, i) {
+        if (text) return text[i] != null && checkName(text[i], id).ok;
+        return picks[i] === id;
+      });
+    } else {
+      var slots = Array.isArray(a.slots) ? a.slots : [];
+      var ok;
+      if (round.twist === 'added') {
+        ok = slots.length === 1 && slots[0] === want.slots[0];
+      } else {
+        ok = slots.length === 2 && isSlot(round, slots[0]) && isSlot(round, slots[1]) && slots[0] !== slots[1] &&
+          Math.min(slots[0], slots[1]) === want.slots[0] && Math.max(slots[0], slots[1]) === want.slots[1];
+      }
+      right = want.slots.map(function () { return ok; });
+    }
+    var n = right.filter(Boolean).length;
+    return { ok: n === right.length && n > 0, right: right, rightGaps: n };
+  }
+
+  /* ---------- points ---------- */
+
+  var BASE = { gone: 100, added: 100, swapped: 150, several: 100 };   // several: per right gap
+  var SPEED_MAX = 50;
+  var EXPERT_BONUS = 50;                                               // per right answer or gap
+  var STREAKS = [[5, 1.5], [3, 1.2]];
+
+  function streakMult(streak) {
+    for (var i = 0; i < STREAKS.length; i++) if (streak >= STREAKS[i][0]) return STREAKS[i][1];
+    return 1;
+  }
+
+  /* A round's points. streak counts this answer when it was right. Speed and the streak
+     multiplier only for a fully right answer; Several gone still scores its right gaps. */
+  function points(o) {
+    o = o || {};
+    var round = o.round, res = o.res || { ok: false, rightGaps: 0 };
+    var out = { base: 0, speed: 0, bonus: 0, mult: 1, total: 0 };
+    if (!round || !res.rightGaps) return out;
+    out.base = round.twist === 'several' ? BASE.several * res.rightGaps : (res.ok ? BASE[round.twist] : 0);
+    if (!out.base) return out;
+    if (round.spell) out.bonus = EXPERT_BONUS * res.rightGaps;
+    if (res.ok) {
+      var secs = o.secs || round.secs || ANSWER_SECS;
+      var left = Math.max(0, Math.min(1, 1 - (o.ms || 0) / (secs * 1000)));
+      out.speed = Math.round(SPEED_MAX * left);
+      out.mult = streakMult(o.streak || 0);
+    }
+    out.total = Math.round((out.base + out.speed + out.bonus) * out.mult);
+    return out;
+  }
+
   FF.WhatsMissingRules = {
     LEVELS: LEVELS, ROOM_LEVELS: ROOM_LEVELS, THEMES: THEMES, SECONDS: SECONDS, CHOICES: CHOICES, TWISTS: TWISTS,
     ROUNDS: ROUNDS, STANDARD: STANDARD, ENDLESS_START: ENDLESS_START, ENDLESS_MAX: ENDLESS_MAX,
@@ -280,6 +356,8 @@ window.FF = window.FF || {};
     sanitize: sanitize, sanitizeRoom: sanitizeRoom, isStandard: isStandard,
     hash: hash, rng: rng, shuffle: shuffle,
     cards: cards, cardOf: cardOf, spellable: spellable,
-    picturesAt: picturesAt, grid: grid, twistsAllowed: twistsAllowed, twistPlan: twistPlan, deal: deal
+    picturesAt: picturesAt, grid: grid, twistsAllowed: twistsAllowed, twistPlan: twistPlan, deal: deal,
+    BASE: BASE, SPEED_MAX: SPEED_MAX, EXPERT_BONUS: EXPERT_BONUS, STREAKS: STREAKS,
+    checkName: checkName, check: check, streakMult: streakMult, points: points
   };
 })();
