@@ -38,7 +38,12 @@ const FILES = [
   'js/ballswap/referee.js',
   // SortRush: the referee the runner hosts (no crew seats play it).
   'js/sortrush/rules.js',
-  'js/sortrush/referee.js'
+  'js/sortrush/referee.js',
+  // Typed answers: the one checker, and the country names it knows,
+  // so a referee can check a spelled answer exactly as a phone does.
+  'js/answerMatch.js',
+  'js/data/worldFlags.js',
+  'js/data/countryAliases.js'
 ];
 
 function stubElement() {

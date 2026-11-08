@@ -53,6 +53,7 @@ const ORDER = [
   'js/data/bible.js',
   'js/data/bibleQuiz.js',
   'js/data/worldFlags.js',
+  'js/data/countryAliases.js',
   'js/games/letterRush.js',
   'js/games/stacoend.js',
   'js/games/wordGames.js',
