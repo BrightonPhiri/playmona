@@ -205,40 +205,13 @@ window.FF = window.FF || {};
     return checkerFor(countries).check(guess, country.code);
   }
 
-  /* ---- Expert letter tiles ---- */
-  var TILE_MULT = { easy: 1.5, normal: 1.75, hard: 2 };   // tiles per answer letter, by the app's difficulty
-  var MAX_TILES = 30;
+  /* ---- Expert letter tiles: the shared FF.SpellTiles (js/spellTiles.js) ---- */
   var LONG_NAME = 16;          // longer names are spelled by a shorter accepted name
-  var COMMON = 'AEIOURSTLNMDCBGHKPY';
-
-  function plainUpper(s) {
-    var x = String(s || '');
-    if (x.normalize) x = x.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    return x.toUpperCase();
-  }
-
-  /* A name as cells: letters to spell, gaps between words, and marks
-     (hyphens, apostrophes, full stops) that are shown for you. */
-  function layout(name) {
-    var cells = [];
-    plainUpper(name).split('').forEach(function (ch) {
-      if (/[A-Z]/.test(ch)) cells.push({ ch: ch, letter: true });
-      else if (/\s/.test(ch)) { if (cells.length && !cells[cells.length - 1].gap) cells.push({ ch: ' ', gap: true }); }
-      else cells.push({ ch: ch, fixed: true });
-    });
-    return cells;
-  }
-  /* What the slots spell, with the name's own gaps and marks between the
-     letters (so SAINT KITTS reads as Saint Kitts, not SAINTKITTS). */
-  function spelled(cells, chars) {
-    var i = 0, out = '';
-    cells.forEach(function (c) {
-      if (c.letter) out += chars[i++] || '';
-      else out += c.ch;
-    });
-    return out.replace(/s+/g, ' ').trim();
-  }
-  function lettersOf(name) { return layout(name).filter(function (c) { return c.letter; }).map(function (c) { return c.ch; }); }
+  function tiles() { return FF.SpellTiles; }
+  function layout(name) { return tiles().layout(name); }
+  function spelled(cells, chars) { return tiles().spelled(cells, chars); }
+  function lettersOf(name) { return tiles().lettersOf(name); }
+  function tileSet(target, rand, opts) { return tiles().deal(target, rand, opts); }
 
   /* The name to spell: the country's own name, or for a very long one
      (Saint Vincent and the Grenadines) a shorter accepted name of 5 to 14 letters. */
@@ -249,33 +222,6 @@ window.FF = window.FF || {};
       return n >= 5 && n <= 14 && a !== a.toUpperCase();
     });
     return alt.length ? alt[0] : country.name;
-  }
-
-  /* The tiles for one name: every letter it needs, plus decoys. The count
-     follows the difficulty (1.5x, 1.75x, 2x the letters, at most 30).
-     Decoys are hard on purpose: extra copies of the name's own letters,
-     letters from flags that look alike or from the same region, then
-     common letters. */
-  function tileSet(target, rand, opts) {
-    opts = opts || {};
-    var cells = layout(target);
-    var letters = cells.filter(function (c) { return c.letter; }).map(function (c) { return c.ch; });
-    var n = letters.length;
-    var mult = TILE_MULT[opts.difficulty] || TILE_MULT.normal;
-    var total = Math.max(n + 2, Math.round(n * mult));
-    total = Math.min(total, Math.max(MAX_TILES, n));
-    var related = [];
-    (opts.related || []).forEach(function (name) { related = related.concat(lettersOf(name)); });
-    var decoys = [];
-    for (var i = n; i < total; i++) {
-      var r = rand();
-      var from = r < 0.4 ? letters : (r < 0.8 && related.length ? related : COMMON.split(''));
-      decoys.push(from[Math.floor(rand() * from.length)]);
-    }
-    var tiles = shuffle(letters.concat(decoys), rand);
-    // Never deal the answer already spelled out at the start.
-    if (tiles.slice(0, n).join('') === letters.join('') && tiles.length > 1) tiles.push(tiles.shift());
-    return { target: target, cells: cells, letters: letters, tiles: tiles };
   }
 
   /* Names whose letters make the hardest decoys for this country. */
@@ -835,179 +781,9 @@ window.FF = window.FF || {};
       }
     }
 
-    /* Expert: answer slots for the name and a tray of letter tiles. Tap a
-       tile to send it to the next empty slot, tap a filled slot to send its
-       letter back; Undo and Clear. A full row is checked by itself; Check
-       sends a shorter accepted name (USA from the tiles of United States).
-       On a keyboard, type the letters, Backspace undoes, Enter checks. */
+    /* Expert: the shared letter-tile board. */
     function tileBoard(set, onSubmit) {
-      var el = FF.ui.div('gc-spell is-waiting');
-      var row = FF.ui.el('div', { class: 'gc-slots', role: 'group', 'aria-label': t('gcYourAnswer', 'Your answer') });
-      var word = FF.ui.div('gc-word');
-      row.appendChild(word);
-      var slots = [];
-      set.cells.forEach(function (c) {
-        if (c.gap) { word = FF.ui.div('gc-word'); row.appendChild(word); return; }
-        if (c.fixed) { word.appendChild(FF.ui.span('gc-slot gc-slot--mark', c.ch)); return; }
-        var b = FF.ui.el('button', { type: 'button', class: 'gc-slot', 'aria-label': t('gcEmptySlot', 'Empty') });
-        var s = { el: b, tile: null, want: c.ch };
-        b.addEventListener('click', function () { unplace(s, true); });
-        word.appendChild(b);
-        slots.push(s);
-      });
-      // Slots shrink so the longest word stays on one line on a phone.
-      var longest = 0;
-      set.cells.reduce(function (n, c) { var m = c.gap ? 0 : n + 1; longest = Math.max(longest, m); return m; }, 0);
-      row.style.setProperty('--gc-longest', String(Math.max(longest, 8)));
-      el.appendChild(row);
-
-      var tray = FF.ui.el('div', { class: 'gc-tiles', role: 'group', 'aria-label': t('gcLetters', 'Letters') });
-      var tiles = set.tiles.map(function (ch) {
-        var b = FF.ui.el('button', { type: 'button', class: 'gc-tile' }, ch);
-        var tile = { el: b, ch: ch, used: false };
-        b.addEventListener('click', function () { place(tile); });
-        tray.appendChild(b);
-        return tile;
-      });
-      el.appendChild(tray);
-
-      var tools = FF.ui.div('gc-spell__tools');
-      var undoBtn = FF.UI.button(t('gcUndo', 'Undo'), { class: 'btn btn-ghost', onClick: function () { undo(); } });
-      var clearBtn = FF.UI.button(t('gcClear', 'Clear'), { icon: 'x', class: 'btn btn-ghost', onClick: function () { clear(); } });
-      var checkBtn = FF.UI.button(t('gcCheck', 'Check'), { icon: 'check', primary: true, class: 'btn', onClick: function () { submit(); } });
-      tools.appendChild(undoBtn);
-      tools.appendChild(clearBtn);
-      tools.appendChild(checkBtn);
-      el.appendChild(tools);
-
-      var history = [];
-      var locked = false;
-      var open = false;
-      var still = reducedMotion();
-
-      function firstEmpty() {
-        for (var i = 0; i < slots.length; i++) if (!slots[i].tile) return slots[i];
-        return null;
-      }
-      function place(tile) {
-        if (locked || !open || tile.used) return;
-        var s = firstEmpty();
-        if (!s) return;
-        tile.used = true;
-        s.tile = tile;
-        history.push(s);
-        fly(tile.el, s);
-        draw();
-        api.audio.play('tap');
-        if (!firstEmpty()) setTimeout(function () { if (!locked) submit(); }, still ? 60 : 280);
-      }
-      function unplace(s, sound) {
-        if (locked || !s.tile) return;
-        s.tile.used = false;
-        var back = s.tile.el;
-        s.tile = null;
-        history = history.filter(function (x) { return x !== s; });
-        draw();
-        if (!still) { back.classList.remove('is-back'); void back.offsetWidth; back.classList.add('is-back'); }
-        if (sound) api.audio.play('tap');
-      }
-      function undo() { var s = history[history.length - 1]; if (s) { unplace(s, true); } }
-      function clear() {
-        if (locked || !history.length) return;
-        slots.forEach(function (s) { unplace(s, false); });
-        api.audio.play('flip');
-      }
-      function text() { return spelled(set.cells, slots.map(function (s) { return s.tile ? s.tile.ch : ''; })); }
-      function submit() {
-        if (locked || !open) return;
-        var x = text();
-        if (!history.length) { row.classList.remove('is-shake'); void row.offsetWidth; row.classList.add('is-shake'); return; }
-        onSubmit(x);
-      }
-
-      /* The letter flies from its tile to its slot. */
-      function fly(from, s) {
-        if (still || !from.getBoundingClientRect || !document.body.appendChild) { s.el.classList.add('is-landed'); return; }
-        var a = from.getBoundingClientRect();
-        var b = s.el.getBoundingClientRect();
-        if (!a.width || !b.width) { s.el.classList.add('is-landed'); return; }
-        var ghost = FF.ui.span('gc-ghost', s.tile.ch);
-        ghost.style.left = a.left + 'px';
-        ghost.style.top = a.top + 'px';
-        ghost.style.width = a.width + 'px';
-        ghost.style.height = a.height + 'px';
-        document.body.appendChild(ghost);
-        s.el.classList.add('is-incoming');
-        void ghost.offsetWidth;
-        ghost.style.transform = 'translate(' + (b.left - a.left) + 'px,' + (b.top - a.top) + 'px) scale(' + (b.width / a.width).toFixed(3) + ',' + (b.height / a.height).toFixed(3) + ')';
-        setTimeout(function () {
-          if (ghost.parentNode) ghost.parentNode.removeChild(ghost);
-          s.el.classList.remove('is-incoming');
-          s.el.classList.remove('is-landed');
-          void s.el.offsetWidth;
-          s.el.classList.add('is-landed');
-        }, 230);
-      }
-
-      function draw() {
-        slots.forEach(function (s) {
-          s.el.textContent = s.tile ? s.tile.ch : '';
-          s.el.classList.toggle('is-filled', !!s.tile);
-          if (!s.tile) s.el.classList.remove('is-incoming', 'is-landed');
-          s.el.disabled = locked || !s.tile;
-          s.el.setAttribute('aria-label', s.tile ? t('gcTakeBack', 'Take back {l}', { l: s.tile.ch }) : t('gcEmptySlot', 'Empty'));
-        });
-        tiles.forEach(function (tl) {
-          tl.el.classList.toggle('is-used', tl.used);
-          tl.el.disabled = locked || tl.used;
-        });
-        undoBtn.disabled = locked || !history.length;
-        clearBtn.disabled = locked || !history.length;
-        checkBtn.disabled = locked || !history.length;
-      }
-
-      function onKey(e) {
-        if (locked || !document.body.contains(el)) { document.removeEventListener('keydown', onKey, true); return; }
-        if (!open || e.ctrlKey || e.metaKey || e.altKey) return;
-        var k = e.key || '';
-        var mine = true;
-        if (/^[a-z]$/i.test(k)) {
-          var ch = plainUpper(k), hit = null;
-          for (var i = 0; i < tiles.length && !hit; i++) if (!tiles[i].used && tiles[i].ch === ch) hit = tiles[i];
-          if (hit) place(hit);
-          else { tray.classList.remove('is-shake'); void tray.offsetWidth; tray.classList.add('is-shake'); }
-        } else if (k === 'Backspace') undo();
-        else if (k === 'Enter' && history.length) submit();
-        else mine = false;
-        if (mine) { e.preventDefault(); e.stopPropagation(); }
-      }
-      // Capture phase: these keys belong to the tiles, not the app's own
-      // shortcuts (Backspace is "back" everywhere else).
-      document.addEventListener('keydown', onKey, true);
-      draw();
-
-      return {
-        el: el,
-        text: text,
-        /* The clock has started: show the tiles (hidden until the flag is up). */
-        open: function () { open = true; el.classList.remove('is-waiting'); draw(); },
-        /* Lock the board and show the name in the slots. */
-        finish: function (correct) {
-          locked = true;
-          open = true;
-          el.classList.remove('is-waiting');
-          document.removeEventListener('keydown', onKey, true);
-          slots.forEach(function (s) {
-            var had = s.tile ? s.tile.ch : '';
-            s.el.textContent = s.want;
-            s.el.classList.remove('is-incoming');
-            s.el.classList.add(correct || had === s.want ? 'is-right' : 'is-wrong');
-          });
-          draw();
-          slots.forEach(function (s) { s.el.textContent = s.want; });
-          el.classList.add(correct ? 'is-correct' : 'is-missed');
-        }
-      };
+      return FF.SpellTiles.board(set, { audio: api.audio, onSubmit: onSubmit });
     }
 
     function finish() {
@@ -1112,7 +888,7 @@ window.FF = window.FF || {};
   FF.GuessCountry = {
     LEVELS: LEVELS, TIMES: TIMES, OPTIONS: OPTIONS, STANDARD: STANDARD, optionCount: optionCount,
     TYPE_EXTRA_SECS: TYPE_EXTRA_SECS, TYPE_BONUS: TYPE_BONUS, isTyped: isTyped, checkTyped: checkTyped, secondsFor: secondsFor,
-    TILE_MULT: TILE_MULT, MAX_TILES: MAX_TILES, aliasesOf: aliasesOf, layout: layout, spelled: spelled, targetName: targetName, tileSet: tileSet, relatedNames: relatedNames, MIN_POOL: MIN_POOL, FLASH_BONUS: FLASH_BONUS,
+    aliasesOf: aliasesOf, layout: layout, spelled: spelled, targetName: targetName, tileSet: tileSet, relatedNames: relatedNames, MIN_POOL: MIN_POOL, FLASH_BONUS: FLASH_BONUS,
     sanitize: sanitize, isStandard: isStandard, pool: pool, rng: rng, decoys: decoys, alikeOf: alikeOf,
     prepare: prepare, deal: deal, points: points, roomPoints: roomPoints, summary: summary
   };

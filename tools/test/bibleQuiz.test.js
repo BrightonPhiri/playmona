@@ -66,7 +66,7 @@ test('bible quiz: settings keep to the offered values', function () {
   assertEqual(s.topics, ['creation', 'women'], 'known topics, in their own order');
   assertEqual(s.types, ['tf']);
   assertEqual(s.level, 'scholar');
-  assertEqual(B.sanitize({ level: 'expert' }).level, 'family', 'an unknown level falls back');
+  assertEqual(B.sanitize({ level: 'master' }).level, 'family', 'an unknown level falls back');
   assertEqual(B.sanitize({ topics: DATA.topics.map(function (t) { return t.id; }) }).topics, [], 'every topic is the same as all');
   assertEqual(B.sanitize({ types: B.TYPES.slice() }).types, [], 'every type is the same as all');
   assert(!B.isStandard({ level: 'kids' }), 'a level change is not standard');

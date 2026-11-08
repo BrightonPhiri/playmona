@@ -7,7 +7,7 @@ const path = require('path');
 const vm = require('vm');
 const { loadFF, test, assert, assertEqual, ROOT } = require('./harness');
 
-const FF = loadFF(['js/core.js', 'js/answerMatch.js', 'js/data/worldFlags.js', 'js/data/countryAliases.js']);
+const FF = loadFF(['js/core.js', 'js/answerMatch.js', 'js/spellTiles.js', 'js/data/worldFlags.js', 'js/data/countryAliases.js']);
 FF.registerGame = function () {};
 vm.runInContext(fs.readFileSync(path.join(ROOT, 'js/games/guessCountry.js'), 'utf8'), FF.__sandbox, { filename: 'guessCountry.js' });
 const M = FF.AnswerMatch;
@@ -166,7 +166,7 @@ test('tiles: every letter of the name is there, plus decoys by difficulty', func
   assertEqual(G.tileSet('Zimbabwe', G.rng(1), { difficulty: 'hard' }).tiles.length, 16, 'Hard: 2 x 8');
   assertEqual(G.tileSet('Zimbabwe', G.rng(1), {}).tiles.length, 14, 'Normal when unset');
   assertEqual(G.tileSet('Chad', G.rng(1), { difficulty: 'easy' }).tiles.length, 6, 'short names still get decoys');
-  assertEqual(G.tileSet('Central African Republic', G.rng(1), { difficulty: 'hard' }).tiles.length, G.MAX_TILES, 'at most 30');
+  assertEqual(G.tileSet('Central African Republic', G.rng(1), { difficulty: 'hard' }).tiles.length, FF.SpellTiles.MAX_TILES, 'at most 30');
 });
 
 test('tiles: spaces, hyphens and apostrophes are laid out for you', function () {

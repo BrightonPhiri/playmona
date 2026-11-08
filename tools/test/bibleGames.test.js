@@ -98,7 +98,7 @@ test('books: all 66 in order, with their parts, chapters and a key verse', funct
 
 test('settings keep to the offered values and know the standard', function () {
   assertEqual(JSON.stringify(G.who.sanitize({})), JSON.stringify(G.who.STANDARD));
-  assertEqual(JSON.stringify(G.who.sanitize({ level: 'expert', testament: 'apocrypha', pace: 'fast' })), JSON.stringify(G.who.STANDARD));
+  assertEqual(JSON.stringify(G.who.sanitize({ level: 'master', testament: 'apocrypha', pace: 'fast' })), JSON.stringify(G.who.STANDARD));
   assert(!G.who.isStandard({ pace: 'tap' }) && !G.who.isStandard({ testament: 'NT' }) && G.who.isStandard({ level: 'family' }));
   assertEqual(G.verse.sanitize({ kinds: ['where', 'nope'] }).kinds, ['where']);
   assertEqual(G.verse.sanitize({ kinds: ['where', 'build'] }).kinds, [], 'every kind is the same as all');

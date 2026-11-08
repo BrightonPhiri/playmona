@@ -5,7 +5,7 @@ get an **Expert** level: the player spells the answer instead of picking
 it. Check this list whenever a game is upgraded, and tick it off here in
 the same commit.
 
-Last checked: 2026-11-08 (main at 40dfa32, 53 games).
+Last checked: 2026-11-08 (53 games). Bible games done the same day.
 
 ## How every Expert level works
 
@@ -19,9 +19,9 @@ second checker.
   never accepts another valid answer, or a guess that is as close to one.
 - **Other names:** each answer lists every name it accepts. Countries use the
   central `js/data/countryAliases.js`. A game with other kinds of answers
-  keeps its own list next to its data (for example `js/data/<game>Aliases.js`),
+  keeps its own list next to its data (Bible people and books: `js/data/bibleAliases.js`),
   and never lists a name that belongs to two answers.
-- **Input:** letter tiles on phones (slots plus scrambled tiles with decoys,
+- **Input:** the shared letter tiles, `FF.SpellTiles` in `js/spellTiles.js` (`deal` then `board`): letter tiles on phones (slots plus scrambled tiles with decoys,
   1.5×, 1.75× or 2× the letters by `api.config.difficulty`). Typing on a
   keyboard picks tiles. Catch keys in the capture phase, because Backspace is
   the app's "back" key.
@@ -42,18 +42,14 @@ second checker.
 |---|---|---|
 | Guess the Country | `js/games/guessCountry.js` | Letter tiles, country aliases, shared checker (66bb617). Rooms play Normal choices. |
 | GeoSpin | `js/games/geoSpin.js` | Letter tiles from the start; the server referee checks answers in rooms. |
+| Who Am I? (Bible) | `js/games/bibleGames.js` | Spell the person; other names from `js/data/bibleAliases.js` (Abram, Simon Peter, Pilate). Family pool, +50. |
+| Books of the Bible | `js/games/bibleGames.js` | "What comes next?" is spelled (number tiles for 1 Kings; First/I/1st Kings count). +6 s, +50. |
+| Verse Rush | `js/games/bibleGames.js` | "Where is it?" spells the book (Psalm verses are in Psalms). Building the verse is unchanged. +6 s, +50. |
+| Bible Quiz | `js/games/bibleQuiz.js` | "Who said it?" and "Finish the verse" with short answers (2–14 letters, no commas) are spelled; the other choices are never accepted. No 50:50 on those. +6 s, +50. |
 
 ### Already upgraded, Expert still missing
 
-These games have had their full upgrade but have no Expert level yet. Do
-these first: the rest of the game is already in good shape.
-
-| Game | File | What to spell | Other names to accept |
-|---|---|---|---|
-| Who Am I? (Bible) | `js/games/bibleGames.js` | The person from the clues | Saul / Paul, Simon / Peter / Simon Peter, Abram / Abraham, Jacob / Israel… (two people may share a name: those need the full name) |
-| Books of the Bible | `js/games/bibleGames.js` | The book's name | 1 Kings / First Kings / I Kings, Song of Songs / Song of Solomon, Psalm / Psalms |
-| Bible Quiz | `js/games/bibleQuiz.js` | "Who said it" and "finish the verse" questions only; choice, true/false and order stay as they are | Same person names as Who Am I; the missing word must be exact for words of 4 letters or fewer |
-| Verse Rush | `js/games/bibleGames.js` | "Find where it is": spell the book. Building the verse from pieces already works like tiles. | Book names as above |
+None right now.
 
 Upgraded games where Expert spelling does **not** apply: Ball Swap,
 SortRush, Number Rush, Remember the Sequence, Blink & Remember, Imposters,

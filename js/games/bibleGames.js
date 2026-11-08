@@ -25,7 +25,11 @@ window.FF = window.FF || {};
 
   /* ================= shared rules (pure, tested) ================= */
 
-  var LEVELS = ['kids', 'family', 'scholar'];
+  var LEVELS = ['kids', 'family', 'scholar', 'expert'];
+  // Expert plays the Family people, verses and books, and has you spell
+  // the names (letter tiles, js/spellTiles.js) instead of picking them.
+  var SPELL_BONUS = 50;
+  var SPELL_EXTRA_SECS = 6;
 
   function bible() {
     return (FF.data && FF.data.bible) || { whoAmI: [], verses: [], books: [], divisions: [] };
@@ -56,6 +60,7 @@ window.FF = window.FF || {};
 
   /* Kids plays kids items; Family adds the family ones; Scholar drops the kids ones. */
   function levelOk(level, itemLevel) {
+    if (level === 'expert') level = 'family';
     if (level === 'kids') return itemLevel === 'kids';
     if (level === 'scholar') return itemLevel !== 'kids';
     return itemLevel !== 'scholar';
@@ -288,6 +293,7 @@ window.FF = window.FF || {};
   /* Kids: the best-known books. Family adds most of the rest. Scholar plays all 66. */
   function booksPool(books, level) {
     level = levelOf(level);
+    if (level === 'expert') level = 'family';
     if (level === 'scholar') return books.slice();
     return books.filter(function (b) { return level === 'kids' ? b.level === 'kids' : b.level !== 'scholar'; });
   }
@@ -384,10 +390,46 @@ window.FF = window.FF || {};
     return (BOOK_BASE[kind] || 80) + Math.min(5, Math.max(0, streak || 0)) * 10;
   }
 
+  /* ---------- Expert: spelled names ---------- */
+
+  function isSpelled(cfg) { return !!cfg && cfg.level === 'expert'; }
+
+  // One checker per list (FF.AnswerMatch), built the first time it is needed.
+  var checkers = { who: null, whoList: null, books: null, booksList: null };
+  function whoChecker(items) {
+    if (checkers.whoList !== items) {
+      checkers.whoList = items;
+      checkers.who = FF.AnswerMatch.create({ answers: items.map(function (x) { return { id: x.answer, names: FF.BibleNames.person(x.answer) }; }) });
+    }
+    return checkers.who;
+  }
+  function booksChecker(books) {
+    if (checkers.booksList !== books) {
+      checkers.booksList = books;
+      checkers.books = FF.AnswerMatch.create({ answers: books.map(function (b) { return { id: b.name, names: FF.BibleNames.book(b.name) }; }) });
+    }
+    return checkers.books;
+  }
+  /* Is a spelled name this person? Other names count (Abram, Simon Peter);
+     another person, or a name as close to one, never does. */
+  function whoCheck(guess, answer, items) { return whoChecker(items || bible().whoAmI).check(guess, answer); }
+  /* Is a spelled name this book? First Kings, I Kings and Song of Songs count. */
+  function bookCheck(guess, name, books) { return booksChecker(books || bible().books).check(guess, name); }
+
+  /* The book a reference is in, by its name in the books list (Psalm 23:1 is in Psalms). */
+  function bookNameOfRef(ref, books) {
+    var b = bookOfRef(ref);
+    var hit = (books || bible().books).filter(function (x) { return FF.BibleNames.book(x.name).indexOf(b) !== -1; })[0];
+    return hit ? hit.name : b;
+  }
+
+  /* Spelled points: the usual points plus a bonus for spelling it. */
+  function spellPoints(pts, correct) { return correct ? pts + SPELL_BONUS : 0; }
+
   /* ================= labels ================= */
 
   function levelName(l) {
-    return l === 'kids' ? t('bqKids', 'Kids') : l === 'scholar' ? t('bqScholar', 'Bible scholar') : t('bqFamily', 'Family');
+    return l === 'kids' ? t('bqKids', 'Kids') : l === 'scholar' ? t('bqScholar', 'Bible scholar') : l === 'expert' ? t('expert', 'Expert') : t('bqFamily', 'Family');
   }
   function testamentName(id) {
     return id === 'OT' ? t('oldTestament', 'Old Testament') : id === 'NT' ? t('newTestament', 'New Testament') : t('bgBoth', 'Both testaments');
@@ -600,6 +642,21 @@ window.FF = window.FF || {};
   }
 
   /* ================= shared game loop pieces ================= */
+
+  /* Expert: a letter-tile board for one name. Decoys come from the other
+     choices; the tiles follow the app's difficulty. */
+  function spellBoard(api, name, related, seed, round, onSubmit) {
+    var set = FF.SpellTiles.deal(name, rng((seed + (round + 1) * 7919) >>> 0), {
+      difficulty: api.config.difficulty, related: (related || []).filter(function (r) { return r !== name; })
+    });
+    return FF.SpellTiles.board(set, { audio: api.audio, onSubmit: onSubmit });
+  }
+  /* After a spelled answer: how it was read, or why it did not count. */
+  function spellNote(spell, right, rightName) {
+    if (!spell) return '';
+    var x = FF.SpellTiles.feedbackText(spell.text, spell.res, rightName);
+    return x ? ' ' + x : '';
+  }
 
   /* Per-player tallies for the recap. */
   function tallies(scorers) {
@@ -858,7 +915,7 @@ window.FF = window.FF || {};
       key: 'bibleWhoAmI:setup', name: t('bwName', 'Who Am I?'), title: t('bwSetupTitle', 'Set up Who Am I?'),
       standard: WHO_STANDARD, sanitize: whoSanitize, isStandard: whoIsStandard,
       rows: [
-        { field: 'level', label: t('bqLevel', 'Level'), desc: t('bwLevelDesc', 'Kids meets the best-known people. Bible scholar meets the ones you have to dig for.'), options: levelOptions() },
+        { field: 'level', label: t('bqLevel', 'Level'), desc: t('bwLevelDesc2', 'Kids meets the best-known people. Bible scholar meets the ones you have to dig for. Expert: spell the name with letter tiles (other names like Abram or Simon Peter count too).'), options: levelOptions() },
         { field: 'testament', label: t('bgTestament', 'Testament'), options: [
           { value: 'all', label: t('bgBoth', 'Both') }, { value: 'OT', label: t('bgOld', 'Old') }, { value: 'NT', label: t('bgNew', 'New') }
         ] },
@@ -891,6 +948,7 @@ window.FF = window.FF || {};
       var shared = sharedRun(config);
       var want = Math.min(rounds, list.length);
       var deck = whoDeal(data.whoAmI, c, rng(seed), want, shared ? null : seenFor(WHO_SEEN, list, want));
+      var spelling = isSpelled(c) && !racing;
       if (timed) FF.GameLength.manual();
       var autoClues = racing || c.pace === 'auto';
       var totals = tallies(scorers);
@@ -974,13 +1032,23 @@ window.FF = window.FF || {};
         card.appendChild(tools);
         stage.appendChild(card);
 
-        var grid = FF.GameUI.options({ columns: 'auto' });
-        var btns = item.choices.map(function (name, ci) {
-          var b = FF.GameUI.option(name, function () { if (!resolved) guess(name, b); }, ci, { className: 'bible-who-option qm-opt' });
-          b.dataset.answer = name;
-          grid.appendChild(b);
-          return b;
-        });
+        var grid, btns = [], board = null;
+        if (spelling) {
+          board = spellBoard(api, item.answer, item.choices, seed, round, function (text) {
+            if (resolved) return;
+            var res = whoCheck(text, item.answer, data.whoAmI);
+            guess(res.ok ? item.answer : null, null, { text: text, res: res });
+          });
+          grid = board.el;
+        } else {
+          grid = FF.GameUI.options({ columns: 'auto' });
+          btns = item.choices.map(function (name, ci) {
+            var b = FF.GameUI.option(name, function () { if (!resolved) guess(name, b); }, ci, { className: 'bible-who-option qm-opt' });
+            b.dataset.answer = name;
+            grid.appendChild(b);
+            return b;
+          });
+        }
         stage.appendChild(grid);
         var after = FF.ui.div('qm-after');
         stage.appendChild(after);
@@ -1041,6 +1109,7 @@ window.FF = window.FF || {};
           });
         } else {
           startClues();
+          if (board) board.open();
         }
         if (FF.Nav && FF.Nav.focusFirst) FF.Nav.focusFirst(grid);
 
@@ -1052,9 +1121,11 @@ window.FF = window.FF || {};
           FF.ui.$$('button', stage).forEach(function (b) { b.disabled = true; });
         }
 
-        function guess(chosenName, btn) {
+        function guess(chosenName, btn, spell) {
           resolved = true;
           stopClues();
+          if (board) board.finish(chosenName === item.answer);
+          clueBtn.disabled = true;
           var isCorrect = chosenName === item.answer;
           if (race) {
             // Worth what it was on THIS device's clue count, so send it along.
@@ -1074,19 +1145,19 @@ window.FF = window.FF || {};
           totals.add(entity.id, isCorrect);
           met.push({ name: item.answer, right: isCorrect, clue: clueLevel });
           if (isCorrect) {
-            var pts = whoPoints(clueLevel);
+            var pts = spell ? spellPoints(whoPoints(clueLevel), true) : whoPoints(clueLevel);
             api.scoring.add(entity.id, pts, { correct: true });
             var r = api.scoring.record ? api.scoring.record(entity.id) : null;
             var streak = !!(r && r.streak > 0 && r.streak % STREAK_EVERY === 0);
             if (streak) api.scoring.add(entity.id, STREAK_BONUS);
             api.audio.play(streak ? 'streak' : 'correct');
             after.appendChild(FF.GameUI.feedback('good', FF.GameUI.correctText(pts + (streak ? STREAK_BONUS : 0)) +
-              ' ' + t('bwOnClue', 'on clue {n}.', { n: clueLevel }) + (streak ? ' ' + t('streakBonus', 'Streak bonus!') : '')));
+              ' ' + t('bwOnClue', 'on clue {n}.', { n: clueLevel }) + (streak ? ' ' + t('streakBonus', 'Streak bonus!') : '') + spellNote(spell, true, item.answer)));
           } else {
             api.scoring.add(entity.id, 0, { wrong: true });
             if (api.scoring.resetStreak) api.scoring.resetStreak(entity.id);
             api.audio.play('wrong');
-            after.appendChild(FF.GameUI.feedback('bad', t('itWasName', 'It was {name}.', { name: item.answer })));
+            after.appendChild(FF.GameUI.feedback('bad', t('itWasName', 'It was {name}.', { name: item.answer }) + spellNote(spell, false, item.answer)));
           }
           drawClues(true);
           after.appendChild(verseCard({
@@ -1141,8 +1212,8 @@ window.FF = window.FF || {};
     modes: ['solo', 'turn', 'team', 'everyone'],
     defaultMode: 'turn',
     howToPlay: [
-      'Pick a level (Kids, Family or Bible scholar), a testament, and whether clues come by themselves.',
-      'Clues appear one at a time, hardest first. Pick the person from four names.',
+      'Pick a level (Kids, Family, Bible scholar or Expert), a testament, and whether clues come by themselves.',
+      'Clues appear one at a time, hardest first. Pick the person from four names, or on Expert spell the name with letter tiles (50 bonus points).',
       'The first clue is worth 300 points, then 225, 150 and 75. Three right in a row earns a bonus.',
       'A wrong name ends that person. After each answer, read a verse about them and where their story is.'
     ],
@@ -1167,7 +1238,7 @@ window.FF = window.FF || {};
       key: 'bibleVerseRush:setup', name: t('bvName', 'Verse Rush'), title: t('bvSetupTitle', 'Set up Verse Rush'),
       standard: VERSE_STANDARD, sanitize: verseSanitize, isStandard: verseIsStandard,
       rows: [
-        { field: 'level', label: t('bqLevel', 'Level'), desc: t('bvLevelDesc', 'Kids builds short, well-known verses in a few pieces. Bible scholar builds long ones in more pieces.'), options: levelOptions() }
+        { field: 'level', label: t('bqLevel', 'Level'), desc: t('bvLevelDesc2', 'Kids builds short, well-known verses in a few pieces. Bible scholar builds long ones in more pieces. Expert: spell the book for Where is it? with letter tiles.'), options: levelOptions() }
       ],
       chips: { field: 'kinds', label: t('bvKinds', 'Kinds of round'), all: VERSE_KINDS, name: verseKindName, icon: function (k) { return k === 'where' ? 'map-pin' : 'puzzle-piece'; } },
       count: function (c) { return versePool(bible().verses, c).length; },
@@ -1194,6 +1265,7 @@ window.FF = window.FF || {};
       var shared = sharedRun(config);
       var want = Math.min(rounds, list.length);
       var deck = verseDeal(data.verses, c, rng(seed), want, shared ? null : seenFor(VERSE_SEEN, list, want), racing);
+      var spelling = isSpelled(c) && !racing;
       if (timed) FF.GameLength.manual();
       var base = config.timer != null ? Number(config.timer) : 20;
       var timerSecs = config.timer != null ? config.timer : 30;   // in a room, as before
@@ -1297,7 +1369,9 @@ window.FF = window.FF || {};
       function renderWhere(q, entity, stage, card, after, opening) {
         card.appendChild(FF.GameUI.prompt(t('bvWhereQ', 'Where is this verse?'), 'md'));
         card.appendChild(FF.ui.el('blockquote', { class: 'bq-quote' }, '“' + q.text + '”'));
-        var seconds = base > 0 ? base : 0;
+        var book = bookNameOfRef(q.ref, data.books);
+        if (spelling) card.appendChild(FF.GameUI.sub(t('bvSpellBook', 'Spell the book it is in.')));
+        var seconds = base > 0 ? base + (spelling ? SPELL_EXTRA_SECS : 0) : 0;
         var meter = null;
         if (seconds) {
           meter = FF.GameUI.meter(1);
@@ -1305,35 +1379,46 @@ window.FF = window.FF || {};
           meter.setAttribute('aria-label', t('timeLeft', 'Time left'));
           card.appendChild(meter);
         }
-        var group = FF.GameUI.options({ columns: 2 });
+        var group, btns = [], board = null;
         var done = false;
         var started = Date.now();
-        var btns = q.options.map(function (label, i) {
-          var b = FF.GameUI.option(label, function () { answer(i); }, i, { className: 'verse-play qm-opt' });
-          group.appendChild(b);
-          return b;
-        });
+        if (spelling) {
+          board = spellBoard(api, book, q.options.map(function (r) { return bookNameOfRef(r, data.books); }), seed, round, function (text) {
+            answer(-1, false, { text: text, res: bookCheck(text, book, data.books) });
+          });
+          group = board.el;
+        } else {
+          group = FF.GameUI.options({ columns: 2 });
+          btns = q.options.map(function (label, i) {
+            var b = FF.GameUI.option(label, function () { answer(i); }, i, { className: 'verse-play qm-opt' });
+            group.appendChild(b);
+            return b;
+          });
+        }
         stage.appendChild(group);
+        if (board) board.open();
         if (seconds) {
           api.shell.setOnTick(function (rem) { if (meter) meter.set(rem / seconds); });
           api.shell.setTimer(seconds, function () { answer(-1, true); });
         }
         if (FF.Nav && FF.Nav.focusFirst) FF.Nav.focusFirst(group);
-        function answer(i, timeout) {
+        function answer(i, timeout, spell) {
           if (done) return;
           done = true;
           api.shell.setOnTick(null);
           api.shell.hideTimer();
           var ms = Date.now() - started;
-          var right = !timeout && i === q.answer;
+          var right = !timeout && (spell ? spell.res.ok : i === q.answer);
+          if (board) board.finish(right);
           btns.forEach(function (b, k) {
             b.disabled = true;
             if (k === q.answer) FF.GameUI.markOption(b, 'correct');
             else if (k === i) FF.GameUI.markOption(b, 'wrong');
             else FF.GameUI.markOption(b, 'dim');
           });
-          score(entity, right, wherePoints(right, ms), after, '',
-            (timeout ? t('timesUp', 'Time’s up!') : t('notQuite', 'Not quite.')) + ' ' + t('bvItIs', 'It is {ref}.', { ref: q.ref }));
+          score(entity, right, board ? spellPoints(wherePoints(right, ms), right) : wherePoints(right, ms), after,
+            spellNote(spell, true, book).trim(),
+            (timeout ? t('timesUp', 'Time’s up!') : t('notQuite', 'Not quite.')) + ' ' + t('bvItIs', 'It is {ref}.', { ref: q.ref }) + spellNote(spell, false, book));
           afterAnswer(after, entity, q);
         }
       }
@@ -1568,7 +1653,7 @@ window.FF = window.FF || {};
     howToPlay: [
       'Pick a level and the kinds of round: build the verse, where is it, or both.',
       'Build: tap the pieces in order. A wrong try keeps the right start and sends the rest back.',
-      'Where is it: read the verse and pick its reference from four.',
+      'Where is it: read the verse and pick its reference from four, or on Expert spell the book with letter tiles (50 bonus points).',
       'Faster scores more; mistakes and hints cost a little. Read each verse in full after every round.'
     ],
     start: function (api) {
@@ -1591,7 +1676,7 @@ window.FF = window.FF || {};
       key: 'bibleBooks:setup', name: t('bbName', 'Books of the Bible'), title: t('bbSetupTitle', 'Set up Books of the Bible'),
       standard: BOOKS_STANDARD, sanitize: booksSanitize, isStandard: booksIsStandard,
       rows: [
-        { field: 'level', label: t('bqLevel', 'Level'), desc: t('bbLevelDesc', 'Kids plays the best-known books. Bible scholar plays all 66, with closer choices.'), options: levelOptions() }
+        { field: 'level', label: t('bqLevel', 'Level'), desc: t('bbLevelDesc2', 'Kids plays the best-known books. Bible scholar plays all 66, with closer choices. Expert: spell the book for What comes next? with letter tiles.'), options: levelOptions() }
       ],
       chips: { field: 'kinds', label: t('bvKinds', 'Kinds of round'), all: BOOK_KINDS, name: bookKindName, icon: bookKindIcon },
       count: function (c) { return booksPool(bible().books, c.level).length; },
@@ -1613,6 +1698,7 @@ window.FF = window.FF || {};
       var rounds = FF.GameLength.rounds(api, 12, 0);
       if (!timed && n > 1) rounds = Math.ceil(rounds / n) * n;
       var deck = booksDeal(data.books, data.divisions, c, rng(seed), Math.min(rounds, 200));
+      var spelling = isSpelled(c);
       if (timed) FF.GameLength.manual();
       var base = config.timer != null ? Number(config.timer) : 20;
       var totals = tallies(scorers);
@@ -1647,7 +1733,7 @@ window.FF = window.FF || {};
         head.appendChild(levelDots(book.level));
         card.appendChild(head);
         if (q.kind === 'next') {
-          card.appendChild(FF.GameUI.sub(t('bbAfter', 'Which book comes right after')));
+          card.appendChild(FF.GameUI.sub(spelling ? t('bbAfterSpell', 'Spell the book that comes right after') : t('bbAfter', 'Which book comes right after')));
           card.appendChild(FF.ui.el('h2', { class: 'bb-book' }, book.name));
         } else if (q.kind === 'order') {
           card.appendChild(FF.GameUI.prompt(t('bbOrderQ', 'Put these books in Bible order.'), 'md'));
@@ -1655,7 +1741,8 @@ window.FF = window.FF || {};
           card.appendChild(FF.ui.el('h2', { class: 'bb-book' }, book.name));
           card.appendChild(FF.GameUI.note(t('chaptersN', '{n} chapters', { n: book.chapters })));
         }
-        var seconds = base > 0 ? base + (q.kind === 'order' ? ORDER_EXTRA_SECS : 0) : 0;
+        var spellNow = spelling && q.kind === 'next';
+        var seconds = base > 0 ? base + (q.kind === 'order' ? ORDER_EXTRA_SECS : 0) + (spellNow ? SPELL_EXTRA_SECS : 0) : 0;
         var meter = null;
         if (seconds) {
           meter = FF.GameUI.meter(1);
@@ -1669,6 +1756,7 @@ window.FF = window.FF || {};
         var btns = [];
         var group;
         var board = null;
+        var spellB = null;
         if (q.kind === 'testament') {
           group = FF.GameUI.duo();
           var ot = FF.GameUI.duoButton(t('oldTestament', 'Old Testament'), function () { answer(0); }, 'up', 'scroll');
@@ -1676,6 +1764,11 @@ window.FF = window.FF || {};
           group.appendChild(ot);
           group.appendChild(nt);
           btns = [ot, nt];
+        } else if (spellNow) {
+          spellB = spellBoard(api, q.next.name, q.options, seed, round, function (text) {
+            answer(-1, null, false, { text: text, res: bookCheck(text, q.next.name, data.books) });
+          });
+          group = spellB.el;
         } else if (q.kind === 'order') {
           board = orderBoard(api, q, function (placed) { answer(-1, placed); }, 'bible-books-option');
           group = board.el;
@@ -1697,15 +1790,17 @@ window.FF = window.FF || {};
           api.shell.setOnTick(function (rem) { if (meter) meter.set(rem / seconds); });
           api.shell.setTimer(seconds, function () { answer(-1, null, true); });
         }
+        if (spellB) spellB.open();
         if (FF.Nav && FF.Nav.focusFirst) FF.Nav.focusFirst(group);
 
-        function answer(i, placed, timeout) {
+        function answer(i, placed, timeout, spell) {
           if (done) return;
           done = true;
           api.shell.setOnTick(null);
           api.shell.hideTimer();
-          var right = !timeout && (q.kind === 'order' ? isRightOrder(q, placed) : i === q.answer);
-          if (board) board.reveal(placed || []);
+          var right = !timeout && (spell ? spell.res.ok : q.kind === 'order' ? isRightOrder(q, placed) : i === q.answer);
+          if (spellB) spellB.finish(right);
+          else if (board) board.reveal(placed || []);
           else {
             btns.forEach(function (b, k) {
               b.disabled = true;
@@ -1720,17 +1815,17 @@ window.FF = window.FF || {};
           if (right) k.c++;
           if (right) {
             streaks[entity.id]++;
-            var pts = bookPoints(q.kind, streaks[entity.id]);
+            var pts = spellB ? spellPoints(bookPoints(q.kind, streaks[entity.id]), true) : bookPoints(q.kind, streaks[entity.id]);
             api.scoring.add(entity.id, pts, { correct: true });
             api.audio.play(streaks[entity.id] >= 3 ? 'streak' : 'correct');
-            after.appendChild(FF.GameUI.feedback('good', FF.GameUI.correctText(pts)));
+            after.appendChild(FF.GameUI.feedback('good', FF.GameUI.correctText(pts) + spellNote(spell, true, q.kind === 'next' ? q.next.name : '')));
           } else {
             streaks[entity.id] = 0;
             api.scoring.add(entity.id, 0, { wrong: true });
             if (api.scoring.resetStreak) api.scoring.resetStreak(entity.id);
             api.audio.play('wrong');
             var lead = timeout ? t('timesUp', 'Time’s up!') : t('notQuite', 'Not quite.');
-            after.appendChild(FF.GameUI.feedback('bad', lead + ' ' + rightText(q)));
+            after.appendChild(FF.GameUI.feedback('bad', lead + ' ' + rightText(q) + spellNote(spell, false, q.kind === 'next' ? q.next.name : '')));
           }
           after.appendChild(bookCard(q.kind === 'next' ? q.next : book, q));
           var last = round + 1 >= rounds || (timed && FF.GameLength.timeUp() && (round + 1) % n === 0);
@@ -1800,7 +1895,7 @@ window.FF = window.FF || {};
     defaultMode: 'turn',
     howToPlay: [
       'Pick a level and the kinds of round you want.',
-      'Say which testament a book is in, which part of the Bible it belongs to, or which book comes next.',
+      'Say which testament a book is in, which part of the Bible it belongs to, or which book comes next (on Expert, spell it with letter tiles for 50 bonus points).',
       'Put three or four books in Bible order by tapping them into the slots.',
       'Answer streaks add points. After each answer, see the book’s place, its chapters and a key verse.'
     ],
@@ -1819,6 +1914,8 @@ window.FF = window.FF || {};
 
   FF.BibleGames = {
     LEVELS: LEVELS, rng: rng, levelOk: levelOk,
+    SPELL_BONUS: SPELL_BONUS, SPELL_EXTRA_SECS: SPELL_EXTRA_SECS, isSpelled: isSpelled,
+    whoCheck: whoCheck, bookCheck: bookCheck, bookNameOfRef: bookNameOfRef, spellPoints: spellPoints,
     who: {
       STANDARD: WHO_STANDARD, sanitize: whoSanitize, isStandard: whoIsStandard,
       pool: whoPool, deal: whoDeal, points: whoPoints

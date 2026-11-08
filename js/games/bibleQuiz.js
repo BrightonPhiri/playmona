@@ -23,7 +23,12 @@ window.FF = window.FF || {};
 
   /* ================= rules (pure, tested) ================= */
 
-  var LEVELS = ['kids', 'family', 'scholar'];
+  var LEVELS = ['kids', 'family', 'scholar', 'expert'];
+  // Expert plays the Family questions; "who said it" and "finish the verse"
+  // questions with a short answer are spelled with letter tiles (js/spellTiles.js).
+  var SPELL_BONUS = 50;
+  var SPELL_EXTRA_SECS = 6;
+  var SPELL_MAX_LETTERS = 14;
   var TYPES = ['choice', 'finish', 'said', 'tf', 'order'];
   var DOUBLE_EVERY = 5;       // every 5th question is worth double (local play)
   var STREAK_EVERY = 3;       // 3 right in a row earns a bonus (local play)
@@ -60,6 +65,7 @@ window.FF = window.FF || {};
 
   /* Kids plays kids questions; Family adds the family ones; Scholar drops the kids ones. */
   function levelOk(level, item) {
+    if (level === 'expert') level = 'family';
     if (level === 'kids') return item.level === 'kids';
     if (level === 'scholar') return item.level !== 'kids';
     return item.level !== 'scholar';
@@ -156,6 +162,40 @@ window.FF = window.FF || {};
     return true;
   }
 
+  /* ---------- Expert: spelled answers ---------- */
+
+  function rightAnswer(q) { return q.options[q.answer]; }
+
+  /* Can this question be spelled? "Who said it" and "finish the verse",
+     when the answer is a name or a few words of letters (no commas or
+     brackets: "Jesus, aged 12" stays a choice), 2 to 14 letters long. */
+  function spellable(q) {
+    if (!q || (q.type !== 'said' && q.type !== 'finish') || q.answer == null || q.answer < 0) return false;
+    var a = String(rightAnswer(q) || '');
+    if (!/^[A-Za-z’' \-]+$/.test(a) || a.trim().split(/\s+/).length > 3) return false;
+    var n = FF.SpellTiles ? FF.SpellTiles.lettersOf(a).length : a.replace(/[^A-Za-z]/g, '').length;
+    return n >= 2 && n <= SPELL_MAX_LETTERS;
+  }
+
+  function namesOf(q, text) {
+    return q.type === 'said' && FF.BibleNames ? FF.BibleNames.person(text) : [text];
+  }
+
+  /* Is a spelled answer right? Small slips pass (FF.AnswerMatch), other names
+     of the same person count (Pilate, Simon Peter); the other choices, or a
+     guess as close to one of them, never do. */
+  function checkSpelled(guess, q) {
+    var accepted = namesOf(q, rightAnswer(q));
+    var mine = {};
+    accepted.forEach(function (n) { mine[FF.AnswerMatch.normalise(n)] = true; });
+    var others = [];
+    q.options.forEach(function (o, i) {
+      if (i === q.answer) return;
+      namesOf(q, o).forEach(function (n) { if (!mine[FF.AnswerMatch.normalise(n)]) others.push(n); });
+    });
+    return FF.AnswerMatch.check(guess, accepted, others);
+  }
+
   /* 100 for a right answer plus up to 60 for speed; the crew brain uses the same sum. */
   function points(correct, ms, double) {
     if (!correct) return 0;
@@ -174,7 +214,7 @@ window.FF = window.FF || {};
   }
   function topicName(id) { return t('bqTopic_' + id, topicOf(id).name); }
   function levelName(l) {
-    return l === 'kids' ? t('bqKids', 'Kids') : l === 'scholar' ? t('bqScholar', 'Bible scholar') : t('bqFamily', 'Family');
+    return l === 'kids' ? t('bqKids', 'Kids') : l === 'scholar' ? t('bqScholar', 'Bible scholar') : l === 'expert' ? t('expert', 'Expert') : t('bqFamily', 'Family');
   }
   function typeName(k) {
     return {
@@ -294,7 +334,7 @@ window.FF = window.FF || {};
       label: t('bqLevel', 'Level'), value: level,
       options: LEVELS.map(function (l) { return { label: levelName(l), value: l }; }),
       onChange: function (v) { level = v; sync(); }
-    }), t('bqLevelDesc', 'Kids keeps to the best-known stories. Bible scholar digs deeper.')));
+    }), t('bqLevelDesc2', 'Kids keeps to the best-known stories. Bible scholar digs deeper. Expert: spell the answers to Who said it? and Finish the verse with letter tiles.')));
     stage.appendChild(levelBox);
 
     // Kinds of question
@@ -494,7 +534,8 @@ window.FF = window.FF || {};
       var double = isDouble(round, racing);
       var opening = race ? race.beginRound(round) : null;
       var base = config.timer != null ? Number(config.timer) : 20;
-      var seconds = racing ? 0 : (base > 0 ? base + (q.type === 'order' ? ORDER_EXTRA_SECS : 0) : 0);
+      var spell = !racing && cfg && cfg.level === 'expert' && spellable(q);
+      var seconds = racing ? 0 : (base > 0 ? base + (q.type === 'order' ? ORDER_EXTRA_SECS : 0) + (spell ? SPELL_EXTRA_SECS : 0) : 0);
       var started = Date.now();
       var done = false;
 
@@ -543,7 +584,14 @@ window.FF = window.FF || {};
       var btns = [];
       var group;
       var order = null;
-      if (q.type === 'order') {
+      var board = null;
+      if (spell) {
+        board = FF.SpellTiles.board(FF.SpellTiles.deal(rightAnswer(q), rng((seed + (round + 1) * 7919) >>> 0), {
+          difficulty: config.difficulty,
+          related: q.options.filter(function (o, i) { return i !== q.answer; })
+        }), { audio: api.audio, onSubmit: function (text) { answer(-1, null, false, { text: text, res: checkSpelled(text, q) }); } });
+        group = board.el;
+      } else if (q.type === 'order') {
         order = orderBoard(q, function (placed) { answer(-1, placed); });
         group = order.el;
         btns = order.buttons;
@@ -566,7 +614,7 @@ window.FF = window.FF || {};
 
       var tools = FF.ui.div('qm-tools');
       var fiftyBtn = null;
-      if (!racing && q.type !== 'tf' && q.type !== 'order') {
+      if (!racing && !spell && q.type !== 'tf' && q.type !== 'order') {
         fiftyBtn = FF.ui.el('button', { type: 'button', class: 'qm-life' });
         fiftyBtn.appendChild(FF.ui.span('qm-life__mark', '50:50'));
         fiftyBtn.appendChild(FF.ui.span('qm-life__text', fifty[entity.id] ? t('qmFiftyLeft', 'Remove two wrong answers (once a game)') : t('qmFiftyUsed', '50:50 used')));
@@ -582,6 +630,7 @@ window.FF = window.FF || {};
       function openQuestion() {
         if (done) return;
         started = Date.now();
+        if (board) board.open();
         if (seconds) {
           api.shell.setOnTick(function (rem) { if (meter) meter.set(rem / seconds); });
           api.shell.setTimer(seconds, function () { answer(-1, null, true); });
@@ -614,13 +663,15 @@ window.FF = window.FF || {};
         api.audio.play('flip');
       }
 
-      function answer(idx, placed, timeout) {
+      function answer(idx, placed, timeout, spelt) {
         if (done) return;
         done = true;
         var ms = Date.now() - started;
         var secs = ms / 1000;
-        var correct = q.type === 'order' ? isRightOrder(q, placed) : idx === q.answer;
+        var correct = spelt ? spelt.res.ok : q.type === 'order' ? isRightOrder(q, placed) : idx === q.answer;
         if (timeout) correct = false;
+        if (board) board.finish(correct);
+        var spellLine = spelt ? FF.SpellTiles.feedbackText(spelt.text, spelt.res, rightAnswer(q)) : '';
         api.shell.setOnTick(null);
         api.shell.hideTimer();
         tools.hidden = true;
@@ -646,14 +697,14 @@ window.FF = window.FF || {};
         tally(entity.id, q, correct, timeout ? null : secs);
 
         if (correct) {
-          var pts = points(true, ms, double);
+          var pts = points(true, ms, double) + (board ? SPELL_BONUS : 0);
           api.scoring.add(entity.id, pts, { correct: true, fastest: secs });
           var r = api.scoring.record ? api.scoring.record(entity.id) : null;
           var streak = !!(r && r.streak > 0 && r.streak % STREAK_EVERY === 0);
           if (streak) api.scoring.add(entity.id, STREAK_BONUS);
           api.audio.play(streak || double ? 'streak' : 'correct');
           after.appendChild(FF.GameUI.feedback('good', FF.GameUI.correctText(pts + (streak ? STREAK_BONUS : 0)) +
-            (double ? ' ' + t('qmDoubled', 'Doubled!') : '') + (streak ? ' ' + t('streakBonus', 'Streak bonus!') : '')));
+            (double ? ' ' + t('qmDoubled', 'Doubled!') : '') + (streak ? ' ' + t('streakBonus', 'Streak bonus!') : '') + (spellLine ? ' ' + spellLine : '')));
         } else {
           api.scoring.add(entity.id, 0, { wrong: true });
           if (api.scoring.resetStreak) api.scoring.resetStreak(entity.id);
@@ -661,7 +712,7 @@ window.FF = window.FF || {};
           var lead = timeout ? t('timesUp', 'Time’s up!') : t('notQuite', 'Not quite.');
           after.appendChild(FF.GameUI.feedback('bad', q.type === 'order'
             ? lead + ' ' + t('bqRightOrder', 'Here is the right order.')
-            : lead + ' ' + t('qmAnswerWas', 'The answer is {a}.', { a: answerText(q) })));
+            : lead + ' ' + t('qmAnswerWas', 'The answer is {a}.', { a: answerText(q) }) + (spellLine ? ' ' + spellLine : '')));
         }
         // A "who said it" quote is already on screen: the card adds where it is.
         after.appendChild(scriptureCard(q.type === 'said' ? { ref: q.ref, note: q.note } : q));
@@ -841,7 +892,8 @@ window.FF = window.FF || {};
     LEVELS: LEVELS, TYPES: TYPES, STANDARD: STANDARD, DOUBLE_EVERY: DOUBLE_EVERY,
     STREAK_EVERY: STREAK_EVERY, STREAK_BONUS: STREAK_BONUS, MIN_POOL: MIN_POOL,
     sanitize: sanitize, isStandard: isStandard, pool: pool, rng: rng, prepare: prepare,
-    deal: deal, isRightOrder: isRightOrder, points: points, isDouble: isDouble, summary: summary
+    deal: deal, isRightOrder: isRightOrder, points: points, isDouble: isDouble, summary: summary,
+    SPELL_BONUS: SPELL_BONUS, SPELL_EXTRA_SECS: SPELL_EXTRA_SECS, spellable: spellable, checkSpelled: checkSpelled
   };
 
   FF.registerGame({
@@ -858,7 +910,7 @@ window.FF = window.FF || {};
     modes: ['solo', 'turn', 'team', 'everyone', 'host'],
     defaultMode: 'turn',
     howToPlay: [
-      'Pick a level (Kids, Family or Bible scholar), the topics and the kinds of question.',
+      'Pick a level (Kids, Family, Bible scholar or Expert), the topics and the kinds of question. On Expert, spell the answers to Who said it? and Finish the verse with letter tiles (50 bonus points).',
       'Answer multiple choice, finish the verse, who said it, true or false, and put the story in order.',
       'Faster answers score more. Every fifth question is worth double, and 3 right in a row earns a bonus.',
       'Stuck? Use your 50:50 once a game. After each answer, read the verse it comes from.'
