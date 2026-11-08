@@ -3613,8 +3613,8 @@ button.imp-card:focus-visible { outline: 3px solid var(--focus-ring); outline-of
 .wm-btn:not(:disabled):active { transform: translateY(3px); box-shadow: 0 1px 0 var(--wm-plum); }
 .wm-btn:disabled { opacity: 0.45; cursor: default; }
 .wm-btn:focus-visible { outline: 3px solid var(--wm-gold); outline-offset: 3px; }
-.wm-btn--go { color: var(--wm-gold-ink); background: linear-gradient(180deg, var(--wm-glow), var(--wm-gold)); box-shadow: 0 4px 0 var(--wm-gold-deep), 0 0 18px color-mix(in srgb, var(--wm-gold) 50%, transparent); }
-.wm-btn--go:not(:disabled):active { box-shadow: 0 1px 0 var(--wm-gold-deep); }
+.wm .wm-btn.wm-btn--go { color: var(--wm-gold-ink); border: 0; background: linear-gradient(180deg, var(--wm-glow), var(--wm-gold)); box-shadow: 0 4px 0 var(--wm-gold-deep), 0 0 18px color-mix(in srgb, var(--wm-gold) 50%, transparent); }
+.wm .wm-btn.wm-btn--go:not(:disabled):active { box-shadow: 0 1px 0 var(--wm-gold-deep); }
 .wm-btn--soft { align-self: center; }
 .wm-btn--big { min-height: 56px; font-size: 1.15rem; padding: 12px 28px; }
 
@@ -3667,6 +3667,34 @@ button.imp-card:focus-visible { outline: 3px solid var(--focus-ring); outline-of
 .wm-row__name { flex: 1; display: flex; flex-direction: column; font-weight: 700; min-width: 0; }
 .wm-row__meta { font-size: 0.78rem; color: var(--wm-ink-soft); font-weight: 600; }
 .wm-row__pts { font-family: var(--font-display); font-weight: 800; color: var(--wm-gold); }
+
+/* Phones: one screen with nothing to scroll. A one-line top bar, a slim score row and
+   choices in two rows leave the board as much height as possible. */
+@media (max-width: 899px) {
+  .wm { padding-top: var(--sp-2); }
+  .wm-top { flex-wrap: nowrap; margin-bottom: var(--sp-2); }
+  .wm-brand { font-size: 1.05rem; white-space: nowrap; }
+  .wm-chip { min-height: 26px; padding: 2px 9px; font-size: 0.75rem; white-space: nowrap; }
+  .wm--play .wm-chip--level { display: none; }
+  .wm-iconbtn { width: 34px; height: 34px; flex: none; }
+  .wm-main { gap: var(--sp-2); }
+  .wm--play .wm-panel { padding: 10px; gap: 8px; border-radius: 18px; }
+  .wm--play .wm-card { padding: 4px 10px; }
+  .wm--play .wm-score__pts { font-size: 1.15rem; }
+  .wm--play .wm-question { font-size: 1.05rem; }
+  .wm--play .wm-board { padding: 2px 4px 10px; }
+  .wm-choices[data-n="8"] { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .wm-choice { padding: 4px 2px 6px; gap: 0; }
+  .wm-choice__pic { width: 34px; height: 34px; }
+  .wm-choice__name { font-size: 0.68rem; }
+  .wm-reveal { padding: 6px 10px; }
+  .wm-reveal__pts { font-size: 1.25rem; }
+  /* While answering, the score waits (it shows again with the result), as in GeoSpin. */
+  .wm.is-open:not(.is-revealed) .wm-card { display: none; }
+  .wm-spell .wm-tip { display: none; }
+  /* With the result, the board shows the truth: the answer controls and the clock step aside. */
+  .wm.is-revealed .wm-body, .wm.is-revealed .wm-clock { display: none; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .wm-tile, .wm-board.is-popping .wm-tile, .wm-tile.is-back .wm-tile__face, .wm-tile.is-new, .wm-tile.is-swap, .wm-tile.is-gap::after { animation: none; transition: opacity 0.2s; }

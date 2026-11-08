@@ -46,6 +46,7 @@ second checker.
 | Books of the Bible | `js/games/bibleGames.js` | "What comes next?" is spelled (number tiles for 1 Kings; First/I/1st Kings count). +6 s, +50. |
 | Verse Rush | `js/games/bibleGames.js` | "Where is it?" spells the book (Psalm verses are in Psalms). Building the verse is unchanged. +6 s, +50. |
 | Bible Quiz | `js/games/bibleQuiz.js` | "Who said it?" and "Finish the verse" with short answers (2–14 letters, no commas) are spelled; the other choices are never accepted. No 50:50 on those. +6 s, +50. |
+| What's Missing? | `js/games/whatsMissing.js` | Expert spells each gone picture (Gone and Several gone); Added and Swapped are still tapped. Other names from `js/data/memoryAliases.js` (Doughnut, Chips, Teddy…). +6 s, +50 per right gap. Rooms play Normal to Expert, never Endless. |
 
 ### Already upgraded, Expert still missing
 
@@ -72,7 +73,6 @@ real words spelled right: no forgiveness).
 | Guess Who / What | `js/games/quizGames.js` | The person or thing from the clues | Per answer |
 | Picture Quiz | `js/games/quizGames.js` | Only questions whose answer is a name | Per answer |
 | Visual Riddle | `js/games/puzzleGames.js` | The riddle's answer word | Per answer, singular and plural |
-| What's Missing | `js/games/memoryGames.js` | Name the item that vanished (Expert only; pick it on the other levels) | Per emoji: Car / Automobile |
 | Number Challenge | `js/games/numberGames.js` | The number, on a number pad | None: numbers must be exact (no spelling forgiveness) |
 
 ### Needs a decision

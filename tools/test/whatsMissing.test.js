@@ -339,3 +339,26 @@ test('wm registered: its own file, listed everywhere, the old emoji game gone', 
     assert(s.indexOf('js/whatsmissing/rules.js') < s.indexOf('js/games/whatsMissing.js'), f + ': rules before the game');
   });
 });
+
+test('wm endless: boards grow from 3 to 24, twists unlock with size, never three alike', function () {
+  const R = app().WhatsMissingRules;
+  ['mix', 'animals'].forEach((theme) => {
+    for (let s = 0; s < 15; s++) {
+      const S = R.sanitize({ level: 'endless', theme });
+      const prev = [];
+      for (let k = 0, n = 3; n <= 24; k++, n++) {
+        const r = R.deal(S, 'run' + s, k, { n, prev: prev.slice() });
+        assertEqual(r.n, Math.min(n, theme === 'mix' ? 24 : 23), 'board size ' + n);
+        checkBoard(R, r, theme + ' endless n' + n);
+        assert(R.twistsAllowed('endless', r.n).indexOf(r.twist) !== -1, r.twist + ' allowed at ' + r.n);
+        if (k === 0) assertEqual(r.twist, 'gone');
+        if (prev.length >= 2) assert(!(prev[prev.length - 1] === r.twist && prev[prev.length - 2] === r.twist), 'no triple');
+        assertEqual(r.spell, false, 'Endless never spells');
+        prev.push(r.twist);
+      }
+    }
+  });
+  assertEqual(R.twistsAllowed('endless', 5).join(), 'gone,added');
+  assertEqual(R.twistsAllowed('endless', 7).join(), 'gone,added,swapped');
+  assertEqual(R.twistsAllowed('endless', 8).join(), 'gone,added,swapped,several');
+});

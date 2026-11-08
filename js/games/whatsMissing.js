@@ -212,7 +212,7 @@ window.FF = window.FF || {};
     var scroller = f.root.closest ? f.root.closest('.game-shell__content') : null;
     var top = f.host.getBoundingClientRect().top + (scroller ? scroller.scrollTop : 0);
     var cs = window.getComputedStyle(f.root);
-    var below = (parseFloat(cs.paddingBottom) || 0) + (wide ? 0 : f.panel.offsetHeight + GAP * 2);
+    var below = (parseFloat(cs.paddingBottom) || 0) + (wide ? 0 : f.panel.offsetHeight + GAP * 3) + 6;   // + rounding and the board's own padding
     var availH = window.innerHeight - top - below;
     var availW = f.host.clientWidth;
     var size = Math.floor(Math.min((availW - GAP * (cols - 1)) / cols, (availH - GAP * (rows - 1)) / rows, MAX_TILE));
@@ -424,6 +424,7 @@ window.FF = window.FF || {};
       });
       spellHost.appendChild(spellBoard.el);
       spellBoard.open();
+      if (o.onLayout) o.onLayout();
     }
     if (spell) {
       spellHost = FF.ui.div('wm-spell');
@@ -717,7 +718,7 @@ window.FF = window.FF || {};
         f.root.classList.remove('is-study');
         f.root.classList.add('is-open');
         q.textContent = question(rd);
-        panel = answerPanel(api, rd, board, { seed: seed, onTap: function (fn) { tapHandler = fn; }, onSubmit: function (a) { answer(a, false); } });
+        panel = answerPanel(api, rd, board, { seed: seed, onLayout: f.fit, onTap: function (fn) { tapHandler = fn; }, onSubmit: function (a) { answer(a, false); } });
         body.appendChild(panel.el);
         f.fit();
         started = Date.now();

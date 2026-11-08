@@ -82,6 +82,21 @@ if (base['nr-arena']) {
   ['nr-good', 'nr-bad', 'nr-c0', 'nr-c1', 'nr-c2', 'nr-c3', 'nr-c4', 'nr-c5'].forEach(function (c) { check(c + ' edge on arena', base[c], base['nr-arena'], 3); });
 }
 
+// What's Missing?: the cover's magenta-to-tangerine sky, the same in both themes.
+if (base['wm-sky-1']) {
+  console.log(' '); console.log("== What's Missing? ==");
+  ['wm-sky-1', 'wm-sky-2', 'wm-sky-3', 'wm-plum', 'wm-plum-2'].forEach(function (bg) { check('wm ink on ' + bg, base['wm-ink'], base[bg], 4.5); });
+  ['wm-plum', 'wm-plum-2'].forEach(function (bg) {
+    check('wm soft ink on ' + bg, base['wm-ink-soft'], base[bg], 4.5);
+    check('wm gold on ' + bg, base['wm-gold'], base[bg], 4.5);
+  });
+  check('wm tile ink on cream', base['wm-tile-ink'], base['wm-cream'], 4.5);
+  check('wm tile ink on cream-deep', base['wm-tile-ink'], base['wm-cream-deep'], 4.5);
+  check('wm button ink on gold', base['wm-gold-ink'], base['wm-gold'], 4.5);
+  check('wm button ink on glow', base['wm-gold-ink'], base['wm-glow'], 4.5);
+  check('wm gold-ink on gold (step numbers)', base['wm-gold-ink'], base['wm-gold'], 4.5);
+}
+
 // GeoSpin night sky: always dark, the same in both themes.
 if (base['gs-night']) {
   console.log(' '); console.log('== GeoSpin ==');
