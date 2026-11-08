@@ -77,3 +77,12 @@ test('crossword bank lint: format, levels, answer in clue, easy length', functio
   assert(has('CAMEL|enh|Desert animal', /5 fields/), 'field count');
   assertEqual(V.lintBank('# note\nZZZ\n', 'blocked'), []);
 });
+
+test('crossword generator: a fill never uses the same answer twice', function () {
+  const G = require('../gen-crossword');
+  // A grid the generator once made: placing 9A SPY also completed 7D as SPY. With only these
+  // words the grid has no fill without that repeat, so the answer is no fill at all.
+  const idx = G.makeIndex(['BUS', 'BUY', 'USES', 'SEATS', 'USED', 'DROP', 'YEARS', 'SPY', 'STOP']);
+  const rows = G.fill(['...##', '....#', '.....', '#....', '##...'], idx, G.rngFrom('t'), () => 0, 4000, null);
+  assertEqual(rows, null);
+});

@@ -36,10 +36,12 @@ const THEMES = R.PACKS.filter((p) => p !== 'mixed');
 /* How many puzzles of each kind per pack and level. Sizes follow R.SIZES. */
 const RECIPE = {
   easy: [{ size: 5, kind: 'open', n: 4 }, { size: 5, kind: 'dense', n: 4 }],
-  normal: [{ size: 5, kind: 'dense', n: 4 }, { size: 7, kind: 'open', n: 4 }],
-  hard: [{ size: 7, kind: 'dense', n: 3 }, { size: 9, kind: 'open', n: 5 }]
+  normal: [{ size: 5, kind: 'dense', n: 4 }, { size: 7, kind: 'open', n: 5 }],
+  hard: [{ size: 7, kind: 'dense', n: 3 }, { size: 9, kind: 'open', n: 6 }]
 };
-const THEME_SHARE = { open: 0.4, dense: 0.25 };
+const THEME_MIN = { 5: 2, 7: 3, 9: 4 };   // at least this many answers from the pack's own bank, by grid size
+// Dense 5x5 and open 7x7 grids leave little room for pack words, so they need fewer.
+function themeNeed(rc) { return rc.kind === 'dense' && rc.size === 5 ? 1 : rc.kind === 'open' && rc.size === 7 ? 2 : THEME_MIN[rc.size]; }
 const REUSE_CAP = 4;                // an answer at most this often per pack and level
 
 /* ---------- words ---------- */
@@ -72,7 +74,7 @@ const everyday = FF.Words.matching((w) => /^[a-z]{3,9}$/.test(w) && w in rank, {
   .map((w) => w.toUpperCase()).filter((w) => !blocked.has(w));
 
 function fillPool(level) {
-  if (level === 'easy') return everyday.filter((w) => w.length <= 5 && rank[w.toLowerCase()] < 3000);
+  if (level === 'easy') return everyday.filter((w) => w.length <= 5 && rank[w.toLowerCase()] < 4500);
   if (level === 'normal') return everyday.filter((w) => w.length <= 7 && rank[w.toLowerCase()] < 6500);
   return everyday.slice();
 }
@@ -130,7 +132,8 @@ function candidates(idx, pattern) {
 }
 
 /* Fills the template; returns rows of letters or null. pref(word) -> number, higher first. */
-function fill(template, idx, rng, pref, limit) {
+function fill(template, idx, rng, pref, limit, seed) {
+  // seed = { words: Set, need: n }: until n seed words are in, seed words get a bigger push.
   const n = template.length;
   const g = template.map((r) => r.split(''));
   const slots = T.slotsOf(template).map((s, i) => Object.assign({ i }, s));
@@ -147,13 +150,18 @@ function fill(template, idx, rng, pref, limit) {
       if (!c.length) return false;
       if (!best || c.length < bestC.length) { best = s; bestC = c; }
     }
+    let boost = 0;
+    if (best && seed) {
+      let have = 0; used.forEach((w) => { if (seed.words.has(w)) have++; });
+      if (have < seed.need) boost = 4;
+    }
     if (!best) return true;
     // Look ahead: a word that leaves every crossing word many options goes first.
     const crossing = best.cells.map(([r, c], k) => {
       const other = slots.filter((s) => s !== best && !done(s) && s.cells.some(([rr, cc]) => rr === r && cc === c))[0];
       return other ? { s: other, at: other.cells.findIndex(([rr, cc]) => rr === r && cc === c), k } : null;
     }).filter(Boolean);
-    const shortlist = bestC.map((w) => [w, pref(w) + rng()]).sort((a, b) => b[1] - a[1]).slice(0, 80);
+    const shortlist = bestC.map((w) => [w, pref(w) + (boost && seed.words.has(w) ? boost : 0) + rng()]).sort((a, b) => b[1] - a[1]).slice(0, 80);
     const order = shortlist.map(([w, p]) => {
       let room = 0;
       for (const x of crossing) {
@@ -162,17 +170,19 @@ function fill(template, idx, rng, pref, limit) {
         if (!k) return [w, -Infinity];
         room += Math.log(k + 1);
       }
-      return [w, room + p * 2];
+      return [w, room + p * 4];
     }).filter((x) => x[1] > -Infinity).sort((a, b) => b[1] - a[1]).slice(0, 30).map((x) => x[0]);
     for (const w of order) {
       const before = best.cells.map(([r, c]) => g[r][c]);
+      const wasDone = slots.filter((s) => s !== best && done(s));
       best.cells.forEach(([r, c], k) => { g[r][c] = w[k]; });
       used.add(w);
-      // Every completed crossing must be a real word too.
-      const ok = slots.every((s) => !done(s) || s === best || used.has(pat(s)) || candidates(idx, pat(s)).length);
+      // Every crossing this word completes must be a real word, and a new one: no answer twice.
+      const newly = slots.filter((s) => s !== best && done(s) && wasDone.indexOf(s) < 0);
+      const words = newly.map(pat);
+      const ok = words.every((x, k) => !used.has(x) && words.indexOf(x) === k && candidates(idx, x).length);
       if (ok) {
-        const newly = slots.filter((s) => s !== best && done(s) && !used.has(pat(s)));
-        newly.forEach((s) => used.add(pat(s)));
+        words.forEach((x) => used.add(x));
         if (step()) return true;
         newly.forEach((s) => used.delete(pat(s)));
       }
@@ -203,18 +213,22 @@ function generate() {
   const needs = {};          // WORD -> Set(levels)
   const usage = {};          // pack|level|WORD -> count
   const shortfall = [];
-  R.LEVELS.forEach((level) => {
+  const why = {};
+  R.LEVELS.filter((l) => !process.env.CW_LEVEL || l === process.env.CW_LEVEL).forEach((level) => {
     const fillWords = fillPool(level);
-    const packs = THEMES.concat(['mixed']);
+    const packs = THEMES.concat(['mixed']).filter((p) => !process.env.CW_ONLY || process.env.CW_ONLY.split(',').indexOf(p) >= 0);
     packs.forEach((pack) => {
       const tw = pack === 'mixed' ? [] : themeWords(pack, level);
       const tset = new Set(tw);
-      const idx = makeIndex(Array.from(new Set(tw.concat(fillWords))));
+      const all = Array.from(new Set(tw.concat(fillWords)));
+      const idx = makeIndex(all);
+      // Words that already have a clue at this level: tried first, so a puzzle rarely needs a new clue.
+      const idxClued = makeIndex(all.filter((w) => clues[w] && clues[w][level]));
       const recipe = RECIPE[level];   // 'mixed' puzzles are general knowledge, from everyday words only
       let num = 0;
       recipe.forEach((rc) => {
         let made = 0;
-        for (let attempt = 0; made < rc.n && attempt < rc.n * 12; attempt++) {
+        for (let attempt = 0; made < rc.n && attempt < rc.n * 30; attempt++) {
           const id = PACK_CODE[pack] + '-' + LEVEL_KEY[level] + '-' + String(num + 1).padStart(3, '0');
           const rng = rngFrom(id + '|' + rc.size + rc.kind + '|' + attempt);
           const tpl = T.make(rc.size, rc.kind, rng);
@@ -227,11 +241,14 @@ function generate() {
             if (!tset.has(w) && /(S|ED)$/.test(w)) s -= 0.6;
             return s;
           };
-          const rows = fill(tpl, idx, rng, pref, 4000);
-          if (!rows) continue;
+          const seed = pack === 'mixed' ? null : { words: tset, need: themeNeed(rc) };
+          const rows = fill(tpl, idxClued, rng, pref, 4000, seed) || fill(tpl, idx, rng, pref, 4000, seed);
+          if (!rows) { why.nofill = (why.nofill || 0) + 1; continue; }
           const words = R.build({ size: rows.length, rows, clues: {} }).words.map((w) => R.answer({ rows }, w.id));
-          if (words.some((w) => (usage[pack + '|' + level + '|' + w] || 0) >= REUSE_CAP)) continue;
-          if (pack !== 'mixed' && words.filter((w) => tset.has(w)).length / words.length < THEME_SHARE[rc.kind]) continue;
+          if (words.some((w) => (usage[pack + '|' + level + '|' + w] || 0) >= REUSE_CAP)) { why.reuse = (why.reuse || 0) + 1; continue; }
+          const themed = words.filter((w) => tset.has(w)).length;
+          if (process.env.CW_DEBUG) (why.shares = why.shares || []).push(themed + "/" + words.length);
+          if (pack !== 'mixed' && themed < (themeNeed(rc))) { why.theme = (why.theme || 0) + 1; continue; }
           words.forEach((w) => { usage[pack + '|' + level + '|' + w] = (usage[pack + '|' + level + '|' + w] || 0) + 1; });
           num++; made++;
           const c = cluesFor(rows, level);
@@ -243,6 +260,7 @@ function generate() {
       });
     });
   });
+  if (process.env.CW_DEBUG) console.log('rejected:', JSON.stringify(why));
   return { puzzles, needs, shortfall };
 }
 
@@ -281,7 +299,9 @@ if (require.main === module) {
   console.log(puzzles.length + ' puzzles in ' + ((Date.now() - t0) / 1000).toFixed(1) + 's; ' + Object.keys(needs).length + ' words still need a clue');
   R.LEVELS.forEach((lv) => console.log('  ' + lv + ': ' + puzzles.filter((p) => p.level === lv).length));
   if (shortfall.length) console.log('Could not make:\n  ' + shortfall.join('\n  '));
-  V.coverage(puzzles, R).forEach((m) => console.log('coverage: ' + m));
+  const gaps = V.coverage(puzzles, R);
+  gaps.forEach((m) => console.log('coverage: ' + m));
+  if (gaps.length && !process.env.CW_ONLY && !process.env.CW_LEVEL) { console.log('Not written: coverage gaps.'); process.exit(1); }
   if (problems.length) { console.log('Not written, problems:\n  ' + problems.slice(0, 30).join('\n  ')); process.exit(1); }
   write(puzzles);
   console.log('Wrote ' + path.relative(ROOT, OUT));
