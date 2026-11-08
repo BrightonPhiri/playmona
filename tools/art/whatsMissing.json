@@ -1,0 +1,21 @@
+{
+  "game": "whatsMissing",
+  "prompts": "docs/art/whatsMissing-prompts.md",
+  "source": "assets/playmona_assets/whats-missing",
+  "ids": [],
+  "sets": [],
+  "focus": {},
+  "cover": {
+    "from": "cover.png",
+    "to": "assets/images/covers/whatsMissing.webp",
+    "size": [
+      1086,
+      1448
+    ],
+    "max_kb": 240,
+    "focus": [
+      0.5,
+      0.5
+    ]
+  }
+}
