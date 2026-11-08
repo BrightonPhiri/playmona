@@ -1,5 +1,5 @@
 'use strict';
-/* Higher or Lower, Word Scramble, Who Am I? (Bible), Verse Rush and Bible Quiz in a room:
+/* Higher or Lower, Word Scramble, Who Am I? (Bible), Verse Rush, Bible Quiz and Guess the Country in a room:
    each game runs headless on two devices sharing a room seed, against a
    stand-in race layer, and both must deal exactly the same rounds. */
 const fs = require('fs');
@@ -14,7 +14,8 @@ const FILES = {
   wordScramble: ['js/data/words.js', 'js/games/wordGames.js'],
   bibleWhoAmI: ['js/data/bible.js', 'js/games/bibleGames.js'],
   bibleVerseRush: ['js/data/bible.js', 'js/games/bibleGames.js'],
-  bibleQuiz: ['js/data/bibleQuiz.js', 'js/games/bibleQuiz.js']
+  bibleQuiz: ['js/data/bibleQuiz.js', 'js/games/bibleQuiz.js'],
+  guessCountry: ['js/data/worldFlags.js', 'js/games/guessCountry.js']
 };
 
 /* One device in a room. `uid` plays; the room seed decides every deal. */
@@ -132,7 +133,7 @@ test('race modes: a typed or picked answer is first, a guess or a build is ranke
     d.start();
     modes[id] = d.log.opts.mode || 'first';
   });
-  assertEqual(modes, { higherOrLower: 'ranked', wordScramble: 'first', bibleWhoAmI: 'first', bibleVerseRush: 'ranked', bibleQuiz: 'first' });
+  assertEqual(modes, { higherOrLower: 'ranked', wordScramble: 'first', bibleWhoAmI: 'first', bibleVerseRush: 'ranked', bibleQuiz: 'first', guessCountry: 'first' });
 });
 
 test('higher or lower: a guess goes to the race and waits for the reveal', async function () {

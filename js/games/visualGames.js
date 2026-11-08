@@ -1,6 +1,6 @@
 /* ============================================================
    PLAYMONA — visualGames.js
-   Seven turn-based visual "guess the picture" games.
+   Turn-based visual "guess the picture" games (Guess the Country moved to guessCountry.js).
    Classic script (no ES modules) so the app runs from file://.
    ============================================================ */
 window.FF = window.FF || {};
@@ -138,9 +138,6 @@ window.FF = window.FF || {};
   }
 
   /* ================= Data access ================= */
-  function getCountries() {
-    return (FF.data && FF.data.countries && FF.data.countries.length) ? FF.data.countries : null;
-  }
   function getVisual() {
     return (FF.data && FF.data.visual) ? FF.data.visual : null;
   }
@@ -336,47 +333,7 @@ window.FF = window.FF || {};
     nextRound();
   }
 
-  /* ================= 1. Guess the Country ================= */
-  FF.registerGame({
-    id: 'guessCountry',
-    featured: true,
-    name: 'Guess the Country',
-    description: 'Identify the country from its flag.',
-    category: 'world',
-    icon: '🌍',
-    players: [1, 8],
-    difficulty: 'Normal',
-    duration: 5,
-    tags: ['visual'],
-    modes: ['solo', 'turn', 'team'],
-    defaultMode: 'turn',
-    howToPlay: [
-      'Look at the flag on screen.',
-      'Choose which country it belongs to.',
-      'Correct answers earn points — be quick for a bonus!',
-      'Most points wins.'
-    ],
-    start: function (api) {
-      var countries = getCountries();
-      if (!countries) { showMissingData(api, 'country'); return; }
-      var names = countries.map(function (c) { return c.name; });
-      runVisualGame(api, {
-        items: countries,
-        rounds: ROUNDS,
-        build: function (country) {
-          var code = (FF.data && FF.data.flagCodes) ? FF.data.flagCodes[country.id] : null;
-          var flag = api.flags.render(country.flag, { code: code, cls: 'flag-big', alt: FF.t('aFlag', 'A country flag') });
-          return {
-            imageDOM: flag,
-            image: code ? { flag: code } : null,
-            promptText: FF.t('whichCountry', 'Which country is this?'),
-            correctName: country.name,
-            options: makeOptions(country.name, names)
-          };
-        }
-      });
-    }
-  });
+  /* Guess the Country lives in js/games/guessCountry.js. */
 
   /* ================= 2. Guess the Landmark ================= */
   FF.registerGame({

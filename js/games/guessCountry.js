@@ -1,0 +1,798 @@
+/* ============================================================
+   PLAYMONA — games/guessCountry.js
+   Guess the Country: a flag waves on screen, pick its country
+   before the time runs out. Every country in the world (data in
+   js/data/worldFlags.js, flags in assets/flags/<code>.svg).
+
+   Setup: regions, level (Easy, Normal, Hard), seconds per flag
+   (3, 5, 8, 12 or no limit), Flash (the flag hides after a
+   moment) and the flag look (waving or flat). When the time runs
+   out the flag counts as wrong.
+
+   - Local play: setup screen, then solo or pass and play.
+   - Daily and friend challenges: the standard rules on a shared deal.
+   - Online rooms: FF.Race, everyone answers the same flag; a round
+     scores as it always has for this game (100 x difficulty, plus
+     50 inside 3 seconds), which the crew brain plays from.
+   Pure rules are FF.GuessCountry (tests: tools/test/guessCountry.test.js).
+   Classic script, ES5.
+   ============================================================ */
+window.FF = window.FF || {};
+
+(function () {
+  'use strict';
+
+  function t(key, fallback, vars) { return FF.t ? FF.t(key, fallback, vars) : String(fallback); }
+
+  /* ================= rules (pure, tested) ================= */
+
+  var LEVELS = ['easy', 'normal', 'hard'];
+  var TIMES = [3, 5, 8, 12, 0];          // seconds per flag; 0 = no limit
+  var LOOKS = ['wave', 'flat'];
+  var STANDARD = { regions: [], level: 'normal', time: 8, flash: false };   // empty list = whole world
+  var FLASH_MS = 1500;                   // Flash: how long the flag shows
+  var FLASH_BONUS = 25;
+  var STREAK_EVERY = 3;
+  var STREAK_BONUS = 50;
+  var MIN_LEVEL_POOL = 8;                // fewer than this at a level: widen it
+  var MIN_POOL = 4;
+  var SEEN_KEY = 'guessCountrySeen';
+  var SEEN_MAX = 400;
+  var SETUP_KEY = 'guessCountry:setup';
+  var LOOK_KEY = 'guessCountry:look';
+
+  function data() { return (FF.data && FF.data.worldFlags) || { regions: [], alike: [], countries: [] }; }
+  function regionIds() { return data().regions.map(function (r) { return r.id; }); }
+  function setOf(list) { var s = {}; (list || []).forEach(function (k) { s[k] = true; }); return s; }
+
+  /* Keep only what is offered; "the whole world" is stored as []. */
+  function sanitize(s) {
+    s = s || {};
+    var all = regionIds();
+    var want = setOf(Array.isArray(s.regions) ? s.regions : []);
+    var regions = all.filter(function (id) { return want[id]; });
+    if (regions.length === all.length) regions = [];
+    var time = Number(s.time);
+    return {
+      regions: regions,
+      level: LEVELS.indexOf(s.level) !== -1 ? s.level : STANDARD.level,
+      time: TIMES.indexOf(time) !== -1 ? time : STANDARD.time,
+      flash: !!s.flash
+    };
+  }
+
+  function isStandard(s) {
+    var c = sanitize(s);
+    return !c.regions.length && c.level === STANDARD.level && c.time === STANDARD.time && c.flash === STANDARD.flash;
+  }
+
+  /* Easy: the famous flags. Normal adds the well known ones. Hard leaves
+     out the famous ones. Too few at a level (a small region): widen it. */
+  function levelOk(level, c) {
+    if (level === 'easy') return c.tier === 1;
+    if (level === 'hard') return c.tier >= 2;
+    return c.tier <= 2;
+  }
+
+  function pool(countries, cfg) {
+    var c = sanitize(cfg);
+    var rg = setOf(c.regions);
+    var base = countries.filter(function (x) { return !c.regions.length || rg[x.region]; });
+    var atLevel = base.filter(function (x) { return levelOk(c.level, x); });
+    if (atLevel.length >= MIN_LEVEL_POOL) return atLevel;
+    if (c.level === 'easy') {
+      var wider = base.filter(function (x) { return x.tier <= 2; });
+      if (wider.length >= MIN_LEVEL_POOL) return wider;
+    }
+    return base;
+  }
+
+  /* A small seeded random source, so one number decides a whole deal. */
+  function rng(seed) {
+    var a = (Number(seed) || 0) >>> 0;
+    return function () {
+      a = (a + 0x6D2B79F5) | 0;
+      var x = Math.imul(a ^ (a >>> 15), 1 | a);
+      x = (x + Math.imul(x ^ (x >>> 7), 61 | x)) ^ x;
+      return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function shuffle(list, rand) {
+    var a = list.slice();
+    for (var j = a.length - 1; j > 0; j--) {
+      var k = Math.floor(rand() * (j + 1));
+      var x = a[j]; a[j] = a[k]; a[k] = x;
+    }
+    return a;
+  }
+
+  function alikeOf(code) {
+    var out = [];
+    data().alike.forEach(function (group) {
+      if (group.indexOf(code) === -1) return;
+      group.forEach(function (c) { if (c !== code && out.indexOf(c) === -1) out.push(c); });
+    });
+    return out;
+  }
+
+  /* Three wrong answers. Easy: other well-known countries. Normal: one
+     flag that looks alike, the rest from the same region. Hard: as many
+     lookalikes as there are, then the same region. */
+  function decoys(country, countries, level, rand) {
+    var byCode = {};
+    countries.forEach(function (c) { byCode[c.code] = c; });
+    var picked = [];
+    function take(list, max) {
+      for (var i = 0; i < list.length && picked.length < max; i++) {
+        var c = list[i];
+        if (c && c.code !== country.code && picked.indexOf(c) === -1) picked.push(c);
+      }
+    }
+    var alike = shuffle(alikeOf(country.code), rand).map(function (code) { return byCode[code]; });
+    var sameRegion = shuffle(countries.filter(function (c) { return c.region === country.region; }), rand);
+    if (level === 'easy') {
+      take(shuffle(countries.filter(function (c) { return c.tier <= 2; }), rand), 3);
+    } else if (level === 'hard') {
+      take(alike, 3);
+      take(sameRegion, 3);
+    } else {
+      take(alike, 1);
+      take(sameRegion, 3);
+    }
+    take(shuffle(countries, rand), 3);
+    return picked;
+  }
+
+  /* A flag ready to show: four names, shuffled, and which one is right. */
+  function prepare(country, countries, level, rand) {
+    var opts = shuffle([country].concat(decoys(country, countries, level, rand)), rand);
+    return {
+      code: country.code, name: country.name, capital: country.capital,
+      region: country.region, tier: country.tier, note: country.note,
+      options: opts.map(function (c) { return c.name; }),
+      answer: opts.indexOf(country)
+    };
+  }
+
+  /* Deal `count` flags: regions take turns so none crowds out the rest.
+     `seen` (optional) is a set of codes to leave out while enough are fresh. */
+  function deal(countries, cfg, rand, count, seen) {
+    var c = sanitize(cfg);
+    var list = pool(countries, c);
+    if (seen) {
+      var fresh = list.filter(function (x) { return !seen[x.code]; });
+      if (fresh.length >= count) list = fresh;
+    }
+    var byRegion = {};
+    list.forEach(function (x) { (byRegion[x.region] = byRegion[x.region] || []).push(x); });
+    var order = shuffle(regionIds().filter(function (id) { return byRegion[id]; }), rand);
+    var bags = {};
+    order.forEach(function (id) { bags[id] = shuffle(byRegion[id], rand); });
+    var out = [];
+    var left = true;
+    while (out.length < count && left) {
+      left = false;
+      for (var i = 0; i < order.length && out.length < count; i++) {
+        var bag = bags[order[i]];
+        if (bag.length) { out.push(bag.shift()); left = true; }
+      }
+    }
+    return out.map(function (x) { return prepare(x, countries, c.level, rand); });
+  }
+
+  /* Local points: 100 for a right answer plus up to 100 for the time
+     left (no limit: 50 inside 3 seconds), and 25 more in Flash. */
+  function points(correct, ms, secs, flash) {
+    if (!correct) return 0;
+    var pts = 100;
+    if (secs > 0) pts += Math.round(100 * Math.max(0, 1 - (ms || 0) / (secs * 1000)));
+    else if ((ms || 0) <= 3000) pts += 50;
+    return pts + (flash ? FLASH_BONUS : 0);
+  }
+
+  /* Room points, unchanged from before the rebuild (the crew brain relies on them). */
+  function roomPoints(ms, difficulty) {
+    var mult = difficulty === 'easy' ? 1 : difficulty === 'hard' ? 2 : 1.5;
+    var pts = Math.round(100 * mult);
+    if (ms != null && ms <= 3000) pts += 50;
+    return pts;
+  }
+
+  /* ================= labels ================= */
+
+  function regionOf(id) {
+    var list = data().regions;
+    for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i];
+    return { id: id, name: id, icon: 'globe', colour: '--cat-world' };
+  }
+  function regionName(id) { return t('gcRegion_' + id, regionOf(id).name); }
+  function levelName(l) {
+    return l === 'easy' ? t('easy', 'Easy') : l === 'hard' ? t('hard', 'Hard') : t('normal', 'Normal');
+  }
+  function timeName(s) { return s ? t('gcNSecs', '{n} s', { n: s }) : t('gcNoLimit', 'No limit'); }
+
+  function summary(cfg) {
+    var c = sanitize(cfg);
+    var bits = [levelName(c.level)];
+    bits.push(c.regions.length ? c.regions.map(regionName).join(', ') : t('gcWholeWorld', 'Whole world'));
+    bits.push(c.time ? t('gcSecsEach', '{n} seconds a flag', { n: c.time }) : t('gcNoLimit', 'No limit'));
+    if (c.flash) bits.push(t('gcFlash', 'Flash'));
+    return bits.join(' · ');
+  }
+
+  /* ================= device helpers ================= */
+
+  function rand0() { return FF._rand ? FF._rand() : Math.random(); }
+  function store() { return FF.Storage || { get: function (k, d) { return d; }, set: function () {} }; }
+
+  function seenFor(list, need) {
+    var arr = store().get(SEEN_KEY, []) || [];
+    var s = setOf(arr);
+    var fresh = list.filter(function (x) { return !s[x.code]; }).length;
+    if (fresh >= Math.max(need, 1)) return s;
+    var codes = setOf(list.map(function (x) { return x.code; }));
+    store().set(SEEN_KEY, arr.filter(function (c) { return !codes[c]; }));
+    return {};
+  }
+  function markSeen(code) {
+    var arr = store().get(SEEN_KEY, []) || [];
+    arr.push(code);
+    if (arr.length > SEEN_MAX) arr = arr.slice(arr.length - SEEN_MAX);
+    try { store().set(SEEN_KEY, arr); } catch (e) { /* storage full */ }
+  }
+
+  function lookPref() { var l = store().get(LOOK_KEY, 'wave'); return LOOKS.indexOf(l) !== -1 ? l : 'wave'; }
+  function reducedMotion() {
+    try {
+      if (document.documentElement.getAttribute('data-reduce') === '1') return true;
+      return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    } catch (e) { return false; }
+  }
+
+  function scorerList(config) {
+    if (config.scorers && config.scorers.length) return config.scorers.slice();
+    if (config.players && config.players.length) return config.players.slice();
+    return [{ id: 'p1', name: t('you', 'You'), avatar: null }];
+  }
+
+  function racingNow() { return !!(FF.Race && FF.Race.active && FF.Race.active() && FF.Room && FF.Room.current()); }
+  function stillShown(api) { return !!(api.shell.root && document.body && document.body.contains(api.shell.root)); }
+
+  function flagPath(code) { return 'assets/flags/' + code + '.svg'; }
+
+  /* ================= the flag ================= */
+
+  var STRIPS = 40;
+
+  /* A flag as cloth. "wave": thin slices of the flag ripple and catch
+     the light in turn, like fabric in a breeze (a still curve when
+     motion is reduced). "flat": the plain flag. Nepal's flag is not a
+     rectangle, so it always shows flat. */
+  function clothFlag(code, look, alt) {
+    var wave = look === 'wave' && code !== 'np';
+    var box = FF.ui.el('div', { class: 'gc-flag' + (wave ? ' gc-flag--wave' : ' gc-flag--flat'), role: 'img', 'aria-label': alt });
+    var cloth = FF.ui.div('gc-flag__cloth');
+    box.appendChild(cloth);
+    var src = flagPath(code);
+    // Size the cloth to the flag's own shape once the file has loaded.
+    if (typeof Image === 'function') {
+      var probe = new Image();
+      probe.onload = function () {
+        if (probe.naturalWidth && probe.naturalHeight) box.style.setProperty('--ratio', String(probe.naturalWidth / probe.naturalHeight));
+      };
+      probe.src = src;
+    }
+    if (!wave) {
+      var img = FF.ui.el('img', { class: 'gc-flag__img', src: src, alt: '', draggable: 'false' });
+      cloth.appendChild(img);
+    } else {
+      var still = reducedMotion();
+      for (var i = 0; i < STRIPS; i++) {
+        var s = FF.ui.span('gc-flag__strip');
+        s.style.backgroundImage = 'url("' + src + '")';
+        s.style.backgroundSize = (STRIPS * 100) + '% 100%';
+        s.style.backgroundPosition = (i / (STRIPS - 1) * 100) + '% 0';
+        if (still) {
+          var a = Math.sin(i / STRIPS * Math.PI * 2);
+          s.style.transform = 'translateY(' + (a * 2.2).toFixed(2) + '%)';
+          s.style.filter = 'brightness(' + (1 + a * 0.1).toFixed(3) + ')';
+        } else {
+          s.style.animationDelay = (-i * 0.055).toFixed(3) + 's';
+        }
+        cloth.appendChild(s);
+      }
+    }
+    var cover = FF.ui.div('gc-flag__cover');
+    cover.appendChild(FF.Icons.icon('eye-slash'));
+    cover.appendChild(FF.ui.span('', t('gcFlagGone', 'Flag hidden')));
+    box.appendChild(cover);
+    return box;
+  }
+
+  function regionIcon(id) {
+    var r = regionOf(id);
+    var ic = FF.ui.span('qm-topic__icon');
+    ic.style.setProperty('--tc', 'var(' + r.colour + ')');
+    ic.appendChild(FF.Icons.icon(r.icon));
+    return ic;
+  }
+  function regionBadge(id) {
+    var b = FF.ui.span('qm-topic');
+    b.appendChild(regionIcon(id));
+    b.appendChild(FF.ui.span('', regionName(id)));
+    return b;
+  }
+
+  /* After an answer: the country, its capital and what is on the flag. */
+  function factCard(q) {
+    var card = FF.ui.div('gc-fact');
+    var mini = FF.ui.el('img', { class: 'gc-fact__flag', src: flagPath(q.code), alt: '' });
+    card.appendChild(mini);
+    var body = FF.ui.div('gc-fact__body');
+    body.appendChild(FF.ui.el('p', { class: 'gc-fact__name' }, q.name));
+    body.appendChild(FF.ui.el('p', { class: 'gc-fact__meta' }, t('gcCapital', 'Capital: {c}', { c: q.capital }) + ' · ' + regionName(q.region)));
+    if (q.note) body.appendChild(FF.ui.el('p', { class: 'gc-fact__note' }, q.note));
+    card.appendChild(body);
+    return card;
+  }
+
+  /* ================= setup screen ================= */
+
+  function setupScreen(api, onGo) {
+    var root = api.shell.root;
+    api.shell.hideTimer();
+    FF.ui.clear(root);
+    if (FF.GameLength && FF.GameLength.pause) FF.GameLength.pause();
+    var countries = data().countries;
+    var gs = sanitize(store().get(SETUP_KEY, null) || STANDARD);
+    var chosen = setOf(gs.regions);
+    var level = gs.level;
+    var time = gs.time;
+    var flash = gs.flash;
+    var look = lookPref();
+
+    var stage = FF.GameUI.stage({ wide: true, className: 'gc gc-setup qm-pick' });
+    stage.appendChild(FF.GameUI.kicker(t('gcName', 'Guess the Country')));
+    stage.appendChild(FF.GameUI.prompt(t('gcSetupTitle', 'Set up your flags'), 'xl'));
+
+    var rows = FF.ui.el('section', { class: 'settings-section gc-setup__rows' });
+    rows.appendChild(FF.UI.settingRow(t('gcLevel', 'Level'), FF.UI.segmented({
+      label: t('gcLevel', 'Level'), value: level,
+      options: LEVELS.map(function (l) { return { label: levelName(l), value: l }; }),
+      onChange: function (v) { level = v; sync(); }
+    }), t('gcLevelDesc', 'Easy keeps to famous flags. Hard leaves them out and offers flags that look alike.')));
+    rows.appendChild(FF.UI.settingRow(t('gcTime', 'Time per flag'), FF.UI.segmented({
+      label: t('gcTime', 'Time per flag'), value: String(time),
+      options: TIMES.map(function (s) { return { label: timeName(s), value: String(s) }; }),
+      onChange: function (v) { time = Number(v); sync(); }
+    }), t('gcTimeDesc', 'Not picked in time? The flag counts as wrong.')));
+    rows.appendChild(FF.UI.settingRow(t('gcShow', 'Flag shows'), FF.UI.segmented({
+      label: t('gcShow', 'Flag shows'), value: flash ? 'flash' : 'all',
+      options: [{ label: t('gcShowAll', 'The whole time'), value: 'all' }, { label: t('gcShowFlash', 'Flash'), value: 'flash' }],
+      onChange: function (v) { flash = v === 'flash'; sync(); }
+    }), t('gcShowDesc', 'Flash hides the flag after a second and a half. Worth 25 more points.')));
+    rows.appendChild(FF.UI.settingRow(t('gcLook', 'Flag look'), FF.UI.segmented({
+      label: t('gcLook', 'Flag look'), value: look,
+      options: [{ label: t('gcLookWave', 'Waving'), value: 'wave' }, { label: t('gcLookFlat', 'Flat'), value: 'flat' }],
+      onChange: function (v) { look = v; try { store().set(LOOK_KEY, v); } catch (e) { /* storage full */ } }
+    })));
+    stage.appendChild(rows);
+
+    stage.appendChild(FF.ui.el('h3', { class: 'bq-setup__h' }, t('gcRegions', 'Regions')));
+    var everything = FF.ui.el('button', { type: 'button', class: 'qm-every' });
+    everything.appendChild(FF.Icons.icon('globe'));
+    everything.appendChild(FF.ui.span('qm-every__label', t('gcWholeWorld', 'Whole world')));
+    var everyCount = FF.ui.span('qm-every__count', '');
+    everything.appendChild(everyCount);
+    everything.addEventListener('click', function () { chosen = {}; FF.Audio.play('select'); sync(); });
+    stage.appendChild(everything);
+
+    var grid = FF.ui.el('div', { class: 'qm-grid', role: 'group', 'aria-label': t('gcRegions', 'Regions') });
+    var tiles = data().regions.map(function (r) {
+      var b = FF.ui.el('button', { type: 'button', class: 'qm-tile' });
+      b.appendChild(regionIcon(r.id));
+      var txt = FF.ui.span('qm-tile__text');
+      txt.appendChild(FF.ui.span('qm-tile__name', regionName(r.id)));
+      var count = FF.ui.span('qm-tile__count', '');
+      txt.appendChild(count);
+      b.appendChild(txt);
+      b.appendChild(FF.ui.span('qm-tile__check', FF.Icons.icon('check')));
+      b.addEventListener('click', function () {
+        if (chosen[r.id]) delete chosen[r.id]; else chosen[r.id] = true;
+        FF.Audio.play('tap');
+        sync();
+      });
+      grid.appendChild(b);
+      return { el: b, id: r.id, count: count };
+    });
+    stage.appendChild(grid);
+
+    var foot = FF.ui.div('qm-pick__foot bq-setup__foot');
+    var note = FF.ui.el('p', { class: 'qm-pick__summary', 'aria-live': 'polite' });
+    foot.appendChild(note);
+    var actions = FF.ui.div('nr-setup__actions');
+    actions.appendChild(FF.UI.button(t('nrStandard', 'Standard settings'), {
+      class: 'btn-lg btn-ghost', icon: 'restart',
+      onClick: function () {
+        api.audio.play('click');
+        try { store().set(SETUP_KEY, sanitize(STANDARD)); } catch (e) { /* storage full */ }
+        setupScreen(api, onGo);
+      }
+    }));
+    var startBtn = FF.GameUI.action(t('gcStart', 'Start'), function () {
+      var cfg = current();
+      if (pool(countries, cfg).length < MIN_POOL) return;
+      api.audio.play('roundStart');
+      try { store().set(SETUP_KEY, cfg); } catch (e) { /* storage full */ }
+      if (FF.GameLength && FF.GameLength.resume) FF.GameLength.resume();
+      onGo(cfg);
+    }, { icon: 'play' });
+    actions.appendChild(startBtn);
+    foot.appendChild(actions);
+    stage.appendChild(foot);
+    root.appendChild(stage);
+
+    function current() {
+      return sanitize({ regions: Object.keys(chosen), level: level, time: time, flash: flash });
+    }
+
+    function sync() {
+      var cfg = current();
+      var all = !cfg.regions.length;
+      everything.classList.toggle('is-on', all);
+      everything.setAttribute('aria-pressed', all ? 'true' : 'false');
+      everyCount.textContent = t('gcNFlags', '{n} flags', { n: pool(countries, { level: cfg.level }).length });
+      tiles.forEach(function (x) {
+        var on = !!chosen[x.id];
+        x.el.classList.toggle('is-on', on);
+        x.el.setAttribute('aria-pressed', on ? 'true' : 'false');
+        x.count.textContent = t('gcNFlags', '{n} flags', { n: pool(countries, { level: cfg.level, regions: [x.id] }).length });
+      });
+      var n = pool(countries, cfg).length;
+      var ranked = FF.Leaderboards && FF.Leaderboards.active && FF.Leaderboards.active(api.def);
+      note.textContent = t('gcNReady', '{n} flags ready', { n: n }) + ' · ' + summary(cfg) +
+        (ranked && !isStandard(cfg) ? ' · ' + t('nrUnranked', 'Leaderboards use the standard settings') : '');
+      startBtn.disabled = n < MIN_POOL;
+    }
+    sync();
+    if (FF.Nav && FF.Nav.focusFirst) FF.Nav.focusFirst(stage);
+  }
+
+  /* ================= the game ================= */
+
+  function play(api, cfg, seed) {
+    cfg = sanitize(cfg);
+    var config = api.config;
+    var scorers = scorerList(config);
+    var racing = racingNow();
+    if (racing) {
+      var me = FF.Room.current();
+      var mine = scorers.filter(function (e) { return e.id === me.uid; });
+      scorers = mine.length ? mine : scorers.slice(0, 1);
+    }
+    var countries = data().countries;
+    var list = pool(countries, cfg);
+    if (list.length < MIN_POOL) {
+      FF.GameUI.exitCard(api, t('gcNoFlags', 'No flags yet'), t('gcTooFew', 'Not enough flags for that mix.'));
+      return;
+    }
+    var look = racing ? 'wave' : lookPref();
+    var n = scorers.length;
+    var timed = FF.GameLength.timed(config);
+    var rounds = FF.GameLength.rounds(api, 10, list.length);
+    if (!racing && !timed && n > 1) rounds = Math.ceil(rounds / n) * n;
+    var shared = racing || !!config.sharedDeal || !!config.daily || !!config.challenge;
+    var want = Math.min(rounds, list.length);
+    var deck = deal(countries, cfg, rng(seed), want, shared ? null : seenFor(list, want));
+    if (timed) FF.GameLength.manual();
+
+    var round = 0;
+    var current = null;
+    var stats = {};      // entityId -> { c, a, fastest }
+    var totals = { c: 0, a: 0, regions: {} };
+    var missed = [];     // flags to learn, for the recap
+    scorers.forEach(function (e) { stats[e.id] = { c: 0, a: 0, fastest: null }; });
+
+    var race = racing ? FF.Race.forGame(api, {
+      rounds: rounds,
+      optionSelector: '.gc-opt',
+      pointsFor: function (answer) {
+        return answer.value != null ? answer.value : roomPoints(answer.ms, config.difficulty);
+      }
+    }) : null;
+    var offSettle = race ? race.onSettle(function (payload) {
+      api.shell.hideTimer();
+      api.shell.setOnTick(null);
+      totals.a++;
+      if (payload && payload.winnerId) totals.c++;
+      race.showResult(payload, {
+        answerText: current ? current.name : null,
+        isLast: race.isLastRound(round, rounds),
+        onNext: function () { next(); }
+      });
+    }) : null;
+
+    function over() {
+      if (round >= rounds) return true;
+      if (race && race.over && race.over(round)) return true;
+      return timed && FF.GameLength.timeUp() && round % n === 0;
+    }
+
+    function next() {
+      round++;
+      if (over()) { finish(); return; }
+      render();
+    }
+
+    function tally(entityId, q, correct, secs) {
+      var s = stats[entityId];
+      s.a++; totals.a++;
+      var rg = totals.regions[q.region] || (totals.regions[q.region] = { c: 0, a: 0 });
+      rg.a++;
+      if (correct) {
+        s.c++; totals.c++; rg.c++;
+        if (secs != null && (s.fastest == null || secs < s.fastest)) s.fastest = secs;
+      } else if (!missed.some(function (m) { return m.code === q.code; })) {
+        missed.push(q);
+      }
+    }
+
+    function render() {
+      var q = deck[round % deck.length];
+      current = q;
+      if (!shared) markSeen(q.code);
+      var entity = racing ? scorers[0] : scorers[round % n];
+      var opening = race ? race.beginRound(round) : null;
+      var seconds = racing ? 0 : cfg.time;
+      var flash = !racing && cfg.flash;
+      var started = Date.now();
+      var done = false;
+      var flashTimer = null;
+
+      var root = api.shell.root;
+      FF.ui.clear(root);
+      api.shell.hideTimer();
+      api.shell.updateScores(entity.id);
+
+      var stage = FF.GameUI.stage({ className: 'gc' });
+      var bar = FF.GameUI.turnBar(racing ? null : entity, FF.GameUI.roundText(round + 1, rounds));
+      var rec = api.scoring.record ? api.scoring.record(entity.id) : null;
+      if (!racing && rec && rec.streak >= 2) bar.appendChild(FF.GameUI.pill(t('streakN', 'Streak {n}', { n: rec.streak }), 'flame', 'streak'));
+      stage.appendChild(bar);
+
+      var card = FF.ui.div('gc-card');
+      var flag = clothFlag(q.code, look, t('aFlag', 'A country flag'));
+      card.appendChild(flag);
+      var meter = null;
+      if (seconds) {
+        meter = FF.GameUI.meter(1);
+        meter.classList.add('qm-time', 'gc-time');
+        meter.setAttribute('aria-label', t('timeLeft', 'Time left'));
+        card.appendChild(meter);
+      }
+      stage.appendChild(card);
+      stage.appendChild(FF.GameUI.prompt(t('whichCountry', 'Which country is this?'), 'md'));
+
+      var group = FF.GameUI.options({ columns: 2, className: 'gc-options' });
+      var btns = q.options.map(function (label, i) {
+        var b = FF.GameUI.option(label, function () { answer(i); }, i, { className: 'gc-opt' });
+        group.appendChild(b);
+        return b;
+      });
+      stage.appendChild(group);
+      var after = FF.ui.div('qm-after gc-after');
+      stage.appendChild(after);
+      root.appendChild(stage);
+
+      function openQuestion() {
+        if (done) return;
+        started = Date.now();
+        if (seconds) {
+          api.shell.setOnTick(function (rem) { if (meter) meter.set(rem / seconds); });
+          api.shell.setTimer(seconds, function () { answer(-1, true); });
+        }
+        if (flash) flashTimer = setTimeout(function () { if (!done) flag.classList.add('is-hidden'); }, FLASH_MS);
+      }
+
+      if (race) {
+        // For people watching: the flag and the four names (the answer is shared after the round).
+        race.describe({ kind: 'choice', text: t('whichCountry', 'Which country is this?'), options: q.options.slice(), image: { flag: q.code } }, q.answer);
+        var thisRound = round;
+        opening.then(function () { race.gate(function () { if (round === thisRound) openQuestion(); }); });
+      } else {
+        openQuestion();
+      }
+      if (FF.Nav && FF.Nav.focusFirst) FF.Nav.focusFirst(group);
+
+      function answer(idx, timeout) {
+        if (done) return;
+        done = true;
+        if (flashTimer) clearTimeout(flashTimer);
+        var ms = Date.now() - started;
+        var secs = ms / 1000;
+        var correct = !timeout && idx === q.answer;
+        api.shell.setOnTick(null);
+        api.shell.hideTimer();
+        flag.classList.remove('is-hidden');
+        if (meter && timeout) meter.set(0);
+
+        if (race) {
+          btns.forEach(function (b, i) { b.disabled = true; if (i === idx) FF.GameUI.markOption(b, 'picked'); });
+          race.submit(idx, correct, ms, { value: correct ? roomPoints(FF.Race.msSinceOpen ? FF.Race.msSinceOpen() : ms, config.difficulty) : 0 });
+          after.appendChild(FF.GameUI.feedback('info', t('bqLockedIn', 'Answer locked in. Waiting for everyone…')));
+          return;
+        }
+
+        btns.forEach(function (b, i) {
+          b.disabled = true;
+          if (i === q.answer) FF.GameUI.markOption(b, 'correct');
+          else if (i === idx) FF.GameUI.markOption(b, 'wrong');
+          else FF.GameUI.markOption(b, 'dim');
+        });
+        tally(entity.id, q, correct, timeout ? null : secs);
+
+        if (correct) {
+          var pts = points(true, ms, seconds, flash);
+          api.scoring.add(entity.id, pts, { correct: true, fastest: secs });
+          var r = api.scoring.record ? api.scoring.record(entity.id) : null;
+          var streak = !!(r && r.streak > 0 && r.streak % STREAK_EVERY === 0);
+          if (streak) api.scoring.add(entity.id, STREAK_BONUS);
+          api.audio.play(streak ? 'streak' : 'correct');
+          after.appendChild(FF.GameUI.feedback('good', FF.GameUI.correctText(pts + (streak ? STREAK_BONUS : 0)) +
+            (streak ? ' ' + t('streakBonus', 'Streak bonus!') : '')));
+        } else {
+          api.scoring.add(entity.id, 0, { wrong: true });
+          if (api.scoring.resetStreak) api.scoring.resetStreak(entity.id);
+          api.audio.play('wrong');
+          flag.classList.add(timeout ? 'is-timeout' : 'is-wrong');
+          var lead = timeout ? t('gcTooSlow', 'Time’s up! That counts as wrong.') : t('notQuite', 'Not quite.');
+          after.appendChild(FF.GameUI.feedback('bad', lead + ' ' + t('gcItWas', 'It was {c}.', { c: q.name })));
+        }
+        after.appendChild(factCard(q));
+        var last = round + 1 >= rounds || (timed && FF.GameLength.timeUp() && (round + 1) % n === 0);
+        var nextBtn = FF.Advance.button(last ? t('seeResults', 'See results') : t('next', 'Next'), function () { api.audio.play('click'); next(); }, { class: 'btn-lg' });
+        after.appendChild(nextBtn);
+        api.shell.updateScores(entity.id);
+        if (FF.Nav && FF.Nav.focus) FF.Nav.focus(nextBtn);
+      }
+    }
+
+    function finish() {
+      if (offSettle) offSettle();
+      api.shell.hideTimer();
+      if (race) { race.end(); end(); return; }
+      recap();
+    }
+
+    function end() {
+      var res = api.scoring.results ? api.scoring.results() : null;
+      var ranked = (res && res.results) || [];
+      var best = 0;
+      var fastest = null;
+      ranked.forEach(function (r) {
+        if (r.bestStreak > best) best = r.bestStreak;
+        if (r.fastest != null && (fastest == null || r.fastest < fastest)) fastest = r.fastest;
+      });
+      api.audio.play('winner');
+      api.end({
+        results: ranked, winnerId: res ? res.winnerId : null,
+        bestStreak: best, fastest: fastest,
+        quizCorrect: totals.c, quizAnswered: totals.a
+      });
+    }
+
+    // How everyone did, by region, and the flags to learn, before the results.
+    function recap() {
+      var root = api.shell.root;
+      FF.ui.clear(root);
+      var stage = FF.GameUI.stage({ className: 'qm-recap gc-recap' });
+      var pct = totals.a ? Math.round(totals.c / totals.a * 100) : 0;
+      var ring = FF.ui.div('qm-ring');
+      ring.style.setProperty('--p', String(pct));
+      ring.appendChild(FF.ui.span('qm-ring__num', pct + '%'));
+      stage.appendChild(ring);
+      stage.appendChild(FF.GameUI.kicker(t('gcRecapKicker', 'Guess the Country recap')));
+      stage.appendChild(FF.GameUI.prompt(t('gcRecapTitle', '{c} of {a} flags right', { c: totals.c, a: totals.a }), 'xl'));
+      stage.appendChild(FF.ui.el('p', { class: 'qm-pick__summary' }, summary(cfg)));
+
+      var people = FF.ui.el('ul', { class: 'qm-people' });
+      scorers.slice().sort(function (a, b) {
+        return (api.scoring.get(b.id) || 0) - (api.scoring.get(a.id) || 0);
+      }).forEach(function (e) {
+        var s = stats[e.id];
+        var li = FF.ui.el('li', { class: 'qm-person' });
+        var ava = FF.ui.span('qm-person__ava');
+        ava.appendChild(FF.Players.avatarEl(e, ''));
+        li.appendChild(ava);
+        var who = FF.ui.div('qm-person__who');
+        who.appendChild(FF.ui.span('qm-person__name', e.name || t('playerLabel', 'Player')));
+        var rec = (api.scoring.record && api.scoring.record(e.id)) || {};
+        var bits = [t('qmRightOf', '{c}/{a} right', { c: s.c, a: s.a })];
+        if (rec.bestStreak > 1) bits.push(t('qmBestStreak', 'best streak {n}', { n: rec.bestStreak }));
+        if (s.fastest != null) bits.push(t('qmFastest', 'fastest {s}s', { s: s.fastest.toFixed(1) }));
+        who.appendChild(FF.ui.span('qm-person__meta', bits.join(' · ')));
+        li.appendChild(who);
+        li.appendChild(FF.ui.span('qm-person__score', FF.util.formatNumber(api.scoring.get(e.id) || 0)));
+        people.appendChild(li);
+      });
+      stage.appendChild(people);
+
+      var ids = Object.keys(totals.regions);
+      if (ids.length > 1) {
+        stage.appendChild(FF.ui.el('h3', { class: 'qm-recap__h' }, t('gcByRegion', 'By region')));
+        var listBox = FF.ui.div('qm-bytopic');
+        ids.sort(function (a, b) { return totals.regions[b].a - totals.regions[a].a; }).forEach(function (id) {
+          var x = totals.regions[id];
+          var row = FF.ui.div('qm-bytopic__row');
+          row.appendChild(regionBadge(id));
+          var m = FF.GameUI.meter(x.a ? x.c / x.a : 0);
+          m.classList.add('qm-bytopic__meter');
+          m.setAttribute('aria-label', regionName(id));
+          row.appendChild(m);
+          row.appendChild(FF.ui.span('qm-bytopic__n', x.c + '/' + x.a));
+          listBox.appendChild(row);
+        });
+        stage.appendChild(listBox);
+      }
+
+      if (missed.length) {
+        stage.appendChild(FF.ui.el('h3', { class: 'qm-recap__h' }, t('gcToLearn', 'Flags to learn')));
+        var learn = FF.ui.el('ul', { class: 'gc-learn' });
+        missed.slice(0, 12).forEach(function (q) {
+          var li = FF.ui.el('li', { class: 'gc-learn__item' });
+          li.appendChild(FF.ui.el('img', { class: 'gc-learn__flag', src: flagPath(q.code), alt: '' }));
+          li.appendChild(FF.ui.span('gc-learn__name', q.name));
+          learn.appendChild(li);
+        });
+        stage.appendChild(learn);
+      }
+      stage.appendChild(FF.GameUI.action(t('seeResults', 'See results'), function () { end(); }, { icon: 'trophy' }));
+      root.appendChild(stage);
+      if (FF.Nav && FF.Nav.focusFirst) FF.Nav.focusFirst(stage);
+    }
+
+    render();
+  }
+
+  /* ================= registration ================= */
+
+  FF.GuessCountry = {
+    LEVELS: LEVELS, TIMES: TIMES, STANDARD: STANDARD, MIN_POOL: MIN_POOL, FLASH_BONUS: FLASH_BONUS,
+    sanitize: sanitize, isStandard: isStandard, pool: pool, rng: rng, decoys: decoys, alikeOf: alikeOf,
+    prepare: prepare, deal: deal, points: points, roomPoints: roomPoints, summary: summary
+  };
+
+  FF.registerGame({
+    id: 'guessCountry',
+    featured: true,
+    name: 'Guess the Country',
+    description: 'Every flag in the world, waving on screen. Name the country before the time runs out.',
+    category: 'world',
+    icon: '🌍',
+    players: [1, 8],
+    difficulty: 'Normal',
+    duration: 5,
+    tags: ['visual', 'quiz', 'everyone'],
+    modes: ['solo', 'turn', 'team'],
+    defaultMode: 'turn',
+    howToPlay: [
+      'Pick the regions, a level and how many seconds you get for each flag.',
+      'A flag waves on screen. Choose its country before the time runs out, or it counts as wrong.',
+      'The quicker you answer, the more points. Three right in a row earns a bonus.',
+      'Want it harder? Flash hides the flag after a second and a half.'
+    ],
+    start: function (api) {
+      // One number decides the whole deal. It is drawn first, before anything
+      // else uses the random source, so a challenge or a room deals the same everywhere.
+      if (racingNow()) FF.Random.seed(FF.Random.roundSeed(FF.Room.current().meta.seed, api.def.id, 'deck'));
+      var seed = Math.floor(rand0() * 4294967296);
+      if (racingNow() || api.config.daily || api.config.challenge) { play(api, STANDARD, seed); return; }
+      setupScreen(api, function (cfg) {
+        if (!stillShown(api)) return;
+        if (!isStandard(cfg)) api.config.customRules = true;
+        play(api, cfg, seed);
+      });
+    }
+  });
+})();
