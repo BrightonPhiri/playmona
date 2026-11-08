@@ -2962,6 +2962,10 @@ button.imp-card:focus-visible { outline: 3px solid var(--focus-ring); outline-of
 @keyframes gc-shake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
 .gc-time { width: 100%; }
 .gc-options { width: 100%; max-width: 640px; }
+.gc-type { max-width: 640px; }
+.gc-type__input { flex: 1 1 220px; min-width: 0; }
+.gc-type.is-right .gc-type__input { border-color: var(--success); }
+.gc-type.is-wrong .gc-type__input { border-color: var(--danger); }
 .gc-opt .gm-opt__label { overflow-wrap: break-word; word-break: normal; hyphens: auto; }
 /* Six or eight answers: a little tighter. */
 .gc-options--n6 .gc-opt, .gc-options--n8 .gc-opt { min-height: 50px; font-size: var(--fs-md); }

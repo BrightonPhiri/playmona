@@ -266,11 +266,45 @@ window.FF = window.FF || {};
     ['pa', 'do', 'cr', 'th']
   ];
 
+  /* Other names people type (Expert level). Accents, case, "the" and
+     "Saint"/"St" are handled by FF.AnswerMatch, so they are not listed. */
+  var AKA = {
+    us: ['United States of America', 'USA', 'US', 'America'],
+    gb: ['UK', 'Great Britain', 'Britain'],
+    ae: ['UAE', 'Emirates'],
+    cd: ['Democratic Republic of the Congo', 'DRC', 'Congo-Kinshasa'],
+    cg: ['Congo', 'Congo-Brazzaville'],
+    ci: ['Côte d’Ivoire', 'Cote dIvoire'],
+    cz: ['Czech Republic'],
+    sz: ['Swaziland'],
+    mm: ['Burma'],
+    tl: ['East Timor'],
+    cv: ['Cape Verde'],
+    kr: ['Korea', 'Republic of Korea'],
+    kp: ['DPRK'],
+    nl: ['Holland'],
+    tr: ['Türkiye'],
+    mk: ['Macedonia'],
+    va: ['Vatican', 'Holy See'],
+    ru: ['Russian Federation'],
+    fm: ['Federated States of Micronesia'],
+    ba: ['Bosnia'],
+    cf: ['CAR'],
+    bn: ['Brunei Darussalam'],
+    pg: ['PNG'],
+    sa: ['Saudi'],
+    ag: ['Antigua'],
+    tt: ['Trinidad'],
+    st: ['Sao Tome'],
+    vc: ['Saint Vincent'],
+    la: ['Lao']
+  };
+
   FF.data.worldFlags = {
     regions: REGIONS,
     alike: ALIKE,
     countries: ROWS.map(function (r) {
-      return { code: r[0], name: r[1], capital: r[2], region: r[3], tier: r[4], note: r[5] };
+      return { code: r[0], name: r[1], capital: r[2], region: r[3], tier: r[4], note: r[5], aka: AKA[r[0]] || [] };
     })
   };
 })();

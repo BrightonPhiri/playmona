@@ -26,10 +26,12 @@ window.FF = window.FF || {};
 
   /* ================= rules (pure, tested) ================= */
 
-  var LEVELS = ['easy', 'normal', 'hard'];
+  var LEVELS = ['easy', 'normal', 'hard', 'expert'];
   var TIMES = [3, 5, 8, 12, 0];          // seconds per flag; 0 = no limit
   var LOOKS = ['wave', 'flat'];
-  var OPTIONS = { easy: 4, normal: 6, hard: 8 };   // answers to choose from
+  var OPTIONS = { easy: 4, normal: 6, hard: 8, expert: 1 };   // answers to choose from (Expert types it)
+  var TYPE_EXTRA_SECS = 6;               // Expert: extra seconds to type
+  var TYPE_BONUS = 50;                   // Expert: points for typing it
   var FLAG_WAIT_MS = 3000;               // longest a round waits for its flag to load
   var STANDARD = { regions: [], level: 'normal', time: 8, flash: false };   // empty list = whole world
   var FLASH_MS = 1500;                   // Flash: how long the flag shows
@@ -69,8 +71,10 @@ window.FF = window.FF || {};
   }
 
   /* Easy: the famous flags. Normal adds the well known ones. Hard leaves
-     out the famous ones. Too few at a level (a small region): widen it. */
+     out the famous ones. Expert: every flag, typed. Too few at a level
+     (a small region): widen it. */
   function levelOk(level, c) {
+    if (level === 'expert') return true;
     if (level === 'easy') return c.tier === 1;
     if (level === 'hard') return c.tier >= 2;
     return c.tier <= 2;
@@ -186,14 +190,35 @@ window.FF = window.FF || {};
     return out.map(function (x) { return prepare(x, countries, c.level, rand); });
   }
 
+  function isTyped(level) { return level === 'expert'; }
+
+  /* Expert: is a typed name right? Small spelling mistakes pass; a name
+     closer to another country (or exactly another country) does not. */
+  function checkTyped(guess, country, countries) {
+    var others = [];
+    countries.forEach(function (c) {
+      if (c.code === country.code) return;
+      others.push(c.name);
+      (c.aka || []).forEach(function (a) { others.push(a); });
+    });
+    return FF.AnswerMatch.check(guess, [country.name].concat(country.aka || []), others);
+  }
+
   /* Local points: 100 for a right answer plus up to 100 for the time
-     left (no limit: 50 inside 3 seconds), and 25 more in Flash. */
-  function points(correct, ms, secs, flash) {
+     left (no limit: 50 inside 3 seconds), 25 more in Flash and 50 more
+     when it was typed (Expert). */
+  function points(correct, ms, secs, flash, typed) {
     if (!correct) return 0;
     var pts = 100;
     if (secs > 0) pts += Math.round(100 * Math.max(0, 1 - (ms || 0) / (secs * 1000)));
-    else if ((ms || 0) <= 3000) pts += 50;
-    return pts + (flash ? FLASH_BONUS : 0);
+    else if ((ms || 0) <= (typed ? 6000 : 3000)) pts += 50;
+    return pts + (flash ? FLASH_BONUS : 0) + (typed ? TYPE_BONUS : 0);
+  }
+
+  /* Seconds a flag gets: Expert adds time to type. */
+  function secondsFor(cfg) {
+    var c = sanitize(cfg);
+    return c.time ? c.time + (isTyped(c.level) ? TYPE_EXTRA_SECS : 0) : 0;
   }
 
   /* Room points, unchanged from before the rebuild (the crew brain relies on them). */
@@ -213,7 +238,7 @@ window.FF = window.FF || {};
   }
   function regionName(id) { return t('gcRegion_' + id, regionOf(id).name); }
   function levelName(l) {
-    return l === 'easy' ? t('easy', 'Easy') : l === 'hard' ? t('hard', 'Hard') : t('normal', 'Normal');
+    return l === 'easy' ? t('easy', 'Easy') : l === 'hard' ? t('hard', 'Hard') : l === 'expert' ? t('expert', 'Expert') : t('normal', 'Normal');
   }
   function timeName(s) { return s ? t('gcNSecs', '{n} s', { n: s }) : t('gcNoLimit', 'No limit'); }
 
@@ -221,7 +246,7 @@ window.FF = window.FF || {};
     var c = sanitize(cfg);
     var bits = [levelName(c.level)];
     bits.push(c.regions.length ? c.regions.map(regionName).join(', ') : t('gcWholeWorld', 'Whole world'));
-    bits.push(c.time ? t('gcSecsEach', '{n} seconds a flag', { n: c.time }) : t('gcNoLimit', 'No limit'));
+    bits.push(c.time ? t('gcSecsEach', '{n} seconds a flag', { n: secondsFor(c) }) : t('gcNoLimit', 'No limit'));
     if (c.flash) bits.push(t('gcFlash', 'Flash'));
     return bits.join(' · ');
   }
@@ -392,7 +417,7 @@ window.FF = window.FF || {};
       label: t('gcLevel', 'Level'), value: level,
       options: LEVELS.map(function (l) { return { label: levelName(l), value: l }; }),
       onChange: function (v) { level = v; sync(); }
-    }), t('gcLevelDesc', 'Easy: famous flags, 4 answers. Normal: 6 answers. Hard: lesser-known flags, 8 answers with lookalikes.')));
+    }), t('gcLevelDesc', 'Easy: famous flags, 4 answers. Normal: 6 answers. Hard: lesser-known flags, 8 answers with lookalikes. Expert: type the name (small spelling mistakes are fine, and you get 6 extra seconds).')));
     rows.appendChild(FF.UI.settingRow(t('gcTime', 'Time per flag'), FF.UI.segmented({
       label: t('gcTime', 'Time per flag'), value: String(time),
       options: TIMES.map(function (s) { return { label: timeName(s), value: String(s) }; }),
@@ -577,7 +602,8 @@ window.FF = window.FF || {};
       if (!shared) markSeen(q.code);
       var entity = racing ? scorers[0] : scorers[round % n];
       var opening = race ? race.beginRound(round) : null;
-      var seconds = racing ? 0 : cfg.time;
+      var typed = !racing && isTyped(cfg.level);
+      var seconds = racing ? 0 : secondsFor(cfg);
       var flash = !racing && cfg.flash;
       var started = Date.now();
       var done = false;
@@ -608,12 +634,33 @@ window.FF = window.FF || {};
       stage.appendChild(card);
       stage.appendChild(FF.GameUI.prompt(t('whichCountry', 'Which country is this?'), 'md'));
 
-      var group = FF.GameUI.options({ columns: 2, className: 'gc-options gc-options--n' + q.options.length });
-      var btns = q.options.map(function (label, i) {
-        var b = FF.GameUI.option(label, function () { answer(i); }, i, { className: 'gc-opt' });
-        group.appendChild(b);
-        return b;
-      });
+      var group, btns = [], input = null;
+      if (typed) {
+        group = FF.ui.el('form', { class: 'gm-input-row gc-type', autocomplete: 'off' });
+        input = FF.ui.el('input', {
+          type: 'text', class: 'gm-input gc-type__input', placeholder: t('gcTypeIt', 'Type the country…'),
+          'aria-label': t('gcYourAnswer', 'Your answer'), autocomplete: 'off', autocapitalize: 'words',
+          autocorrect: 'off', spellcheck: 'false', enterkeyhint: 'done', maxlength: 60
+        });
+        group.appendChild(input);
+        var check = FF.UI.button(t('gcCheck', 'Check'), { icon: 'check', primary: true, class: 'btn' });
+        check.setAttribute('type', 'submit');
+        group.appendChild(check);
+        group.addEventListener('submit', function (e) {
+          e.preventDefault();
+          if (done) return;
+          var res = checkTyped(input.value, countries.filter(function (c) { return c.code === q.code; })[0] || q, countries);
+          if (res.empty) { input.focus(); return; }
+          answer(res.ok ? q.answer : -1, false, { text: input.value.trim(), res: res });
+        });
+      } else {
+        group = FF.GameUI.options({ columns: 2, className: 'gc-options gc-options--n' + q.options.length });
+        btns = q.options.map(function (label, i) {
+          var b = FF.GameUI.option(label, function () { answer(i); }, i, { className: 'gc-opt' });
+          group.appendChild(b);
+          return b;
+        });
+      }
       stage.appendChild(group);
       var after = FF.ui.div('qm-after gc-after');
       stage.appendChild(after);
@@ -631,6 +678,7 @@ window.FF = window.FF || {};
           api.shell.setTimer(seconds, function () { answer(-1, true); });
         }
         if (flash) flashTimer = setTimeout(function () { if (!done) flag.classList.add('is-hidden'); }, FLASH_MS);
+        if (input) { try { input.focus(); } catch (e) { /* not focusable yet */ } }
       }
 
       var thisRound = round;
@@ -643,7 +691,7 @@ window.FF = window.FF || {};
       }
       if (FF.Nav && FF.Nav.focusFirst) FF.Nav.focusFirst(group);
 
-      function answer(idx, timeout) {
+      function answer(idx, timeout, typing) {
         if (done) return;
         done = true;
         if (flashTimer) clearTimeout(flashTimer);
@@ -654,6 +702,11 @@ window.FF = window.FF || {};
         api.shell.hideTimer();
         flag.classList.remove('is-hidden');
         if (meter && timeout) meter.set(0);
+        if (input) {
+          input.disabled = true;
+          Array.prototype.forEach.call(group.querySelectorAll('button'), function (b) { b.disabled = true; });
+          group.classList.add(correct ? 'is-right' : 'is-wrong');
+        }
 
         if (race) {
           btns.forEach(function (b, i) { b.disabled = true; if (i === idx) FF.GameUI.markOption(b, 'picked'); });
@@ -671,28 +724,42 @@ window.FF = window.FF || {};
         tally(entity.id, q, correct, timeout ? null : secs);
 
         if (correct) {
-          var pts = points(true, ms, seconds, flash);
+          var pts = points(true, ms, seconds, flash, typed);
           api.scoring.add(entity.id, pts, { correct: true, fastest: secs });
           var r = api.scoring.record ? api.scoring.record(entity.id) : null;
           var streak = !!(r && r.streak > 0 && r.streak % STREAK_EVERY === 0);
           if (streak) api.scoring.add(entity.id, STREAK_BONUS);
           api.audio.play(streak ? 'streak' : 'correct');
           after.appendChild(FF.GameUI.feedback('good', FF.GameUI.correctText(pts + (streak ? STREAK_BONUS : 0)) +
-            (streak ? ' ' + t('streakBonus', 'Streak bonus!') : '')));
+            (streak ? ' ' + t('streakBonus', 'Streak bonus!') : '') +
+            (typing && !typing.res.exact ? ' ' + t('gcSpelt', 'It is spelt {c}.', { c: q.name }) : '')));
         } else {
           api.scoring.add(entity.id, 0, { wrong: true });
           if (api.scoring.resetStreak) api.scoring.resetStreak(entity.id);
           api.audio.play('wrong');
           flag.classList.add(timeout ? 'is-timeout' : 'is-wrong');
           var lead = timeout ? t('gcTooSlow', 'Time’s up! That counts as wrong.') : t('notQuite', 'Not quite.');
-          after.appendChild(FF.GameUI.feedback('bad', lead + ' ' + t('gcItWas', 'It was {c}.', { c: q.name })));
+          var said = '';
+          if (typing && typing.text) {
+            var other = typing.res.near && FF.AnswerMatch.normalise(typing.text) === FF.AnswerMatch.normalise(typing.res.near);
+            said = other
+              ? ' ' + t('gcOtherCountry', '{o} is a different country.', { o: typing.res.near })
+              : typing.res.near
+              ? ' ' + t('gcTooNear', 'You typed “{x}”, which is closer to {o}.', { x: typing.text, o: typing.res.near })
+              : ' ' + t('gcYouTyped', 'You typed “{x}”.', { x: typing.text });
+          }
+          after.appendChild(FF.GameUI.feedback('bad', lead + ' ' + t('gcItWas', 'It was {c}.', { c: q.name }) + said));
         }
         after.appendChild(factCard(q));
         var last = round + 1 >= rounds || (timed && FF.GameLength.timeUp() && (round + 1) % n === 0);
         var nextBtn = FF.Advance.button(last ? t('seeResults', 'See results') : t('next', 'Next'), function () { api.audio.play('click'); next(); }, { class: 'btn-lg' });
         after.appendChild(nextBtn);
         api.shell.updateScores(entity.id);
-        if (FF.Nav && FF.Nav.focus) FF.Nav.focus(nextBtn);
+        // After Enter in the answer box, wait a moment so the same key press cannot also press Next.
+        if (FF.Nav && FF.Nav.focus) {
+          if (typed) setTimeout(function () { if (document.body.contains(nextBtn)) FF.Nav.focus(nextBtn); }, 400);
+          else FF.Nav.focus(nextBtn);
+        }
       }
     }
 
@@ -796,7 +863,8 @@ window.FF = window.FF || {};
   /* ================= registration ================= */
 
   FF.GuessCountry = {
-    LEVELS: LEVELS, TIMES: TIMES, OPTIONS: OPTIONS, STANDARD: STANDARD, optionCount: optionCount, MIN_POOL: MIN_POOL, FLASH_BONUS: FLASH_BONUS,
+    LEVELS: LEVELS, TIMES: TIMES, OPTIONS: OPTIONS, STANDARD: STANDARD, optionCount: optionCount,
+    TYPE_EXTRA_SECS: TYPE_EXTRA_SECS, TYPE_BONUS: TYPE_BONUS, isTyped: isTyped, checkTyped: checkTyped, secondsFor: secondsFor, MIN_POOL: MIN_POOL, FLASH_BONUS: FLASH_BONUS,
     sanitize: sanitize, isStandard: isStandard, pool: pool, rng: rng, decoys: decoys, alikeOf: alikeOf,
     prepare: prepare, deal: deal, points: points, roomPoints: roomPoints, summary: summary
   };
@@ -818,7 +886,7 @@ window.FF = window.FF || {};
       'Pick the regions, a level (4, 6 or 8 answers to choose from) and how many seconds you get for each flag.',
       'A flag waves on screen. Choose its country before the time runs out, or it counts as wrong.',
       'The quicker you answer, the more points. Three right in a row earns a bonus.',
-      'Want it harder? Flash hides the flag after a second and a half.'
+      'Want it harder? Flash hides the flag after a second and a half, and Expert has you type the name.'
     ],
     start: function (api) {
       // One number decides the whole deal. It is drawn first, before anything
