@@ -3692,6 +3692,13 @@ button.imp-card:focus-visible { outline: 3px solid var(--focus-ring); outline-of
   /* While answering, the score waits (it shows again with the result), as in GeoSpin. */
   .wm.is-open:not(.is-revealed) .wm-card { display: none; }
   .wm-spell .wm-tip { display: none; }
+  /* Long Expert names (Hot-air balloon, Game controller) must fit under a 16-picture board. */
+  .wm-spell .spell { gap: 8px; }
+  .wm-spell .spell-slots { gap: 5px 12px; }
+  .wm-spell .spell-word { gap: 4px; }
+  .wm-spell .spell-slot { height: 34px; font-size: 1.1rem; }
+  .wm-spell .spell-tiles { gap: 4px; }
+  .wm-spell .spell-tile { width: 32px; height: 36px; font-size: 1.05rem; }
   /* With the result, the board shows the truth: the answer controls and the clock step aside. */
   .wm.is-revealed .wm-body, .wm.is-revealed .wm-clock { display: none; }
 }

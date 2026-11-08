@@ -103,7 +103,7 @@ window.FF = window.FF || {};
       if (!rounds[k]) {
         var rd = R.deal(state.settings, state.seed, k);
         if (rd.spell && FF.SpellTiles) {
-          // The same tiles a solo Expert player would get for this seed and gap.
+          // The same tiles for everyone in the room, from the seed (the normal tile count).
           rd.tiles = rd.answer.ids.map(function (id, gap) {
             var set = FF.SpellTiles.deal(R.cardOf(id).name, R.rng(R.hash('spell|' + state.seed + '|' + k + '|' + gap)), {});
             return { shape: shapeOf(set.cells), tiles: set.tiles.join('') };
@@ -150,6 +150,8 @@ window.FF = window.FF || {};
         if (saved && saved.matchId === run.matchId) {
           state = revive(saved);
           log('resuming ' + run.matchId + ' at ' + state.phase + ' ' + state.k);
+          // Phones may have missed part of the study board while the referee was away: study it again.
+          if (state.phase === 'study') timeRound(now());
         } else {
           fresh();
           later(function () { return room.set('wmInbox', null); });
@@ -217,13 +219,20 @@ window.FF = window.FF || {};
     function nextRound(at) {
       state.k++;
       state.answers = {};
+      timeRound(at);
+      move('study');
+    }
+
+    /* The round's clock. Never from the past: a referee that starts late or comes back
+       after a crash still gives everyone the whole study time (the study is the round). */
+    function timeRound(at) {
       var rd = roundOf(state.k);
+      at = Math.max(at, now());
       state.studyAt = at;
       state.changeAt = at + state.settings.seconds * 1000;
       state.openAt = state.changeAt + CHANGE_MS;
       state.closeAt = state.openAt + rd.secs * 1000;
       state.nextAt = 0;
-      move('study');
     }
 
     /* Everyone still here has answered: no reason to wait for the clock. */

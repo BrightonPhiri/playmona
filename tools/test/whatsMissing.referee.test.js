@@ -67,7 +67,7 @@ async function match(opts) {
   await room.set('', { meta: { seed: 's', status: 'playing', hostUid: 'p1', startAt: clock.now + 1000 }, players });
   const saved = opts.saved || { value: null };
   const reports = [];
-  const run = { matchId: 'm_1', roomCode: code, seats, startAt: clock.now + 1000, settings: Object.assign({ level: 'normal', rounds: 5 }, opts.settings || {}) };
+  const run = { matchId: 'm_1', roomCode: code, seats, startAt: clock.now + 1000 - (opts.lateMs || 0), settings: Object.assign({ level: 'normal', rounds: 5 }, opts.settings || {}) };
   const ref = RF.create({
     run, room, store: { load: () => Promise.resolve(saved.value), save: (s) => { saved.value = s; return Promise.resolve(); } },
     randomInt: seeded(42), timers: clock, report: (e, p) => { reports.push({ e, p }); return Promise.resolve(); }
@@ -336,4 +336,57 @@ test('wm crew seat: plays a whole match through the inbox and is scored by the r
   await m.clock.advance(m.RF.REVEAL_MS + 10);
   assertEqual(m.wm().result.winners.join(), 'p2');
   seat.stop();
+});
+
+test('wm referee: a late start still gives the full study time', async function () {
+  const m = await match({ lateMs: 20000 });
+  await m.clock.advance(1);
+  const g = m.wm();
+  assertEqual(g.phase, 'study', 'the first board is studied, not skipped');
+  assertEqual(g.changeAt - m.clock.now, g.settings.seconds * 1000 - 1, 'the whole study time from now');
+  assertEqual(g.closeAt - g.openAt, m.truth().secs * 1000, 'and the whole answer time');
+});
+
+test('wm referee: a restart after the reveal ran out still studies the next board', async function () {
+  const m = await match();
+  await m.open();
+  await m.answer('p1', m.right());
+  await m.answer('p2', m.right());
+  assertEqual(m.wm().phase, 'reveal');
+  const nextAt = m.wm().nextAt;
+  m.ref.stop();
+  m.clock.now = nextAt + 15000;
+  const saved = m.saved;
+  const again = m.RF.create({
+    run: m.run, room: m.room, store: { load: () => Promise.resolve(saved.value), save: (v) => { saved.value = v; return Promise.resolve(); } },
+    randomInt: seeded(7), timers: m.clock
+  });
+  await again.start();
+  await m.clock.advance(1);
+  const g = m.wm();
+  assertEqual(g.k, 1);
+  assertEqual(g.phase, 'study', 'the next board is studied');
+  assert(g.changeAt - m.clock.now >= g.settings.seconds * 1000 - 5, 'for the whole study time');
+  again.stop();
+});
+
+test('wm referee: a restart in the middle of study starts the study again', async function () {
+  const m = await match();
+  await m.clock.advance(1000 + m.RF.BRIEF_MS + 1);
+  assertEqual(m.wm().phase, 'study');
+  const before0 = JSON.stringify(m.wm().round.before);
+  m.ref.stop();
+  m.clock.now = m.wm().changeAt + 3000;
+  const saved = m.saved;
+  const again = m.RF.create({
+    run: m.run, room: m.room, store: { load: () => Promise.resolve(saved.value), save: (v) => { saved.value = v; return Promise.resolve(); } },
+    randomInt: seeded(7), timers: m.clock
+  });
+  await again.start();
+  await m.clock.advance(1);
+  const g = m.wm();
+  assertEqual(g.phase, 'study');
+  assertEqual(JSON.stringify(g.round.before), before0, 'the same board');
+  assert(g.changeAt - m.clock.now >= g.settings.seconds * 1000 - 5, 'studied again in full');
+  again.stop();
 });
