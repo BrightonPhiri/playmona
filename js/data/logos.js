@@ -484,11 +484,37 @@ window.FF = window.FF || {};
     ['heartsofoak', 'Hearts of Oak', 'football', 3, 'Accra Hearts of Oak, founded in 1911, are among Ghana’s oldest clubs.', ['Accra Hearts of Oak'], ['asantekotoko'], AF]
   ];
 
+  /* Brands whose symbol shows their own name, so it gives the answer away. They stay in
+     the list (files, facts, names for the checker) but are not dealt until they get a
+     crop that hides the name (Brighton, 2026-11-09). Remove an id once its crop is in. */
+  var NAMED = (
+    'samsung intel amd sony lg nokia dell hp ibm zoom kindle logitech philips mtn safaricom vodacom econet glo ' +
+    'telkom cellc ethiotelecom vimeo kfc burgerking subway cocacola pepsi fanta sprite nestle nutella kitkat ' +
+    'cadbury oreo pringles lays doritos mms heinz kelloggs lipton dunkin wendys krispykreme nescafe milo ' +
+    'toblerone heineken guinness carlsberg chupachups skittles nandos steers wimpy debonairs chickenlicken ' +
+    'chickeninn castlelager tusker amarula savanna chibuku converse vans fila asics umbro kappa lacoste ' +
+    'tommyhilfiger calvinklein levis gucci chanel prada versace burberry rolex omega casio rayban zara hm ' +
+    'uniqlo timberland northface champion skechers swarovski ellesse ford bmw nissan kia lexus ferrari porsche ' +
+    'astonmartin jaguar landrover mini fiat alfaromeo peugeot volvo jeep isuzu mclaren byd yamaha ' +
+    'harleydavidson michelin bp engen ebay walmart costco ikea tesco lidl aldi temu etsy bestbuy seven11 spar ' +
+    'sephora fedex dhl ups shoprite checkers picknpay woolworths jumia takealot konga clicks dischem pep ' +
+    'mrprice edgars game disney pixar marvel dc warnerbros hbo primevideo nickelodeon cartoonnetwork pokemon ' +
+    'angrybirds pacman barbie lego bbc cnn aljazeera espn natgeo mtv championsleague dstv showmax supersport ' +
+    'klm etihad delta easyjet virginatlantic cathaypacific japanairlines koreanair kenyaairways saa rwandair ' +
+    'egyptair royalairmaroc airzimbabwe flysafair uber lyft airbus visa amex citi santander standardchartered ' +
+    'stripe applepay googlepay coinbase mpesa ecocash fnb absa capitec ecobank accessbank gtbank equitybank ' +
+    'oldmutual flutterwave cbz manutd mancity liverpool arsenal chelsea tottenham newcastle astonvilla westham ' +
+    'everton leicester valencia bayern leipzig leverkusen roma lazio psg lyon ajax psv celtic rangers salzburg ' +
+    'alnassr intermiami kaizerchiefs orlandopirates sundowns alahly tpmazembe wydad raja esperance simbasc ' +
+    'yanga gormahia enyimba dynamos capsunited asantekotoko heartsofoak'
+  ).split(' ');
+
   var brands = ROWS.map(function (r) {
     var o = r[7] || {};
     return {
       id: r[0], name: r[1], cat: r[2], tier: r[3], fact: r[4], aliases: r[5] || [], alike: r[6] || [],
-      africa: !!o.africa, bg: o.bg === 'dark' ? 'dark' : 'light', crop: o.crop || null
+      africa: !!o.africa, bg: o.bg === 'dark' ? 'dark' : 'light', crop: o.crop || null,
+      named: NAMED.indexOf(r[0]) !== -1
     };
   });
 

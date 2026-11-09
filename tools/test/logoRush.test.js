@@ -212,7 +212,7 @@ test('rules: a small pool widens and still deals enough different answers', func
 test('rules: African brands filter and categories mix', function () {
   const r = R();
   const af = r.pool(r.sanitize({ cats: ['africa'], level: 'hard' }));
-  assert(af.length >= 20 && af.every((b) => b.africa), 'africa pool');
+  assert(af.length >= 1 && af.every((b) => b.africa), 'africa pool (few until name logos get crops)');
   const two = r.pool(r.sanitize({ cats: ['cars', 'food'], level: 'hard' }));
   assert(two.every((b) => b.cat === 'cars' || b.cat === 'food'), 'two categories');
   const ids = r.deal(r.sanitize({ cats: ['cars', 'food'], level: 'hard' }), 'mix', 10);
@@ -325,4 +325,17 @@ test('rules: rounds carry what the twists need', function () {
   assertEqual(r.roundAt({}, 'z', 0).zoom, null);
   const t = r.roundAt({ mode: 'tiles' }, 'z', 0);
   assert(t.tiles.length >= t.letters.length && !t.choices, 'tiles round');
+});
+
+test('rules: brands whose symbol shows their name are never dealt until they have a crop', function () {
+  const r = R();
+  const brands = rules().data.logos.brands;
+  const named = brands.filter((b) => b.named);
+  assert(named.length > 0 && named.length < brands.length, named.length + ' hidden');
+  ['mixed', ['food'], ['football'], ['africa']].forEach((cats) => ['easy', 'normal', 'hard'].forEach((level) => {
+    const cfg = r.sanitize({ cats, level });
+    r.pool(cfg).forEach((b) => assert(!b.named || b.crop, b.id + ' is dealt but shows its name'));
+    r.deal(cfg, 'n' + level, 20).forEach((id) => assert(!r.brand(id).named, id + ' dealt'));
+  }));
+  assert(r.brand('cocacola') && r.check('coca cola', 'cocacola').ok, 'hidden brands stay known by name');
 });

@@ -45,6 +45,8 @@ window.FF = window.FF || {};
 
   var byId = null;
   function all() { return (FF.data && FF.data.logos && FF.data.logos.brands) || []; }
+  /* Not dealt while its symbol shows its name, until it has a crop that hides it. */
+  function playable(b) { return !b.named || !!b.crop; }
   function brand(id) {
     if (!byId) { byId = {}; all().forEach(function (b) { byId[b.id] = b; }); }
     return byId[id] || null;
@@ -98,7 +100,7 @@ window.FF = window.FF || {};
      expert ones. Too few (a small category): widen, as GeoSpin does. */
   function pool(cfg) {
     var c = sanitize(cfg);
-    var base = all().filter(function (b) {
+    var base = all().filter(playable).filter(function (b) {
       return c.cats === 'mixed' || c.cats.indexOf(b.cat) !== -1 || (b.africa && c.cats.indexOf('africa') !== -1);
     });
     var steps = c.level === 'easy' ? [function (b) { return b.tier === 1; }, function (b) { return b.tier <= 2; }]
