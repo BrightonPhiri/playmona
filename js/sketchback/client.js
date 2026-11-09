@@ -11,6 +11,7 @@
      c.sendDrawings([enc])  -> true if sent, false if not now or already sent
      c.sendAnswers([text])  -> true if sent, false if not now or already sent
      c.stop()
+     var m = FF.SketchBackClient.memo(matchId, FF.Storage)   this phone's drawings, kept for a reload
 
    Also FF.SketchBackApi.start(room, pick) / nudge(code): the server
    (POST /api/sketchback/*), or the host tab in dev rooms.
@@ -134,6 +135,33 @@ window.FF = window.FF || {};
     };
   }
 
+  /* This phone's own drawings and answers for one match, kept on the device so a reload
+     mid-game brings them back. A sketch that was not saved stays blank.
+     storage: { get(key, fallback), set(key, value), remove?(key) } (FF.Storage in the app). */
+  function memo(matchId, storage) {
+    var key = 'skb:' + matchId;
+    var data = null;
+    try { data = storage.get(key, null); } catch (e) { data = null; }
+    if (!data || typeof data !== 'object') data = {};
+    if (!data.d || typeof data.d !== 'object') data.d = {};
+    if (!data.a || typeof data.a !== 'object') data.a = {};
+    if (!data.hide || typeof data.hide !== 'object') data.hide = {};
+    function save() { try { storage.set(key, data); } catch (e) { /* storage full or off */ } }
+    return {
+      drawing: function (k, enc) { data.d[k] = String(enc || ''); save(); },
+      has: function (k) { return Object.prototype.hasOwnProperty.call(data.d, k); },
+      drawings: function (n) { var out = []; for (var i = 0; i < n; i++) out.push(String(data.d[i] || '')); return out; },
+      answer: function (k, text) { data.a[k] = String(text || ''); save(); },
+      answers: function () { var out = {}; Object.keys(data.a).forEach(function (k) { if (data.a[k]) out[k] = data.a[k]; }); return out; },
+      hidden: function (id) { return !!data.hide[id]; },
+      hide: function (id, on) { if (on) data.hide[id] = 1; else delete data.hide[id]; save(); },
+      forget: function () {
+        data = { d: {}, a: {}, hide: {} };
+        try { if (storage.remove) storage.remove(key); else storage.set(key, null); } catch (e) { /* storage off */ }
+      }
+    };
+  }
+
   /* ---------- the server ---------- */
 
   function t(key, fallback) { return FF.t ? FF.t(key, fallback) : fallback; }
@@ -188,5 +216,5 @@ window.FF = window.FF || {};
     }
   };
 
-  FF.SketchBackClient = { create: create, tidy: tidy, ready: ready };
+  FF.SketchBackClient = { create: create, tidy: tidy, ready: ready, memo: memo };
 })();

@@ -298,6 +298,35 @@ test('sketchback client: drawings and answers go once, only when the referee tak
   m.ref.stop();
 });
 
+test('sketchback client: a rejoin keeps the saved drawings and answers and sends the drawings once', async function () {
+  const m = await match();
+  const mem = {};
+  const storage = { get: (k, d) => (k in mem ? JSON.parse(mem[k]) : d), set: (k, v) => { mem[k] = JSON.stringify(v); }, remove: (k) => { delete mem[k]; } };
+  const a = await phone(m, 'p1');
+  const first = a.FF.SketchBackClient.memo('k_1', storage);
+  first.drawing(0, DOT);
+  first.drawing(2, DOT);
+  first.answer(1, 'cat');
+  a.c.stop();                        // the page went away during sketch 4
+  await m.toRecall();
+  const b = await phone(m, 'p1');    // and came back while naming
+  const again = b.FF.SketchBackClient.memo('k_1', storage);
+  assertEqual(again.drawings(5), [DOT, '', DOT, '', ''], 'saved drawings back, missed ones blank');
+  assertEqual(again.answers(), { 1: 'cat' });
+  assertEqual(b.FF.SketchBackClient.memo('k_2', storage).drawings(2), ['', ''], 'another match starts empty');
+  assertEqual(b.c.sendDrawings(again.drawings(5)), true);
+  assertEqual(b.c.sendDrawings(again.drawings(5)), false, 'once');
+  await flush();
+  assertEqual(m.saved.value.players.p1.art, [DOT, '', DOT, '', ''].join('|'));
+  const c = await phone(m, 'p1');    // a second reload after the referee took them
+  assertEqual(c.c.sendDrawings(again.drawings(5)), false, 'not again after a reload');
+  again.forget();
+  assertEqual(c.FF.SketchBackClient.memo('k_1', storage).drawings(2), ['', ''], 'forgotten');
+  b.c.stop();
+  c.c.stop();
+  m.ref.stop();
+});
+
 test('sketchback client: a phase is drawn only once it has arrived in full', async function () {
   const m = await match();
   const { FF } = await phone(m, 'p1');

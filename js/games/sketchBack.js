@@ -402,7 +402,7 @@ window.FF = window.FF || {};
 
   /* The gallery of the player's own drawings, shuffled, with no names.
      opts: { drawings: [encoded], order: [k], answers: {k: text}, startedAt, now(), limitMs,
-             onAnswer(k, text), onFinish(answers), waiting? } */
+             onAnswer(k, text), onFinish(answers), goLabel? } */
   function recallScreen(api, f, opts) {
     FF.ui.clear(f.main);
     FF.ui.clear(f.chips);
@@ -435,7 +435,7 @@ window.FF = window.FF || {};
     });
     wrap.appendChild(grid);
     var bar = el('div', 'skb-recall__bar');
-    var go = button('skb-btn--go skb-btn--big', 'trophy', t('seeResults', 'See results'), function () {
+    var go = button('skb-btn--go skb-btn--big', 'trophy', opts.goLabel || t('seeResults', 'See results'), function () {
       if (go.disabled) return;
       finish();
     });
@@ -751,9 +751,389 @@ window.FF = window.FF || {};
     return { v: 1, seed: seed, settings: R.sanitize(cfg), deal: R.deal(cfg, seed), drawings: [], open: null, recall: null, daily: api.config.daily || null, savedAt: Date.now() };
   }
 
+  /* ================= online ================= */
+
+  var NUDGE_MS = 8000;               // this late, ask the server to wake the referee
+  var AUTO_SCORES_MS = 180000;       // the end screen moves on by itself after 3 minutes
+
+  /* A room match: the referee (js/sketchback/referee.js) deals the objects and keeps the clock;
+     this phone draws, keeps its drawings on the device, and sends them and its answers once. */
+  function online(api, room) {
+    var C = FF.SketchBackClient;
+    var f = frame(api, 'skb--play skb--online');
+    if (api.shell.hideTimer) api.shell.hideTimer();
+    if (FF.Race && FF.Race.begin) FF.Race.begin(api.def.id, { rounds: 1, mode: 'parallel' });
+    var client = C.create({ room: room, onChange: schedule });
+    var ended = false, pending = null, nudged = {}, autoScores = null;
+    var mem = null, memFor = null;
+    var shown = null;       // what is on screen: 'deal', 'brief', 'draw', 'between', 'watch', 'recall', 'named', 'end'
+    var drawing = null;     // { k, screen, done }
+    var recall = null;
+    var named = null;       // the answers this phone finished with, until the referee has them
+    var brief = null;
+    var ticker = setInterval(tick, 250);
+
+    function expected() { return room.meta && room.meta.skbMatch; }
+    function who(uid) {
+      var p = (room.players || {})[uid] || {};
+      return { id: uid, uid: uid, name: p.name || t('playerLabel', 'Player'), avatar: p.avatar || null, color: p.color || null };
+    }
+    function memory(skb) {
+      if (memFor !== skb.matchId) { mem = C.memo(skb.matchId, store()); memFor = skb.matchId; }
+      return mem;
+    }
+    function schedule() { if (!pending && !ended) pending = setTimeout(function () { pending = null; render(); }, 0); }
+    function stopDrawing() {
+      if (!drawing) return;
+      if (!drawing.done) drawing.screen.finish();
+      drawing.screen.stop();
+      drawing = null;
+    }
+    function stopRecall() { if (recall) { recall.stop(); recall = null; } }
+    function cleanup() {
+      if (ended) return;
+      ended = true;
+      clearInterval(ticker);
+      if (pending) clearTimeout(pending);
+      if (autoScores) clearTimeout(autoScores);
+      stopDrawing();
+      stopRecall();
+      client.stop();
+      if (FF.Race && FF.Race.end) { try { FF.Race.end(); } catch (e) { /* not running */ } }
+    }
+    function finish() {
+      if (ended) return;
+      if (mem) mem.forget();
+      cleanup();
+      api.end({});
+    }
+    function dueOf(skb) {
+      switch (skb.phase) {
+        case 'starting': return skb.drawAt;
+        case 'draw': return skb.closeAt;
+        case 'gap': return skb.drawAt || skb.recallAt;
+        case 'recall': return skb.recallEnd + 1500;
+        default: return 0;
+      }
+    }
+    function maybeNudge(key, due) {
+      if (nudged[key] || !due) return;
+      if (client.serverNow() - due < NUDGE_MS) return;
+      nudged[key] = true;
+      FF.SketchBackApi.nudge(room.code);
+    }
+
+    function card(kind, title, sub) {
+      stopDrawing();
+      stopRecall();
+      shown = kind;
+      FF.ui.clear(f.main);
+      FF.ui.clear(f.chips);
+      var box = el('section', 'skb-card skb-wait');
+      box.appendChild(el('h2', 'skb-wait__title', title));
+      if (sub) box.appendChild(el('p', 'skb-note', sub));
+      f.main.appendChild(box);
+      return box;
+    }
+
+    function tick() {
+      if (ended) return;
+      if (!stillShown(api)) { cleanup(); return; }
+      var skb = client.view().skb;
+      if (!skb || skb.matchId !== expected() || !C.ready(skb)) return;
+      if (skb.phase === 'starting' && brief) {
+        var left = Math.max(0, Math.ceil((skb.drawAt - client.serverNow()) / 1000));
+        if (String(left) !== brief.num.textContent) {
+          brief.num.textContent = String(left);
+          brief.num.classList.remove('is-pop');
+          void brief.num.offsetWidth;
+          brief.num.classList.add('is-pop');
+          if (left > 0 && left <= 3) api.audio.play('countdown');
+        }
+      }
+      maybeNudge(skb.phase + skb.k, dueOf(skb));
+    }
+
+    /* The drawings go once, after the last sketch; the client turns away repeats. */
+    function sendDrawings(skb) { client.sendDrawings(memory(skb).drawings(skb.total)); }
+
+    function render() {
+      if (ended) return;
+      if (!stillShown(api)) { cleanup(); return; }
+      var v = client.view();
+      var skb = v.skb;
+      if (!skb || skb.matchId !== expected()) {
+        if (shown !== 'deal') card('deal', t('skbDealing', 'Dealing the sketches…'), t('skbDealingSub', 'Everyone draws the same sketches on the same clock.'));
+        return;
+      }
+      if (!C.ready(skb)) return;
+      if (skb.phase === 'ended') { if (shown !== 'end') showEnd(skb, v); return; }
+      if (!v.seated) {
+        if (shown !== 'watch') card('watch', t('gsWatching', 'This game started without you'), t('gsWatchingSub', 'You can join the next one.'));
+        return;
+      }
+      var m = memory(skb);
+      var last = skb.k + 1 >= skb.total;
+
+      if (skb.phase === 'starting') { if (shown !== 'brief') showBrief(skb); return; }
+
+      if (skb.phase === 'draw') {
+        if (drawing && drawing.k === skb.k) return;
+        stopDrawing();
+        if (m.has(skb.k) || client.serverNow() >= skb.closeAt) { between(skb); return; }
+        showSketch(skb, m);
+        return;
+      }
+
+      if (skb.phase === 'gap') {
+        // The referee closed this sketch: lock the paper now if this phone's clock is behind.
+        if (drawing && drawing.k === skb.k) { if (!drawing.done) drawing.screen.finish(); }
+        else if (shown !== 'between') between(skb);
+        if (last) sendDrawings(skb);
+        return;
+      }
+
+      if (skb.phase === 'recall') {
+        sendDrawings(skb);
+        if (named && !v.me.named) client.sendAnswers(named);   // try again if the first send was lost
+        if (v.me.named || named) { showNamed(skb); return; }
+        if (shown !== 'recall') showRecall(skb, m, v);
+      }
+    }
+
+    function showBrief(skb) {
+      stopDrawing();
+      stopRecall();
+      shown = 'brief';
+      FF.ui.clear(f.main);
+      FF.ui.clear(f.chips);
+      f.chips.appendChild(chip(levelName(skb.settings.level), 'skb-chip--level skb-lv-' + skb.settings.level));
+      var box = el('section', 'skb-card skb-ready');
+      box.appendChild(el('p', 'skb-ready__kicker', t('skbGetReady', 'Get ready')));
+      box.appendChild(el('h2', 'skb-ready__title', t('skbReadyLine', '{n} sketches · {s} seconds each', { n: skb.total, s: R.SECONDS[skb.settings.level] })));
+      var num = el('div', 'skb-ready__num', '');
+      box.appendChild(num);
+      box.appendChild(el('p', 'skb-ready__tip', t('skbOnlineTip', 'Everyone draws the same sketches on the same clock. Then name your own drawings from memory.')));
+      f.main.appendChild(box);
+      brief = { num: num };
+    }
+
+    function showSketch(skb, m) {
+      brief = null;
+      stopRecall();
+      shown = 'draw';
+      var k = skb.k, closeAt = skb.closeAt;
+      var rec = { k: k, done: false, screen: null };
+      drawing = rec;
+      api.audio.play('roundStart');
+      rec.screen = drawScreen(api, f, {
+        k: k, total: skb.total, id: skb.round.id, secs: R.SECONDS[skb.settings.level], level: skb.settings.level,
+        until: function () { return closeAt; }, now: client.serverNow,
+        onDone: function (strokes) {
+          rec.done = true;
+          m.drawing(k, R.encode(strokes));
+          schedule();
+        }
+      });
+    }
+
+    /* Joined between sketches, or after a reload during one: wait for the next. */
+    function between(skb) {
+      brief = null;
+      var last = skb.k + 1 >= skb.total;
+      card('between', last ? t('skbNamingSoon', 'Time to remember…') : t('skbNextSoon', 'Next sketch coming…'),
+        t('skbSketchOf', 'Sketch {k}/{n}', { k: Math.min(skb.k + 2, skb.total), n: skb.total }));
+    }
+
+    function showRecall(skb, m, v) {
+      brief = null;
+      stopDrawing();
+      shown = 'recall';
+      api.audio.play('flip');
+      recall = recallScreen(api, f, {
+        drawings: m.drawings(skb.total),
+        order: R.recallOrder(skb.total, skb.matchId, v.uid),
+        answers: m.answers(),
+        startedAt: skb.recallAt,
+        now: client.serverNow,
+        limitMs: Math.max(0, skb.recallEnd - skb.recallAt),
+        goLabel: t('skbDoneNaming', 'I’m done'),
+        onAnswer: function (k, text) { m.answer(k, text); },
+        onFinish: function (answers) {
+          var list = [];
+          for (var i = 0; i < skb.total; i++) list.push(String(answers[i] || ''));
+          named = list;
+          recall = null;
+          client.sendAnswers(list);
+          schedule();
+        }
+      });
+    }
+
+    function showNamed(skb) {
+      var box = shown === 'named' ? f.main.querySelector('.skb-wait') : null;
+      if (!box) box = card('named', t('skbAnswersIn', 'Answers in!'), '');
+      shown = 'named';
+      var waitingFor = skb.order.filter(function (uid) { return !(skb.p[uid] || {}).named; });
+      var note = box.querySelector('.skb-note') || box.appendChild(el('p', 'skb-note'));
+      note.textContent = waitingFor.length
+        ? t('skbWaitingFor', 'Waiting for {n} more to name their drawings', { n: waitingFor.length })
+        : t('skbScoring', 'Checking everyone’s answers…');
+      var old = box.querySelector('.skb-wait__who');
+      if (old) old.parentNode.removeChild(old);
+      var list = el('ul', 'skb-wait__who');
+      skb.order.forEach(function (uid) {
+        var done = !!(skb.p[uid] || {}).named;
+        var li = el('li', done ? 'is-done' : '');
+        if (done) li.appendChild(glyph('check'));
+        li.appendChild(FF.ui.span('', who(uid).name + (uid === client.uid ? ' ' + t('youTag', '(you)') : '')));
+        list.appendChild(li);
+      });
+      box.appendChild(list);
+    }
+
+    /* ---------- the end ---------- */
+
+    function ranking(skb) {
+      var res = skb.result;
+      var rows = res.rows;
+      var box = el('section', 'skb-card skb-rank');
+      var top = rows[0];
+      var meWon = top && res.winners.indexOf(client.uid) !== -1;
+      box.appendChild(el('h3', 'skb-h', res.draw ? (meWon ? t('skbYouShare', 'You share the win!') : t('skbDraw', 'It’s a draw!'))
+        : meWon ? t('skbYouWin', 'You win!') : top ? t('skbWins', '{name} wins!', { name: who(top.uid).name }) : t('gsOver', 'Game over')));
+      var list = el('ol', 'skb-podium');
+      rows.forEach(function (r) {
+        var li = el('li', (r.uid === client.uid ? 'is-me ' : '') + (r.place <= 3 ? 'is-p' + r.place : ''));
+        li.appendChild(FF.ui.span('skb-podium__place', String(r.place)));
+        var nm = FF.ui.span('skb-podium__name');
+        nm.appendChild(FF.ui.span('', who(r.uid).name + (r.uid === client.uid ? ' ' + t('youTag', '(you)') : '')));
+        nm.appendChild(el('div', 'skb-podium__meta', t('skbRightIn', '{c}/{n} right · {time}', { c: r.correct, n: res.deal.length, time: clockText(r.ms) })));
+        li.appendChild(nm);
+        li.appendChild(FF.ui.span('skb-podium__pts', FF.util.formatNumber(r.points || 0)));
+        list.appendChild(li);
+      });
+      box.appendChild(list);
+      return { el: box, meWon: meWon };
+    }
+
+    function everyone(skb) {
+      var res = skb.result;
+      var m = memory(skb);
+      var sec = el('section', 'skb-everyone');
+      sec.appendChild(el('h3', 'skb-h skb-results__h', t('skbEveryone', 'Everyone’s drawings')));
+      var art = {};
+      res.rows.forEach(function (r) { art[r.uid] = String(res.art[r.uid] || '').split('|'); });
+      res.deal.forEach(function (id, k) {
+        var row = el('div', 'skb-card skb-everyone__row');
+        var head = el('div', 'skb-everyone__head');
+        var ref = el('div', 'skb-paper skb-paper--thumb skb-paper--ref skb-everyone__ref');
+        ref.appendChild(sketchEl(id));
+        head.appendChild(ref);
+        head.appendChild(el('h4', 'skb-everyone__name', nameOf(id)));
+        row.appendChild(head);
+        var list = el('ul', 'skb-everyone__list');
+        res.rows.forEach(function (r) {
+          var hideId = r.uid + ':' + k;
+          var li = el('li', 'skb-everyone__item');
+          var paper = FF.ui.el('div', { class: 'skb-paper skb-paper--thumb', 'data-hidden': t('skbHidden', 'Hidden') });
+          var cv = FF.ui.el('canvas', { class: 'skb-paper__canvas' });
+          paper.appendChild(cv);
+          li.appendChild(paper);
+          var line = el('div', 'skb-everyone__who');
+          line.appendChild(FF.ui.span('', who(r.uid).name));
+          var good = !!(res.ok[r.uid] || [])[k];
+          var mark = FF.ui.span(good ? 'skb-ok' : 'skb-no');
+          mark.appendChild(glyph(good ? 'check' : 'cross'));
+          mark.setAttribute('role', 'img');
+          mark.setAttribute('aria-label', good ? t('correct', 'Correct') : t('wrong', 'Wrong'));
+          line.appendChild(mark);
+          li.appendChild(line);
+          var said = String((res.answers[r.uid] || [])[k] || '').trim();
+          li.appendChild(el('p', 'skb-everyone__said', said ? '“' + said + '”' : t('skbNoAnswer', 'No answer')));
+          var hide = FF.ui.el('button', { type: 'button', class: 'skb-btn skb-btn--soft skb-everyone__hide' });
+          function sync() {
+            var off = m.hidden(hideId);
+            li.classList.toggle('is-hidden', off);
+            hide.textContent = off ? t('skbShow', 'Show') : t('skbHide', 'Hide');
+            hide.setAttribute('aria-pressed', off ? 'true' : 'false');
+            hide.setAttribute('aria-label', (off ? t('skbShowOf', 'Show {name}’s drawing', { name: who(r.uid).name }) : t('skbHideOf', 'Hide {name}’s drawing', { name: who(r.uid).name })));
+          }
+          hide.addEventListener('click', function () { m.hide(hideId, !m.hidden(hideId)); api.audio.play('tap'); sync(); });
+          sync();
+          li.appendChild(hide);
+          list.appendChild(li);
+          setTimeout(function () { FF.SketchPad.paint(cv, R.decode(art[r.uid][k] || '')); }, 0);
+        });
+        row.appendChild(list);
+        sec.appendChild(row);
+      });
+      return sec;
+    }
+
+    function showEnd(skb, v) {
+      brief = null;
+      stopDrawing();
+      stopRecall();
+      shown = 'end';
+      var res = skb.result;
+      var rank = ranking(skb);
+      var mine = res.rows.filter(function (r) { return r.uid === v.uid; })[0];
+      if (mine && res.ok[v.uid]) {
+        var art = res.art[v.uid] ? String(res.art[v.uid]).split('|') : memory(skb).drawings(res.deal.length);
+        resultsScreen(api, f, {
+          deal: res.deal, drawings: art, answers: res.answers[v.uid] || [], ok: res.ok[v.uid], timeMs: mine.ms,
+          title: t('skbYourPlace', 'You came {place} of {n}', { place: placeName(mine.place), n: res.rows.length }),
+          doneLabel: t('srtSeeScores', 'See scores'), onDone: finish, extra: rank.el
+        });
+      } else {
+        FF.ui.clear(f.main);
+        FF.ui.clear(f.chips);
+        var wrap = el('section', 'skb-results');
+        wrap.appendChild(rank.el);
+        wrap.appendChild(button('skb-btn--go skb-btn--big', 'trophy', t('srtSeeScores', 'See scores'), finish));
+        f.main.appendChild(wrap);
+        api.audio.play('roundEnd');
+      }
+      var wrapEl = f.main.querySelector('.skb-results');
+      if (wrapEl) wrapEl.appendChild(everyone(skb));
+      // The results screen already throws confetti for 80% and up.
+      if (rank.meWon && mine && R.score(res.ok[v.uid] || []).accuracy < 80 && animationsOn() && FF.Confetti) FF.Confetti.burst(100);
+      if (!autoScores) autoScores = setTimeout(finish, AUTO_SCORES_MS);
+    }
+
+    render();
+  }
+
+  function placeName(n) {
+    if (n === 1) return t('place1st', '1st');
+    if (n === 2) return t('place2nd', '2nd');
+    if (n === 3) return t('place3rd', '3rd');
+    return t('placeNth', '{n}th', { n: n });
+  }
+
+  /* ================= room settings ================= */
+
+  function fields() {
+    function opt(label, value) { return { label: label, value: value }; }
+    return [
+      { key: 'count', label: t('skbStatSketches', 'Sketches'), options: R.COUNTS.map(function (n) { return opt(String(n), n); }) },
+      { key: 'level', label: t('skbLevel', 'Level'), options: R.LEVELS.map(function (l) { return opt(levelName(l) + ' · ' + t('skbSecsEach', '{n} s each', { n: R.SECONDS[l] }), l); }) }
+    ];
+  }
+
+  var ROOM = {
+    minPlayers: R.MIN_PLAYERS,
+    defaults: R.STANDARD,
+    fields: function () { return fields(); },
+    sanitize: function (s) { return R.sanitizeRoom(s); },
+    summary: function (s) { return summary(R.sanitizeRoom(s)); },
+    start: function (room, pick) { return FF.SketchBackApi.start(room, pick); }
+  };
+
   /* ================= registration ================= */
 
-  FF.SketchBackGame = { summary: summary, drawScreen: drawScreen, recallScreen: recallScreen, resultsScreen: resultsScreen, frame: frame, sketchEl: sketchEl };
+  FF.SketchBackGame = { summary: summary, drawScreen: drawScreen, recallScreen: recallScreen, resultsScreen: resultsScreen, frame: frame, sketchEl: sketchEl, online: online, room: ROOM };
 
   var preview = false;
   try { preview = !!(window.localStorage && window.localStorage.getItem('playmona:sketchPreview') === '1'); } catch (e) { /* storage off */ }
@@ -772,6 +1152,7 @@ window.FF = window.FF || {};
     modes: ['solo'],
     defaultMode: 'solo',
     leaderboard: true,
+    room: ROOM,
     howToPlay: [
       'A black-and-white sketch appears with its name. Copy it on the paper below before the clock runs out.',
       'When time is up the sketch vanishes and your paper locks. You can Undo or Clear until then.',

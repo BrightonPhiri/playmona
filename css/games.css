@@ -4695,6 +4695,11 @@ button.imp-card:focus-visible { outline: 3px solid var(--focus-ring); outline-of
 .skb-podium li.is-p3 .skb-podium__place { background: var(--medal-bronze); color: var(--medal-ink); }
 .skb-podium__name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .skb-podium__meta { font-size: var(--fs-sm); color: var(--skb-ink-soft); }
+.skb-podium__pts { font-family: var(--font-display); font-size: var(--fs-lg); }
+.skb-rank { max-width: 640px; width: 100%; margin: 0 auto; box-sizing: border-box; }
+.skb-rank .skb-h { margin: 0 0 var(--sp-2); }
+.skb-everyone { display: flex; flex-direction: column; gap: var(--sp-3); max-width: 860px; width: 100%; margin: 0 auto; }
+.skb-everyone__said { margin: 0; font-size: var(--fs-xs); color: var(--skb-ink-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .skb-everyone__row { padding: var(--sp-3); }
 .skb-everyone__head { display: flex; align-items: center; gap: var(--sp-3); margin-bottom: var(--sp-2); }
 .skb-everyone__ref { width: 72px; flex: none; }
