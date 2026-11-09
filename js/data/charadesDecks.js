@@ -23,7 +23,7 @@ window.FF = window.FF || {};
     { id: 'actions', name: 'Actions', glyph: 'run', kind: 'word',
       e: 'Brushing teeth|Sleeping|Eating|Jumping|Clapping|Crying|Laughing|Waving goodbye|Running|Sneezing|Yawning|Kicking a ball|Climbing a tree|Blowing bubbles|Taking a bath|Combing hair|Drinking water|Walking a dog',
       n: 'Changing a tyre|Riding a bike|Fishing|Painting a wall|Taking a selfie|Juggling|Skipping rope|Tying shoelaces|Making the bed|Building a sandcastle|Catching a bus|Flying a kite|Shaving|Typing on a computer|Blowing out candles|Rowing a boat|Surfing|Ironing clothes',
-      h: 'Parallel parking|Walking a tightrope|Changing a baby’s nappy|Doing a magic trick|Sleepwalking|Threading a needle|Opening a stuck jar|Defusing a bomb|Hiccuping|Milking a cow|Bungee jumping|Stepping on a plug|Getting stung by a bee|Walking against the wind' },
+      h: 'Parallel parking|Walking a tightrope|Changing a baby’s nappy|Doing a magic trick|Sleepwalking|Threading a needle|Opening a stuck jar|Catching a falling plate|Hiccuping|Milking a cow|Bungee jumping|Stepping on a plug|Getting stung by a bee|Walking against the wind' },
 
     { id: 'jobs', name: 'Jobs', glyph: 'briefcase', kind: 'word',
       e: 'Doctor|Teacher|Chef|Firefighter|Police officer|Farmer|Pilot|Builder|Singer|Dancer|Painter|Driver|Nurse|Fisherman|Baker|Clown|King|Queen',
@@ -31,7 +31,7 @@ window.FF = window.FF || {};
       h: 'Air-traffic controller|Beekeeper|Lion tamer|Window cleaner|Zookeeper|Surgeon|Orchestra conductor|Weather reporter|Tailor|Mime artist|Archaeologist|Football referee|Shop cashier|Barber' },
 
     { id: 'sports', name: 'Sports & games', glyph: 'ball', kind: 'word',
-      e: 'Football|Swimming|Basketball|Tennis|Boxing|Skipping|Hide and seek|Running a race|Karate|Dancing|Throwing a ball|Cycling|Skating|Hopscotch|Tug of war|Bowling|Golf|Horse riding',
+      e: 'Football|Swimming|Basketball|Tennis|Boxing|Leapfrog|Hide and seek|Running a race|Karate|Dancing|Throwing a ball|Cycling|Skating|Hopscotch|Tug of war|Bowling|Golf|Horse riding',
       n: 'Netball|Cricket|Volleyball|Weightlifting|Hula hoop|Table tennis|Skiing|Rugby|Diving|Baseball|Archery|Wrestling|Gymnastics|Badminton|Rock climbing|Sack race|Musical chairs|Darts',
       h: 'Synchronised swimming|Pole vault|Fencing|Ice hockey|Curling|Javelin|Snooker|Hurdles|Water polo|Triple jump|Sumo wrestling|Egg and spoon race|Long jump|Marathon finish' },
 
@@ -41,9 +41,9 @@ window.FF = window.FF || {};
       h: 'Sushi chef|Eating with chopsticks|Tossing a pizza|Whisking cream|Spilling a drink|Pineapple|Sticky toffee|Kneading dough|Sizzling sausages|Too-hot soup|Melting chocolate|Barbecue|Jelly wobbling|Cutting a birthday cake' },
 
     { id: 'home', name: 'Around the house', glyph: 'house', kind: 'word',
-      e: 'Watering plants|Washing dishes|Sweeping|Reading a book|Watching TV|Opening a door|Phone call|Turning on a light|Brushing hair|Putting on shoes|Feeding the cat|Washing hands|Closing a window|Going upstairs|Sitting on a chair|Knocking on a door|Pillow fight|Getting dressed',
+      e: 'Watering plants|Washing dishes|Sweeping|Reading a book|Watching TV|Opening a door|Phone call|Turning on a light|Hiding under the bed|Putting on shoes|Feeding the cat|Washing hands|Closing a window|Going upstairs|Sitting on a chair|Knocking on a door|Pillow fight|Getting dressed',
       n: 'Vacuuming|Hanging washing|Taking out the rubbish|Mopping the floor|Folding clothes|Setting the table|Locking the door|Changing a light bulb|Doing homework|Mowing the lawn|Washing the car|Making toast|Looking for keys|Hammering a nail|Painting nails|Wrapping a present|Unpacking shopping|Charging a phone',
-      h: 'Assembling furniture|Fixing a leaky tap|Untangling headphones|Sneaking a midnight snack|Hanging a picture straight|Killing a mosquito|Catching a fly|Losing the TV remote|Power cut|Stuck in the bathroom|Burnt toast|Alarm clock not working|Tidying in a hurry|Moving house' },
+      h: 'Assembling furniture|Fixing a leaky tap|Untangling headphones|Sneaking a midnight snack|Hanging a picture straight|Swatting a fly|Catching a fly|Losing the TV remote|Power cut|Stuck in the bathroom|Burnt toast|Alarm clock not working|Tidying in a hurry|Moving house' },
 
     { id: 'feelings', name: 'Feelings & faces', glyph: 'smile', kind: 'word',
       e: 'Happy|Sad|Angry|Scared|Tired|Surprised|Hungry|Cold|Hot|Sleepy|Excited|Shy|Sick|Bored|Silly|Proud|Worried|Thirsty',

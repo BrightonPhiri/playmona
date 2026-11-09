@@ -281,7 +281,8 @@ window.FF = window.FF || {};
 
   function setupScreen(api, onGo) {
     api.shell.hideTimer();
-    if (FF.GameLength && FF.GameLength.pause) FF.GameLength.pause();
+    // Charades' own setup decides the length: the app-wide game clock is off.
+    if (FF.GameLength && FF.GameLength.stop) FF.GameLength.stop();
     var c = R.sanitize(store().get(SETUP_KEY, null) || R.STANDARD, deckIds());
     var f = frame(api, 'chr--setup', openSignals);
 
@@ -339,7 +340,6 @@ window.FF = window.FF || {};
       var cfg = R.sanitize(c, deckIds());
       try { store().set(SETUP_KEY, cfg); } catch (e) { /* storage full */ }
       api.audio.play('roundStart');
-      if (FF.GameLength && FF.GameLength.resume) FF.GameLength.resume();
       onGo(cfg);
     });
     foot.appendChild(go);
@@ -380,6 +380,7 @@ window.FF = window.FF || {};
     var order = R.turnOrder(scorers, cfg.turns);
     // Teams with nobody in them: play as individuals named after the scorers.
     if (!order.length) order = R.turnOrder(scorers.map(function (s) { return { id: s.id, name: s.name }; }), cfg.turns);
+    var board = R.activeScorers(scorers, order);
     var dealer = R.Dealer(R.pool(decks(), cfg), rand0);
     var k = 0;
     var stats = {};   // actorId -> { guessed, best }
@@ -397,7 +398,7 @@ window.FF = window.FF || {};
 
     function scoreboard(highlightId, pending) {
       var list = FF.ui.el('ol', { class: 'chr-board' });
-      scorers.slice().sort(function (a, b) { return scoreOf(b.id) - scoreOf(a.id); }).forEach(function (s) {
+      board.slice().sort(function (a, b) { return scoreOf(b.id) - scoreOf(a.id); }).forEach(function (s) {
         var li = FF.ui.el('li', { class: 'chr-row' + (s.id === highlightId ? ' is-now' : '') });
         var dot = FF.ui.span('chr-row__dot');
         if (s.color) dot.style.background = s.color;
@@ -468,7 +469,7 @@ window.FF = window.FF || {};
         big.classList.add('is-pop');
         api.audio.play('countdown');
         n--;
-        later(step, 750);
+        setTimeout(step, 750);
       }
       step();
     }
@@ -548,9 +549,11 @@ window.FF = window.FF || {};
       var lastWhole = total;
       ring.set(total, total);
       api.shell.setTimer(total, timeUp);
+      // Paused during the 3-2-1: the turn waits for Resume.
+      if (document.querySelector('.pause-overlay')) api.shell.timer.pause();
       if (api.shell.timerEl) api.shell.timerEl.classList.add('hidden');
       var watch = setInterval(function () {
-        if (!f.root.isConnected) { clearInterval(watch); document.removeEventListener('keydown', onKey); return; }
+        if (!f.root.isConnected) { clearInterval(watch); document.removeEventListener('keydown', onKey); if (api.shell.timer) api.shell.timer.stop(); return; }
         var tm = api.shell.timer;
         var rem = tm && typeof tm.remaining === 'number' ? tm.remaining : 0;
         ring.set(rem, total);
@@ -571,7 +574,7 @@ window.FF = window.FF || {};
         gotBtn.disabled = true;
         stamp.textContent = t('timeUpShort', 'Time!');
         stamp.classList.add('is-on');
-        later(function () { if (f.root.isConnected) recap(spec, turn); }, 1300);
+        setTimeout(function () { if (f.root.isConnected) recap(spec, turn); }, 1300);
       }
 
       drawCard();
@@ -651,7 +654,7 @@ window.FF = window.FF || {};
     function podium() {
       api.shell.hideTimer();
       f = frame(api, 'chr--podium', null);
-      var ranked = scorers.slice().sort(function (a, b) { return scoreOf(b.id) - scoreOf(a.id); });
+      var ranked = board.slice().sort(function (a, b) { return scoreOf(b.id) - scoreOf(a.id); });
       var top = ranked.length ? scoreOf(ranked[0].id) : 0;
       var winners = ranked.filter(function (s) { return scoreOf(s.id) === top; });
       var box = FF.ui.div('chr-podium');
@@ -743,7 +746,7 @@ window.FF = window.FF || {};
       if (left <= 0) { api.audio.play('flip'); forward(); }
     }, 1000);
     function finish() {
-      if (ended) return;
+      if (ended || !f.root.isConnected) return;
       ended = true;
       clearInterval(cardTimer);
       api.shell.hideTimer();

@@ -1413,6 +1413,8 @@ window.FF = window.FF || {};
       // Leaving an online game early: stop following its rounds, and tell the
       // room so nobody's round waits for this player.
       const leaving = this.current;
+      // A game's own timer must not run on (beeping, or ending the next game).
+      if (leaving && leaving.shell && leaving.shell.timer && leaving.shell.timer.stop) leaving.shell.timer.stop();
       if (leaving && leaving.config && leaving.config.daily) {
         if (FF.Random.unseed) FF.Random.unseed();
         if (!leaving.ended && FF.Daily) {

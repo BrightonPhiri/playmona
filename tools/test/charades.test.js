@@ -254,3 +254,49 @@ test('ch TV display: the theatre stage, not the plain deck', function () {
   assert(tv[1].indexOf("'chr--tv'") !== -1, 'theatre frame');
   assert(tv[1].indexOf('FF.Display.seconds(api, 120)') !== -1, 'same session length');
 });
+
+/* ---------- final review fixes ---------- */
+
+test('ch activeScorers: only scorers who get a turn show on the board', function () {
+  const R = app().CharadesRules;
+  const A = { id: 'A', players: ['a1', 'a2'] };
+  const B = { id: 'B', players: [] };
+  const order = R.turnOrder([A, B], 1);
+  assertEqual(R.activeScorers([A, B], order).map((s) => s.id).join(','), 'A');
+  const solo = [{ id: 'p1' }];
+  assertEqual(R.activeScorers(solo, R.turnOrder(solo, 1)).length, 1);
+});
+
+test('ch leaving: no timer, clock or sound outlives the game screen', function () {
+  const src = read('js/games/charades.js');
+  const close = /close: function \(view, params\) \{([\s\S]*?)\n    \},/.exec(read('js/registry.js'));
+  assert(close && /leaving\.shell\.timer\.stop\(\)/.test(close[1]), 'GameFlow.close stops the leaving game’s shell timer');
+  assert(/isConnected\) \{ clearInterval\(watch\); document\.removeEventListener\('keydown', onKey\); if \(api\.shell\.timer\) api\.shell\.timer\.stop\(\); return; \}/.test(src), 'the turn watch stops the shell timer when the screen is gone');
+  const tvFinish = /function finish\(\) \{\s*if \(ended \|\| !f\.root\.isConnected\) return;/.test(src);
+  assert(tvFinish, 'the TV finish ignores a gone screen');
+  assert(src.indexOf('FF.GameLength.resume') === -1 && /FF\.GameLength\.stop\(\)/.test(src), 'the app-wide game clock is stopped, never resumed');
+});
+
+test('ch timing: countdown and Time! are not cut short by reduced motion; pause during 3-2-1 holds the turn', function () {
+  const src = read('js/games/charades.js');
+  const cd = /function countdown\(spec\) \{([\s\S]*?)\n    \}\n/.exec(src);
+  assert(cd && cd[1].indexOf('later(') === -1 && cd[1].indexOf('setTimeout(step, 750)') !== -1, 'countdown uses a plain timeout');
+  assert(/setTimeout\(function \(\) \{ if \(f\.root\.isConnected\) recap\(spec, turn\); \}, 1300\)/.test(src), 'Time! hold uses a plain timeout');
+  assert(/querySelector\('\.pause-overlay'\)\) api\.shell\.timer\.pause\(\)/.test(src), 'a turn that starts under the pause menu starts paused');
+});
+
+test('ch styles: keyframes use the chr- prefix too', function () {
+  const css = read('css/games.css');
+  const start = css.indexOf('/* ---------- Charades (js/games/charades.js)');
+  const block = css.slice(start, css.indexOf('[data-reduce="1"] .chr-stamp.is-on', start));
+  assert(!/@keyframes ch-|animation: ch-/.test(block), 'no ch- keyframes');
+});
+
+test('ch decks: family-safe words and no near-duplicate cards', function () {
+  const all = [];
+  withDecks().data.charadesDecks.forEach((d) => d.cards.forEach((c) => all.push(c.t.toLowerCase())));
+  all.forEach((t) => assert(!/bomb|gun|kill|blood|dead|knife/.test(t), 'not family-safe: ' + t));
+  [['brushing hair', 'combing hair'], ['skipping', 'skipping rope']].forEach(function (p) {
+    assert(!(all.indexOf(p[0]) !== -1 && all.indexOf(p[1]) !== -1), 'near-duplicates: ' + p.join(' / '));
+  });
+});

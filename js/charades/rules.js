@@ -185,6 +185,13 @@ window.FF = window.FF || {};
     return out;
   }
 
+  /* The scorers that get at least one turn (an empty team never shows). */
+  function activeScorers(scorers, order) {
+    var ids = {};
+    (order || []).forEach(function (o) { ids[o.scorerId] = true; });
+    return (scorers || []).filter(function (s) { return ids[s.id]; });
+  }
+
   function wordCount(text) {
     return String(text || '').trim().split(/\s+/).filter(Boolean).length;
   }
@@ -204,6 +211,7 @@ window.FF = window.FF || {};
     points: points,
     Turn: Turn,
     turnOrder: turnOrder,
+    activeScorers: activeScorers,
     wordCount: wordCount
   };
 })();
