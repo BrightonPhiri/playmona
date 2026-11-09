@@ -1,7 +1,6 @@
 /* ============================================================
    PLAYMONA — creativeGames.js
-   Five creative/party games:
-   - charades           (act out a word)
+   Four creative/party games (Charades has its own file, games/charades.js):
    - visualCharades     (act out an illustrated scene)
    - dontSayIt          (describe without forbidden words)
    - drawingChallenge   (draw, then players vote)
@@ -264,52 +263,6 @@ window.FF = window.FF || {};
   /* ---------- get items with fallbacks ---------- */
   function party() { return (FF.data && FF.data.party) ? FF.data.party : null; }
   function visual() { return (FF.data && FF.data.visual) ? FF.data.visual : null; }
-
-  /* ============================================================
-     1. CHARADES
-     ============================================================ */
-  FF.registerGame({
-    id: 'charades',
-    featured: true,
-    name: 'Charades',
-    description: 'Act out the word — no talking! — while everyone guesses.',
-    category: 'creative',
-    icon: '🎭',
-    players: [1, 8],
-    difficulty: 'Easy',
-    duration: 6,
-    modes: ['solo', 'turn', 'team'],
-    defaultMode: 'turn',
-    howToPlay: [
-      'Pass the device to the active player.',
-      'Tap Reveal to see your secret word.',
-      'Act it out — no speaking!',
-      'Teammates guess; tap Correct when solved.'
-    ],
-    display: true,
-    displayStart: function (api) {
-      var p = party();
-      if (!p || !p.charades || !p.charades.length) { showMissing(api, 'No charades prompts'); return; }
-      FF.Display.deck(api, {
-        title: 'Charades',
-        tag: 'Everyone plays: act it out',
-        items: p.charades,
-        interval: 30,
-        render: function (item) { return FF.ui.div('dsp-word', item.word); },
-        label: function (item) { return item.category || 'Act it out — no talking!'; }
-      });
-    },
-    start: function (api) {
-      var p = party();
-      if (!p || !p.charades || !p.charades.length) { showMissing(api, 'No charades prompts'); return; }
-      runRevealGame(api, p.charades, {
-        instruction: 'Act it out — no talking! Others guess aloud.',
-        render: function (item) {
-          return [FF.ui.div('rv-word', item.word), item.category ? FF.ui.div('rv-cat', item.category) : null];
-        }
-      });
-    }
-  });
 
   /* ============================================================
      2. VISUAL CHARADES
