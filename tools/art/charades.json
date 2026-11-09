@@ -1,0 +1,21 @@
+{
+  "game": "charades",
+  "prompts": "docs/art/charades-prompts.md",
+  "source": "assets/playmona_assets/charades",
+  "ids": [],
+  "sets": [],
+  "focus": {},
+  "cover": {
+    "from": "cover.png",
+    "to": "assets/images/covers/charades.webp",
+    "size": [
+      1086,
+      1448
+    ],
+    "max_kb": 240,
+    "focus": [
+      0.5,
+      0.5
+    ]
+  }
+}
