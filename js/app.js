@@ -777,6 +777,13 @@ window.FF = window.FF || {};
         onclick: function () { FF.Audio.play('select'); if (opts.onPlay) opts.onPlay(def); else FF.GameFlow.launch(def.id); }
       }, def.name);
       var name = FF.ui.el('h3', { class: 'gcard__name' }, [link]);
+      // The whole card opens the game, not just the name (featured cards clip the link's cover).
+      card.addEventListener('click', function (e) {
+        if (e.target.closest('button, a') && e.target.closest('button, a') !== link) return;
+        if (e.target.closest('.gcard__link')) return;
+        link.click();
+      });
+      card.style.cursor = 'pointer';
       var desc = FF.ui.el('p', { class: 'gcard__desc' }, def.description);
       var meta = FF.ui.div('gcard__meta');
       var pc = FF.ui.span('meta-chip');
