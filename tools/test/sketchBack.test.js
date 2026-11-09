@@ -186,3 +186,51 @@ test('sketchBack art: the sketch list names only files that exist', function () 
   const gen = require(path.join(ROOT, 'tools/sketchback/gen-files.js'));
   assertEqual(JSON.stringify(gen.list()), JSON.stringify(F.ids), 'sketchFiles.js is up to date');
 });
+
+/* ---------- drawing pad ---------- */
+
+const pad = () => loadFF(['js/core.js', 'js/sketchback/pad.js']).SketchPad;
+
+test('sketchBack pad: undo removes the last stroke, clear empties', function () {
+  const m = pad()._model();
+  m.start(10, 10); m.move(50, 50); m.end();
+  m.start(100, 100); m.move(200, 200); m.end();
+  assertEqual(m.strokes().length, 2);
+  m.undo();
+  assertEqual(m.strokes().length, 1);
+  assertEqual(m.strokes()[0].join(','), '10,10,50,50');
+  m.clear();
+  assertEqual(m.strokes().length, 0);
+  m.undo();
+  assertEqual(m.strokes().length, 0, 'undo on empty is harmless');
+});
+
+test('sketchBack pad locks mid-stroke: the drawing stays as it stood', function () {
+  const m = pad()._model();
+  m.start(10, 10); m.move(20, 20);
+  m.lock();
+  m.move(300, 300); m.end();
+  m.start(500, 500); m.move(600, 600); m.end();
+  m.undo(); m.clear();
+  assertEqual(JSON.stringify(m.strokes()), JSON.stringify([[10, 10, 20, 20]]));
+  assert(m.locked(), 'locked');
+});
+
+test('sketchBack pad: a tap makes a dot, points stay on the paper', function () {
+  const m = pad()._model();
+  m.start(40, 40); m.end();
+  assertEqual(m.strokes().length, 1);
+  assertEqual(m.strokes()[0].length, 2);
+  m.start(-50, 2000); m.move(1200, -3); m.end();
+  assertEqual(m.strokes()[1].join(','), '0,1000,1000,0');
+});
+
+test('sketchBack pad: strokes() is a copy, so saved drawings never change', function () {
+  const m = pad()._model();
+  m.start(1, 1); m.move(5, 5); m.end();
+  const saved = m.strokes();
+  m.start(9, 9); m.end();
+  saved[0].push(99);
+  assertEqual(m.strokes().length, 2);
+  assertEqual(m.strokes()[0].length, 4);
+});
