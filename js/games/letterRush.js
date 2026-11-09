@@ -75,6 +75,9 @@ window.FF = window.FF || {};
     return { index: r, name: t(RANKS[r].key, RANKS[r].name), next: RANKS[r + 1] || null };
   }
 
+  // Night-stage look (like Mini Crossword and GeoSpin) on every screen but the TV one.
+  function theme(api, on) { if (api.shell.el) api.shell.el.classList.toggle('lr-shell', !!on); }
+
   function upper(w) { return String(w).toUpperCase(); }
 
   function bestWord(words) {
@@ -111,7 +114,7 @@ window.FF = window.FF || {};
   function whenReady(api, go) {
     if (FF.Words && FF.Words.ready()) { go(); return; }
     var root = api.shell.root;
-    FF.ui.clear(root);
+    FF.ui.clear(root); theme(api, true);
     api.shell.hideTimer();
     var stage = FF.GameUI.stage({ center: true, className: 'lr-loading' });
     var dots = FF.ui.div('lr-loading__tiles');
@@ -231,11 +234,15 @@ window.FF = window.FF || {};
     var open = !opts.racing;
     var flashing = null;   // timeout while the last word shows its result
 
-    FF.ui.clear(root);
+    FF.ui.clear(root); theme(api, true);
     api.shell.hideTimer();
     api.shell.setTitle(api.def.name);
 
     var stage = FF.GameUI.stage({ wide: true, className: 'lr' });
+    var brand = FF.ui.div('lr-brand');
+    brand.appendChild(FF.ui.span('lr-brand__a', t('lrBrandA', 'Letter')));
+    brand.appendChild(FF.ui.span('lr-brand__b', t('lrBrandB', 'Rush')));
+    stage.appendChild(brand);
     stage.appendChild(FF.GameUI.turnBar(entity, opts.label));
 
     // ---- Score, words and rank ----
@@ -289,13 +296,11 @@ window.FF = window.FF || {};
     board.appendChild(rackEl);
 
     var controls = FF.ui.div('lr-controls');
-    var shuffleBtn = ctrl('shuffle', t('lrShuffle', 'Shuffle'), shuffle);
     var deleteBtn = ctrl('backspace', t('lrDelete', 'Delete'), removeLast);
     var enterBtn = FF.ui.el('button', { type: 'button', class: 'lr-ctrl lr-ctrl--enter' });
     enterBtn.appendChild(icon('check'));
     enterBtn.appendChild(FF.ui.span('', t('lrEnter', 'Enter')));
     enterBtn.addEventListener('click', submit);
-    controls.appendChild(shuffleBtn);
     controls.appendChild(deleteBtn);
     controls.appendChild(enterBtn);
     board.appendChild(controls);
@@ -312,7 +317,7 @@ window.FF = window.FF || {};
     foot.appendChild(hintBtn);
     foot.appendChild(FF.UI.button(opts.racing ? t('lrImDone', 'I’m done') : t('lrFinishTurn', 'Finish turn'), { icon: 'chevron-right', class: 'btn lr-done', onClick: function () { finish(); } }));
     stage.appendChild(foot);
-    stage.appendChild(FF.ui.el('p', { class: 'lr-keys' }, t('lrKeys', 'Keyboard: type letters · Enter to submit · Backspace to delete · Space to shuffle')));
+    stage.appendChild(FF.ui.el('p', { class: 'lr-keys' }, t('lrKeys', 'Keyboard: type letters · Enter to submit · Backspace to delete')));
     if (!seconds) stage.appendChild(FF.GameUI.note(t('lrNoClock', 'No clock this time. Press Finish turn when you are done.')));
     root.appendChild(stage);
 
@@ -365,7 +370,9 @@ window.FF = window.FF || {};
       var hi = r.next ? r.next.at : 1;
       var frac = rack.total ? Math.min(1, score / rack.total) : 0;
       var within = r.next ? Math.max(0, Math.min(1, (frac - lo) / (hi - lo))) : 1;
-      rankFill.style.width = ((r.index + within) / (RANKS.length - 1) * 100) + '%';
+      // Top rank fills the bar; never past the end.
+      var pct = r.next ? (r.index + within) / (RANKS.length - 1) : 1;
+      rankFill.style.width = (Math.max(0, Math.min(1, pct)) * 100) + '%';
       pips.forEach(function (pip, i) { pip.classList.toggle('is-on', i <= r.index); });
       return r;
     }
@@ -437,23 +444,6 @@ window.FF = window.FF || {};
       picked = [];
       renderRack();
       renderWord();
-    }
-
-    function shuffle() {
-      if (over || !open) return;
-      // Keep shuffling until the order really changes.
-      var before = tiles.map(function (x) { return x.id; }).join(',');
-      for (var n = 0; n < 6; n++) {
-        tiles = FF.util.shuffle(tiles);
-        if (tiles.map(function (x) { return x.id; }).join(',') !== before) break;
-      }
-      api.audio.play('flip');
-      renderRack();
-      if (animate) {
-        rackEl.classList.remove('is-shuffled');
-        void rackEl.offsetWidth;
-        rackEl.classList.add('is-shuffled');
-      }
     }
 
     function flash(state, after) {
@@ -531,7 +521,6 @@ window.FF = window.FF || {};
       if (k === 'Enter') { e.preventDefault(); submit(); return; }
       if (k === 'Backspace') { e.preventDefault(); removeLast(); return; }
       if (k === 'Escape' && picked.length) { e.preventDefault(); settleFlash(); clearPicked(); return; }
-      if (k === ' ' || k === 'Spacebar') { e.preventDefault(); shuffle(); return; }
       if (k && k.length === 1 && /[a-z]/i.test(k)) {
         var ch = k.toLowerCase();
         if (flashing) settleFlash();
@@ -592,7 +581,7 @@ window.FF = window.FF || {};
 
   function turnSummary(api, entity, rack, result, opts) {
     var root = api.shell.root;
-    FF.ui.clear(root);
+    FF.ui.clear(root); theme(api, true);
     api.shell.hideTimer();
     var stage = FF.GameUI.stage({ className: 'lr-sum' });
     var r = rankFor(rack.total ? result.score / rack.total : 0);
@@ -649,7 +638,7 @@ window.FF = window.FF || {};
   /* Pass the device: nothing starts until the next player is ready. */
   function readyCard(api, entity, label, go) {
     var root = api.shell.root;
-    FF.ui.clear(root);
+    FF.ui.clear(root); theme(api, true);
     api.shell.hideTimer();
     var stage = FF.GameUI.stage({ center: true, className: 'lr-ready' });
     var ava = FF.ui.div('lr-ready__ava');
@@ -675,7 +664,7 @@ window.FF = window.FF || {};
     if (!rack) { FF.GameUI.exitCard(api); return; }
     var ended = false;
 
-    FF.ui.clear(root);
+    FF.ui.clear(root); theme(api, false);
     api.shell.hideTimer();
     api.shell.setTitle(api.def.name);
 
@@ -693,11 +682,6 @@ window.FF = window.FF || {};
 
     var actions = FF.ui.div('dsp-actions');
     var revealBtn = FF.UI.button(t('lrReveal', 'Show the words'), { icon: 'eye', class: 'btn btn-lg', onClick: reveal });
-    actions.appendChild(FF.UI.button(t('lrShuffle', 'Shuffle'), { icon: 'shuffle', class: 'btn btn-lg', onClick: function () {
-      rack.letters = FF.util.shuffle(rack.letters);
-      render();
-      api.audio.play('flip');
-    } }));
     actions.appendChild(FF.UI.button(t('lrNewLetters', 'New letters'), { icon: 'restart', class: 'btn btn-lg', onClick: function () {
       rack = deal(api) || rack;
       FF.ui.clear(answers);
@@ -817,7 +801,7 @@ window.FF = window.FF || {};
 
     function standings() {
       var root = api.shell.root;
-      FF.ui.clear(root);
+      FF.ui.clear(root); theme(api, true);
       api.shell.hideTimer();
       var stage = FF.GameUI.stage({ className: 'lr-end' });
       stage.appendChild(FF.GameUI.prompt(t('lrStandings', 'How everyone did'), 'md'));

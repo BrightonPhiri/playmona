@@ -4030,3 +4030,72 @@ button.imp-card:focus-visible { outline: 3px solid var(--focus-ring); outline-of
   .cw-tile, .cw-tile *, .cw-demo__cell, .cw-demo__cell span, .cw-win__box, .cw-pass__box, .cw-win__star, .cw-win__best { animation-duration: 0.01s !important; animation-delay: 0s !important; }
   .cw-cursor { transition: opacity 0.2s; }
 }
+
+/* ---------- Letter Rush night stage (js/games/letterRush.js) ----------
+   Same family as Mini Crossword and GeoSpin: a night sky, glass panels and
+   gold 3D letter tiles, the same in both themes. Re-points the shared tokens
+   inside the game so every Letter Rush screen picks up the dark look. */
+.lr-shell .game-shell__content {
+  color-scheme: dark;
+  --surface: color-mix(in srgb, var(--gs-night-2) 62%, transparent);
+  --surface-2: color-mix(in srgb, var(--gs-night) 60%, transparent);
+  --surface-3: color-mix(in srgb, var(--gs-ink) 14%, transparent);
+  --text: var(--gs-ink); --muted: var(--gs-ink-dim);
+  --border: color-mix(in srgb, var(--gs-violet) 45%, transparent);
+  --border-strong: color-mix(in srgb, var(--gs-violet) 70%, transparent);
+  --accent: var(--gs-gold); --accent-text: var(--gs-gold-ink); --accent-edge: var(--gs-gold-deep);
+  --accent-soft: color-mix(in srgb, var(--gs-gold) 18%, transparent);
+  --success: var(--gs-green); --success-soft: color-mix(in srgb, var(--gs-green) 20%, transparent);
+  --danger: var(--gs-red); --warn: var(--gs-gold-hi); --on-status: var(--gs-night);
+  --press-edge: rgba(0, 0, 0, 0.5);
+  --shadow-1: 0 0 18px color-mix(in srgb, var(--gs-violet) 22%, transparent);
+  --shadow-2: 0 0 28px color-mix(in srgb, var(--gs-violet) 30%, transparent);
+  position: relative; isolation: isolate; color: var(--text);
+  background:
+    radial-gradient(60% 40% at 50% 30%, color-mix(in srgb, var(--gs-violet) 30%, transparent), transparent 70%),
+    radial-gradient(40% 30% at 10% 90%, color-mix(in srgb, var(--gs-horizon) 40%, transparent), transparent 70%),
+    radial-gradient(40% 30% at 92% 80%, color-mix(in srgb, var(--gs-blue) 28%, transparent), transparent 70%),
+    linear-gradient(180deg, var(--gs-night) 0%, var(--gs-night-2) 55%, var(--gs-dusk) 100%);
+}
+.lr-shell .game-shell__content::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; opacity: 0.7;
+  background-image:
+    radial-gradient(1.5px 1.5px at 12% 18%, var(--gs-ink), transparent), radial-gradient(1px 1px at 28% 72%, var(--gs-ink-soft), transparent),
+    radial-gradient(1.5px 1.5px at 66% 12%, var(--gs-ink), transparent), radial-gradient(1px 1px at 84% 40%, var(--gs-ink-soft), transparent),
+    radial-gradient(1px 1px at 44% 88%, var(--gs-ink-soft), transparent), radial-gradient(2px 2px at 92% 8%, var(--gs-gold-hi), transparent),
+    radial-gradient(1px 1px at 6% 52%, var(--gs-ink), transparent), radial-gradient(1.5px 1.5px at 58% 64%, var(--gs-ink-soft), transparent);
+}
+.lr-shell .gm-turnbar, .lr-shell .lr-stat, .lr-shell .lr-rank, .lr-shell .lr-found, .lr-shell .lr-end__row {
+  background: var(--surface); border: 1.5px solid var(--border); border-radius: 20px;
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); box-shadow: var(--shadow-1);
+}
+.lr-brand { align-self: center; font-family: var(--font-display); font-weight: 700; font-size: 1.7rem; line-height: 1; letter-spacing: -0.01em; filter: drop-shadow(0 2px 6px color-mix(in srgb, var(--gs-violet) 70%, transparent)); }
+.lr-brand__a { color: var(--gs-ink); }
+.lr-brand__b { margin-left: 0.25em; background: linear-gradient(180deg, var(--gs-gold-hi), var(--gs-gold) 55%, var(--gs-gold-deep)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.lr-shell .lr-stat__num { color: var(--gs-gold); }
+.lr-shell .lr-rank__name { color: var(--gs-gold-hi); }
+.lr-shell .lr-rank__track { overflow: visible; background: color-mix(in srgb, var(--gs-ink) 14%, transparent); }
+.lr-shell .lr-rank__fill { max-width: 100%; background: linear-gradient(90deg, var(--gs-cyan), var(--gs-violet), var(--gs-gold)); box-shadow: 0 0 10px color-mix(in srgb, var(--gs-cyan) 60%, transparent); }
+.lr-shell .lr-rank__pip { background: var(--gs-night-2); }
+.lr-shell .lr-rank__pip.is-on { background: var(--gs-gold); border-color: var(--gs-gold-hi); box-shadow: 0 0 8px var(--gs-gold); }
+.lr-shell .lr-board {
+  background: color-mix(in srgb, var(--gs-night-2) 55%, transparent); border: 1.5px solid var(--border); border-radius: 24px;
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); box-shadow: var(--shadow-2);
+}
+.lr-shell .lr-board::before { background: linear-gradient(90deg, var(--gs-cyan), var(--gs-violet), var(--gs-gold)); }
+.lr-shell .lr-word__ch { background: color-mix(in srgb, var(--gs-cyan) 22%, var(--gs-night-2)); color: var(--gs-ink); border: 1.5px solid var(--gs-cyan); box-shadow: 0 0 12px color-mix(in srgb, var(--gs-cyan) 45%, transparent); }
+.lr-shell .lr-tile {
+  border: 0; border-radius: 16px; color: var(--gs-gold-ink);
+  background: linear-gradient(180deg, var(--gs-gold-hi) 0%, var(--gs-gold) 48%, var(--gs-gold-deep) 100%);
+  box-shadow: inset 0 3px 0 color-mix(in srgb, var(--gs-ink) 75%, transparent), inset 0 -5px 0 color-mix(in srgb, var(--gs-gold-deep) 85%, var(--gs-gold-ink)),
+    0 6px 0 color-mix(in srgb, var(--gs-gold-deep) 80%, var(--gs-gold-ink)), 0 10px 16px color-mix(in srgb, var(--gs-night) 80%, transparent);
+}
+@media (hover: hover) { .lr-shell .lr-tile:hover:not(:disabled) { color: var(--gs-gold-ink); filter: brightness(1.06); transform: translateY(-2px); } }
+.lr-shell .lr-tile:active:not(:disabled) { transform: translateY(5px); box-shadow: inset 0 3px 0 color-mix(in srgb, var(--gs-ink) 75%, transparent), 0 1px 0 var(--gs-gold-deep); }
+.lr-shell .lr-tile.is-used { opacity: 0.28; filter: grayscale(0.7); transform: translateY(5px) scale(0.92); box-shadow: none; }
+.lr-shell .lr-ctrl { background: var(--surface); border: 1.5px solid color-mix(in srgb, var(--gs-ink) 25%, transparent); color: var(--gs-ink); box-shadow: none; }
+@media (hover: hover) { .lr-shell .lr-ctrl:hover { border-color: var(--gs-cyan); } }
+.lr-shell .lr-ctrl--enter { background: linear-gradient(180deg, var(--gs-gold-hi), var(--gs-gold) 55%, var(--gs-gold-deep)); color: var(--gs-gold-ink); border: 0; box-shadow: 0 4px 0 var(--gs-gold-deep), 0 0 16px color-mix(in srgb, var(--gs-gold) 40%, transparent); }
+.lr-shell .lr-chip { background: color-mix(in srgb, var(--gs-night) 55%, transparent); border-color: color-mix(in srgb, var(--gs-ink) 18%, transparent); }
+.lr-shell .lr-chip--rush { background: var(--gs-gold); color: var(--gs-gold-ink); border-color: transparent; }
+.lr-shell .btn:not(.btn-primary) { background: var(--surface); color: var(--gs-ink); border-color: color-mix(in srgb, var(--gs-ink) 25%, transparent); }
