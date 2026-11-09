@@ -234,3 +234,23 @@ test('ch registered: own file, old block gone, scripts listed in order', functio
   });
   assert(/"charades"/.test(read('js/icons.js')), 'has an icon');
 });
+
+test('ch signals sheet: every signal has a pose drawing', function () {
+  const src = read('js/games/charades.js');
+  const m = /var POSES = \{([\s\S]*?)\n  \};/.exec(src);
+  assert(m, 'a POSES table in charades.js');
+  app().CharadesRules.SIGNALS.forEach(function (s) {
+    const keys = m[1].split(/\r?\n/).map((l) => l.trim().split(':')[0]);
+    assert(keys.indexOf(s.id) !== -1, 'pose for ' + s.id);
+  });
+  assert(/function signals\(/.test(src), 'a signals sheet');
+});
+
+test('ch TV display: the theatre stage, not the plain deck', function () {
+  const src = read('js/games/charades.js');
+  const tv = /function displayStart\(api\) \{([\s\S]*?)\n  \}\n/.exec(src);
+  assert(tv, 'displayStart exists');
+  assert(tv[1].indexOf('FF.Display.deck') === -1, 'no plain deck');
+  assert(tv[1].indexOf("'chr--tv'") !== -1, 'theatre frame');
+  assert(tv[1].indexOf('FF.Display.seconds(api, 120)') !== -1, 'same session length');
+});

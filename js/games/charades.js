@@ -207,11 +207,75 @@ window.FF = window.FF || {};
     };
   }
 
-  /* ================= signals sheet (filled in by signals()) ================= */
+  /* ================= the card face ================= */
 
-  function openSignals() {
-    if (FF.CharadesGame && FF.CharadesGame.signals) FF.CharadesGame.signals();
+  /* The cream card in the spotlight: deck chip, the words, the category signal
+     and word count for titles, and the twist ribbon. */
+  function cardFace(c) {
+    var el = FF.ui.div('chr-cardface' + (c.twist ? ' has-twist' : ''));
+    el.appendChild(chip(deckName(c.deck), 'chr-chip--deck', (deckById(c.deck) || {}).glyph));
+    el.appendChild(FF.ui.div('chr-cardface__text' + (c.t.length > 22 ? ' is-long' : ''), c.t));
+    if (c.kind === 'title') {
+      var sig = FF.ui.div('chr-cardface__sig');
+      sig.appendChild(glyph(c.signal === 'song' ? 'music' : c.signal === 'tv' ? 'tv' : c.signal === 'film' ? 'film' : 'book'));
+      sig.appendChild(FF.ui.span('', signalLine(c.signal) + ' · ' + t('chrNWords', '{n} words', { n: R.wordCount(c.t) })));
+      el.appendChild(sig);
+    }
+    if (c.twist) {
+      var rib = FF.ui.div('chr-twist');
+      rib.appendChild(FF.ui.span('chr-twist__label', t('chrTwist', 'Twist')));
+      rib.appendChild(FF.ui.span('', t('chrTw_' + c.twist.id, c.twist.text) + ' (+1)'));
+      el.appendChild(rib);
+    }
+    return el;
   }
+
+  /* ================= signals sheet ================= */
+
+  /* Stick-figure poses for the standard signals (viewBox 0 0 48 44). Every pose
+     shares the head, body and legs; these are the arms and props. */
+  var POSE_BODY = '<circle cx="24" cy="9" r="4.5"/><path d="M24 13.5V28M24 28l-6 12M24 28l6 12"/>';
+  var POSES = {
+    film: '<path d="M24 17l-7-3M24 17l9-4"/><rect x="9" y="9" width="8" height="7" rx="1.5"/><circle cx="36" cy="11" r="3.5"/><path d="M36 11l2-2"/>',
+    book: '<path d="M24 17l-7 5M24 17l7 5"/><path d="M15 20l9 3 9-3v8l-9 3-9-3z"/><path d="M24 23v8"/>',
+    song: '<path d="M24 17l3-4 1-1M24 17l11-3"/><path d="M39 5v6M39 5l4 1v5"/><circle cx="38" cy="11" r="1.5"/>',
+    tv: '<path d="M24 17l-8-8M24 17l8-8"/><rect x="10" y="2" width="28" height="18" rx="2" stroke-dasharray="3 3"/>',
+    play: '<path d="M24 17l10-12M24 17l-7 6"/><path d="M34 0v26"/><circle cx="34" cy="27" r="1.6"/>',
+    saying: '<path d="M24 17l-9-7M24 17l9-7"/><path d="M11 3v4M14 3v4M34 3v4M37 3v4"/>',
+    words: '<path d="M24 17l-8 4M24 17l10-9"/><path d="M33 7V2M35.5 7V1.5M38 7V2.5"/>',
+    whichWord: '<path d="M24 17l10-9M24 17l6 1 4-5"/><path d="M35 7V1.5"/>',
+    syllables: '<path d="M24 17l-10 4h14M24 17l3 1"/><path d="M19 17v3M22 17v3M25 17v3"/>',
+    soundsLike: '<path d="M24 17l-4-5 0-3M24 17l9 3"/><path d="M18 6a3 3 0 0 0 0 6"/><path d="M14 5a6 6 0 0 0 0 8" stroke-dasharray="2 2"/>',
+    smallWord: '<path d="M24 17l11-4M24 17l-8 4"/><path d="M36 10l3-2M36 14l3 1"/>',
+    wholeIdea: '<path d="M24 17l-11-6M24 17l11-6"/><path d="M8 18a16 16 0 0 1 32 0" stroke-dasharray="3 3"/>',
+    plural: '<path d="M24 17l-4 4 3 1M24 17l4 4-3 1"/><circle cx="22.5" cy="23" r="2"/><circle cx="25.5" cy="23" r="2"/>',
+    pastTense: '<path d="M24 17l-5-4 -3-6M24 17l8 4"/><path d="M14 13a7 7 0 0 1-4-8M10 5l-1 4 4-1"/>',
+    onTheNose: '<path d="M24 17l-3-3 2-4M24 17l13-2"/><path d="M37 15l4 0M39 13l2 2-2 2"/>'
+  };
+  function poseEl(id) {
+    var s2 = document.createElement('span');
+    s2.className = 'chr-pose';
+    s2.setAttribute('aria-hidden', 'true');
+    s2.innerHTML = '<svg viewBox="0 0 48 44" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' + POSE_BODY + (POSES[id] || '') + '</svg>';
+    return s2;
+  }
+
+  /* A sheet with every standard signal. The turn's timer keeps running. */
+  function signals() {
+    var grid = FF.ui.el('ul', { class: 'chr-signals' });
+    R.SIGNALS.forEach(function (sg) {
+      var li = FF.ui.el('li', { class: 'chr-signal' });
+      li.appendChild(poseEl(sg.id));
+      var txt = FF.ui.div('chr-signal__text');
+      txt.appendChild(FF.ui.el('strong', {}, signalName(sg.id)));
+      txt.appendChild(FF.ui.span('', t('chrSigHow_' + sg.id, sg.how)));
+      li.appendChild(txt);
+      grid.appendChild(li);
+    });
+    var intro = FF.ui.el('p', { class: 'chr-signals__intro' }, t('chrSignalsIntro', 'The silent signals players use all over the world. Start with the category and the number of words.'));
+    FF.UI.sheet({ title: t('chrSignals', 'Charades signals'), body: [intro, grid], className: 'chr-sheet', wide: true, actions: [{ label: t('close', 'Close'), primary: true }] });
+  }
+  function openSignals() { signals(); }
 
   /* ================= setup ================= */
 
@@ -443,21 +507,7 @@ window.FF = window.FF || {};
         var c = turn.card();
         FF.ui.clear(cardHost);
         if (!c) return;
-        cardEl = FF.ui.div('chr-cardface' + (c.twist ? ' has-twist' : ''));
-        cardEl.appendChild(chip(deckName(c.deck), 'chr-chip--deck', (deckById(c.deck) || {}).glyph));
-        cardEl.appendChild(FF.ui.div('chr-cardface__text' + (c.t.length > 22 ? ' is-long' : ''), c.t));
-        if (c.kind === 'title') {
-          var sig = FF.ui.div('chr-cardface__sig');
-          sig.appendChild(glyph(c.signal === 'song' ? 'music' : c.signal === 'tv' ? 'tv' : c.signal === 'film' ? 'film' : 'book'));
-          sig.appendChild(FF.ui.span('', signalLine(c.signal) + ' · ' + t('chrNWords', '{n} words', { n: R.wordCount(c.t) })));
-          cardEl.appendChild(sig);
-        }
-        if (c.twist) {
-          var rib = FF.ui.div('chr-twist');
-          rib.appendChild(FF.ui.span('chr-twist__label', t('chrTwist', 'Twist')));
-          rib.appendChild(FF.ui.span('', t('chrTw_' + c.twist.id, c.twist.text) + ' (+1)'));
-          cardEl.appendChild(rib);
-        }
+        cardEl = cardFace(c);
         cardHost.appendChild(cardEl);
         swipeOn(cardEl);
       }
@@ -636,16 +686,73 @@ window.FF = window.FF || {};
 
   /* ================= TV display ================= */
 
+  /* The big screen shows one card for the whole room to act at once. A new card
+     every 30 seconds (or Next), for the TV session's length. */
   function displayStart(api) {
     var pool = R.pool(decks(), { decks: ['mix'], level: 'normal' });
-    FF.Display.deck(api, {
-      title: t('chrName', 'Charades'),
-      tag: t('chrEveryoneActs', 'Everyone acts at once'),
-      items: pool,
-      interval: 30,
-      render: function (item) { return FF.ui.div('dsp-word', item.t); },
-      label: function (item) { return deckName(item.deck); }
+    if (!pool.length) { api.fail('No items to display.'); return; }
+    var seconds = FF.Display.seconds(api, 120);
+    var interval = 30;
+    var dealer = R.Dealer(pool, rand0);
+    var history = [];
+    var idx = -1;
+    var left = interval;
+    var ended = false;
+    var f = frame(api, 'chr--tv', openSignals);
+    api.shell.setTitle(api.def.name);
+    f.chips.appendChild(chip(t('chrEveryoneActs', 'Everyone acts at once'), 'chr-chip--turn', 'mask'));
+    var clock = chip(FF.util.formatTime(seconds), '', 'check');
+    f.chips.appendChild(clock);
+    var ring = timerRing();
+    f.stage.appendChild(ring.el);
+    var host = FF.ui.div('chr-cardhost');
+    f.stage.appendChild(host);
+    var counter = FF.ui.el('p', { class: 'chr-note', 'aria-live': 'polite' });
+    f.stage.appendChild(counter);
+    var actions = FF.ui.div('chr-actions chr-actions--tv');
+    actions.appendChild(button(t('previous', 'Previous'), 'chr-btn--pass', null, function () { if (idx > 0) { idx--; show(); } }));
+    actions.appendChild(button(t('next', 'Next'), 'chr-btn--go', 'skip', function () { forward(); }));
+    f.stage.appendChild(actions);
+    f.stage.appendChild(button(t('finish', 'Finish'), 'chr-btn--ghost', 'check', finish));
+    var how = FF.ui.el('ol', { class: 'chr-how chr-card' });
+    [t('chrTv1', 'Everyone stands up and acts the card at the same time.'), t('chrTv2', 'Guess what the others are acting. No talking while you act!'),
+      t('chrTv3', 'A new card every {n} seconds, or tap Next.', { n: interval })].forEach(function (x, i) {
+      var li = FF.ui.el('li', {});
+      li.appendChild(FF.ui.span('chr-how__n', String(i + 1)));
+      li.appendChild(FF.ui.span('', x));
+      how.appendChild(li);
     });
+    f.side.appendChild(how);
+
+    function show() {
+      FF.ui.clear(host);
+      host.appendChild(cardFace(history[idx]));
+      counter.textContent = t('cardN', 'Card {n}', { n: idx + 1 });
+      left = interval;
+      ring.set(left, interval);
+    }
+    function forward() {
+      if (idx < history.length - 1) idx++;
+      else { history.push(dealer.next()); idx = history.length - 1; }
+      show();
+    }
+    var cardTimer = setInterval(function () {
+      if (ended || !f.root.isConnected) { clearInterval(cardTimer); return; }
+      left -= 1;
+      ring.set(left, interval);
+      if (left <= 0) { api.audio.play('flip'); forward(); }
+    }, 1000);
+    function finish() {
+      if (ended) return;
+      ended = true;
+      clearInterval(cardTimer);
+      api.shell.hideTimer();
+      api.end({ title: FF.t('timesUp', 'Time\u2019s up!') });
+    }
+    forward();
+    api.shell.setOnTick(function (rem) { clock.lastChild.textContent = FF.util.formatTime(rem); });
+    api.shell.setTimer(seconds, finish);
+    if (api.shell.timerEl) api.shell.timerEl.classList.add('hidden');
   }
 
   /* ================= registration ================= */
@@ -684,4 +791,5 @@ window.FF = window.FF || {};
 
   FF.CharadesGame = FF.CharadesGame || {};
   FF.CharadesGame.glyph = glyph;
+  FF.CharadesGame.signals = signals;
 })();
