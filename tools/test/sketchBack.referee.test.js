@@ -197,6 +197,39 @@ test('sketchback referee: naming ends early once everyone here has answered; a l
   m.ref.stop();
 });
 
+test('sketchback: answers sent a few seconds after the naming clock (a slow phone) still count; the client agrees', async function () {
+  assert(m0GraceOk(), 'grace of at least 5 s');
+  const m = await match();
+  await m.toRecall();
+  const a = await phone(m, 'p2');
+  const deal = m.deal();
+  await m.to(m.skb().recallEnd + 3000);
+  assertEqual(m.skb().phase, 'recall', 'still taking late answers');
+  assertEqual(a.c.sendAnswers(deal.map((id) => m.R.object(id).name)), true, 'the client still sends');
+  await flush();
+  await m.answers('p1', deal.map((id) => m.R.object(id).name), { t: m.skb().recallEnd + 4500 });
+  await m.to(m.skb().recallEnd + m.RF.GRACE_MS + 10);
+  const rows = m.skb().result.rows;
+  assertEqual(rows.map((x) => x.correct), [5, 5]);
+  a.c.stop();
+  m.ref.stop();
+});
+function m0GraceOk() { return loadFF(FILES).SketchBackReferee.GRACE_MS >= 5000; }
+
+test('sketchback client: one device keeps one match, so old matches never pile up', async function () {
+  const FF = loadFF(FILES.concat(['js/sketchback/client.js']));
+  const mem = {};
+  const storage = { get: (k, d) => (k in mem ? JSON.parse(mem[k]) : d), set: (k, v) => { mem[k] = JSON.stringify(v); }, remove: (k) => { delete mem[k]; } };
+  const one = FF.SketchBackClient.memo('k_1', storage);
+  one.drawing(0, DOT);
+  const two = FF.SketchBackClient.memo('k_2', storage);
+  assertEqual(two.drawings(1), [''], 'a new match starts empty');
+  two.drawing(0, DOT);
+  assertEqual(Object.keys(mem).length, 1, 'one saved match');
+  assertEqual(FF.SketchBackClient.memo('k_1', storage).drawings(1), [''], 'the older match is gone');
+  assertEqual(FF.SketchBackClient.memo('k_2', storage).drawings(1), [DOT]);
+});
+
 test('sketchback referee: the clock ends the naming; what was sent counts, silence scores 0', async function () {
   const m = await match();
   await m.toRecall();

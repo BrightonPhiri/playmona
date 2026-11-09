@@ -115,7 +115,7 @@ window.FF = window.FF || {};
 
     function sendAnswers(answers) {
       if (stopped || !skb || !me() || me().named || skb.phase !== 'recall') return false;
-      if (T.serverNow() > skb.recallEnd + 1000) return false;
+      if (T.serverNow() > skb.recallEnd + R.GRACE_MS) return false;
       var key = skb.matchId + '|names';
       if (sent[key]) return false;
       return push(key, { type: 'answers', matchId: skb.matchId, t: stamp(), text: full(answers, skb.total, '').map(clean).join('|') });
@@ -139,10 +139,11 @@ window.FF = window.FF || {};
      mid-game brings them back. A sketch that was not saved stays blank.
      storage: { get(key, fallback), set(key, value), remove?(key) } (FF.Storage in the app). */
   function memo(matchId, storage) {
-    var key = 'skb:' + matchId;
+    // One slot per device: a new match replaces the last one, so nothing piles up.
+    var key = 'skb:match';
     var data = null;
     try { data = storage.get(key, null); } catch (e) { data = null; }
-    if (!data || typeof data !== 'object') data = {};
+    if (!data || typeof data !== 'object' || data.m !== matchId) data = { m: matchId };
     if (!data.d || typeof data.d !== 'object') data.d = {};
     if (!data.a || typeof data.a !== 'object') data.a = {};
     if (!data.hide || typeof data.hide !== 'object') data.hide = {};
@@ -156,7 +157,7 @@ window.FF = window.FF || {};
       hidden: function (id) { return !!data.hide[id]; },
       hide: function (id, on) { if (on) data.hide[id] = 1; else delete data.hide[id]; save(); },
       forget: function () {
-        data = { d: {}, a: {}, hide: {} };
+        data = { m: matchId, d: {}, a: {}, hide: {} };
         try { if (storage.remove) storage.remove(key); else storage.set(key, null); } catch (e) { /* storage off */ }
       }
     };

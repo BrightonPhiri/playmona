@@ -812,7 +812,7 @@ window.FF = window.FF || {};
         case 'starting': return skb.drawAt;
         case 'draw': return skb.closeAt;
         case 'gap': return skb.drawAt || skb.recallAt;
-        case 'recall': return skb.recallEnd + 1500;
+        case 'recall': return skb.recallEnd + R.GRACE_MS;
         default: return 0;
       }
     }
@@ -888,12 +888,13 @@ window.FF = window.FF || {};
       if (skb.phase === 'gap') {
         // The referee closed this sketch: lock the paper now if this phone's clock is behind.
         if (drawing && drawing.k === skb.k) { if (!drawing.done) drawing.screen.finish(); }
-        else if (shown !== 'between') between(skb);
+        else if (shown !== 'between') between(skb);   // also saves a sketch still open from before
         if (last) sendDrawings(skb);
         return;
       }
 
       if (skb.phase === 'recall') {
+        stopDrawing();   // the last sketch is saved before the drawings go (the gap view can be skipped)
         sendDrawings(skb);
         if (named && !v.me.named) client.sendAnswers(named);   // try again if the first send was lost
         if (v.me.named || named) { showNamed(skb); return; }

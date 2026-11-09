@@ -114,6 +114,17 @@ test('sketchBack check refuses vague words and other objects', function () {
   assert(!r.check('   ', 'cat').ok, 'blank');
 });
 
+test('sketchBack check refuses plural vague words and everyday look-alikes, keeps real typos', function () {
+  const r = R();
+  [['plants', 'aeroplane'], ['the plants', 'aeroplane'], ['tools', 'chair'], ['weathers', 'feather'], ['nones', 'iceCream'],
+    ['animals', 'cat'], ['house', 'horse'], ['houses', 'horse']].forEach(([guess, id]) => {
+    assert(!r.check(guess, id).ok, '"' + guess + '" should not be ' + id);
+  });
+  [['planes', 'aeroplane'], ['stools', 'chair'], ['feathers', 'feather'], ['cones', 'iceCream'], ['horse', 'horse'], ['horce', 'horse']].forEach(([guess, id]) => {
+    assert(r.check(guess, id).ok, '"' + guess + '" should be ' + id);
+  });
+});
+
 test('sketchBack score: 100 a right answer, accuracy as a whole percent', function () {
   const r = R();
   const s = r.score([true, true, false, true, true, false, true, true, false, true]);

@@ -29,6 +29,9 @@ window.FF = window.FF || {};
   var MAX_PLAYERS = 8;
   var RECALL_MS = 180000;          // naming: 3 minutes, no clock on screen
   var RECALL_NOTE_MS = 150000;     // "30 seconds left"
+  var GRACE_MS = 5000;             // online answers stamped this soon after the naming clock still count (slow phones)
+  /* Everyday words that are one slip from an object but are not it ("house" is not a horse). */
+  var LOOKALIKES = ['house', 'mouth', 'hat', 'bat', 'cap'];
   var POINTS = 100;
   var MAX_POINTS = 1200;           // per drawing, so it fits one write
   var MIN_STEP = 4;                // units between kept points
@@ -141,15 +144,27 @@ window.FF = window.FF || {};
   var vague = null;
   function setup() {
     if (matcher) return;
-    matcher = FF.AnswerMatch.create({
-      answers: D.LIST.map(function (x) {
-        var names = [];
-        [x.name].concat(x.alts).forEach(function (n) { names = names.concat(plurals(n)); });
-        return { id: x.id, names: names };
-      })
+    var answers = D.LIST.map(function (x) {
+      var names = [];
+      [x.name].concat(x.alts).forEach(function (n) { names = names.concat(plurals(n)); });
+      return { id: x.id, names: names };
     });
+    var known = {};
+    answers.forEach(function (a) { a.names.forEach(function (n) { known[FF.AnswerMatch.normalise(n)] = true; }); });
+    // Vague words (and their plurals) and look-alikes are wrong answers the checker knows about,
+    // so a guess as close to one of them as to an object is turned down ("plants" is not "planes").
+    var decoys = [];
     vague = {};
-    D.VAGUE.forEach(function (v) { vague[FF.AnswerMatch.normalise(v)] = true; });
+    D.VAGUE.concat(LOOKALIKES).forEach(function (v) {
+      plurals(v).forEach(function (p) {
+        var n = FF.AnswerMatch.normalise(p);
+        if (known[n]) return;   // an object's own name (an exact match wins anyway)
+        decoys.push(p);
+        if (D.VAGUE.indexOf(v) !== -1) vague[n] = true;
+      });
+    });
+    answers.push({ id: '_decoy', names: decoys });
+    matcher = FF.AnswerMatch.create({ answers: answers });
   }
 
   function check(answer, id) {
@@ -157,7 +172,7 @@ window.FF = window.FF || {};
     var text = String(answer == null ? '' : answer).trim().replace(/^(a|an|my|some|the)\s+/i, '');
     var n = FF.AnswerMatch.normalise(text);
     if (!n) return { ok: false, empty: true, matched: null, near: null };
-    if (vague[n]) return { ok: false, empty: false, vague: true, matched: null, near: null };
+    if (vague[n] || id === '_decoy') return { ok: false, empty: false, vague: true, matched: null, near: null };
     var res = matcher.check(text, id);
     return { ok: !!res.ok, empty: false, matched: res.matched, near: res.near };
   }
@@ -222,7 +237,7 @@ window.FF = window.FF || {};
 
   FF.SketchBackRules = {
     COUNTS: COUNTS, LEVELS: LEVELS, SECONDS: SECONDS, STANDARD: STANDARD,
-    MIN_PLAYERS: MIN_PLAYERS, MAX_PLAYERS: MAX_PLAYERS, RECALL_MS: RECALL_MS, RECALL_NOTE_MS: RECALL_NOTE_MS, POINTS: POINTS,
+    MIN_PLAYERS: MIN_PLAYERS, MAX_PLAYERS: MAX_PLAYERS, RECALL_MS: RECALL_MS, RECALL_NOTE_MS: RECALL_NOTE_MS, GRACE_MS: GRACE_MS, POINTS: POINTS,
     sanitize: sanitize, sanitizeRoom: sanitize, isStandard: isStandard, secondsOf: secondsOf,
     LIST_MIN: LIST_MIN, listed: listed, recallOrder: recallOrder,
     object: object, pool: pool, deal: deal, check: check, score: score,

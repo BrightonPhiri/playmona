@@ -26,7 +26,7 @@ class SketchBack
     private const PRESENCE_STALE_MS = 20_000;  // as FF.Room's presence
     private const ROOM_TTL_MS = 30 * 24 * 3600 * 1000;
     private const NUDGE_AFTER_MS = 6_000;      // this late means the referee is not running
-    private const GRACE_MS = 1_500;            // as FF.SketchBackReferee.GRACE_MS
+    private const GRACE_MS = 5_000;            // as FF.SketchBackRules.GRACE_MS
 
     public const COUNTS = [5, 10, 15];
     public const LEVELS = ['easy', 'normal', 'hard'];

@@ -42,7 +42,7 @@ window.FF = window.FF || {};
   var PRESENCE_STALE_MS = 20000;   // as js/net/room.js
   var BRIEF_MS = 5000;             // after the room's countdown: read how to play
   var GAP_MS = 900;                // between sketches: the paper locks, the next one comes
-  var GRACE_MS = 1500;             // answers sent this soon after the naming clock still count
+  var GRACE_MS = R.GRACE_MS;       // answers sent this soon after the naming clock still count
   var MAX_TEXT = 40;
   var MAX_ART = 200000;
 
