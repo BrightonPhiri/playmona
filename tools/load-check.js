@@ -106,7 +106,12 @@ const ORDER = [
   'js/geospin/rules.js',
   'js/geospin/globe.js',
   'js/geospin/client.js',
-  'js/games/geoSpin.js'
+  'js/games/geoSpin.js',
+  'js/data/logos.js',
+  'js/data/logoFiles.js',
+  'js/logorush/rules.js',
+  'js/logorush/client.js',
+  'js/games/logoRush.js'
 ];
 
 const sandbox = {

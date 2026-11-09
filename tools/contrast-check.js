@@ -129,6 +129,19 @@ if (base['chr-velvet']) {
   check('chr gold ink on gold', base['chr-gold-ink'], base['chr-gold'], 4.5);
   check('chr ink on curtain-deep', base['chr-ink'], base['chr-curtain-deep'], 4.5);
 }
+if (base['lgo-night']) {
+  console.log(' '); console.log('== Logo Rush ==');
+  ['lgo-night', 'lgo-night-2', 'lgo-dusk'].forEach(function (bg) {
+    check('lgo ink on ' + bg, base['lgo-ink'], base[bg], 4.5);
+    check('lgo soft ink on ' + bg, base['lgo-ink-soft'], base[bg], 4.5);
+    check('lgo gold on ' + bg, base['gs-gold'], base[bg], 4.5);
+  });
+  check('lgo cyan on night-2', base['gs-cyan'], base['lgo-night-2'], 4.5);
+  check('lgo dim ink on night-2', base['lgo-ink-dim'], base['lgo-night-2'], 4.5);
+  check('lgo tile ink on tile', base['lgo-tile-ink'], base['lgo-tile'], 4.5);
+  check('lgo tile ink on tile-2', base['lgo-tile-ink'], base['lgo-tile-2'], 4.5);
+  check('lgo ink on bright-deep', base['lgo-ink'], base['lgo-bright-deep'], 4.5);
+}
 if (base['gs-night']) {
   console.log(' '); console.log('== GeoSpin ==');
   ['gs-night', 'gs-night-2', 'gs-dusk'].forEach(function (bg) {

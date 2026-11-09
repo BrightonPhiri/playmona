@@ -339,3 +339,60 @@ test('rules: brands whose symbol shows their name are never dealt until they hav
   }));
   assert(r.brand('cocacola') && r.check('coca cola', 'cocacola').ok, 'hidden brands stay known by name');
 });
+
+/* ---------- the screen ---------- */
+
+test('logoPath: every playable brand has a symbol on disk, and the reveal a file too', function () {
+  const FF = loadFF(RULES.concat(['js/data/logoFiles.js']));
+  const r = FF.LogoRushRules;
+  FF.data.logos.brands.filter((b) => !b.named || b.crop).forEach((b) => {
+    const sym = r.logoPath(b.id, false);
+    const full = r.logoPath(b.id, true);
+    assert(sym && fs.existsSync(path.join(ROOT, sym)), b.id + ' symbol ' + sym);
+    assert(full && fs.existsSync(path.join(ROOT, full)), b.id + ' reveal ' + full);
+    assert(sym.indexOf('-full.') === -1 || b.crop, b.id + ' plays its full logo');
+  });
+  assertEqual(r.logoPath('nosuchbrand', false), '');
+});
+
+test('logoRush registered: solo, turns and everyone, on the leaderboards, listed everywhere', function () {
+  const read = (f) => fs.readFileSync(path.join(ROOT, f), 'utf8');
+  const src = read('js/games/logoRush.js');
+  assert(/id:\s*'logoRush'/.test(src), 'registered');
+  assert(/modes:\s*\['solo', 'turn', 'everyone'\]/.test(src), 'modes');
+  assert(/leaderboard:\s*true/.test(src), 'on the leaderboards');
+  assert(/'logoRush'/.test(read('api/lib/Leaderboards.php')), 'the server leaderboard list');
+  assert(/'logoRush'/.test(read('js/net/roomUI.js')), 'listed in ONLINE_GAMES');
+  assert(/"logoRush"/.test(read('js/icons.js')), 'has an icon');
+  assert(/"logoRush"/.test(read('js/data/assetManifest.js')), 'has a cover');
+  assert(/Brand logos/.test(read('js/app.js')), 'credits line');
+  assert(/Logo Rush/.test(read('docs/expert-levels.md')), 'expert levels list');
+  ['play.html', 'admin.html', 'tools/load-check.js', 'tools/test-seed.html'].forEach((f) => {
+    const s = read(f);
+    const order = ['js/spellTiles.js', 'js/games/geoSpin.js', 'js/data/logos.js', 'js/data/logoFiles.js', 'js/logorush/rules.js', 'js/logorush/client.js', 'js/games/logoRush.js'];
+    let at = -1;
+    order.forEach((js) => {
+      const i = s.indexOf(js);
+      assert(i !== -1, f + ' loads ' + js);
+      assert(i > at, f + ': ' + js + ' in order');
+      at = i;
+    });
+    assert(s.indexOf('js/logorush/dev.js') === -1, f + ' never loads the dev referee');
+  });
+});
+
+test('geoSpin boards serve Logo Rush: brand names in the list, digits on tiles, answers shown online', function () {
+  const src = fs.readFileSync(path.join(ROOT, 'js/games/geoSpin.js'), 'utf8');
+  assert(/opts\.nameOf \? \{ name: opts\.nameOf\(code\) \}/.test(src), 'choiceBoard nameOf');
+  assert(/\/\^\[a-z0-9\]\$\/i/.test(src), 'letter keys take digits');
+  assert(/finish: function \(correct, wants\)/.test(src), 'finish takes the right letters');
+  ['soundButtons', 'timerRing', 'glyph', 'chip', 'levelChip', 'countUp'].forEach((k) => assert(new RegExp(k + ': ' + k).test(src), 'exports ' + k));
+});
+
+test('logoRush screen: category buttons only show groups with enough logos, and cover every category', function () {
+  const src = fs.readFileSync(path.join(ROOT, 'js/games/logoRush.js'), 'utf8');
+  const groups = src.match(/var GROUPS = \[([\s\S]*?)\];/)[1];
+  const cats = (groups.match(/cats: \[([^\]]*)\]/g) || []).join(',').match(/'([a-z]+)'/g).map((s) => s.replace(/'/g, ''));
+  CATS.concat(['africa']).forEach((c) => assert(cats.indexOf(c) !== -1, c + ' has a button'));
+  assertEqual(cats.length, CATS.length + 1, 'each category on one button');
+});

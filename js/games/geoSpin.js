@@ -412,7 +412,7 @@ window.FF = window.FF || {};
       if (!open || e.ctrlKey || e.metaKey || e.altKey) return;
       var k = e.key || '';
       var mine = true;
-      if (/^[a-z]$/i.test(k)) {
+      if (/^[a-z0-9]$/i.test(k)) {
         var ch = k.toUpperCase(), hit = null;
         for (var i = 0; i < tiles.length && !hit; i++) if (!tiles[i].used && !tiles[i].gone && tiles[i].ch === ch) hit = tiles[i];
         if (hit) place(hit); else shake(tray);
@@ -485,17 +485,19 @@ window.FF = window.FF || {};
       },
       open: function () { open = true; el.classList.remove('is-waiting'); draw(); },
       lock: function () { locked = true; draw(); document.removeEventListener('keydown', onKey, true); },
-      /* Show the right name in the slots: green where they had it right. */
-      finish: function (correct) {
+      /* Show the right name in the slots: green where they had it right. wants: the
+         right letters, when the board was built without them (online, from masked slots). */
+      finish: function (correct, wants) {
         locked = true; open = true;
         el.classList.remove('is-waiting');
         document.removeEventListener('keydown', onKey, true);
         draw();
         slots.forEach(function (s, i) {
           var had = s.tile ? s.tile.ch : '';
-          s.el.textContent = s.want;
+          var want = wants && wants[i] != null ? wants[i] : s.want;
+          s.el.textContent = want;
           s.el.classList.remove('is-incoming', 'is-next');
-          s.el.classList.add(correct || had === s.want ? 'is-right' : 'is-wrong');
+          s.el.classList.add(correct || had === want ? 'is-right' : 'is-wrong');
           if (!still) s.el.style.animationDelay = (i * 0.035).toFixed(3) + 's';
         });
         el.classList.add(correct ? 'is-correct' : 'is-missed');
@@ -508,17 +510,18 @@ window.FF = window.FF || {};
 
   /* The answers to pick from, numbered. Tap one (or press its number) to answer
      straight away. The same face as letterBoard, so a round can use either:
-     open, lock, finish, hints (solo: remove 2 answers, show continent). */
+     open, lock, finish, hints (solo: remove 2 answers, show continent).
+     opts.nameOf(code) names an answer (Logo Rush lists brands); countries by default. */
   function choiceBoard(api, round, opts) {
     opts = opts || {};
     var el = FF.ui.div('gs-board gs-board--choice is-waiting');
-    var grid = FF.ui.el('div', { class: 'gs-choices', role: 'group', 'aria-label': t('gsPickCountry', 'Pick the country') });
+    var grid = FF.ui.el('div', { class: 'gs-choices', role: 'group', 'aria-label': opts.label || t('gsPickCountry', 'Pick the country') });
     grid.setAttribute('data-n', String(round.choices.length));
     var open = false, locked = false, picked = null;
     var still = reduceMotion();
     var used = { letter: 0, remove: 0, continent: 0 };
     var items = round.choices.map(function (code, i) {
-      var c = R.countryOf(code) || { name: code };
+      var c = opts.nameOf ? { name: opts.nameOf(code) } : (R.countryOf(code) || { name: code });
       var b = FF.ui.el('button', { type: 'button', class: 'gs-choice' });
       b.appendChild(FF.ui.span('gs-choice__n', String((i + 1) % 10)));
       b.appendChild(FF.ui.span('gs-choice__name', c.name));
@@ -1372,5 +1375,9 @@ window.FF = window.FF || {};
     }
   });
 
-  FF.GeoSpinGame = { summary: summary, fields: fields, letterBoard: letterBoard, choiceBoard: choiceBoard };
+  /* Shared with Logo Rush (js/games/logoRush.js), which wears the same arcade look. */
+  FF.GeoSpinGame = {
+    summary: summary, fields: fields, letterBoard: letterBoard, choiceBoard: choiceBoard,
+    soundButtons: soundButtons, timerRing: timerRing, glyph: glyph, chip: chip, levelChip: levelChip, countUp: countUp
+  };
 })();

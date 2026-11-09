@@ -46,6 +46,7 @@ second checker.
 | Books of the Bible | `js/games/bibleGames.js` | "What comes next?" is spelled (number tiles for 1 Kings; First/I/1st Kings count). +6 s, +50. |
 | Verse Rush | `js/games/bibleGames.js` | "Where is it?" spells the book (Psalm verses are in Psalms). Building the verse is unchanged. +6 s, +50. |
 | Bible Quiz | `js/games/bibleQuiz.js` | "Who said it?" and "Finish the verse" with short answers (2–14 letters, no commas) are spelled; the other choices are never accepted. No 50:50 on those. +6 s, +50. |
+| Logo Rush | `js/games/logoRush.js` | Letter tiles are standard; Expert is "Type it": a plain text box, no tiles, checked by `FF.AnswerMatch` over every brand's names and aliases (Man Utd, Maccas…). +6 s, +50. Rooms play tiles or choices. |
 | What's Missing? | `js/games/whatsMissing.js` | Expert spells each gone picture (Gone and Several gone); Added and Swapped are still tapped. Other names from `js/data/memoryAliases.js` (Doughnut, Chips, Teddy…). +6 s, +50 per right gap. Rooms play Normal to Expert, never Endless. |
 
 ### Already upgraded, Expert still missing

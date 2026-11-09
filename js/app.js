@@ -1369,6 +1369,7 @@ window.FF = window.FF || {};
           ['Original assets', 'Illustrations, flag artwork, sound effects and music are original creations made for this project.'],
           ['Fonts', 'Nunito, Fredoka, Baloo 2, Quicksand and Atkinson Hyperlegible are bundled in assets/fonts/ under the SIL Open Font License.'],
           ['Icons', 'Interface icons are hand-drawn for PlayMona. The optional Bold style uses Phosphor Icons (MIT license), bundled in assets/icons/phosphor/.'],
+          ['Brand logos', 'Logos in Logo Rush come from theSVG, Wikimedia Commons and other logo libraries. They are trademarks of their owners, shown only so players can name them. A brand can ask for its logo to be removed.'],
           ['Word list', 'Word games use a bundled list of common English words (google-10000-english-usa-no-swears, MIT license) plus everyday words.'],
           ['Photographs', 'Real-world photos for the Guess games can be added to assets/images/. See the README "Image Download List" for public-domain sources and attribution.']
         ].forEach(function (row) {

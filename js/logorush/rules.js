@@ -52,6 +52,18 @@ window.FF = window.FF || {};
     return byId[id] || null;
   }
 
+  /* The symbol (never the name) or the full logo shown at the reveal. The extension comes from
+     the generated map in js/data/logoFiles.js; a brand with no full logo shows its symbol, and
+     one with only a full logo (a crop brand) shows that. '' when the brand has no file. */
+  var LOGO_DIR = 'assets/images/games/logoRush/';
+  function logoPath(id, full) {
+    var f = FF.data && FF.data.logoFiles && FF.data.logoFiles[id];
+    if (!f) return '';
+    if (full && f[1]) return LOGO_DIR + id + '-full.' + f[1];
+    if (f[0]) return LOGO_DIR + id + '.' + f[0];
+    return f[1] ? LOGO_DIR + id + '-full.' + f[1] : '';
+  }
+
   /* ---------- settings ---------- */
 
   function sanitizeCats(cats) {
@@ -302,7 +314,7 @@ window.FF = window.FF || {};
     TYPE_EXTRA: TYPE_EXTRA, TWISTS: TWISTS, ROUNDS: ROUNDS, CHOICES: CHOICES, BASE: BASE, BONUS: BONUS,
     STANDARD: STANDARD, MIN_PLAYERS: MIN_PLAYERS, MAX_PLAYERS: MAX_PLAYERS, FLASH_MS: FLASH_MS,
     REVEAL_MS: REVEAL_MS, MIN_POOL: MIN_POOL, LONG_NAME: LONG_NAME,
-    brand: brand, sanitize: sanitize, sanitizeRoom: sanitizeRoom, isStandard: isStandard, secondsFor: secondsFor,
+    brand: brand, logoPath: logoPath, sanitize: sanitize, sanitizeRoom: sanitizeRoom, isStandard: isStandard, secondsFor: secondsFor,
     pool: pool, hash: hash, rng: rng, shuffle: shuffle, deal: deal, nextUnused: nextUnused, target: target,
     relatedNames: relatedNames, tilesFor: tilesFor, check: check, choices: choices, checkChoice: checkChoice,
     roundAt: roundAt, points: points

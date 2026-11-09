@@ -139,6 +139,12 @@
   --gs-gold: #ffc940; --gs-gold-hi: #ffe98f; --gs-gold-deep: #cc8418; --gs-gold-ink: #3b1f00;
   --gs-green: #34d65c; --gs-green-hi: #8dff9f; --gs-green-deep: #0f7a2e; --gs-red: #ff5c7a; --gs-red-deep: #b0213f;
   --gs-ink: #ffffff; --gs-ink-soft: #d6d2ff; --gs-ink-dim: #9f9ad6;
+  /* Logo Rush (js/games/logoRush.js): GeoSpin's arcade frame in the cover's sky, deep ocean
+     blues with cyan light and gold, the same in both themes; logos sit on a glossy white tile. */
+  --lgo-night: #04214a; --lgo-night-2: #0a3a78; --lgo-dusk: #0b4f94; --lgo-glow: #19b5e6;
+  --lgo-bright: #3d9bff; --lgo-bright-deep: #1d5fd1;
+  --lgo-ink: #ffffff; --lgo-ink-soft: #d6ecff; --lgo-ink-dim: #a9cbf0;
+  --lgo-tile: #ffffff; --lgo-tile-2: #e4eef9; --lgo-tile-ink: #0a2a55;
   /* Charades (js/games/charades.js): a little theatre that is the same in both themes, as the
      cover: plum-black velvet, crimson curtains, a gold spotlight and marquee bulbs, cream cards. */
   --chr-velvet: #12060c; --chr-velvet-2: #2a0c1a; --chr-plum: #4a1530;

@@ -4363,6 +4363,96 @@ button.imp-card:focus-visible { outline: 3px solid var(--focus-ring); outline-of
 .lr-shell .lr-tile.is-used { opacity: 0.28; filter: grayscale(0.7); transform: translateY(5px) scale(0.92); box-shadow: none; }
 .lr-shell .lr-ctrl { background: var(--surface); border: 1.5px solid color-mix(in srgb, var(--gs-ink) 25%, transparent); color: var(--gs-ink); box-shadow: none; }
 @media (hover: hover) { .lr-shell .lr-ctrl:hover { border-color: var(--gs-cyan); } }
+
+/* ---------- Logo Rush (js/games/logoRush.js) ----------
+   GeoSpin's screen (the .gs classes) with the cover's ocean sky: the --gs-* tokens point at
+   --lgo-*. The globe's place goes to a glossy logo tile. Prefix lgo- (lr- is Letter Rush). */
+.lgo {
+  --gs-night: var(--lgo-night); --gs-night-2: var(--lgo-night-2); --gs-dusk: var(--lgo-dusk); --gs-horizon: var(--lgo-glow);
+  --gs-violet: var(--lgo-bright); --gs-violet-deep: var(--lgo-bright-deep);
+  --gs-ink: var(--lgo-ink); --gs-ink-soft: var(--lgo-ink-soft); --gs-ink-dim: var(--lgo-ink-dim);
+}
+.lgo .gs-stage { justify-content: center; padding-top: var(--sp-2); }
+.lgo-tile {
+  position: relative; width: min(100%, 38vh, 360px); aspect-ratio: 1; border-radius: 22%; overflow: hidden; isolation: isolate;
+  background: radial-gradient(120% 90% at 30% 15%, var(--lgo-tile), var(--lgo-tile-2) 75%);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--gs-gold) 85%, transparent), 0 10px 0 color-mix(in srgb, var(--lgo-night) 70%, transparent),
+    0 0 46px color-mix(in srgb, var(--lgo-glow) 65%, transparent);
+  transition: box-shadow 0.3s ease, width 0.3s ease;
+}
+@media (min-width: 900px) { .lgo-tile { width: min(100%, calc(100vh - 260px), 420px); } }
+.lgo-zoom { position: absolute; inset: 14%; will-change: transform; }
+.lgo-sym, .lgo-full { position: absolute; width: 100%; height: 100%; object-fit: contain; user-select: none; -webkit-user-drag: none; }
+.lgo-sym { inset: 0; transition: opacity 0.35s ease, filter 0.35s ease; }
+.lgo-full { inset: 10%; width: 80%; height: 80%; opacity: 0; transform: scale(0.85); transition: opacity 0.45s ease 0.15s, transform 0.45s ease 0.15s; }
+.lgo-tile.is-revealed .lgo-full[src] { opacity: 1; transform: none; }
+.lgo-tile.is-revealed .lgo-full[src] ~ .lgo-shine { opacity: 0; }
+.lgo-tile.is-revealed:has(.lgo-full[src]) .lgo-sym { opacity: 0; }
+.lgo-tile.is-grey .lgo-sym { filter: grayscale(1) contrast(1.1); }
+.lgo-gone { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--font-display); font-weight: 700; font-size: 5rem; color: var(--lgo-tile-ink); opacity: 0; transition: opacity 0.3s ease; }
+.lgo-tile.is-flashed:not(.is-revealed) .lgo-sym { opacity: 0; }
+.lgo-tile.is-flashed:not(.is-revealed) .lgo-gone { opacity: 0.35; }
+.lgo-shine { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(160deg, color-mix(in srgb, #fff 55%, transparent) 0%, transparent 38%); mix-blend-mode: screen; }
+.lgo-tile.is-empty .lgo-sym, .lgo-tile.is-loading .lgo-sym { opacity: 0; }
+.lgo-tile.is-loading::after { content: ""; position: absolute; inset: 40%; border-radius: 50%; border: 4px solid color-mix(in srgb, var(--lgo-tile-ink) 20%, transparent); border-top-color: var(--lgo-bright-deep); animation: lgo-spin 0.8s linear infinite; }
+@keyframes lgo-spin { to { transform: rotate(360deg); } }
+.lgo-tile.is-good { box-shadow: 0 0 0 5px var(--gs-green), 0 10px 0 color-mix(in srgb, var(--lgo-night) 70%, transparent), 0 0 50px color-mix(in srgb, var(--gs-green) 60%, transparent); }
+.lgo-tile.is-bad { box-shadow: 0 0 0 5px var(--gs-red), 0 10px 0 color-mix(in srgb, var(--lgo-night) 70%, transparent), 0 0 40px color-mix(in srgb, var(--gs-red) 45%, transparent); }
+.lgo-tile.is-teaser { transform: rotate(-4deg); }
+.lgo .gs-timer { margin-top: var(--sp-3); }
+
+/* Type it. */
+.lgo-type__input {
+  width: 100%; min-height: 54px; padding: 0 var(--sp-4); border-radius: 16px; font: 700 1.3rem var(--font-body); text-align: center;
+  color: var(--lgo-tile-ink); background: var(--lgo-tile); border: 3px solid var(--gs-gold); box-shadow: 0 4px 0 var(--gs-gold-deep);
+}
+.lgo-type__input:focus { outline: 3px solid var(--gs-cyan); outline-offset: 2px; }
+.lgo-type__input:disabled { opacity: 1; }
+.lgo-type.is-waiting .lgo-type__input { opacity: 0.5; }
+.lgo-type__input.is-right { border-color: var(--gs-green); box-shadow: 0 4px 0 var(--gs-green-deep); }
+.lgo-type__input.is-wrong { border-color: var(--gs-red); box-shadow: 0 4px 0 var(--gs-red-deep); }
+.lgo-type__input.is-shake { animation: gs-shake 0.35s ease; }
+.lgo-type .gs-actions { grid-template-columns: minmax(0, 1fr); }
+
+/* Say it out loud. */
+.lgo-say { align-items: stretch; text-align: center; }
+.lgo-say__note { margin: 0; font-weight: 700; color: var(--gs-ink-soft); }
+.lgo-say.is-asking .lgo-say__note, .lgo-say.is-asking .lgo-say__got { display: none; }
+.lgo-say__got { align-self: center; }
+.lgo-say__q { margin: 0 0 var(--sp-2); }
+.lgo-say__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: var(--sp-2); }
+.lgo-say__who {
+  display: flex; flex-direction: column; align-items: center; gap: 6px; padding: var(--sp-2); min-height: 92px; border-radius: 16px; cursor: pointer;
+  color: var(--gs-ink); font: 700 0.95rem var(--font-body); background: var(--gs-glass); border: 2px solid var(--gs-line);
+}
+.lgo-say__who:not(:disabled):hover, .lgo-say__who:focus-visible { border-color: var(--gs-gold); }
+.lgo-say__who:not(:disabled):active { transform: translateY(2px); }
+.lgo-say__who .gs-row__ava { width: 44px; height: 44px; }
+.lgo-say__who--none { justify-content: center; color: var(--gs-ink-soft); }
+.lgo-say__name { overflow-wrap: anywhere; }
+
+/* Take turns. */
+.lgo-pass { display: flex; flex-direction: column; align-items: center; gap: var(--sp-3); text-align: center; padding: var(--sp-5) var(--sp-4); }
+.lgo-pass__ava { width: 84px; height: 84px; display: grid; place-items: center; }
+.lgo-pass__ava > * { width: 100%; height: 100%; }
+
+/* Setup, reveal and recap. */
+.lgo-modes--one { grid-template-columns: minmax(0, 1fr); }
+.lgo-count { margin-left: 6px; padding: 0 6px; border-radius: 999px; font-size: 0.75rem; background: color-mix(in srgb, var(--gs-ink) 16%, transparent); }
+.lgo-reveal__logo { flex: none; width: 60px; height: 60px; padding: 7px; border-radius: 14px; background: var(--lgo-tile); box-shadow: 0 0 0 2px var(--gs-gold); display: grid; place-items: center; }
+.lgo-reveal__logo img { width: 100%; height: 100%; object-fit: contain; }
+.lgo-learn img { width: 30px; height: 30px; object-fit: contain; padding: 3px; border-radius: 8px; background: var(--lgo-tile); }
+@media (max-width: 899px) {
+  .lgo.gs--play .gs-timer { position: absolute; top: 4px; right: 4px; margin: 0; z-index: 2; }
+  .lgo.gs--play.is-recap .gs-stage { display: none; }
+  .lgo.gs--setup .lgo-tile { width: min(46%, 22vh, 200px); }
+  .lgo.gs--play.is-revealed .lgo-type .gs-actions, .lgo.gs--play.is-revealed .lgo-say__pick { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lgo-sym, .lgo-full, .lgo-tile { transition: none !important; }
+  .lgo-zoom { transition: none !important; }
+  .lgo-tile.is-loading::after { animation: none; }
+}
 .lr-shell .lr-ctrl--enter { background: linear-gradient(180deg, var(--gs-gold-hi), var(--gs-gold) 55%, var(--gs-gold-deep)); color: var(--gs-gold-ink); border: 0; box-shadow: 0 4px 0 var(--gs-gold-deep), 0 0 16px color-mix(in srgb, var(--gs-gold) 40%, transparent); }
 .lr-shell .lr-chip { background: color-mix(in srgb, var(--gs-night) 55%, transparent); border-color: color-mix(in srgb, var(--gs-ink) 18%, transparent); }
 .lr-shell .lr-chip--rush { background: var(--gs-gold); color: var(--gs-gold-ink); border-color: transparent; }

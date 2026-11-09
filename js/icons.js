@@ -138,6 +138,7 @@ window.FF = window.FF || {};
   "blinkRemember": "eye",
   "sortRush": "stack",
   "geoSpin": "globe-hemisphere-west",
+  "logoRush": "magnifying-glass",
   "higherOrLower": "chart-line",
   "wouldYouRather": "arrows-left-right",
   "thisOrThat": "split-horizontal",
