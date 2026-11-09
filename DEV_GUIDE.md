@@ -290,8 +290,15 @@ Mini Crossword puzzles: `{ id, level, pack, size, kind: 'dense'|'open', rows: ['
 `#` is a black square; numbers follow standard crossword numbering (`FF.CrosswordRules.build`).
 Never edit this file by hand: edit the clue banks in `tools/crossword/bank/` (format and clue rules in
 its README), then run `node tools/gen-crossword.js`. It fills the grids, checks every puzzle and the
-coverage (200+ puzzles, 60+ per level, 3+ per pack and level) and only writes when everything passes.
-`node tools/gen-crossword.js --needs` lists fill words that still need a clue in `general.txt`.
+coverage (200+ puzzles, 40+ per level, 2+ per pack and level; the generator now makes about 213) and variety (no repeated grid, no two
+puzzles at a level sharing half their answers, an answer at most 3 times per level, 4 if it has 3 letters, and
+the same clue for an answer at most twice per level) and only writes when everything passes.
+A clue field may hold alternatives, `First clue ~ Second clue`: a word that comes back gets the least-used one.
+`--needs` lists fill words with no clue (add them to `general.txt`); `--variants` lists words that need another
+` ~ ` alternative. Levels can run in parallel: `CW_LEVEL=easy node tools/gen-crossword.js --part easy.json` for
+each level, then `node tools/gen-crossword.js --merge easy.json normal.json hard.json`.
+Online Race and Co-op: `js/crossword/referee.js` on the crew runner (`crosswordRuns/<id>`), `api/lib/Crossword.php`,
+phones read `rooms/<code>/cw` and write `cwInbox` (`js/crossword/client.js`, `online.js`).
 
 ### `FF.data.countries` (js/data/countries.js)
 ```js

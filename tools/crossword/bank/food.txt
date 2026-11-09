@@ -3,21 +3,21 @@
 
 # Short words (3-5 letters)
 PIE|enh|Pastry dish with a filling inside|Steak and kidney ___|Humble one is eaten when admitting you were wrong
-TEA|enh|Hot drink made with leaves|Afternoon ___ with scones|Darjeeling or Assam, perhaps
+TEA|enh|Hot drink made with leaves ~ Drink the English have with milk ~ Meal at four o'clock with sandwiches|Afternoon ___ with scones ~ Brew in a pot ~ Cup of ___ and a biscuit|Darjeeling or Assam, perhaps ~ Brew drunk from a cup, with milk ~ Meal eaten in the late afternoon
 JAM|enh|Sweet fruit spread for your toast|Strawberry ___ in a Victoria sponge|Fruit preserve, or a traffic snarl-up
-EGG|enh|A hen lays this|Boiled ___ and soldiers|It may be poached or coddled
+EGG|enh|A hen lays this|Boiled ___ and soldiers ~ Oval thing a hen lays ~ Fried or scrambled breakfast item|It may be poached or coddled
 BUN|enh|Small round sweet bread roll|Hot cross ___|Chelsea or Bath teatime treat
 PEA|enh|Small green ball that grows in a pod|Mushy ___ with fish and chips|The princess felt one under all her mattresses
 OATS|enh|Grain used to make porridge|Rolled grains in flapjacks and muesli|Dr Johnson said Scots ate what English horses did
 FIG|nh||Soft fruit packed with tiny seeds|Tree whose leaves Adam and Eve sewed together
-HAM|enh|Pink meat from a pig, in sandwiches|Toastie filling with cheese|Cured pork, or an actor who overacts
+HAM|enh|Pink meat from a pig, in sandwiches ~ Meat in a sandwich with cheese ~ Cured leg of pork ~ Green eggs and ___|Toastie filling with cheese|Cured pork, or an actor who overacts
 RICE|enh|Small white grains often eaten with curry|Grain grown in paddy fields|Arborio or basmati, for example
 SOUP|enh|Hot runny food eaten from a bowl|Minestrone or chicken noodle|Mulligatawny or gazpacho
 CAKE|enh|Sweet treat with candles on your birthday|Victoria sponge, for example|Marie Antoinette supposedly told the hungry to eat it
 MILK|enh|White drink that comes from cows|Pint of ___ on the doorstep|Dairy drink once delivered by a float
 BREAD|enh|You make toast from it|Loaf of ___|Sourdough or soda, for instance
-APPLE|enh|Red or green fruit that grows on trees|Bramley or Granny Smith|Fruit that fell on Newton, so the story goes
-PEAR|enh|Green fruit that is wide at the bottom|Conference or Williams fruit|The partridge sits in this tree in a Christmas carol
+APPLE|enh|Red or green fruit that grows on trees ~ Fruit that fell on Newton's head, the story says ~ Fruit baked in a pie with custard|Bramley or Granny Smith|Fruit that fell on Newton, so the story goes
+PEAR|enh|Green fruit that is wide at the bottom ~ Fruit shaped a bit like a bell ~ Fruit in the partridge song|Conference or Williams fruit|The partridge sits in this tree in a Christmas carol
 PLUM|enh|Purple fruit with a stone inside|Victoria fruit that dries into a prune|Little Jack Horner pulled one out of his pie
 LIME|enh|Small green fruit that tastes sour|Key ___ pie|Citrus fruit that kept British sailors free of scurvy
 LEMON|enh|Sour yellow fruit|Fruit in a meringue pie|Sharp citrus squeezed over pancakes on Shrove Tuesday

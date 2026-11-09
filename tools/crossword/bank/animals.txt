@@ -1,20 +1,20 @@
 # Animals: pets, farm, wild, sea, birds, insects and animal words
 # WORD|levels|easy clue|normal clue|hard clue
-CAT|enh|Furry pet that purrs|Tabby or Persian, for example|It is said to have nine lives
-DOG|enh|Pet that barks and wags its tail|Spaniel or terrier, for example|Man's best friend, so they say
-COW|enh|Farm animal that gives us milk|Animal that chews the cud and moos|Friesian or Jersey in the dairy herd
+CAT|enh|Furry pet that purrs ~ Animal that chases mice ~ Lion or tiger is a big one|Tabby or Persian, for example ~ Animal that says miaow ~ Pet that purrs on your lap|It is said to have nine lives
+DOG|enh|Pet that barks and wags its tail ~ Pet you take for a walk ~ Animal that fetches sticks ~ A puppy grows up to be one|Spaniel or terrier, for example|Man's best friend, so they say
+COW|enh|Farm animal that gives us milk|Animal that chews the cud and moos|Friesian or Jersey in the dairy herd ~ Dairy animal that moos ~ Jumped over the moon, in the rhyme
 PIG|enh|Pink farm animal that oinks|Farm animal kept in a sty|Boar or sow, on the farm
 HEN|enh|Farm bird that lays eggs|Female chicken|Bird that broods in the coop
 FOX|enh|Wild animal with a bushy red tail|Sly animal whose female is a vixen|Reynard of the old folk tales
 OWL|enh|Bird that hoots at night|Wise-looking bird of the night|Barn or tawny bird of prey
 BAT|enh|Animal that flies at night and hangs upside down|The only mammal that can truly fly|Flying mammal that hunts by echolocation
 ANT|enh|Tiny insect that lives in a big colony|Insect that may be a worker, a soldier or a queen|Hard worker in Aesop's fable with the grasshopper
-BEE|enh|Buzzing insect that makes honey|Insect that lives in a hive|Busy insect, so they say; drones are the males
-RAT|enh|Animal like a big mouse with a long tail|Rodent that comes first in the Chinese zodiac|The Pied Piper led them out of Hamelin
+BEE|enh|Buzzing insect that makes honey|Insect that lives in a hive|Busy insect, so they say; drones are the males ~ Insect that makes honey ~ Spelling ___ contest
+RAT|enh|Animal like a big mouse with a long tail|Rodent that comes first in the Chinese zodiac ~ Pet rodent with a long tail ~ Disloyal person, in slang|The Pied Piper led them out of Hamelin ~ Rodent with a long bare tail ~ Scampering sewer dweller
 EMU|enh|Big bird from Australia that cannot fly|Flightless bird on Australia's coat of arms|Australia's tallest native bird
-APE|enh|Big monkey with no tail|Gorilla or chimpanzee, for example|Mimic; or a primate without a tail
-EEL|enh|Long fish shaped like a snake|Slippery fish that wriggles like a snake|It's slippery, as the saying goes, and may be jellied in London
-RAM|enh|Daddy sheep|Male sheep|Aries is shown as one
+APE|enh|Big monkey with no tail|Gorilla or chimpanzee, for example|Mimic; or a primate without a tail ~ Gorilla or chimp, for one ~ Copy someone's behaviour
+EEL|enh|Long fish shaped like a snake ~ Fish that can give an electric shock, one kind ~ Slippery fish served in London pies|Slippery fish that wriggles like a snake|It's slippery, as the saying goes, and may be jellied in London
+RAM|enh|Daddy sheep|Male sheep|Aries is shown as one ~ Male sheep ~ Computer memory, for short
 DEN|enh|Home of a fox or a lion|Lair of a wild animal|Cubs' hideaway; or a cosy little study
 CUB|enh|Baby lion or bear|Young fox, bear or lion|Young bear; or a junior Scout
 FOAL|enh|Baby horse|Young horse or pony|Colt or filly in its first year
@@ -36,7 +36,7 @@ HARE|enh|Animal like a big rabbit with long ears|Speedy animal that raced the to
 NEWT|nh||Small pond amphibian with a tail|Eye of ___, in the witches' brew
 WOLF|enh|Wild animal that howls at the moon|Wild ancestor of the dog that hunts in packs|Big bad villain of fairy tales
 SHEEP|enh|Woolly farm animal that says baa|Farm animal kept for its wool|Animal counted by those who cannot sleep
-HORSE|enh|Animal you can ride that neighs|Stallion or mare|Animal measured in hands
+HORSE|enh|Animal you can ride that neighs ~ Animal with a mane and hooves ~ Pony's big relative|Stallion or mare|Animal measured in hands
 ZEBRA|enh|Striped horse of Africa|Black and white grazer of the savannah|Its stripes gave a road crossing its name
 TIGER|enh|Big orange cat with black stripes|Largest of the big cats, found in Asia|Shere Khan of The Jungle Book
 MOUSE|enh|Small squeaky animal that likes cheese|Small rodent; also a computer gadget|It ran up the clock in a nursery rhyme
@@ -48,7 +48,7 @@ LLAMA|enh|Woolly animal from South America that can spit|Andean pack animal, cou
 PANDA|enh|Black and white bear that eats bamboo|Bamboo-eating bear from China|Giant animal on the WWF logo
 KOALA|enh|Furry Australian animal that lives in trees|Marsupial that eats eucalyptus leaves|Often called a bear, though it is a marsupial
 OTTER|enh|River animal that floats on its back|Playful river mammal whose home is a holt|Tarka, in Henry Williamson's tale
-EAGLE|enh|Big bird with a hooked beak|Golden bird of prey|The bald one is the national bird of the USA
+EAGLE|enh|Big bird with a hooked beak ~ Bird that soars high above the mountains ~ Bird on the American national symbol|Golden bird of prey|The bald one is the national bird of the USA
 ROBIN|enh|Little bird with a red breast|Garden bird often seen on Christmas cards|Batman's sidekick shares its name
 GOOSE|enh|Big farm bird that honks|Bird whose male is a gander|Golden-egg layer of Aesop's fable
 HIPPO|enh|Big African animal that loves mud|Large African animal that wallows in rivers|River horse, from the Greek
@@ -91,7 +91,7 @@ GERBIL|nh||Small desert rodent kept as a pet|Pet rodent from the deserts of Mong
 SPIDER|nh||Creature with eight legs that spins a web|Charlotte, in a famous children's book
 BEETLE|nh||Insect with hard wing covers|Ladybird or stag, for example
 LOBSTER|nh||Shellfish that turns red when cooked|Thermidor dish
-OCTOPUS|nh||Sea creature with eight arms|Clever creature with three hearts and blue blood
+OCTOPUS|nh||Sea creature with eight arms ~ Ink-squirting sea creature ~ Soft sea creature with tentacles|Clever creature with three hearts and blue blood
 SALMON|nh||Pink-fleshed fish, often smoked|Fish that returns upriver to spawn where it hatched
 BADGER|nh||Black and white digger of the woods|Brock of folk tales; or pester
 FERRET|nh||Long thin animal once used to hunt rabbits|Search about; or a tame polecat
@@ -132,7 +132,7 @@ SQUIRREL|nh||Bushy-tailed animal that buries nuts|Red or grey tree-climber
 HEDGEHOG|nh||Prickly animal that rolls into a ball|Mrs Tiggy-Winkle, for one
 TORTOISE|nh||Slow reptile with a shell|Winner of the race with the hare
 DUCKLING|nh||Baby duck|The ugly one became a swan
-REINDEER|nh||Deer that pulls Santa's sleigh|Rudolph, for one
+REINDEER|nh||Deer that pulls Santa's sleigh|Rudolph, for one ~ Antlered animals that pull Santa's sleigh ~ Lapland herd animals
 STARFISH|nh||Five-armed sea creature|Sea creature that can regrow lost arms
 SEAHORSE|nh||Little fish that swims upright|Fish whose males carry the babies
 JELLYFISH|nh||Sea creature that stings and wobbles|Brainless drifter with stinging tentacles

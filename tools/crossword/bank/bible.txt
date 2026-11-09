@@ -3,18 +3,18 @@
 NOAH|enh|He built a big boat for the animals|Man who built the ark at God's command|Father of Shem, Ham and Japheth
 ARK|enh|Noah's big boat|Vessel that rode out the Flood|Gopher wood vessel three hundred cubits long
 ADAM|enh|The first man God made|First man, formed from the dust of the ground|He gave names to every beast of the field
-EVE|enh|The first woman|Wife of Adam, mother of all living|Woman made from a rib
+EVE|enh|The first woman ~ Christmas ___ ~ Wife of Adam|Wife of Adam, mother of all living|Woman made from a rib
 EDEN|enh|Garden where Adam and Eve lived|The garden God planted eastward|Garden guarded by cherubims and a flaming sword
 MOSES|enh|He led God's people out of Egypt|Baby hidden in an ark of bulrushes|Lawgiver whose face shone after speaking with God
 DAVID|enh|Shepherd boy who beat a giant|Psalm-writing king, son of Jesse|He chose five smooth stones out of the brook
 JESUS|enh|Son of God, born in Bethlehem|He fed five thousand with five loaves and two fishes|The good shepherd who giveth his life for the sheep
 MARY|enh|Mother of baby Jesus|Woman of Nazareth visited by the angel Gabriel|Sister of Martha who sat at the Lord's feet
-ANGEL|enh|Messenger from heaven|Gabriel, for one|Heavenly messenger who shut the lions' mouths for Daniel
+ANGEL|enh|Messenger from heaven ~ Winged helper in the Christmas story ~ Figure that sits on top of some Christmas trees|Gabriel, for one|Heavenly messenger who shut the lions' mouths for Daniel
 MANNA|enh|Food from heaven in the desert|Bread from heaven in the wilderness|It tasted like wafers made with honey
 LAMB|enh|A baby sheep|"Behold the ___ of God"|Passover animal, to be without blemish
 STAR|enh|It shone to show the way to baby Jesus|Wise men followed it from the east|It stood over where the young child was
 DOVE|enh|Bird Noah sent out from the ark|Bird that brought back an olive leaf|The Spirit came down like one at the baptism of Jesus
-GOD|enh|He made the heavens and the earth|"In the beginning ___ created the heaven and the earth"|The Almighty, Alpha and Omega
+GOD|enh|He made the heavens and the earth ~ Lord of heaven and earth ~ Being people pray to in church|"In the beginning ___ created the heaven and the earth" ~ Almighty ~ Zeus or Thor, for example|The Almighty, Alpha and Omega
 LORD|enh|Another name for God|"The ___ is my shepherd"|Title for God, printed in small capitals in the KJV
 CROSS|enh|Jesus died on it|Wooden beam carried to Golgotha|Simon of Cyrene was made to bear it
 TOMB|enh|Grave that was empty on Easter morning|Joseph of Arimathaea's new grave, hewn in rock|Sepulchre sealed with a great stone
@@ -46,7 +46,7 @@ FAITH|enh|Believing and trusting in God|"Now abideth ___, hope, charity"|The sub
 HOPE|enh|Wishing and trusting that good will come|"Faith, ___, charity, these three"|Anchor of the soul, says Hebrews
 LOVE|enh|God is this, says the Bible|"God is ___"|The perfect sort casteth out fear
 GRACE|enh|Prayer said before a meal|"For by ___ are ye saved through faith"|Noah found it in the eyes of the Lord
-SIN|enh|Doing wrong against God|"The wages of ___ is death"|Transgression of the law, says John
+SIN|enh|Doing wrong against God ~ Bad deed in the Bible ~ Wrongdoing ~ Greed or pride, for example|"The wages of ___ is death"|Transgression of the law, says John
 KING|enh|David was one|Herod, Saul or Solomon|Title written over the cross: "The ___ of the Jews"
 CROWN|enh|A king wears it on his head|Jesus wore one made of thorns|One "of life" is promised to the faithful unto death
 GOLD|enh|Shiny gift from the wise men|Gift brought with frankincense and myrrh|Aaron's calf was made of it

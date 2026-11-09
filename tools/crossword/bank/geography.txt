@@ -11,13 +11,13 @@ CAVE|enh|Dark hole in the side of a hill|Hollow in rock where bats may roost|Gro
 SAND|enh|You build castles with it on the beach|Grains that cover much of a desert|Stuff that dunes are made of
 BEACH|enh|Sandy place by the sea|Seaside strip where the waves break|Shore for sunbathers
 ROCK|enh|Hard stone|Large stone sticking out of the ground|Granite or basalt, for example
-PARK|enh|Green place in a town with swings|Public garden in a city|Yellowstone is a national one
+PARK|enh|Green place in a town with swings ~ Leave a car in a space ~ Place with a playground and benches|Public garden in a city|Yellowstone is a national one
 ROAD|enh|Cars drive on it|Street or highway|All of them lead to Rome, they say
 SHIP|enh|Very big boat|Ocean liner, for example|Vessel such as a tanker or a liner
-BOAT|enh|It floats on water and carries people|Small vessel such as a rowing ___|Don't rock it, so the saying goes
+BOAT|enh|It floats on water and carries people ~ Small ship on a lake ~ Row, row, row your ___|Small vessel such as a rowing ___|Don't rock it, so the saying goes
 TRAIN|enh|It runs on rails|Engine pulling a line of carriages|It may be an express or a sleeper
-PLANE|enh|It flies people through the sky|Jet airliner|Aircraft, or a carpenter's smoothing tool
-BUS|enh|Big road vehicle that stops to pick people up|Double-decker, for example|Coach on a town route
+PLANE|enh|It flies people through the sky ~ Aircraft with wings ~ Flat tool for smoothing wood ~ Boeing or Airbus vehicle|Jet airliner|Aircraft, or a carpenter's smoothing tool
+BUS|enh|Big road vehicle that stops to pick people up ~ Vehicle with a number on the front, like route 9 ~ Red London vehicle with two floors, often|Double-decker, for example|Coach on a town route
 EAST|enh|Way the sun rises|Opposite of west|The Orient
 WEST|enh|Way the sun sets|Opposite of east|The Occident
 NORTH|enh|Way a compass needle points|Opposite of south|Direction of the Pole Star
@@ -25,7 +25,7 @@ SOUTH|enh|Opposite of north|Down, on most maps|Way to Antarctica from Cape Town
 PARIS|enh|City with the Eiffel Tower|Capital of France|The City of Light
 NILE|enh|Long river in Egypt|Africa's longest river|River with a Blue and a White branch
 ROME|enh|Capital city of Italy|City of the Colosseum|The Eternal City
-CHINA|enh|Huge country in Asia with a Great Wall|Country whose capital is Beijing|Land of the Yangtze, or fine porcelain
+CHINA|enh|Huge country in Asia with a Great Wall ~ Land where pandas live in the wild ~ Country with Beijing as its capital|Country whose capital is Beijing|Land of the Yangtze, or fine porcelain
 INDIA|enh|Big country in Asia where the Taj Mahal is|Country whose capital is New Delhi|Land of the Ganges
 JAPAN|enh|Country of Tokyo and sushi|Land of the Rising Sun|Island nation whose highest peak is Fuji
 SPAIN|enh|Country next to Portugal|Country whose capital is Madrid|Land of flamenco and the Alhambra
@@ -34,11 +34,11 @@ ASIA|enh|The biggest continent|Continent of China and India|Continent divided fr
 PEAK|enh|Pointy top of a mountain|Summit|Highest point
 CLIFF|enh|High steep rock by the sea|Sheer face of rock|Beachy Head, for one
 COAST|enh|Land next to the sea|Seashore|The ___ is clear
-BAY|enh|Part of the sea that curves into the land|Curve of coastline, like Biscay|Inlet, or a laurel tree
+BAY|enh|Part of the sea that curves into the land ~ Place where ships may shelter near the coast ~ Reddish-brown horse|Curve of coastline, like Biscay|Inlet, or a laurel tree
 GLOBE|enh|Ball-shaped map of the world|Round model of the Earth|Shakespeare's theatre, or the world itself
 TRIP|enh|Short journey|Day out or holiday journey|Excursion, or a stumble
 HOTEL|enh|Place where you stay on holiday|Building with rooms for travellers|The Savoy or the Ritz
-OCEAN|enh|Huge salty sea|The Pacific or the Atlantic|Vast expanse of deep water
+OCEAN|enh|Huge salty sea ~ Pacific or Atlantic ~ Where whales and sharks swim ~ Water that covers most of the Earth|The Pacific or the Atlantic|Vast expanse of deep water
 WAVE|enh|Water that rises and crashes on the beach|Breaker|Surfer's ride, or a hand gesture
 FERRY|enh|Boat that carries cars across water|Boat that crosses a channel again and again|Cross-Channel vessel
 TENT|enh|Camping home made of cloth|Shelter you pitch at a campsite|Canvas shelter

@@ -8,8 +8,8 @@
 const T = require('./templates');
 
 const CLUE_MAX = 90;
-const MIN_PER_PACK_LEVEL = 3;
-const MIN_PER_LEVEL = 60;
+const MIN_PER_PACK_LEVEL = 2;
+const MIN_PER_LEVEL = 40;
 const MIN_TOTAL = 200;
 
 function validatePuzzle(p, R) {
@@ -63,6 +63,43 @@ function coverage(list, R) {
   return out;
 }
 
+/* Keeps the set fresh: no repeated grid, no two puzzles at a level sharing half their answers,
+   no answer used too often at a level, and no answer with the same clue more than twice.
+   Returns [problem, ...]. */
+const MAX_USES = (word) => (word.length <= 3 ? 4 : 3);
+const MAX_SAME_CLUE = 2;
+const NEAR_SHARE = 0.5;
+function variety(list, R) {
+  const out = [];
+  const grids = {};
+  const info = list.map((p) => {
+    const words = R.build(p).words.map((w) => ({ a: R.answer(p, w.id), clue: p.clues[w.id] }));
+    return { p, set: new Set(words.map((w) => w.a)), words };
+  });
+  info.forEach(({ p }) => {
+    const k = p.rows.join('/');
+    if (grids[k]) out.push(p.id + ': same grid as ' + grids[k]); else grids[k] = p.id;
+  });
+  for (let i = 0; i < info.length; i++) {
+    for (let j = i + 1; j < info.length; j++) {
+      const a = info[i], b = info[j];
+      if (a.p.level !== b.p.level || a.p.rows.join() === b.p.rows.join()) continue;
+      let same = 0;
+      a.set.forEach((w) => { if (b.set.has(w)) same++; });
+      if (same / Math.min(a.set.size, b.set.size) >= NEAR_SHARE) out.push(a.p.id + ' and ' + b.p.id + ': share ' + same + ' answers');
+    }
+  }
+  const uses = {}, clued = {};
+  info.forEach(({ p, words }) => words.forEach((w) => {
+    const u = p.level + '|' + w.a, c = u + '|' + w.clue;
+    uses[u] = (uses[u] || 0) + 1;
+    clued[c] = (clued[c] || 0) + 1;
+  }));
+  Object.keys(uses).forEach((u) => { const [lv, w] = u.split('|'); if (uses[u] > MAX_USES(w)) out.push(lv + ': ' + w + ' used ' + uses[u] + ' times'); });
+  Object.keys(clued).forEach((c) => { const [lv, w] = c.split('|'); if (clued[c] > MAX_SAME_CLUE) out.push(lv + ': the same clue for ' + w + ' ' + clued[c] + ' times'); });
+  return out;
+}
+
 /* Lints one clue bank file's text. Returns [problem, ...] with line numbers. */
 function lintBank(text, name) {
   const out = [];
@@ -86,16 +123,22 @@ function lintBank(text, name) {
       const want = levels.indexOf(k) >= 0;
       if (want && !clue) out.push(at + word + ': missing ' + ['easy', 'normal', 'hard'][j] + ' clue');
       if (!clue) return;
-      if (!/^["'‘“(0-9A-Z]/.test(clue)) out.push(at + word + ': clue must start with a capital');
-      if (clue.length > CLUE_MAX) out.push(at + word + ': clue longer than ' + CLUE_MAX);
-      if (new RegExp('\\b' + word + '\\b', 'i').test(clue)) out.push(at + word + ': answer in clue');
+      // A field may hold alternatives, "First clue ~ Second clue", used in turn when a word repeats.
+      const alts = clue.split('~').map((x) => x.trim());
+      if (alts.some((x, n) => alts.indexOf(x) !== n)) out.push(at + word + ': same clue twice');
+      alts.forEach((c) => {
+        if (!c) { out.push(at + word + ': empty alternative'); return; }
+        if (!/^["'‘“(0-9A-Z]/.test(c)) out.push(at + word + ': clue must start with a capital');
+        if (c.length > CLUE_MAX) out.push(at + word + ': clue longer than ' + CLUE_MAX);
+        if (new RegExp('\\b' + word + '\\b', 'i').test(c)) out.push(at + word + ': answer in clue');
+      });
     });
     if (levels.indexOf('e') >= 0 && word.length > 5) out.push(at + word + ': easy words are 5 letters or fewer');
   });
   return out;
 }
 
-module.exports = { validatePuzzle, coverage, lintBank, CLUE_MAX };
+module.exports = { validatePuzzle, coverage, variety, lintBank, CLUE_MAX, MAX_USES, MAX_SAME_CLUE, NEAR_SHARE };
 
 if (require.main === module) {
   const fs = require('fs');

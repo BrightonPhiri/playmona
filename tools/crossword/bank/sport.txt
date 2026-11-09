@@ -4,7 +4,7 @@
 # --- 3 to 5 letters, easy ---
 GOAL|enh|The ball goes in this to score in football|Football score made between the posts|It's scored when the ball crosses the line under the bar
 BAT|enh|You hit the ball with this in cricket|Wooden blade swung by a cricketer|Willow tool at the crease, or a winged night flier
-NET|enh|A tennis ball must go over this|Mesh across the middle of a tennis court|It hangs behind the keeper, waiting to bulge
+NET|enh|A tennis ball must go over this|Mesh across the middle of a tennis court|It hangs behind the keeper, waiting to bulge ~ Mesh used for catching fish ~ Amount remaining after deductions, as in pay
 BALL|enh|You kick or throw this round toy|Round object used in most team games|Sphere for a game, or a grand dance
 DICE|enh|Spotted cubes you roll in games|Cubes rolled to move counters in board games|They're thrown in Ludo, with one to six spots each
 RACE|enh|Who is the fastest? Have a ___|Contest of speed to the finish line|Sprint or marathon, for example
@@ -18,7 +18,7 @@ JUMP|enh|Go up in the air with both feet|Leap, as over a hurdle|Long or high eve
 KITE|enh|A toy that flies on a string in the wind|Toy that soars on a windy day, held by a line|Box or diamond flier with a tail
 DOLL|enh|A toy that looks like a baby or a person|Toy figure that children dress and care for|Barbie or Sindy, for example
 YOYO|enh|A toy that goes up and down on a string|Spinning toy that climbs back up its string|Toy famed for "walking the dog" and "round the world" tricks
-TOP|enh|A toy that spins round and round|Spinning toy, sometimes whipped|Humming toy that whirls on its point
+TOP|enh|A toy that spins round and round|Spinning toy, sometimes whipped|Humming toy that whirls on its point ~ Peak or summit ~ Lid, or a T-shirt
 BIKE|enh|You ride it with two wheels and pedals|Pedal-powered two-wheeler|Machine raced in the Tour de France, informally
 SKATE|enh|Glide on ice with special boots|Glide on blades or wheels|Move on a rink in boots with blades
 SWING|enh|A seat on ropes you go high on in the park|Playground seat that goes back and forth|Golfer's stroke, or a seat on chains
@@ -40,7 +40,7 @@ QUEEN|enh|The most powerful chess piece|Chess piece that can move any distance i
 LAP|enh|Once round the running track|One circuit of a racecourse|Victory ___ (celebration run after winning)
 POOL|enh|You swim in this|Place for swimming, or a game with cue and balls|Game with stripes and solids potted into pockets
 DIVE|enh|Jump into water head first|Plunge from a springboard|Keeper's leap, or a cheat's fall in the box
-ROW|enh|Move a boat with oars|Propel a boat with blades|Do what Oxford and Cambridge do on the Thames
+ROW|enh|Move a boat with oars|Propel a boat with blades|Do what Oxford and Cambridge do on the Thames ~ Line of seats ~ Noisy argument
 OAR|enh|A long pole you use to move a boat|Pole with a blade for rowing|Sculler's blade
 SKI|enh|A long flat runner for sliding on snow|Glide down a slope on runners|Slalom runner
 LUDO|enh|A board game where you race four counters home|Dice game where a six lets a counter out|Board game adapted from the Indian pachisi
@@ -59,13 +59,13 @@ RINK|enh|Ice where you go skating|Arena for ice hockey|Sheet of ice used for cur
 COURT|enh|Where you play tennis|Playing area for netball or tennis|Centre one at Wimbledon
 
 # --- 3 to 5 letters, normal and hard ---
-ACE|nh||Serve the opponent cannot touch|Card that may count as one or eleven
+ACE|nh||Serve the opponent cannot touch ~ Top card in a suit ~ Expert pilot|Card that may count as one or eleven
 PUCK|nh||Rubber disc used in ice hockey|What a hockey player on ice hits, not a ball
 PAWN|nh||Smallest chess piece|Piece that can become a queen on the far rank
 ROOK|nh||Chess piece also called a castle|Chess piece moving in straight lines from the corner
 CLUB|nh||Golfer's stick, such as an iron|Black card suit, or a wood or iron
 PUTT|nh||Gentle golf stroke on the green|Tap towards the hole, perhaps for a birdie
-PAR|nh||Expected number of strokes for a golf hole|Standard score, so "below ___" is good on the course
+PAR|nh||Expected number of strokes for a golf hole ~ Normal standard, as in "below ___" ~ Equal footing, as in "on a ___ with"|Standard score, so "below ___" is good on the course
 BOGEY|nh||One stroke over par in golf|Golf score worse than a birdie and a par
 SERVE|nh||Start a point in tennis|Begin each rally on the court
 LOVE|nh||Nil in tennis|Fifteen-___ (score when the server leads)

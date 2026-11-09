@@ -4,17 +4,17 @@ LAMP|enh|It gives light on a table|Bedside light with a shade|Aladdin rubbed his
 CHALK|enh|Teachers write on the blackboard with it|White stick for a blackboard|Soft white rock of the cliffs at Dover
 RULER|enh|Straight stick for measuring lines|Classroom tool marked in centimetres|Monarch, or a measuring stick
 ATTIC|enh|Room at the top of a house, under the roof|Loft for storing old things|Garret under the eaves
-BED|enh|You sleep in it at night|Bunk, cot or four-poster|Where a river flows or flowers grow
+BED|enh|You sleep in it at night ~ Place for a teddy to sleep ~ Flower ___ in a garden|Bunk, cot or four-poster|Where a river flows or flowers grow
 MUM|enh|Your mother|Mother, informally|Keep ___ (say nothing)
 DAD|enh|Your father|Father, informally|Pop, or pa
 NAN|enh|Your grandmother|Granny, informally|Grandma, or Indian bread spelt another way
 AUNT|enh|Your mum's or dad's sister|Uncle's wife, perhaps|Sally, in a fairground throwing game
 UNCLE|enh|Your mum's or dad's brother|Aunt's husband, perhaps|Bob's your ___!
 BABY|enh|A very young child|Newborn in a pram|Infant, or the youngest of the family
-DESK|enh|Table you sit at to do schoolwork|Writing table in a classroom|Bureau, or a newsroom department
+DESK|enh|Table you sit at to do schoolwork ~ Teacher's table in a classroom ~ Place with drawers where you write|Writing table in a classroom|Bureau, or a newsroom department
 PEN|enh|You write with ink using it|Biro, for example|Mightier than the sword, they say
 BOOK|enh|You read stories in it|Novel or textbook|Reserve a table, say
-BAG|enh|You carry your things in it|School satchel, for example|Catch, as a hunter might
+BAG|enh|You carry your things in it|School satchel, for example|Catch, as a hunter might ~ Handbag or carrier, say ~ Sack for shopping
 RUG|enh|Small mat on the floor|Covering in front of the hearth|Cut a ___ (dance with energy)
 CUP|enh|You drink tea from it|Saucer's partner|Trophy for the winners
 MUG|enh|Big cup with a handle|Large cup for hot chocolate|Face, informally, or a gullible person
@@ -45,14 +45,14 @@ TOWEL|enh|You dry yourself with it|Bath sheet|Throw in the ___ (give up)
 BROOM|enh|Brush with a long handle for sweeping|Sweeping tool|Witch's flying machine
 MOP|enh|You clean the floor with it|Tool for a wet floor|Untidy head of hair
 SOCK|enh|You wear it on your foot inside a shoe|Knitted foot covering|Punch, informally
-SHOE|enh|You wear it on your foot|Trainer or sandal|Horse's iron fitting
+SHOE|enh|You wear it on your foot ~ Sneaker or boot, for instance ~ Horse wears one made of metal|Trainer or sandal|Horse's iron fitting
 BOOT|enh|Tall shoe for wet weather|Wellington, for example|Car's luggage space, in Britain
 HAT|enh|You wear it on your head|Cap or beret|Bowler or trilby
 COAT|enh|You wear it outside when it is cold|Anorak or mac|Layer of paint
 SCARF|enh|You wrap it round your neck|Woolly neck warmer|Football fan's knitted colours
 GLOVE|enh|You wear it on your hand|Hand covering with fingers|Fits like a ___
 SKIRT|enh|Clothing that hangs from the waist|Kilt, for one|Go round, avoid
-DRESS|enh|One-piece outfit with a skirt|Frock|Put on clothes, or bandage a wound
+DRESS|enh|One-piece outfit with a skirt ~ Put on your clothes ~ Girl might wear one to a party|Frock|Put on clothes, or bandage a wound
 MATHS|enh|School subject with numbers and sums|Subject with sums and shapes|Arithmetic, algebra and geometry
 ART|enh|Drawing and painting at school|Painting and sculpture|State of the ___ (the very latest)
 GLUE|enh|Sticky stuff for paper|Gum for sticking things|PVA, in the classroom

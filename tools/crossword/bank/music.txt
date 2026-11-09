@@ -6,7 +6,7 @@ TUNE|enh|A melody you can hum|Air you might whistle|Adjust a guitar until it sou
 HARP|enh|Big instrument with lots of strings you pluck|Instrument often shown with angels|Instrument on Ireland's coat of arms
 PAINT|enh|Colour you put on with a brush|Watercolour or oil, to an artist|Do as Monet did
 STAGE|enh|Where actors stand in a theatre|Raised platform for performers|"All the world's a ___" (Shakespeare)
-PIANO|enh|Instrument with black and white keys|Grand or upright instrument|Soft, in a musical score
+PIANO|enh|Instrument with black and white keys ~ Instrument with pedals and 88 keys ~ Grand one has a big lid|Grand or upright instrument|Soft, in a musical score
 BAND|enh|Group of people playing music together|Brass or rock group|Strip of rubber, or a group of players
 SING|enh|Use your voice to make music|Perform a carol, say|Croon or warble
 DANCE|enh|Move your body to music|Waltz or tango, for example|Jig, reel or hornpipe
@@ -21,20 +21,20 @@ BELL|enh|It goes ding-dong|It rings in a church tower|Big Ben, strictly speaking
 HORN|enh|Brass instrument you blow|French ___ (orchestral brass)|Rhino's feature, or a brass instrument
 CLAP|enh|Hit your hands together|Applaud|Sound of thunder, or show approval
 CHOIR|enh|Group of singers|Singers in church stalls|Its parts are soprano, alto, tenor and bass
-ACTOR|enh|Person who plays a part in a play|Performer on stage or screen|Thespian
+ACTOR|enh|Person who plays a part in a play ~ Film star, for example ~ He or she appears on stage or on screen|Performer on stage or screen|Thespian
 CLAY|enh|Soft stuff you shape into pots|Potter's material|It's fired in a kiln
-NOTE|enh|One sound in music|Crotchet or quaver|Short letter, or a sound on a stave
+NOTE|enh|One sound in music ~ Short message left for someone ~ Do, re or mi, for one ~ Short letter left on the fridge|Crotchet or quaver|Short letter, or a sound on a stave
 BEAT|enh|The steady pulse in music|Rhythm you tap your foot to|A drummer's job is to keep it
-RAP|enh|Fast talking to a beat|Music of spoken rhymes|Knock, or rhyme over a beat
+RAP|enh|Fast talking to a beat ~ Quick, sharp knock ~ Music style with rhyming words|Music of spoken rhymes|Knock, or rhyme over a beat
 JAZZ|nh||Music style of Duke Ellington|Swing or bebop, broadly
 OPERA|nh||Play in which the words are sung|La Traviata or Carmen
-DRAMA|enh|Acting lessons at school|Play for the stage or screen|Excitement, or theatre
+DRAMA|enh|Acting lessons at school ~ Play on stage or television ~ Exciting events, or a play|Play for the stage or screen|Excitement, or theatre
 PLAY|enh|Story acted out on a stage|Romeo and Juliet, for one|Perform on an instrument, or a drama
 MIME|enh|Acting without any words|Silent acting with gestures|Marcel Marceau's art
 VIOLA|nh||String instrument a bit bigger than a violin|Alto of the strings, or the heroine of Twelfth Night
 CELLO|nh||Big string instrument held between the knees|Instrument played by Yo-Yo Ma
 OBOE|nh||Woodwind with a double reed|It gives the orchestra its tuning note
-TUBA|enh|Huge brass instrument with a deep sound|Biggest instrument in a brass band|Oompah instrument
+TUBA|enh|Huge brass instrument with a deep sound ~ Oompah band instrument ~ Biggest brass instrument in a band|Biggest instrument in a brass band|Oompah instrument
 BANJO|enh|String instrument with a round, drum-like body|Bluegrass string instrument|Kermit plays one in The Muppet Movie
 KAZOO|enh|Toy you hum into to make a buzz|Buzzing instrument played by humming|Toy instrument with a buzzing membrane
 VOICE|enh|You sing and talk with it|Tenor or soprano, say|Express out loud, or a singer's instrument
@@ -51,9 +51,9 @@ CRAFT|enh|Making things with your hands|Knitting or weaving, say|Skill, or a boa
 KNIT|enh|Make a scarf with wool and needles|"___ one, purl one"|Join together, as a mended bone does
 MASK|enh|You wear it to hide your face|Face cover for a masquerade|Comedy or tragedy symbol of the theatre
 CLOWN|enh|Funny circus performer with a red nose|Joker in the circus ring|Coco or Pierrot, say
-PHOTO|enh|Picture taken with a camera|Snapshot|Selfie, for one
+PHOTO|enh|Picture taken with a camera ~ Snapshot ~ Picture in a family album ~ Selfie, for one|Snapshot|Selfie, for one
 SCENE|nh||Part of an act in a play|Fuss, or a stage setting
-ACT|enh|Pretend to be someone in a play|Play a part|One of five in Hamlet
+ACT|enh|Pretend to be someone in a play ~ Do something ~ One section of a play or pantomime|Play a part ~ Section of a play ~ Law passed by Parliament|One of five in Hamlet
 TAP|enh|Dance with clicking shoes|Dance in shoes with metal plates|Gene Kelly's dance style
 WALTZ|nh||Ballroom dance in three-four time|The Blue Danube, for one
 TANGO|nh||Ballroom dance from Argentina|It takes two to do this, they say
@@ -65,7 +65,7 @@ CAROL|enh|Christmas song|Silent Night, for one|Song sung by waits in winter
 HYMN|nh||Song of praise in church|Amazing Grace, for one
 BLUES|nh||Sad music style from the American South|Music of B.B. King
 ROCK|enh|Loud music with electric guitars|Music of the Rolling Stones|Stone, or Queen's music
-POP|enh|Music in the charts|Kind of music on Top of the Pops|Burst a balloon, or chart music
+POP|enh|Music in the charts ~ Sound of a bursting bubble ~ Fizzy drink, to some|Kind of music on Top of the Pops|Burst a balloon, or chart music ~ Sound of a cork leaving a bottle ~ Fizzy drink, to some
 KEY|enh|One of the black or white bits on a piano|C major or A minor|Lock opener, or a musical scale
 TALE|enh|A story|Old wives' ___|Yarn, or account
 COMIC|enh|Magazine with picture stories|The Beano, for one|Stand-up performer

@@ -35,6 +35,21 @@ test('crossword data: coverage of packs and levels', function () {
   assertEqual(V.coverage(list(), R), []);
 });
 
+test('crossword data: variety - no repeated grids, near-copies, overused answers or repeated clues', function () {
+  const R = app().CrosswordRules;
+  assertEqual(V.variety(list(), R).slice(0, 15), []);
+});
+
+test('crossword validator: variety catches a repeated grid and a clue used too often', function () {
+  const R = rules();
+  const a = Object.assign({}, GOOD);
+  const b = Object.assign({}, GOOD, { id: 'an-e-002' });
+  const probs = V.variety([a, b], R);
+  assert(probs.some((m) => /same grid/.test(m)), 'repeated grid: ' + probs.join('; '));
+  const c = Object.assign({}, GOOD, { id: 'an-e-003' });
+  assert(V.variety([a, b, c], R).some((m) => /clue for CAMEL/.test(m)), 'the same clue for CAMEL three times');
+});
+
 /* The validator itself catches what it should (so a green data test means something). */
 const GOOD = {
   id: 'an-e-001', level: 'easy', pack: 'animals', size: 5, kind: 'open',
@@ -85,4 +100,12 @@ test('crossword generator: a fill never uses the same answer twice', function ()
   const idx = G.makeIndex(['BUS', 'BUY', 'USES', 'SEATS', 'USED', 'DROP', 'YEARS', 'SPY', 'STOP']);
   const rows = G.fill(['...##', '....#', '.....', '#....', '##...'], idx, G.rngFrom('t'), () => 0, 4000, null);
   assertEqual(rows, null);
+});
+
+test('crossword bank lint: alternative clues after ~ are each checked', function () {
+  assertEqual(V.lintBank('CAT|enh|Furry pet ~ Pet that purrs|Tabby, say ~ Kitten grown up|Feline ~ Tom, for one', 'animals'), []);
+  const p = V.lintBank('CAT|enh|Furry pet ~ a cat on a mat|Tabby ~ Tabby|Feline', 'animals');
+  assert(p.some((m) => /capital/.test(m)), 'each alternative must start with a capital: ' + p.join('; '));
+  assert(p.some((m) => /answer in clue/.test(m)), 'the answer may not appear in any alternative');
+  assert(p.some((m) => /same clue twice/.test(m)), 'no repeated alternative');
 });

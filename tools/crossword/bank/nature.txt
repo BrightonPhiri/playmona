@@ -2,11 +2,11 @@
 RAIN|enh|Water that falls from the clouds|Wet weather that fills puddles|Precipitation that comes down in drops
 SNOW|enh|Cold white flakes from the sky|You can build a man out of it in winter|What a white Christmas needs
 OAK|enh|Big tree that grows from an acorn|Mighty tree of English woods|Hardwood once used for Nelson's warships
-ROSE|enh|Pretty flower with thorns on its stem|Flower that is England's emblem|Thorny bloom, or got out of bed
+ROSE|enh|Pretty flower with thorns on its stem ~ Flower given on Valentine's Day ~ Went up, like the sun at dawn|Flower that is England's emblem|Thorny bloom, or got out of bed
 LEAF|enh|Flat green part of a tree|It turns brown and falls in autumn|Page of a book, or part of a plant
 STORM|enh|Very windy, rainy weather|Wild weather, a tempest|Attack a castle suddenly, or a tempest
 FROST|enh|Icy white coating on a cold morning|Jack ___, who nips noses in winter|Rime on the windowpane
-SUN|enh|It shines in the sky in the daytime|The star at the centre of our solar system|Our nearest star
+SUN|enh|It shines in the sky in the daytime ~ Star that gives us daylight ~ Big ball of fire that warms Earth|The star at the centre of our solar system|Our nearest star
 MOON|enh|It shines in the sky at night|It goes round the Earth about once a month|Luna, to the Romans
 STAR|enh|Twinkling light in the night sky|Twinkle, twinkle, little ___|Glowing ball of hot gas, like the Sun
 SKY|enh|It is blue on a sunny day|The blue above our heads|The heavens, or the firmament
@@ -17,10 +17,10 @@ SEED|enh|Plant it to grow a flower|Small thing that grows into a new plant|Pip, 
 ROOT|enh|Part of a plant under the ground|Part of a plant that draws up water|Origin, or a plant's anchor in the soil
 STEM|enh|Stalk of a flower|Part of a plant that holds up its bloom|Stalk, or to stop a flow
 SOIL|enh|Earth that plants grow in|Garden earth, loam or clay|Earth, or to make dirty
-MUD|enh|Wet, sticky earth|Mire left after heavy rain|Clear as ___ (not clear at all)
-ICE|enh|Frozen water|You skate on it at a rink|It forms a berg
+MUD|enh|Wet, sticky earth ~ Gooey bottom of a puddle ~ Pigs love rolling in it|Mire left after heavy rain|Clear as ___ (not clear at all)
+ICE|enh|Frozen water|You skate on it at a rink ~ Frozen water ~ Slippery stuff on a winter pavement|It forms a berg
 HAIL|enh|Little balls of ice from the sky|Frozen pellets that fall in a storm|Pellets of ice, or call to a taxi
-FOG|enh|Thick mist that is hard to see through|Thick mist that grounds flights|Pea-souper
+FOG|enh|Thick mist that is hard to see through ~ Cloud lying on the ground ~ Weather that hides the road ahead|Thick mist that grounds flights|Pea-souper
 MIST|enh|Thin, damp cloud near the ground|Light fog over a lake at dawn|Haze that blurs the view on a damp morning
 POND|enh|Small pool of water in a garden|Small still water where frogs and lilies live|Across the ___, jokingly, the Atlantic
 LAKE|enh|Big area of water with land all around|Windermere, for one|Superior or Victoria, for example
@@ -35,7 +35,7 @@ DAISY|enh|Little white flower with a yellow middle|You can make a chain of them|
 LILY|enh|Tall white flower with a sweet smell|Water ___, a plant of ponds|To gild the ___ (to over-decorate)
 IVY|enh|Plant that climbs up walls|Evergreen climber on old houses|Holly's partner in a Christmas carol
 MOSS|enh|Soft green plant that grows on stones|A rolling stone gathers no ___|Sphagnum, for one
-FERN|enh|Green plant with feathery leaves|Leafy plant of shady woods that has no flowers|Bracken, for example
+FERN|enh|Green plant with feathery leaves ~ Plant that grows in shady woods ~ Leafy plant with no flowers|Leafy plant of shady woods that has no flowers|Bracken, for example
 GRASS|enh|Green plant you mow in the garden|Keep off the ___|Bamboo is a giant one
 WEED|enh|Plant you pull up in the garden|Plant growing where it is not wanted|Dandelion, to a proud lawn owner
 TWIG|enh|Tiny branch|Small stick snapped from a tree|Catch on, or a small shoot
