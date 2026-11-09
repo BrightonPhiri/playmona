@@ -253,7 +253,8 @@ window.FF = window.FF || {};
     var pk = section(t('cwChoosePack', 'Pick a theme'));
     var pkGroup = group(pk, t('cwTheme', 'Theme'));
     pkGroup.classList.add('cw-choices--packs');
-    var packBtns = R.PACKS.map(function (p) {
+    // Mixed (the default) first, then the themes.
+    var packBtns = ['mixed'].concat(R.PACKS.filter(function (x) { return x !== 'mixed'; })).map(function (p) {
       var b = FF.ui.el('button', { type: 'button', class: 'cw-choice cw-choice--pack' });
       b.appendChild(glyph(PACK[p][2]));
       b.appendChild(FF.ui.span('cw-choice__name', packName(p)));
@@ -558,7 +559,7 @@ window.FF = window.FF || {};
       setSelection: setSelection, setLetter: setLetter, setWrong: setWrong, setRevealed: setRevealed, setTint: setTint,
       solveWord: solveWord, unsolveWord: unsolveWord, ripple: ripple, setHelp: setHelp, fit: fit,
       focusInput: function () { if (input) { try { input.focus({ preventScroll: true }); } catch (e) { input.focus(); } } },
-      lock: function (on) { f.root.classList.toggle('is-locked', !!on); if (kb) kb.setDisabled(on); }
+      lock: function (on) { f.root.classList.toggle('cw--locked', !!on); if (kb) kb.setDisabled(on); }
     };
   }
 

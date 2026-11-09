@@ -3882,7 +3882,7 @@ button.imp-card:focus-visible { outline: 3px solid var(--focus-ring); outline-of
   animation: cw-cursor 1.2s ease-in-out infinite alternate;
 }
 @keyframes cw-cursor { to { box-shadow: 0 0 0 2px color-mix(in srgb, var(--cw-cream) 70%, transparent), 0 0 28px var(--cw-lamp); } }
-.cw.is-locked .cw-cursor { opacity: 0.35; }
+.cw.cw--locked .cw-cursor { opacity: 0.35; }
 
 /* Motion. */
 .cw-board.is-dealing .cw-tile, .cw-board.is-dealing .cw-cell.is-block::before { animation: cw-deal 0.5s cubic-bezier(.2, 1.4, .4, 1) both; animation-delay: calc(var(--d) * 55ms); }
