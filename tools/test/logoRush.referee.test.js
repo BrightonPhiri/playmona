@@ -325,3 +325,72 @@ test('logorush: the inbox rule, the lists that name online games, and the runner
   const runner = read('api/crew/runner.js');
   assert(/logorushRuns/.test(runner) && /LogoRushReferee/.test(runner) && /logorushState/.test(runner) && /dropLogorush/.test(runner), 'the runner referees logorushRuns');
 });
+
+/* ---------- the phone's client ---------- */
+
+async function phone(m, uid) {
+  const FF = loadFF(FILES.concat(['js/logorush/client.js']));
+  const T = FF.Transport.dev({ bus: m.bus, root: 'rooms/ROOM01' });
+  await T.connect();
+  T.serverNow = () => m.clock.now;
+  let changes = 0;
+  const c = FF.LogoRushClient.create({ room: { transport: T, uid, code: 'ROOM01' }, onChange: () => { changes++; } });
+  await flush();
+  return { FF, c, changes: () => changes };
+}
+
+test('logorush client: one answer per logo, sent only while it is open, and the referee takes it', async function () {
+  const m = await match();
+  const a = await phone(m, 'p1');
+  const b = await phone(m, 'p2');
+  await m.clock.advance(1000 + m.RF.BRIEF_MS + 10);
+  assertEqual(a.c.view().lr.phase, 'ready');
+  assertEqual(a.c.send(m.answerText()), false, 'not before the clock starts');
+  await m.open();
+  assert(a.c.view().seated && a.c.view().me, 'p1 is seated');
+  assertEqual(a.c.send(m.answerText()), true);
+  assertEqual(a.c.send('again'), false, 'one answer per logo');
+  await flush();
+  assertEqual(m.lr().p.p1.inK, 0, 'the referee took it');
+  assertEqual(b.c.send('Nobody Knows'), true);
+  await flush();
+  assertEqual(m.lr().phase, 'reveal');
+  assert(m.lr().p.p1.last.ok && !m.lr().p.p2.last.ok);
+  assertEqual(a.c.send('late'), false, 'not after the reveal');
+  assert(a.changes() > 0, 'the screen hears about changes');
+  a.c.stop();
+  b.c.stop();
+});
+
+test('logorush client: a phase is drawn only once its round has arrived in full', async function () {
+  const m = await match();
+  const { FF } = await phone(m, 'p1');
+  const C = FF.LogoRushClient;
+  const copy = () => C.tidy(JSON.parse(JSON.stringify(m.lr())));
+  assert(C.ready(copy()), 'starting is ready');
+  await m.clock.advance(1000 + m.RF.BRIEF_MS + 10);
+  assert(C.ready(copy()), 'a full ready view is ready');
+  for (const field of ['id', 'cells', 'tiles', 'seconds']) {
+    const v = copy();
+    delete v.round[field];
+    assert(!C.ready(v), 'ready without ' + field + ' is not');
+  }
+  const stale = copy();
+  stale.round.k = stale.k - 1;
+  assert(!C.ready(stale), 'last round\'s logo is not this one');
+  await m.open();
+  assert(C.ready(copy()), 'open is ready');
+  await m.answer('p1', m.answerText());
+  await m.answer('p2', m.answerText());
+  assert(C.ready(copy()), 'a full reveal is ready');
+  const rev = copy();
+  delete rev.reveal;
+  assert(!C.ready(rev), 'a reveal without the name is not');
+  assert(!C.ready(null) && !C.ready({}));
+  const ch = await match({ settings: { mode: 'choice' } });
+  await ch.open();
+  const v = C.tidy(JSON.parse(JSON.stringify(ch.lr())));
+  assert(C.ready(v) && Array.isArray(v.round.choices) && v.round.choices.length === 6, 'choices come back as a list');
+  delete v.round.choices;
+  assert(!C.ready(v), 'choice round without its choices is not ready');
+});
