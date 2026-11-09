@@ -22,7 +22,8 @@ window.FF = window.FF || {};
   'use strict';
 
   var R = FF.WhatsMissingRules;
-  var SETUP_KEY = 'whatsMissing:setup';
+  var SETUP_KEY = 'whatsMissing:setup:v2';   // v2: Gone only became the default
+  var OLD_SETUP_KEY = 'whatsMissing:setup';
   var BEST_KEY = 'whatsMissing:endlessBest';
   var MM_ART = 'games/memoryMatch';
   var FLIP_MS = 420;          // tiles turn face down, the board changes, they turn back
@@ -370,9 +371,9 @@ window.FF = window.FF || {};
       var grid = FF.ui.div('wm-choices');
       grid.setAttribute('data-n', String(round.choices.length));
       var btns = round.choices.map(function (id) {
-        var b = FF.ui.el('button', { type: 'button', class: 'wm-choice' });
+        // Just the picture, big enough to know at a glance; the name is for screen readers.
+        var b = FF.ui.el('button', { type: 'button', class: 'wm-choice', 'aria-label': cardName(id) });
         b.appendChild(picEl(id, 'wm-pic wm-choice__pic'));
-        b.appendChild(FF.ui.span('wm-choice__name', cardName(id)));
         b.setAttribute('data-id', id);
         b.addEventListener('click', function () {
           if (sent) return;
@@ -525,10 +526,20 @@ window.FF = window.FF || {};
     return { el: wrap, sync: function (v) { btns.forEach(function (x) { x.el.classList.toggle('is-on', x.id === v); x.el.setAttribute('aria-pressed', x.id === v ? 'true' : 'false'); }); } };
   }
 
+  /* A setup saved before Gone only became the default keeps its other choices; its twists
+     were almost always the old default, so they start at the new one. */
+  function oldSetup() {
+    var old = store().get(OLD_SETUP_KEY, null);
+    if (!old) return null;
+    var c = R.sanitize(old);
+    c.twists = R.STANDARD.twists;
+    return c;
+  }
+
   function setupScreen(api, onGo) {
     api.shell.hideTimer();
     if (FF.GameLength && FF.GameLength.pause) FF.GameLength.pause();
-    var c = R.sanitize(store().get(SETUP_KEY, null) || R.STANDARD);
+    var c = R.sanitize(store().get(SETUP_KEY, null) || oldSetup() || R.STANDARD);
     var f = frame(api, 'wm--setup');
     var hero = FF.ui.div('wm-hero');
     var demo = { cols: 3, rows: 2, slots: 6 };
@@ -561,7 +572,7 @@ window.FF = window.FF || {};
     var theme = segmented(t('wmTheme', 'Pictures'), R.THEMES.map(function (id) { return { id: id, label: themeName(id) }; }), c.theme, function (v) { c.theme = v; api.audio.play('tap'); sync(); });
     var secs = segmented(t('wmStudyTime', 'Time to study'), R.SECONDS.map(function (n) { return { id: n, label: t('wmSecs', '{n} s', { n: n }) }; }), c.seconds, function (v) { c.seconds = v; api.audio.play('tap'); sync(); });
     var choices = segmented(t('wmChoices', 'Answers to pick from'), R.CHOICES.map(function (n) { return { id: n, label: String(n) }; }), c.choices, function (v) { c.choices = v; api.audio.play('tap'); sync(); });
-    var twists = segmented(t('wmTwists', 'Twists'), [{ id: 'mix', label: t('wmTwMix', 'Mix them up') }, { id: 'gone', label: t('wmGoneOnly', 'Gone only') }], c.twists, function (v) { c.twists = v; api.audio.play('tap'); sync(); });
+    var twists = segmented(t('wmTwists', 'Twists'), [{ id: 'gone', label: t('wmGoneOnly', 'Gone only') }, { id: 'mix', label: t('wmTwMix', 'Mix them up') }], c.twists, function (v) { c.twists = v; api.audio.play('tap'); sync(); });
     [theme, secs, choices, twists].forEach(function (x) { p.appendChild(x.el); });
 
     var foot = FF.ui.div('wm-setup__foot');

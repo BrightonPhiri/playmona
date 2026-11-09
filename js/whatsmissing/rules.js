@@ -25,9 +25,9 @@ window.FF = window.FF || {};
   var THEMES = ['mix', 'animals', 'sea', 'food', 'fruit', 'characters', 'toys', 'sports', 'vehicles'];
   var SECONDS = [3, 5, 8, 12];
   var CHOICES = [4, 6, 8];
-  var TWISTS = ['mix', 'gone'];
+  var TWISTS = ['gone', 'mix'];
   var ROUNDS = [5, 8, 12];
-  var STANDARD = { level: 'normal', theme: 'mix', seconds: 5, choices: 6, twists: 'mix', rounds: 8 };
+  var STANDARD = { level: 'normal', theme: 'mix', seconds: 5, choices: 6, twists: 'gone', rounds: 8 };
   var PICTURES = { easy: 4, normal: 6, hard: 8 };
   var EXPERT_START = 10;
   var EXPERT_MAX = 16;
@@ -138,14 +138,10 @@ window.FF = window.FF || {};
   }
 
   /* A few more slots than pictures, so Added has somewhere to go and nothing moves. */
-  function grid(n) {
-    if (n <= 4) return { cols: 3, rows: 2 };
-    if (n <= 6) return { cols: 3, rows: 3 };
-    if (n <= 8) return { cols: 4, rows: 3 };
-    if (n <= 12) return { cols: 4, rows: 4 };
-    if (n <= 16) return { cols: 5, rows: 4 };
-    if (n <= 20) return { cols: 5, rows: 5 };
-    return { cols: 6, rows: 5 };
+  /* The board for m tiles: just those tiles, no empty places; the last row may be short. */
+  function grid(m) {
+    var cols = m <= 3 ? Math.max(1, m) : m <= 4 ? 2 : m <= 6 ? 3 : m <= 8 ? 4 : m <= 9 ? 3 : m <= 16 ? 4 : m <= 20 ? 5 : 6;
+    return { cols: cols, rows: Math.ceil(m / cols) };
   }
 
   /* ---------- twists ---------- */
@@ -217,8 +213,8 @@ window.FF = window.FF || {};
     var picked = shuffle(pool, rand).slice(0, n + 1);
     var onBoard = picked.slice(0, n).map(function (x) { return x.id; });
     var extra = picked[n].id;
-    var g = grid(n);
-    var slots = g.cols * g.rows;
+    var slots = twist === 'added' ? n + 1 : n;   // Added needs one free spot for the newcomer
+    var g = grid(slots);
     var places = shuffle(range(slots), rand);
     var before = range(slots).map(function () { return null; });
     onBoard.forEach(function (id, i) { before[places[i]] = id; });

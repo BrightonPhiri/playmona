@@ -54,7 +54,7 @@ test('whatsmissing: settings out of range are refused; Endless is solo only; the
     foreach ([['level' => 'endless'], ['level' => 'insane'], ['theme' => 'mars'], ['seconds' => 4], ['choices' => 5], ['twists' => 'all'], ['rounds' => 7]] as $bad) {
         eq(400, wmStart($w, 'WMAE', ['settings' => $bad])->status, json_encode($bad));
     }
-    eq(['level' => 'normal', 'theme' => 'mix', 'seconds' => 5, 'choices' => 6, 'twists' => 'mix', 'rounds' => 8], WhatsMissing::settings([]));
+    eq(['level' => 'normal', 'theme' => 'mix', 'seconds' => 5, 'choices' => 6, 'twists' => 'gone', 'rounds' => 8], WhatsMissing::settings([]));
     eq(12, WhatsMissing::settings(['rounds' => '12'])['rounds']);
     eq('expert', WhatsMissing::settings(['level' => 'expert'])['level']);
     $js = file_get_contents(__DIR__ . '/../../js/whatsmissing/rules.js');
@@ -82,7 +82,7 @@ test('whatsmissing: a start hands the match and its seed to the runner and opens
     $run = $w['rtdb']->get('whatsmissingRuns/' . $id);
     eq('WMAF', $run['roomCode']);
     eq(['host1', 'guest2', 'guest3'], $run['seats']);
-    eq(['level' => 'hard', 'theme' => 'animals', 'seconds' => 5, 'choices' => 6, 'twists' => 'mix', 'rounds' => 5], $run['settings']);
+    eq(['level' => 'hard', 'theme' => 'animals', 'seconds' => 5, 'choices' => 6, 'twists' => 'gone', 'rounds' => 5], $run['settings']);
     eq(1, preg_match('/^[0-9a-f]{24}$/', $run['seed']), 'a seed from the server random');
     $room = $w['rtdb']->get('rooms/WMAF');
     eq('playing', $room['meta']['status']);

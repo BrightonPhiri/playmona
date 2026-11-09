@@ -29,7 +29,7 @@ class WhatsMissing
     public const THEMES = ['mix', 'animals', 'sea', 'food', 'fruit', 'characters', 'toys', 'sports', 'vehicles'];
     public const SECONDS = [3, 5, 8, 12];
     public const CHOICES = [4, 6, 8];
-    public const TWISTS = ['mix', 'gone'];
+    public const TWISTS = ['gone', 'mix'];
     public const ROUNDS = [5, 8, 12];
 
     public function __construct(private Db $db, private RealtimeDb $rtdb, private Runner $runner) {}
@@ -42,7 +42,7 @@ class WhatsMissing
             'theme' => self::allowed($raw, 'theme', self::THEMES, 'mix'),
             'seconds' => self::allowed($raw, 'seconds', self::SECONDS, 5),
             'choices' => self::allowed($raw, 'choices', self::CHOICES, 6),
-            'twists' => self::allowed($raw, 'twists', self::TWISTS, 'mix'),
+            'twists' => self::allowed($raw, 'twists', self::TWISTS, 'gone'),
             'rounds' => self::allowed($raw, 'rounds', self::ROUNDS, 8),
         ];
     }

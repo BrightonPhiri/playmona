@@ -20,7 +20,8 @@ function unique(list) { return new Set(list).size === list.length; }
 test('wm settings: sanitize falls back to the standard; only rounds stay standard', function () {
   const R = app().WhatsMissingRules;
   assertEqual(JSON.stringify(R.sanitize({ level: 'x', theme: 'mars', seconds: 7 })), JSON.stringify(R.STANDARD));
-  assertEqual(JSON.stringify(R.STANDARD), JSON.stringify({ level: 'normal', theme: 'mix', seconds: 5, choices: 6, twists: 'mix', rounds: 8 }));
+  assertEqual(JSON.stringify(R.STANDARD), JSON.stringify({ level: 'normal', theme: 'mix', seconds: 5, choices: 6, twists: 'gone', rounds: 8 }));
+  assert(!R.isStandard({ twists: 'mix' }), 'all twists is a custom game');
   assert(R.isStandard({ rounds: 5 }), 'rounds are the game length');
   assert(!R.isStandard({ choices: 4 }));
   assert(!R.isStandard({ level: 'endless' }));
@@ -28,14 +29,30 @@ test('wm settings: sanitize falls back to the standard; only rounds stay standar
   assertEqual(R.sanitize({ seconds: '12', choices: '8' }).seconds, 12);
 });
 
-test('wm grid: slots by picture count, always room for one more', function () {
+test('wm grid: exactly the tiles a board needs, the last row may be short', function () {
   const R = app().WhatsMissingRules;
-  const want = { 3: '3x2', 4: '3x2', 6: '3x3', 8: '4x3', 12: '4x4', 16: '5x4', 20: '5x5', 24: '6x5' };
+  const want = { 3: '3x1', 4: '2x2', 5: '3x2', 6: '3x2', 7: '4x2', 8: '4x2', 9: '3x3', 10: '4x3', 12: '4x3', 13: '4x4', 16: '4x4', 17: '5x4', 20: '5x4', 24: '6x4', 25: '6x5' };
   Object.keys(want).forEach((n) => {
     const g = R.grid(Number(n));
     assertEqual(g.cols + 'x' + g.rows, want[n], 'n=' + n);
-    assert(g.cols * g.rows > Number(n), 'room for Added at n=' + n);
+    assert(g.cols * g.rows >= Number(n) && g.cols * (g.rows - 1) < Number(n), 'no empty row at n=' + n);
   });
+});
+
+test('wm deal: no empty places, except the one spot an Added picture lands in', function () {
+  const R = app().WhatsMissingRules;
+  let added = 0;
+  ['easy', 'normal', 'hard', 'expert'].forEach((level) => {
+    for (let k = 0; k < 12; k++) {
+      const r = R.deal({ level, twists: 'mix' }, 'e' + k, k);
+      const empty = r.before.filter((x) => x == null).length;
+      if (r.twist === 'added') { added++; assertEqual(r.slots, r.n + 1, level + ' added slots'); assertEqual(empty, 1, level + ' one free spot'); }
+      else { assertEqual(r.slots, r.n, level + ' ' + r.twist + ' slots'); assertEqual(empty, 0, level + ' no empty place'); }
+    }
+  });
+  assert(added > 0, 'some Added rounds were dealt');
+  const easy = R.deal({ level: 'easy', twists: 'gone' }, 'x', 0);
+  assertEqual(easy.slots + ':' + easy.cols + 'x' + easy.rows, '4:2x2', 'Easy shows just its 4 pictures');
 });
 
 test('wm pictures: 4, 6, 8 by level; Expert starts at 10 and grows to 16', function () {
@@ -58,7 +75,7 @@ test('wm deal: the same seed deals the same rounds; another seed differs', funct
 });
 
 function checkBoard(R, r, label) {
-  assertEqual(r.slots, r.cols * r.rows, label + ' slots');
+  assert(r.slots <= r.cols * r.rows && r.slots > r.cols * (r.rows - 1), label + ' slots fill the rows');
   assertEqual(r.before.length, r.slots, label + ' before length');
   assertEqual(r.after.length, r.slots, label + ' after length');
   const b = filled(r.before);
@@ -98,7 +115,7 @@ function checkBoard(R, r, label) {
 test('wm deal: every level deals a fair board and a true change', function () {
   const R = app().WhatsMissingRules;
   LEVELS.forEach((level) => {
-    const S = R.sanitize({ level });
+    const S = R.sanitize({ twists: 'mix', level });
     ['s1', 's2', 's3', 's4', 's5'].forEach((seed) => {
       for (let k = 0; k < 8; k++) {
         const r = R.deal(S, seed, k);
@@ -113,7 +130,7 @@ test('wm twists: round 1 is Gone, never three alike, only allowed ones, Gone onl
   const R = app().WhatsMissingRules;
   for (let i = 0; i < 200; i++) {
     LEVELS.forEach((level) => {
-      const S = R.sanitize({ level });
+      const S = R.sanitize({ twists: 'mix', level });
       const plan = R.twistPlan(S, 'seed' + i, 12);
       assertEqual(plan[0], 'gone');
       for (let k = 2; k < plan.length; k++) assert(!(plan[k] === plan[k - 1] && plan[k] === plan[k - 2]), 'no triple at ' + k);
@@ -127,9 +144,9 @@ test('wm twists: round 1 is Gone, never three alike, only allowed ones, Gone onl
   const gapsHard = new Set(), gapsExpert = new Set();
   for (let i = 0; i < 60; i++) {
     for (let k = 0; k < 8; k++) {
-      const h = R.deal(R.sanitize({ level: 'hard' }), 'g' + i, k);
+      const h = R.deal(R.sanitize({ twists: 'mix', level: 'hard' }), 'g' + i, k);
       if (h.twist === 'several') gapsHard.add(h.gaps);
-      const e = R.deal(R.sanitize({ level: 'expert' }), 'g' + i, k);
+      const e = R.deal(R.sanitize({ twists: 'mix', level: 'expert' }), 'g' + i, k);
       if (e.twist === 'several') gapsExpert.add(e.gaps);
     }
   }
@@ -144,7 +161,7 @@ test('wm choices: the setting count, every answer in, nothing else from the boar
     LEVELS.filter((l) => l !== 'expert').forEach((level) => {
       for (let i = 0; i < 20; i++) {
         for (let k = 0; k < 8; k++) {
-          const r = R.deal(R.sanitize({ level, choices }), 'c' + i, k);
+          const r = R.deal(R.sanitize({ twists: 'mix', level, choices }), 'c' + i, k);
           if (r.twist !== 'gone' && r.twist !== 'several') { assertEqual(r.choices, null); continue; }
           assertEqual(r.choices.length, choices, 'count');
           assert(unique(r.choices), 'no repeats');
@@ -165,12 +182,12 @@ test('wm theme: one deck only, and a small theme still deals Expert and Endless 
   const R = app().WhatsMissingRules;
   for (let k = 0; k < 8; k++) filled(R.deal(R.sanitize({ theme: 'sea' }), 't', k).before).forEach((id) => assertEqual(R.cardOf(id).deck, 'sea'));
   for (let k = 0; k <= 12; k++) {
-    const r = R.deal(R.sanitize({ level: 'expert', theme: 'sea', choices: 8 }), 'tiny', k);
+    const r = R.deal(R.sanitize({ twists: 'mix', level: 'expert', theme: 'sea', choices: 8 }), 'tiny', k);
     checkBoard(R, r, 'expert sea k' + k);
     if (r.choices) { assertEqual(r.choices.length, 8); assert(unique(r.choices)); }
   }
   for (let k = 0; k < 10; k++) {
-    const r = R.deal(R.sanitize({ level: 'endless', theme: 'sea', choices: 8 }), 'big', k, { n: 24, prev: [] });
+    const r = R.deal(R.sanitize({ twists: 'mix', level: 'endless', theme: 'sea', choices: 8 }), 'big', k, { n: 24, prev: [] });
     checkBoard(R, r, 'endless sea k' + k);
     if (r.choices) assertEqual(r.choices.length, 8);
   }
@@ -180,7 +197,7 @@ test('wm expert: only spellable pictures on the board, and gaps are spelled', fu
   const R = app().WhatsMissingRules;
   for (let i = 0; i < 20; i++) {
     for (let k = 0; k < 8; k++) {
-      const r = R.deal(R.sanitize({ level: 'expert' }), 'e' + i, k);
+      const r = R.deal(R.sanitize({ twists: 'mix', level: 'expert' }), 'e' + i, k);
       filled(r.before).concat(filled(r.after)).forEach((id) => assert(R.spellable(R.cardOf(id).name), id + ' spellable'));
       assertEqual(r.spell, r.twist === 'gone' || r.twist === 'several', 'spell on gaps only');
       if (r.spell) assertEqual(r.choices, null);
@@ -192,9 +209,9 @@ test('wm expert: only spellable pictures on the board, and gaps are spelled', fu
 test('wm secs: 20 seconds, +6 on Expert, +5 for each extra gap', function () {
   const R = app().WhatsMissingRules;
   for (let k = 0; k < 8; k++) {
-    const r = R.deal(R.sanitize({ level: 'hard' }), 'z', k);
+    const r = R.deal(R.sanitize({ twists: 'mix', level: 'hard' }), 'z', k);
     assertEqual(r.secs, 20 + 5 * (r.gaps - 1));
-    const e = R.deal(R.sanitize({ level: 'expert' }), 'z', k);
+    const e = R.deal(R.sanitize({ twists: 'mix', level: 'expert' }), 'z', k);
     assertEqual(e.secs, 26 + 5 * (e.gaps - 1));
   }
 });
@@ -205,7 +222,7 @@ test('wm secs: 20 seconds, +6 on Expert, +5 for each extra gap', function () {
 function findRound(R, settings, twist, gaps) {
   for (let i = 0; i < 400; i++) {
     for (let k = 0; k < 10; k++) {
-      const r = R.deal(R.sanitize(settings), 'f' + i, k);
+      const r = R.deal(R.sanitize(Object.assign({ twists: 'mix' }, settings)), 'f' + i, k);
       if (r.twist === twist && (!gaps || r.gaps === gaps)) return r;
     }
   }
@@ -314,7 +331,7 @@ test('wm points: base, speed, streaks, partial gaps and the Expert bonus', funct
 
 test('wm deal: pass and play grows Expert boards by lap (opts.step), each turn its own board', function () {
   const R = app().WhatsMissingRules;
-  const S = R.sanitize({ level: 'expert' });
+  const S = R.sanitize({ twists: 'mix', level: 'expert' });
   assertEqual(R.deal(S, 'p', 5, { step: 0 }).n, 10);
   assertEqual(R.deal(S, 'p', 5, { step: 2 }).n, 12);
   assert(JSON.stringify(R.deal(S, 'p', 4, { step: 2 }).before) !== JSON.stringify(R.deal(S, 'p', 5, { step: 2 }).before), 'another turn, another board');
@@ -344,7 +361,7 @@ test('wm endless: boards grow from 3 to 24, twists unlock with size, never three
   const R = app().WhatsMissingRules;
   ['mix', 'animals'].forEach((theme) => {
     for (let s = 0; s < 15; s++) {
-      const S = R.sanitize({ level: 'endless', theme });
+      const S = R.sanitize({ twists: 'mix', level: 'endless', theme });
       const prev = [];
       for (let k = 0, n = 3; n <= 24; k++, n++) {
         const r = R.deal(S, 'run' + s, k, { n, prev: prev.slice() });

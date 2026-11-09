@@ -3477,7 +3477,12 @@ button.imp-card:focus-visible { outline: 3px solid var(--focus-ring); outline-of
 }
 
 /* ---------- the board ---------- */
-.wm-board { display: grid; grid-template-columns: repeat(var(--wm-cols, 3), var(--wm-tile)); gap: 8px; perspective: 900px; padding: 6px 6px 14px; }
+/* Only the tiles a board needs: a short last row sits in the middle. */
+.wm-board {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; perspective: 900px; padding: 6px 6px 14px; box-sizing: content-box;
+  width: calc(var(--wm-cols, 3) * var(--wm-tile) + (var(--wm-cols, 3) - 1) * 8px);
+}
+.wm-tile { flex: none; }
 .wm-tile {
   --side: var(--wm-s0);
   position: relative; width: var(--wm-tile); height: var(--wm-tile); padding: 0; border: 0; cursor: default;
@@ -3563,12 +3568,13 @@ button.imp-card:focus-visible { outline: 3px solid var(--focus-ring); outline-of
 .wm-body { display: flex; flex-direction: column; gap: var(--sp-2); }
 .wm-body:empty { display: none; }
 .wm-tip { margin: 0; color: var(--wm-ink-soft); font-weight: 600; }
+/* Pictures only. Phones: two in a row for 4 and 6 answers, four in a row for 8. */
 .wm-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-2); }
-.wm-choices[data-n="6"], .wm-choices[data-n="8"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-@media (min-width: 520px) { .wm-choices[data-n="4"], .wm-choices[data-n="8"] { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.wm-choices[data-n="8"] { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (min-width: 520px) { .wm-choices[data-n="4"] { grid-template-columns: repeat(4, minmax(0, 1fr)); } .wm-choices[data-n="6"] { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (min-width: 900px) { .wm-choices[data-n="4"] { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .wm-choice {
-  display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 4px 8px; min-height: 44px; border: 0; border-radius: 14px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; padding: 6px 4px 8px; min-height: 44px; border: 0; border-radius: 14px; cursor: pointer;
   color: var(--wm-tile-ink); background: linear-gradient(180deg, var(--wm-cream), var(--wm-cream-deep));
   box-shadow: 0 4px 0 var(--wm-s4), 0 6px 12px color-mix(in srgb, var(--wm-plum) 45%, transparent); transition: transform 0.12s;
 }
@@ -3576,9 +3582,8 @@ button.imp-card:focus-visible { outline: 3px solid var(--focus-ring); outline-of
 .wm-choice:not(:disabled):active { transform: translateY(3px); box-shadow: 0 1px 0 var(--wm-s4); }
 .wm-choice:focus-visible { outline: 3px solid var(--wm-gold); outline-offset: 2px; }
 .wm-choice:disabled { cursor: default; }
-.wm-choice__pic { width: clamp(36px, 11vw, 60px); height: clamp(36px, 11vw, 60px); }
+.wm-choice__pic { width: clamp(52px, 16vw, 72px); height: clamp(52px, 16vw, 72px); }
 .wm-choice__pic .wm-pic__emoji { font-size: 2rem; }
-.wm-choice__name { font-size: 0.75rem; font-weight: 800; line-height: 1.1; text-align: center; }
 .wm-choice.is-used { opacity: 0.45; }
 .wm-choice.is-picked { box-shadow: 0 0 0 3px var(--wm-gold), 0 4px 0 var(--wm-s4); }
 .wm-spell .spell { margin: 0; }
@@ -3661,10 +3666,9 @@ button.imp-card:focus-visible { outline: 3px solid var(--focus-ring); outline-of
   .wm--play .wm-score__pts { font-size: 1.15rem; }
   .wm--play .wm-question { font-size: 1.05rem; }
   .wm--play .wm-board { padding: 2px 4px 10px; }
-  .wm-choices[data-n="8"] { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .wm-choice { padding: 4px 2px 6px; gap: 0; }
-  .wm-choice__pic { width: 34px; height: 34px; }
-  .wm-choice__name { font-size: 0.68rem; }
+  .wm-choice { padding: 4px 2px 6px; }
+  .wm-choice__pic { width: 64px; height: 64px; }
+  .wm-choices[data-n="8"] .wm-choice__pic { width: 56px; height: 56px; }
   .wm-reveal { padding: 6px 10px; }
   .wm-reveal__pts { font-size: 1.25rem; }
   /* While answering, the score waits (it shows again with the result), as in GeoSpin. */
