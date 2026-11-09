@@ -1,0 +1,800 @@
+{
+ "absa": {
+  "wiki": "Absa Bank"
+ },
+ "accessbank": {
+  "wiki": "Access Bank plc"
+ },
+ "acmilan": {
+  "wiki": "AC Milan"
+ },
+ "adobe": {
+  "wiki": "Adobe Inc."
+ },
+ "airtel": {
+  "wiki": "Airtel Africa"
+ },
+ "ajax": {
+  "wiki": "AFC Ajax"
+ },
+ "alahly": {
+  "wiki": "Al Ahly SC"
+ },
+ "aldi": {
+  "wiki": "Aldi"
+ },
+ "alhilal": {
+  "wiki": "Al Hilal SFC"
+ },
+ "alibaba": {
+  "wiki": "Alibaba Group"
+ },
+ "aljazeera": {
+  "wiki": "Al Jazeera"
+ },
+ "alnassr": {
+  "wiki": "Al Nassr FC"
+ },
+ "amazon": {
+  "wiki": "Amazon (company)"
+ },
+ "amex": {
+  "wiki": "American Express"
+ },
+ "angrybirds": {
+  "wiki": "Angry Birds"
+ },
+ "apple": {
+  "wiki": "Apple Inc."
+ },
+ "arsenal": {
+  "wiki": "Arsenal F.C."
+ },
+ "asantekotoko": {
+  "wiki": "Asante Kotoko S.C."
+ },
+ "astonvilla": {
+  "wiki": "Aston Villa F.C."
+ },
+ "atletico": {
+  "wiki": "Atlético Madrid"
+ },
+ "barbie": {
+  "wiki": "Barbie"
+ },
+ "barcelona": {
+  "wiki": "FC Barcelona"
+ },
+ "bayern": {
+  "wiki": "FC Bayern Munich"
+ },
+ "bbc": {
+  "wiki": "BBC"
+ },
+ "benfica": {
+  "wiki": "S.L. Benfica"
+ },
+ "bestbuy": {
+  "wiki": "Best Buy"
+ },
+ "binance": {
+  "wiki": "Binance"
+ },
+ "bing": {
+  "wiki": "Microsoft Bing"
+ },
+ "bitcoin": {
+  "wiki": "Bitcoin"
+ },
+ "bluesky": {
+  "wiki": "Bluesky"
+ },
+ "bocajuniors": {
+  "wiki": "Boca Juniors"
+ },
+ "bolt": {
+  "wiki": "Bolt (company)"
+ },
+ "booking": {
+  "wiki": "Booking.com"
+ },
+ "bp": {
+  "wiki": "BP"
+ },
+ "bugatti": {
+  "wiki": "Bugatti Automobiles"
+ },
+ "byd": {
+  "wiki": "BYD Auto"
+ },
+ "cadbury": {
+  "wiki": "Cadbury"
+ },
+ "calvinklein": {
+  "wiki": "Calvin Klein (fashion house)"
+ },
+ "capitec": {
+  "wiki": "Capitec Bank"
+ },
+ "capsunited": {
+  "wiki": "CAPS United F.C."
+ },
+ "carlsberg": {
+  "wiki": "Carlsberg Group"
+ },
+ "carrefour": {
+  "wiki": "Carrefour"
+ },
+ "cartoonnetwork": {
+  "wiki": "Cartoon Network"
+ },
+ "casio": {
+  "wiki": "Casio"
+ },
+ "castlelager": {
+  "wiki": "Castle Lager"
+ },
+ "cbz": {
+  "wiki": "CBZ Holdings"
+ },
+ "cellc": {
+  "wiki": "Cell C"
+ },
+ "celtic": {
+  "wiki": "Celtic F.C."
+ },
+ "champion": {
+  "wiki": "Champion (sportswear)"
+ },
+ "championsleague": {
+  "wiki": "UEFA Champions League"
+ },
+ "chase": {
+  "wiki": "Chase Bank"
+ },
+ "checkers": {
+  "wiki": "Checkers (supermarket chain)"
+ },
+ "chelsea": {
+  "wiki": "Chelsea F.C."
+ },
+ "chibuku": {
+  "wiki": "Chibuku Shake Shake"
+ },
+ "chickeninn": {
+  "wiki": "Chicken Inn"
+ },
+ "chickenlicken": {
+  "wiki": "Chicken Licken (restaurant)"
+ },
+ "chrome": {
+  "wiki": "Google Chrome"
+ },
+ "citi": {
+  "wiki": "Citigroup"
+ },
+ "clicks": {
+  "wiki": "Clicks (South Africa)"
+ },
+ "cnn": {
+  "wiki": "CNN"
+ },
+ "crocs": {
+  "wiki": "Crocs"
+ },
+ "dc": {
+  "wiki": "DC Comics"
+ },
+ "debonairs": {
+  "wiki": "Debonairs Pizza"
+ },
+ "decathlon": {
+  "wiki": "Decathlon (retailer)"
+ },
+ "delta": {
+  "wiki": "Delta Air Lines"
+ },
+ "dhl": {
+  "wiki": "DHL"
+ },
+ "dischem": {
+  "wiki": "Dis-Chem"
+ },
+ "discord": {
+  "wiki": "Discord"
+ },
+ "disney": {
+  "wiki": "The Walt Disney Company"
+ },
+ "dominos": {
+  "wiki": "Domino's"
+ },
+ "dortmund": {
+  "wiki": "Borussia Dortmund"
+ },
+ "dstv": {
+  "wiki": "DStv"
+ },
+ "dunkin": {
+  "wiki": "Dunkin'"
+ },
+ "dynamos": {
+  "wiki": "Dynamos F.C."
+ },
+ "ea": {
+  "wiki": "Electronic Arts"
+ },
+ "ecocash": {
+  "wiki": "EcoCash"
+ },
+ "econet": {
+  "wiki": "Econet Wireless"
+ },
+ "edgars": {
+  "wiki": "Edgars (department store)"
+ },
+ "ellesse": {
+  "wiki": "Ellesse"
+ },
+ "emirates": {
+  "wiki": "Emirates (airline)"
+ },
+ "engen": {
+  "wiki": "Engen Petroleum"
+ },
+ "enyimba": {
+  "wiki": "Enyimba F.C."
+ },
+ "equitybank": {
+  "wiki": "Equity Group Holdings"
+ },
+ "esperance": {
+  "wiki": "Espérance Sportive de Tunis"
+ },
+ "espn": {
+  "wiki": "ESPN"
+ },
+ "ethiopian": {
+  "wiki": "Ethiopian Airlines"
+ },
+ "etihad": {
+  "wiki": "Etihad Airways"
+ },
+ "everton": {
+  "wiki": "Everton F.C."
+ },
+ "fanta": {
+  "wiki": "Fanta"
+ },
+ "ferrari": {
+  "wiki": "Ferrari"
+ },
+ "fiat": {
+  "wiki": "Fiat Automobiles"
+ },
+ "fila": {
+  "wiki": "Fila (company)"
+ },
+ "firefox": {
+  "wiki": "Firefox"
+ },
+ "flamengo": {
+  "wiki": "CR Flamengo"
+ },
+ "fnb": {
+  "wiki": "First National Bank (South Africa)"
+ },
+ "ford": {
+  "wiki": "Ford Motor Company"
+ },
+ "formula1": {
+  "wiki": "Formula One"
+ },
+ "galatasaray": {
+  "wiki": "Galatasaray S.K. (football)"
+ },
+ "game": {
+  "wiki": "Game (South African retailer)"
+ },
+ "glo": {
+  "wiki": "Globacom"
+ },
+ "gormahia": {
+  "wiki": "Gor Mahia F.C."
+ },
+ "gtbank": {
+  "wiki": "GTCO Group"
+ },
+ "guinness": {
+  "wiki": "Guinness"
+ },
+ "hbo": {
+  "wiki": "HBO"
+ },
+ "heartsofoak": {
+  "wiki": "Accra Hearts of Oak S.C."
+ },
+ "heinz": {
+  "wiki": "Heinz"
+ },
+ "hellokitty": {
+  "wiki": "Hello Kitty"
+ },
+ "highlanders": {
+  "wiki": "Highlanders F.C."
+ },
+ "hilton": {
+  "wiki": "Hilton Hotels & Resorts"
+ },
+ "hm": {
+  "wiki": "H&M"
+ },
+ "hp": {
+  "wiki": "HP Inc."
+ },
+ "hyundai": {
+  "wiki": "Hyundai Motor Company"
+ },
+ "inter": {
+  "wiki": "Inter Milan"
+ },
+ "intermiami": {
+  "wiki": "Inter Miami CF"
+ },
+ "isuzu": {
+  "wiki": "Isuzu Motors"
+ },
+ "jaguar": {
+  "wiki": "Jaguar Cars"
+ },
+ "japanairlines": {
+  "wiki": "Japan Airlines"
+ },
+ "jeep": {
+  "wiki": "Jeep"
+ },
+ "jordan": {
+  "wiki": "Air Jordan"
+ },
+ "jumia": {
+  "wiki": "Jumia"
+ },
+ "juventus": {
+  "wiki": "Juventus FC"
+ },
+ "kaizerchiefs": {
+  "wiki": "Kaizer Chiefs F.C."
+ },
+ "kappa": {
+  "wiki": "Kappa (company)"
+ },
+ "kelloggs": {
+  "wiki": "Kellogg's"
+ },
+ "kia": {
+  "wiki": "Kia"
+ },
+ "kindle": {
+  "wiki": "Amazon Kindle"
+ },
+ "kitkat": {
+  "wiki": "Kit Kat"
+ },
+ "konga": {
+  "wiki": "Konga.com"
+ },
+ "lacoste": {
+  "wiki": "Lacoste"
+ },
+ "landrover": {
+  "wiki": "Land Rover"
+ },
+ "lays": {
+  "wiki": "Lay's"
+ },
+ "lazio": {
+  "wiki": "SS Lazio"
+ },
+ "lego": {
+  "wiki": "Lego"
+ },
+ "leicester": {
+  "wiki": "Leicester City F.C."
+ },
+ "leipzig": {
+  "wiki": "RB Leipzig"
+ },
+ "leverkusen": {
+  "wiki": "Bayer 04 Leverkusen"
+ },
+ "levis": {
+  "wiki": "Levi Strauss & Co."
+ },
+ "lg": {
+  "wiki": "LG Corporation"
+ },
+ "linux": {
+  "wiki": "Linux"
+ },
+ "lipton": {
+  "wiki": "Lipton"
+ },
+ "liverpool": {
+  "wiki": "Liverpool F.C."
+ },
+ "lufthansa": {
+  "wiki": "Lufthansa"
+ },
+ "lyft": {
+  "wiki": "Lyft"
+ },
+ "lyon": {
+  "wiki": "Olympique Lyonnais"
+ },
+ "mancity": {
+  "wiki": "Manchester City F.C."
+ },
+ "manutd": {
+  "wiki": "Manchester United F.C."
+ },
+ "marriott": {
+  "wiki": "Marriott International"
+ },
+ "marseille": {
+  "wiki": "Olympique de Marseille"
+ },
+ "marvel": {
+  "wiki": "Marvel Comics"
+ },
+ "mazda": {
+  "wiki": "Mazda"
+ },
+ "mclaren": {
+  "wiki": "McLaren Automotive"
+ },
+ "mercedes": {
+  "wiki": "Mercedes-Benz"
+ },
+ "messenger": {
+  "wiki": "Messenger (platform)"
+ },
+ "michelin": {
+  "wiki": "Michelin"
+ },
+ "milo": {
+  "wiki": "Milo (drink)"
+ },
+ "mini": {
+  "wiki": "Mini (marque)"
+ },
+ "mms": {
+  "wiki": "M&M's"
+ },
+ "monster": {
+  "wiki": "Monster Energy"
+ },
+ "mpesa": {
+  "wiki": "M-Pesa"
+ },
+ "mrprice": {
+  "wiki": "Mr Price Group"
+ },
+ "mtn": {
+  "wiki": "MTN Group"
+ },
+ "mtv": {
+  "wiki": "MTV"
+ },
+ "nandos": {
+  "wiki": "Nando's"
+ },
+ "napoli": {
+  "wiki": "SSC Napoli"
+ },
+ "natgeo": {
+  "wiki": "National Geographic"
+ },
+ "nba": {
+  "wiki": "National Basketball Association"
+ },
+ "nedbank": {
+  "wiki": "Nedbank"
+ },
+ "newcastle": {
+  "wiki": "Newcastle United F.C."
+ },
+ "nickelodeon": {
+  "wiki": "Nickelodeon"
+ },
+ "nissan": {
+  "wiki": "Nissan"
+ },
+ "northface": {
+  "wiki": "The North Face"
+ },
+ "oldmutual": {
+  "wiki": "Old Mutual"
+ },
+ "olympics": {
+  "wiki": "Olympic Games"
+ },
+ "omega": {
+  "wiki": "Omega SA"
+ },
+ "orange": {
+  "wiki": "Orange S.A."
+ },
+ "orlandopirates": {
+  "wiki": "Orlando Pirates F.C."
+ },
+ "pacman": {
+  "wiki": "Pac-Man"
+ },
+ "pep": {
+  "wiki": "Pep (store)"
+ },
+ "peugeot": {
+  "wiki": "Peugeot"
+ },
+ "philips": {
+  "wiki": "Philips"
+ },
+ "pixar": {
+  "wiki": "Pixar"
+ },
+ "playstation": {
+  "wiki": "PlayStation"
+ },
+ "pokemon": {
+  "wiki": "Pokémon"
+ },
+ "porsche": {
+  "wiki": "Porsche"
+ },
+ "porto": {
+  "wiki": "FC Porto"
+ },
+ "prada": {
+  "wiki": "Prada"
+ },
+ "premierleague": {
+  "wiki": "Premier League"
+ },
+ "primevideo": {
+  "wiki": "Amazon Prime Video"
+ },
+ "psg": {
+  "wiki": "Paris Saint-Germain FC"
+ },
+ "psv": {
+  "wiki": "PSV Eindhoven"
+ },
+ "puma": {
+  "wiki": "Puma (brand)"
+ },
+ "qantas": {
+  "wiki": "Qantas"
+ },
+ "raja": {
+  "wiki": "Raja CA"
+ },
+ "ralphlauren": {
+  "wiki": "Ralph Lauren Corporation"
+ },
+ "rangers": {
+  "wiki": "Rangers F.C."
+ },
+ "rayban": {
+  "wiki": "Ray-Ban"
+ },
+ "realmadrid": {
+  "wiki": "Real Madrid CF"
+ },
+ "renault": {
+  "wiki": "Renault"
+ },
+ "riverplate": {
+  "wiki": "Club Atlético River Plate"
+ },
+ "roblox": {
+  "wiki": "Roblox"
+ },
+ "rockstar": {
+  "wiki": "Rockstar Games"
+ },
+ "rollsroyce": {
+  "wiki": "Rolls-Royce Motor Cars"
+ },
+ "roma": {
+  "wiki": "AS Roma"
+ },
+ "saa": {
+  "wiki": "South African Airways"
+ },
+ "salzburg": {
+  "wiki": "FC Red Bull Salzburg"
+ },
+ "santander": {
+  "wiki": "Banco Santander"
+ },
+ "savanna": {
+  "wiki": "Savanna Cider"
+ },
+ "sega": {
+  "wiki": "Sega"
+ },
+ "seven11": {
+  "wiki": "7-Eleven"
+ },
+ "sevilla": {
+  "wiki": "Sevilla FC"
+ },
+ "shell": {
+  "wiki": "Shell plc"
+ },
+ "shoprite": {
+  "wiki": "Shoprite (South Africa)"
+ },
+ "showmax": {
+  "wiki": "Showmax"
+ },
+ "signal": {
+  "wiki": "Signal (software)"
+ },
+ "simbasc": {
+  "wiki": "Simba S.C."
+ },
+ "skittles": {
+  "wiki": "Skittles (confectionery)"
+ },
+ "skoda": {
+  "wiki": "Škoda Auto"
+ },
+ "slack": {
+  "wiki": "Slack (software)"
+ },
+ "spar": {
+  "wiki": "Spar (retailer)"
+ },
+ "sporting": {
+  "wiki": "Sporting CP"
+ },
+ "sprite": {
+  "wiki": "Sprite (drink)"
+ },
+ "standardbank": {
+  "wiki": "Standard Bank"
+ },
+ "starbucks": {
+  "wiki": "Starbucks"
+ },
+ "steam": {
+  "wiki": "Steam (service)"
+ },
+ "steers": {
+  "wiki": "Steers (restaurant)"
+ },
+ "stripe": {
+  "wiki": "Stripe, Inc."
+ },
+ "subway": {
+  "wiki": "Subway (restaurant)"
+ },
+ "sundowns": {
+  "wiki": "Mamelodi Sundowns F.C."
+ },
+ "supersport": {
+  "wiki": "SuperSport (South African TV channel)"
+ },
+ "suzuki": {
+  "wiki": "Suzuki"
+ },
+ "swarovski": {
+  "wiki": "Swarovski"
+ },
+ "takealot": {
+  "wiki": "Takealot.com"
+ },
+ "target": {
+  "wiki": "Target Corporation"
+ },
+ "telegram": {
+  "wiki": "Telegram (software)"
+ },
+ "telkom": {
+  "wiki": "Telkom (South Africa)"
+ },
+ "temu": {
+  "wiki": "Temu"
+ },
+ "tesco": {
+  "wiki": "Tesco"
+ },
+ "tesla": {
+  "wiki": "Tesla, Inc."
+ },
+ "threads": {
+  "wiki": "Threads (social network)"
+ },
+ "timberland": {
+  "wiki": "Timberland (company)"
+ },
+ "tommyhilfiger": {
+  "wiki": "Tommy Hilfiger (company)"
+ },
+ "tottenham": {
+  "wiki": "Tottenham Hotspur F.C."
+ },
+ "tpmazembe": {
+  "wiki": "TP Mazembe"
+ },
+ "tusker": {
+  "wiki": "Tusker (African beer)"
+ },
+ "twitch": {
+  "wiki": "Twitch (service)"
+ },
+ "twitter": {
+  "wiki": "Twitter"
+ },
+ "uber": {
+  "wiki": "Uber"
+ },
+ "unitedairlines": {
+  "wiki": "United Airlines"
+ },
+ "ups": {
+  "wiki": "United Parcel Service"
+ },
+ "valencia": {
+  "wiki": "Valencia CF"
+ },
+ "vans": {
+  "wiki": "Vans"
+ },
+ "visa": {
+  "wiki": "Visa Inc."
+ },
+ "volvo": {
+  "wiki": "Volvo Cars"
+ },
+ "warnerbros": {
+  "wiki": "Warner Bros."
+ },
+ "wendys": {
+  "wiki": "Wendy's"
+ },
+ "westernunion": {
+  "wiki": "Western Union"
+ },
+ "westham": {
+  "wiki": "West Ham United F.C."
+ },
+ "wimpy": {
+  "wiki": "Wimpy (restaurant)"
+ },
+ "windows": {
+  "wiki": "Microsoft Windows"
+ },
+ "wise": {
+  "wiki": "Wise (company)"
+ },
+ "woolworths": {
+  "wiki": "Woolworths Holdings Limited"
+ },
+ "wydad": {
+  "wiki": "Wydad AC"
+ },
+ "yamaha": {
+  "wiki": "Yamaha Corporation"
+ },
+ "yanga": {
+  "wiki": "Young Africans S.C."
+ },
+ "zamalek": {
+  "wiki": "Zamalek SC"
+ },
+ "zoom": {
+  "wiki": "Zoom Communications"
+ }
+}

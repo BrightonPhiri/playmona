@@ -27,3 +27,6 @@ assets/music/originals/
 # Raw generated art (Codex PNGs, about 2.5 MB each). tools/process-game-art.py
 # writes the compressed copies the app ships into assets/images/.
 assets/playmona_assets/
+
+# Logo Rush contact sheet (tools/logos/sheet.js), pictures inlined: big and generated
+tools/logos/sheet.html

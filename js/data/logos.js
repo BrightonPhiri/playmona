@@ -86,7 +86,6 @@ window.FF = window.FF || {};
     ['safaricom', 'Safaricom', 'tech', 2, 'Safaricom, Kenya’s biggest mobile network, launched M-Pesa in 2007.', [], [], AF],
     ['vodacom', 'Vodacom', 'tech', 2, 'Vodacom was founded in South Africa in 1993.', [], [], AF],
     ['econet', 'Econet', 'tech', 2, 'Econet was founded in Zimbabwe by Strive Masiyiwa.', ['Econet Wireless'], [], AF],
-    ['netone', 'NetOne', 'tech', 3, 'NetOne is Zimbabwe’s state-owned mobile network.', ['Net One'], [], AF],
     ['glo', 'Glo', 'tech', 3, 'Glo is the Nigerian mobile network of Globacom, launched in 2003.', ['Globacom'], [], AF],
     ['telkom', 'Telkom', 'tech', 3, 'Telkom became South Africa’s national phone company in 1991.', [], [], AF],
     ['cellc', 'Cell C', 'tech', 3, 'Cell C became South Africa’s third mobile network in 2001.', [], [], AF],
@@ -168,8 +167,6 @@ window.FF = window.FF || {};
     ['castlelager', 'Castle Lager', 'food', 2, 'Castle Lager was first brewed in Johannesburg in 1895.', ['Castle'], [], AF],
     ['tusker', 'Tusker', 'food', 2, 'Tusker is named after an elephant that killed the brewery’s founder in 1923.', ['Tusker Lager'], ['amarula'], AF],
     ['amarula', 'Amarula', 'food', 3, 'Amarula cream liqueur is made from the fruit of the marula tree.', [], ['tusker'], AF],
-    ['mazoe', 'Mazoe', 'food', 2, 'Mazoe orange crush comes from the Mazowe valley citrus estate in Zimbabwe.', ['Mazoe Orange Crush'], [], AF],
-    ['mrsballs', 'Mrs Ball’s', 'food', 3, 'Mrs Ball’s chutney has been made in South Africa for over a hundred years.', ['Mrs Balls', 'Mrs Ball’s Chutney'], [], AF],
     ['savanna', 'Savanna', 'food', 3, 'Savanna Dry is a South African cider made from apples.', ['Savanna Dry', 'Savanna Cider'], [], AF],
     ['chibuku', 'Chibuku', 'food', 3, 'Chibuku is a sorghum beer brewed across southern Africa.', ['Chibuku Super'], [], AF],
 
@@ -297,7 +294,6 @@ window.FF = window.FF || {};
     ['mrprice', 'Mr Price', 'shops', 2, 'Mr Price began in Durban in 1985.', ['Mr. Price'], [], AF],
     ['edgars', 'Edgars', 'shops', 3, 'Edgars opened its first store in Johannesburg in 1929.', [], [], AF],
     ['game', 'Game', 'shops', 3, 'Game sells electronics, toys and groceries in stores across Africa.', ['Game Stores'], [], AF],
-    ['okzim', 'OK Zimbabwe', 'shops', 3, 'OK Zimbabwe runs the OK and OK Mart supermarkets.', ['OK', 'OK Mart'], [], AF],
 
     /* fun */
     ['disney', 'Disney', 'fun', 1, 'Walt Disney and his brother Roy started their studio in 1923.', ['Walt Disney'], []],

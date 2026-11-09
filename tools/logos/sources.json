@@ -1,0 +1,4134 @@
+{
+ "absa": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:ABSA_Group_Limited_Logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "accessbank": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Access_Bank_Logo.png",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "acmilan": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Logo_of_AC_Milan.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "adidas": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/adidas/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Adidas_2022_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "adobe": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/adobe/default.svg",
+   "from": "thesvg",
+   "licence": "MIT"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Adobe_Corporate_wordmark.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "airbnb": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/airbnb/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://thesvg.org/icons/airbnb/wordmark.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  }
+ },
+ "airbus": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/airbus/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Airbus_Logo_2017.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "aircanada": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/air-canada/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Air_Canada_2017.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "airfrance": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/air-france/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Air_France_Airbus_A350-900_F-HUVM_on_final_approach_to_Boston_July_2026_1_(cropped).jpg",
+   "from": "wikipedia",
+   "licence": "CC BY 4.0"
+  }
+ },
+ "airindia": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/air-india/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Air_India_2023.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "airtel": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/airtel/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Airtel_Africa_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "airzimbabwe": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Air_Zimbabwe_Logo_2011.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "ajax": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Logo_AFC_Ajax_(1928-1991,_2025-).png",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "alahly": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Al_Ahly_SC_logo.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "aldi": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:ALDI_SUD.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "alfaromeo": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Alfa_Romeo_logo.png",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "alhilal": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Al_Hilal_SFC_Logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "alibaba": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/alibaba/default.svg",
+   "from": "thesvg",
+   "licence": "MIT"
+  },
+  "full": {
+   "url": "https://en.wikipedia.org/wiki/File:Alibaba-Group-Logo.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "aliexpress": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/aliexpress/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://thesvg.org/icons/aliexpress/wordmark.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  }
+ },
+ "aljazeera": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/al-jazeera/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://en.wikipedia.org/wiki/File:Al_Jazeera_Media_Network_Logo.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "alnassr": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Nassr_FC_Logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "amarula": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Amarula_Festive.jpg",
+   "from": "wikipedia",
+   "licence": "CC BY-SA 4.0"
+  }
+ },
+ "amazon": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/amazon-badge/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Amazon_2024.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "amd": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/amd/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:AMD_Logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "americanairlines": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/american-airlines/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://en.wikipedia.org/wiki/File:American_Airlines_logo_2013.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "amex": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/american-express/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:American_Express_logo_(2018).svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "android": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/android/default.svg",
+   "from": "thesvg",
+   "licence": "CC-BY-3.0"
+  }
+ },
+ "angrybirds": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Angry_Birds_logo_2015.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "apple": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/apple-badge/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Apple_logo_black.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "applepay": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/apple-pay/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Apple_Pay_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "appstore": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/app-store/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  }
+ },
+ "arsenal": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Arsenal_FC.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "asantekotoko": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Asante_Kotoko_SC_(logo).png",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "asics": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Asics_Logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "astonmartin": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/aston-martin/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://en.wikipedia.org/wiki/File:Aston_Martin_Lagonda_brand_logo.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "astonvilla": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Aston_Villa_FC_new_crest.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "atletico": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Atletico_Madrid_Logo_2024.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "audi": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/audi/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Audi-Logo_2016.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "barbie": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Barbie_Logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "barcelona": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:FC_Barcelona_(crest).svg",
+   "from": "wikipedia",
+   "licence": "PD"
+  }
+ },
+ "barclays": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/barclays/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://en.wikipedia.org/wiki/File:Barclays_logo.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "baskinrobbins": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Baskin-Robbins_logo_2022.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "bayern": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:FC_Bayern_M%C3%BCnchen_logo_(2024).svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "bbc": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/bbc/default.svg",
+   "from": "thesvg",
+   "licence": "Fair Use"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:BBC_Logo_2021.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "benfica": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:SL_Benfica_logo.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "bentley": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/bentley/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://en.wikipedia.org/wiki/File:Bentley_(Logo_2025).svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "bestbuy": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/best-buy-badge/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Best_Buy_logo_2018.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "binance": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/binance-badge/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Binance-BNB-Icon-Logo.wine.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "bing": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/bing/default.svg",
+   "from": "thesvg",
+   "licence": "MIT"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Bing_Fluent_Logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "bitcoin": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/bitcoin/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  }
+ },
+ "bluesky": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/bluesky/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Bluesky_Logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "bluetooth": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/bluetooth/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Bluetooth_logo_(2016).svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "bmw": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/bmw/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:4_cilindros_de_BMW,_M%C3%BAnich,_Alemania1.jpg",
+   "from": "wikipedia",
+   "licence": "CC BY-SA 3.0"
+  }
+ },
+ "bocajuniors": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Boca_Juniors_logo18.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "boeing": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/boeing/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Boeing_full_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "bolt": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/bolt/default.svg",
+   "from": "thesvg",
+   "licence": "MIT"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Bolt_logo.png",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "booking": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/bookingdotcom/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Booking.com_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "bp": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:BP_Helios_logo.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "britishairways": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/british-airways/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://en.wikipedia.org/wiki/File:British_Airways_Logo.svg",
+   "from": "wikipedia",
+   "licence": "PD"
+  }
+ },
+ "bugatti": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/bugatti/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:2022_Bugatti_wordmark.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "burberry": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Logo_Burberry_01.svg",
+   "from": "wikipedia",
+   "licence": "CC0"
+  }
+ },
+ "burgerking": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/burger-king/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Burger_King_2020.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "byd": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:BYD_Zhengzhou_All-Terrain_Circuit_entrance.png",
+   "from": "wikipedia",
+   "licence": "CC BY 3.0"
+  }
+ },
+ "cadbury": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Cadbury_(2020).svg",
+   "from": "wikipedia",
+   "licence": "PD"
+  }
+ },
+ "calvinklein": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Calvin_klein_logo_web23.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "canva": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/canva/default.svg",
+   "from": "thesvg",
+   "licence": "MIT"
+  },
+  "full": {
+   "url": "https://thesvg.org/icons/canva/wordmark.svg",
+   "from": "thesvg",
+   "licence": "MIT"
+  }
+ },
+ "capitec": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Capitec_Bank_SA_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "capsunited": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:CAPS_United_(logo).png",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "carlsberg": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Carlsberg_Group_logo.svg",
+   "from": "wikipedia",
+   "licence": "PD"
+  }
+ },
+ "carrefour": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/carrefour/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://en.wikipedia.org/wiki/File:Carrefour_Groupe.svg",
+   "from": "wikipedia",
+   "licence": "PD"
+  }
+ },
+ "cartoonnetwork": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/cartoon-network/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Cartoon_Network_2010_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "casio": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Casio_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "castlelager": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:CastleLagerandGlass2016.jpg",
+   "from": "wikipedia",
+   "licence": "CC BY-SA 3.0"
+  }
+ },
+ "cathaypacific": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/cathay-pacific/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://en.wikipedia.org/wiki/File:Cathay_Pacific_logo.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "cbz": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:CBZ_Holdings_Logo.png",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "cellc": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Cell_C_New_2024_logo.svg",
+   "from": "wikipedia",
+   "licence": "CC0"
+  }
+ },
+ "celtic": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Celtic_FC_crest.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "champion": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Champion_USA_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "championsleague": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/uefa-champions-league/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://en.wikipedia.org/wiki/File:UEFA_Champions_League.svg",
+   "from": "wikipedia",
+   "licence": "PD"
+  }
+ },
+ "chanel": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Chanel_logo_interlocking_cs.svg",
+   "from": "wikipedia",
+   "licence": "PD"
+  }
+ },
+ "chase": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/chase/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://thesvg.org/icons/chase/wordmark.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  }
+ },
+ "checkers": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Checkers_(supermarket_chain)_Logo.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "chelsea": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Chelsea_FC.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "chevrolet": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/chevrolet/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://en.wikipedia.org/wiki/File:Chevrolet_(logo).svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "chibuku": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Chibuku_Shake_Shake_logo.png",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "chickeninn": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Chickeninnfclogo.png",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "chickenlicken": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Chicken_Licken_(restaurant)_Logo.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "chrome": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/google-chrome/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Google_Chrome_icon_(February_2022).svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "chupachups": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/chupa-chups/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Chupa_Chups_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "citi": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/citibank/default.svg",
+   "from": "thesvg",
+   "licence": "Fair Use"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Citi_logo_March_2023.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "citroen": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/citroen/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Citroen_2022.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "clicks": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Clicks_(South_Africa)_Logo.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "cnn": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/cnn/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:CNN_Logo_(2014).svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "cocacola": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/coca-cola/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Coca-Cola_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "coinbase": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/coinbase-badge/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Coinbase.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "converse": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/converse/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  }
+ },
+ "costco": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/costco/default.svg",
+   "from": "thesvg",
+   "licence": "Fair Use"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Costco_Wholesale_logo_2010-10-26.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "crocs": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Crocs_logo.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "dc": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:DC_Comics_2024.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "debonairs": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Debonairs_Pizza_logo_(2025).png",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "decathlon": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/decathlon-logo/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://thesvg.org/icons/decathlon-logo/wordmark.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  }
+ },
+ "dell": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/dell/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Dell_logo_2016.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "delta": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/delta/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Delta_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "dhl": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/dhl/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:DHL_Logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "dischem": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Dischem_Logo.png",
+   "from": "wikipedia",
+   "licence": "CC0"
+  }
+ },
+ "discord": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/discord-badge/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://en.wikipedia.org/wiki/File:Discord_logo.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "disney": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/disney-plus/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:The_Walt_Disney_company_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "dominos": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/dominos/default.svg",
+   "from": "thesvg",
+   "licence": "Fair Use"
+  },
+  "full": {
+   "url": "https://thesvg.org/icons/dominos/wordmark.svg",
+   "from": "thesvg",
+   "licence": "Fair Use"
+  }
+ },
+ "doritos": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Doritos_Logo_(2013).png",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "dortmund": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Borussia_Dortmund_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "dropbox": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/dropbox-badge/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Dropbox_logo_2017.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "dstv": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:DStv_Logo_(2023).svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "dunkin": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Dunkin%27_2022.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "duolingo": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/duolingo/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Duolingo_logo_(2019).svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "dynamos": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:De-mbare_copy.jpg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "ea": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/ea/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Electronic_Arts_Logo_Blue.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "easyjet": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/easyjet/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:EasyJet_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "ebay": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/ebay-badge/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:EBay_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "ecobank": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Ecobank_Logo_EN.png",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "ecocash": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:EcoCash.png",
+   "from": "wikipedia",
+   "licence": "CC BY-SA 4.0"
+  }
+ },
+ "econet": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:EconetWirelessLogo.jpg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "edgars": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Edgars_(department_store)_logo.png",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "egyptair": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:SU-GET@PEK_(20190821150927).jpg",
+   "from": "wikipedia",
+   "licence": "CC BY-SA 4.0"
+  }
+ },
+ "ellesse": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Ellesse_logo.png",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "emirates": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/emirates/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Emirates_Logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "engen": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Engen_Petroleum_logo.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "enyimba": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Enyimba_International_F.C._logo.png",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "equitybank": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Equity_Group_Logo.png",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "esperance": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Esp%C3%A9rance_Sportive_de_Tunis_logo.png",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "espn": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/espn/default.svg",
+   "from": "thesvg",
+   "licence": "Fair Use"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:ESPN_wordmark.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "ethereum": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/ethereum/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Eth-diamond-(color).svg",
+   "from": "wikipedia",
+   "licence": "CC BY 4.0"
+  }
+ },
+ "ethiopian": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/ethiopian-airlines/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Ethiopian_Airlines_Logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "ethiotelecom": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Ethio_telecom2.png",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "etihad": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/etihad/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Etihad-airways-logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "etsy": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/etsy-badge/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Etsy_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "everton": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Everton_FC_logo.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "expedia": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/expedia/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Expedia_Logo_2023.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "facebook": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/facebook-badge/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:2023_Facebook_icon.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "fanta": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/fanta/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Fanta_orang_1.jpg",
+   "from": "wikipedia",
+   "licence": "CC BY 2.0"
+  }
+ },
+ "fedex": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/fedex/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:FedEx_Corporation_-_2016_Logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "ferrari": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/ferrari/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://en.wikipedia.org/wiki/File:Prancing_horse.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "fiat": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/fiat/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:FIAT_logo_coloured.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "fila": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/fila/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Fila_logo_(3).svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "firefox": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/firefox/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Firefox_logo,_2019.svg",
+   "from": "wikipedia",
+   "licence": "MPL 2"
+  }
+ },
+ "flamengo": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Clube_de_Regatas_do_Flamengo_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "flickr": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/flickr/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Flickr_wordmark.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "flutterwave": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Flutterwave_Logo.png",
+   "from": "wikipedia",
+   "licence": "CC BY-SA 4.0"
+  }
+ },
+ "flysafair": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:FlySafair_logo.png",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "fnb": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:First_National_Bank_Logo.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "ford": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/ford/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Ford_logo_flat.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "formula1": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/f1/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Formula_One_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "fortnite": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/fortnite/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:FortniteLogo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "galatasaray": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Galatasaray_S.K._Logo_2026_5-stars.svg",
+   "from": "wikipedia",
+   "licence": "CC0"
+  }
+ },
+ "game": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Game_South_Africa_Logo.png",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "github": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/github-badge/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:GitHub_Invertocat_Logo.svg",
+   "from": "wikipedia",
+   "licence": "CC BY 4.0"
+  }
+ },
+ "glo": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Glo_button.png",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "gmail": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/gmail/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Gmail_icon_(2026).svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "google": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/google-badge/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Google_2026_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "googledrive": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/google-drive/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Google_Drive_icon_(2026).svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "googlemaps": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/google-maps/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Google_Maps_icon_(2026).svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "googlepay": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/google-pay/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  }
+ },
+ "googleplay": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/google-play/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://thesvg.org/icons/google-play/wordmark.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  }
+ },
+ "gormahia": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Gor_Mahia_F.C._logo.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "gtbank": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:GTCO_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "gucci": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Gucci_Logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "guinness": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Guinness_logo_dark_text.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "harleydavidson": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Harley_Davidson_orange_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "hbo": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/hbo/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:HBO_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "heartsofoak": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Accra_hearts_of_oak_sc.png",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "heineken": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/heineken/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Heineken_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "heinz": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/heinz/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:H._J._Heinz_Company_-_Logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "hellokitty": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Hello_kitty_character_portrait.png",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "highlanders": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Highlanders_FC.png",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "hilton": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/hilton/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:HiltonHotelsLogo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "hm": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/handm/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:H%26M-Logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "honda": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/honda/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://thesvg.org/icons/honda/wordmark.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  }
+ },
+ "hp": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/hp-badge/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:HP_logo_2025.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "hsbc": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/hsbc/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:HSBC_logo_(2018).svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "huawei": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/huawei-badge/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://en.wikipedia.org/wiki/File:Huawei_Standard_logo.svg",
+   "from": "wikipedia",
+   "licence": "PD"
+  }
+ },
+ "hyundai": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/hyundai/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Hyundai_Motor_Company_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "ibm": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/ibm-badge/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:IBM_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "icloud": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/icloud/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:ICloud_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "ikea": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/ikea/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Ikea_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "instagram": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/instagram-badge/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Instagram_logo_2022.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "intel": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/intel/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Intel_logo_2023.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "inter": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:FC_Internazionale_Milano_2021.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "intermiami": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Inter_Miami_CF_logo.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "isuzu": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Isuzu.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "jaguar": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/jaguar/default.svg",
+   "from": "thesvg",
+   "licence": "Trademark"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Jaguar_2024.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "japanairlines": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/japan-airlines/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:JA02WJ_JFK_Landing_22L_JL_A350_1041_Small_(53548157200).png",
+   "from": "wikipedia",
+   "licence": "CC BY-SA 2.0"
+  }
+ },
+ "jeep": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/jeep/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Jeep_wordmark.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "jordan": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/jordan/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://en.wikipedia.org/wiki/File:Jumpman_logo.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "jumia": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:JumiaLogo_(14).png",
+   "from": "wikipedia",
+   "licence": "CC BY-SA 4.0"
+  }
+ },
+ "juventus": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Juventus_FC_-_logo_black_(Italy,_2020).svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "kaizerchiefs": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Kaizer_Chiefs_logo.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "kappa": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Kappa_logo_(full).svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "kelloggs": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/kelloggs/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Kellogg%27s-Logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "kenyaairways": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Kenya_Airways_Logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "kfc": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/kfc/default.svg",
+   "from": "thesvg",
+   "licence": "Trademark"
+  },
+  "full": {
+   "url": "https://thesvg.org/icons/kfc/wordmark.svg",
+   "from": "thesvg",
+   "licence": "Trademark"
+  }
+ },
+ "kia": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/kia/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:KIA_logo3.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "kindle": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/amazon-kindle/default.svg",
+   "from": "thesvg",
+   "licence": "Fair use"
+  },
+  "full": {
+   "url": "https://thesvg.org/icons/amazon-kindle/wordmark.svg",
+   "from": "thesvg",
+   "licence": "Fair use"
+  }
+ },
+ "kitkat": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/kit-kat/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Logo_of_the_KitKat.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "klarna": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/klarna/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Klarna_Wordmark_Transparent_And_Black_v2.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "klm": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/klm-badge/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:KLM_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "konga": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Konga.com_logo.png",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "koreanair": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/korean-air/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Korean_Air_2025.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "krispykreme": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Krispy_Kreme_Cannington,_April_2022.jpg",
+   "from": "wikipedia",
+   "licence": "CC0"
+  }
+ },
+ "lacoste": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Lacoste_logo.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "lamborghini": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/lamborghini/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://en.wikipedia.org/wiki/File:Lamborghini_Logo.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "landrover": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Land_Rover_logo_black.svg",
+   "from": "wikipedia",
+   "licence": "PD"
+  }
+ },
+ "lays": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Lay%27s_2025.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "lazio": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:S.S._Lazio_badge.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "lego": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/lego/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:LEGO_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "leicester": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Leicester_City_crest.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "leipzig": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:RB_Leipzig_2014_logo.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "lenovo": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/lenovo-badge/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Lenovo_(2015).svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "leverkusen": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Bayer_04_Leverkusen_logo.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "levis": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Levis-logo-quer.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "lexus": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/lexus/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Lexus.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "lg": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/lg/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:LG_logo_(2014).svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "lidl": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/lidl/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Lidl-Logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "linkedin": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/linkedin-badge/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:LinkedIn_2021.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "linux": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/linux/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Tux.svg",
+   "from": "wikipedia",
+   "licence": "Attribution"
+  }
+ },
+ "lipton": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/lipton/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  }
+ },
+ "liverpool": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Liverpool_FC.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "logitech": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/logitech-badge/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Logitech_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "louisvuitton": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:LV_Monogram.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "lufthansa": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/lufthansa/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Lufthansa_Logo_2018.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "lyft": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/lyft/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Lyft_logo_2025.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "lyon": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Olympique_Lyonnais_logo.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "mancity": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Manchester_City_FC_badge.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "manutd": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Manchester_United_FC_crest.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "marriott": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/marriott/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Marriott_International.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "marseille": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Olympique_de_Marseille_2026_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "marvel": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/marvel-comics/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Marvel_Comics_2024_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "maserati": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/maserati/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Maserati_logo_2.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "mastercard": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/mastercard/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Mastercard_2019_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "mazda": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/mazda/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Mazda_logo_2024_(vertical).svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "mcdonalds": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/mcdonald-s/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:McDonald%27s_Golden_Arches.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "mclaren": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/mclaren/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  }
+ },
+ "mercedes": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/mercedes-benz/default.svg",
+   "from": "thesvg",
+   "licence": "Fair Use"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Mercedes-Benz_Star_(1969-1986,_2025-).svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "messenger": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/messenger/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  }
+ },
+ "michelin": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Michelin_(2017).svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "microsoft": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/microsoft-badge/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Microsoft_logo_(2012).svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "milo": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Milo_brand_logo.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "minecraft": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/minecraft-server/default.svg",
+   "from": "thesvg",
+   "licence": "Trademark of Mojang AB / Microsoft. Used for identification under nominative fair use."
+  },
+  "full": {
+   "url": "https://en.wikipedia.org/wiki/File:Minecraft_game_logo_2023.png",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "mini": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/mini/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:MINI_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "mitsubishi": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/mitsubishi/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Mitsubishi_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "mms": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/mms/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:M%26M%27s_2022.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "moneygram": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/moneygram/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:MoneyGram_Logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "monster": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/monster/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Logo_Monster_Energy.webp",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "mpesa": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:M-PESA.png",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "mrprice": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Mr_Price_Group_Limited_Logo.png",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "mtn": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:MTN_2022_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "mtv": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:MTV_2021_(brand_version).svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "nandos": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Nandos_logo.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "napoli": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:SSC_Napoli_2025_(white_and_azure).svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "natgeo": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Natgeologo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "nba": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/nba/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://en.wikipedia.org/wiki/File:National_Basketball_Association_logo.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "nedbank": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Nedbank_logo.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "nescafe": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Nescafe_logo_2014.png",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "nestle": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Nestl%C3%A9.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "netflix": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/netflix/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://thesvg.org/icons/netflix/wordmark.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  }
+ },
+ "newbalance": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/new-balance/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:New_Balance_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "newcastle": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Newcastle_United_FC_2026_crest.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "nickelodeon": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/nickelodeon/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Nickelodeon_2023_logo_(outline).svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "nike": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/nike/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  }
+ },
+ "nintendo": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/nintendo-badge/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Nintendo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "nissan": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/nissan/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Nissan_Motor_Corporation_2020_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "nokia": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/nokia/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Nokia_2023.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "northface": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/the-north-face/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:The_North_Face_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "nutella": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Logo_Nutella.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "nvidia": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/nvidia-badge/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:NVIDIA_logo.svg",
+   "from": "wikipedia",
+   "licence": "Apache License 2.0"
+  }
+ },
+ "oldmutual": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Old_Mutual.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "olympics": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Olympic_rings_without_rims.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "omega": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Omega_Logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "openai": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/openai-badge/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:OpenAI_logo_2025_(wordmark).svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "orange": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/orange/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Orange_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "oreo": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Oreologo2001.png",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "orlandopirates": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Orlando_Pirates_FC_logo.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "pacman": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Pac_flyer.png",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "paypal": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/paypal-badge/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:PayPal_2024.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "pep": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:PEP_South_Africa_Logo.svg",
+   "from": "wikipedia",
+   "licence": "PD"
+  }
+ },
+ "pepsi": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/pepsi/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Pepsi_2023.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "peugeot": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/peugeot/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://en.wikipedia.org/wiki/File:Peugeot_2021_Logo.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "philips": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/philips-badge/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Philips_shield_(2013).svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "picknpay": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Pick_n_Pay_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "pinterest": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/pinterest-badge/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Pinterest_Logo_3.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "pixar": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Pixar_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "pizzahut": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/pizza-hut/default.svg",
+   "from": "thesvg",
+   "licence": "Fair Use"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Pizza_Hut_2025.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "playstation": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/playstation-badge/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:PlayStation_logo_and_wordmark.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "pokemon": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:International_Pok%C3%A9mon_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "porsche": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/porsche/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://en.wikipedia.org/wiki/File:Porsche_Logo_2024.png",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "porto": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:FC_Porto.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "prada": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Prada-Logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "premierleague": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/premier-league/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://en.wikipedia.org/wiki/File:Premier_League_Logo.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "primevideo": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/prime-video/default.svg",
+   "from": "thesvg",
+   "licence": "MIT"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Prime_Video_logo_(2024).svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "pringles": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Pringles_2021.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "psg": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Paris_Saint-Germain_F.C..svg",
+   "from": "wikipedia",
+   "licence": "PD"
+  }
+ },
+ "psv": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:PSV_Eindhoven.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "puma": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/puma/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://en.wikipedia.org/wiki/File:Puma_complete_logo.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "qantas": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/qantas-badge/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://en.wikipedia.org/wiki/File:Qantas_Airways_logo_2016.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "qatarairways": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/qatar-airways/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://en.wikipedia.org/wiki/File:Qatar_Airways_Logo.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "quora": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/quora/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Quora_logo_2015.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "raja": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Raja_CA_logo.png",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "ralphlauren": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/ralph-lauren/default.svg",
+   "from": "thesvg",
+   "licence": "Unknown"
+  },
+  "full": {
+   "url": "https://thesvg.org/icons/ralph-lauren/wordmark.svg",
+   "from": "thesvg",
+   "licence": "Unknown"
+  }
+ },
+ "rangers": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Rangers_FC.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "rayban": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Ray-Ban_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "realmadrid": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Real_Madrid_CF.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "redbull": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/red-bull/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://en.wikipedia.org/wiki/File:RedBullEnergyDrink.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "reddit": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/reddit-badge/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  }
+ },
+ "reebok": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/reebok/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Reebok_red_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "renault": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/renault/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:2021_Renault_Group_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "revolut": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/revolut/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Revolut_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "riverplate": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Club_Atl%C3%A9tico_River_Plate_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "roblox": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/roblox-badge/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Roblox_Logo_2022.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "rockstar": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/rockstar-games-badge/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Rockstar_Games_Logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "rolex": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Rolex_Geneva_13.jpg",
+   "from": "wikipedia",
+   "licence": "CC BY-SA 4.0"
+  }
+ },
+ "rollsroyce": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/rolls-royce/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Rolls_royce_motorcars_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "roma": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:AS_Roma_logo_(2017).svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "royalairmaroc": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/ram/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:CN-RGZ@PEK_(20200414153838).jpg",
+   "from": "wikipedia",
+   "licence": "CC BY-SA 4.0"
+  }
+ },
+ "rwandair": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:RwandAir_logo.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "ryanair": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/ryanair/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://en.wikipedia.org/wiki/File:Ryanair.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "saa": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:SAA_logo_(2019).svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "safaricom": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Safaricom_logo.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "salzburg": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:FC_Red_Bull_Salzburg_logo.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "samsung": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/samsung-badge/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Samsung_Black_icon.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "santander": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/santander/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Banco_Santander_Logotipo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "savanna": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Savanna_Premium_Cider_Logo_2024_PNG.png",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "sega": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/sega/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:SEGA_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "sephora": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Sephora_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "seven11": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:7-Eleven_logo_2021.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "sevilla": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Sevilla_FC_logo.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "shazam": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/shazam/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  }
+ },
+ "shell": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/shell/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://en.wikipedia.org/wiki/File:Shell_logo.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "shoprite": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Logo_-_Shoprite_-_SUPERMARCE.jpg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "showmax": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Showmax_Logo.png",
+   "from": "wikipedia",
+   "licence": "CC0"
+  }
+ },
+ "signal": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/signal/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Signal-Logo-Ultramarine_(2024).svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "simbasc": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Simba_Sports_Club.png",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "singaporeairlines": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/singapore-airlines/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://en.wikipedia.org/wiki/File:Singapore_Airlines_Logo_2.svg",
+   "from": "wikipedia",
+   "licence": "PD"
+  }
+ },
+ "skechers": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/skechers/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Skechers_wordmark.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "skittles": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Skittles_brand_logo.png",
+   "from": "wikipedia",
+   "licence": "PD"
+  }
+ },
+ "skoda": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/skoda/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:%C5%A0koda_nieuw.png",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "slack": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/slack-badge/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Slack_Technologies_Logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "snapchat": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/snapchat-badge/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://en.wikipedia.org/wiki/File:Snapchat_logo.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "sony": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/sony-badge/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Sony_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "soundcloud": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/soundcloud/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://thesvg.org/icons/soundcloud/wordmark.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  }
+ },
+ "spar": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Spar-logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "sporting": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Sporting_Clube_de_Portugal_logo_(2026).svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "spotify": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/spotify/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://thesvg.org/icons/spotify/wordmark.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  }
+ },
+ "sprite": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:A_cup_and_can_of_Sprite.jpg",
+   "from": "wikipedia",
+   "licence": "CC BY-SA 4.0"
+  }
+ },
+ "standardbank": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Standard_Bank_of_South_Africa_logo.png",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "standardchartered": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/standard-chartered/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Standard_Chartered_(2021).svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "starbucks": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/starbucks/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://en.wikipedia.org/wiki/File:Starbucks_Corporation_Logo_2011.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "steam": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/steam-badge/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Steam_2016_logo_black.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "steers": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Steers_Logo.jpg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "stripe": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/stripe-badge/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Stripe_Logo,_revised_2016.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "subaru": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/subaru/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Subaru_logo_(transparent).svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "subway": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/subway/default.svg",
+   "from": "thesvg",
+   "licence": "Fair Use"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Subway_2016_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "sundowns": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Mamelodi_Sundowns_F.C.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "supersport": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Supersport2012.jpg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "suzuki": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/suzuki/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Suzuki_logo_2025_(vertical).svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "swarovski": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Swarovski_new_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "tacobell": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/taco-bell/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://en.wikipedia.org/wiki/File:Taco_Bell_2023.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "takealot": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Takealot_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "target": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/target/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Target_Corporation_logo_(vector).svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "telegram": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/telegram/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Telegram_2019_Logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "telkom": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Telkom_Logo_2025.png",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "temu": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Temu_app_logo.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "tesco": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/tesco/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Tesco_2026_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "tesla": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/tesla-badge/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Tesla_Motors.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "threads": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/threads/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Threads_2026_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "tiktok": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/tiktok-badge/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  }
+ },
+ "timberland": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Timberland-logo.png",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "tinder": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/tinder/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  }
+ },
+ "toblerone": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Toblerone_logo22.png",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "tommyhilfiger": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Tommy_hilfig_vectorlogo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "tottenham": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Tottenham_Hotspur.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "toyota": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/toyota/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Toyota.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "tpmazembe": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:TP_Mazembe_Logo.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "tripadvisor": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/tripadvisor/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Tripadvisor_2025_Logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "trivago": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/trivago/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Trivago_logo_2023.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "turkishairlines": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/turkish-airlines/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Turkish_Airlines_logo_2019_compact.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "tusker": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Tusker.png",
+   "from": "wikipedia",
+   "licence": "CC BY-SA 4.0"
+  }
+ },
+ "twitch": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/twitch-badge/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Twitch_logo_2019.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "twitter": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/twitter-badge/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:X_(formerly_Twitter)_logo_late_2025.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "uber": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/uber-badge/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Uber_logo_2018.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "ubisoft": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/ubisoft-badge/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Ubisoft_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "umbro": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Umbro_2024_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "underarmour": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/under-armour/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Under_armour_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "uniqlo": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/uniqlo/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Uniqlo_logo_Japanese.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "unitedairlines": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/united-airlines/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://en.wikipedia.org/wiki/File:United_Airlines_Logo.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "ups": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/ups/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:United_Parcel_Service_logo_2014.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "valencia": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Valenciacf.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "vans": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Vans_(brand)_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "versace": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Versace_old_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "viber": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/viber/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Viber_icon.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "vimeo": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/vimeo-badge/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Vimeo_Logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "virginatlantic": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/virgin-atlantic/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Virgin_Atlantic_logo_2018.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "visa": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/visa/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Visa_Inc._logo_(2021%E2%80%93present).svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "vodacom": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Vodacom_Logo_2017.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "volkswagen": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/volkswagen/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Volkswagen_logo_2019.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "volvo": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/volvo/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Volvo-Iron-Mark-Black.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "walmart": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/walmart/default.svg",
+   "from": "thesvg",
+   "licence": "Fair Use"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Walmart_spark_(2025).svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "warnerbros": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/warner-bros/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  }
+ },
+ "waze": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/waze/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://en.wikipedia.org/wiki/File:Logo_for_waze.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "wechat": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/wechat/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://en.wikipedia.org/wiki/File:WeChat_logo.svg",
+   "from": "wikipedia",
+   "licence": "PD"
+  }
+ },
+ "wendys": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/wendys/default.svg",
+   "from": "thesvg",
+   "licence": "Fair Use"
+  },
+  "full": {
+   "url": "https://en.wikipedia.org/wiki/File:Wendy%27s_full_logo_2012.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "westernunion": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/western-union/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Western_Union_current_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "westham": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:West_Ham_United_FC_logo.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "whatsapp": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/whatsapp/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://thesvg.org/icons/whatsapp/wordmark.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  }
+ },
+ "wikipedia": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/wikipedia-badge/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://en.wikipedia.org/wiki/File:Wikipedia-logo-v2.svg",
+   "from": "wikipedia",
+   "licence": "CC-BY-SA-3.0"
+  }
+ },
+ "wimpy": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Logo_of_Wimpy.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "windows": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/windows/default.svg",
+   "from": "thesvg",
+   "licence": "MIT"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Windows_logo_and_wordmark_-_2021.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "wise": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/wise-badge/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  }
+ },
+ "woolworths": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Woolworths_South_Africa.png",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "wydad": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/azure-wac/default.svg",
+   "from": "thesvg",
+   "licence": "MIT"
+  },
+  "full": {
+   "url": "https://en.wikipedia.org/wiki/File:Wydad_AC_crest_(2022).svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "xbox": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/xbox/default.svg",
+   "from": "thesvg",
+   "licence": "MIT"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:XBOX_logo_(2026).png",
+   "from": "wikipedia",
+   "licence": "PD"
+  }
+ },
+ "xiaomi": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/xiaomi-badge/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Xiaomi_Headquarters.jpg",
+   "from": "wikipedia",
+   "licence": "CC BY 4.0"
+  }
+ },
+ "yahoo": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/yahoo-badge/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Yahoo!_(2019).svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "yamaha": {
+  "symbol": {
+   "url": "https://commons.wikimedia.org/wiki/File:Yamaha_logo.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ },
+ "yanga": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Young_Africans_SC_(logo).png",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "youtube": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/youtube/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://thesvg.org/icons/youtube/wordmark.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  }
+ },
+ "zamalek": {
+  "symbol": {
+   "url": "https://en.wikipedia.org/wiki/File:Zamalek_SC_logo.svg",
+   "from": "wikipedia",
+   "licence": "Fair use"
+  }
+ },
+ "zara": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/zara/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  }
+ },
+ "zoom": {
+  "symbol": {
+   "url": "https://thesvg.org/icons/zoom-badge/default.svg",
+   "from": "thesvg",
+   "licence": "CC0-1.0"
+  },
+  "full": {
+   "url": "https://commons.wikimedia.org/wiki/File:Zoom_Logo_2022.svg",
+   "from": "wikipedia",
+   "licence": "Public domain"
+  }
+ }
+}
