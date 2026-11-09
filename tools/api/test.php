@@ -1104,6 +1104,7 @@ require __DIR__ . '/geospin.test.php';
 require __DIR__ . '/whatsmissing.test.php';
 require __DIR__ . '/crossword.test.php';
 require __DIR__ . '/logoRush.test.php';
+require __DIR__ . '/sketchBack.test.php';
 require __DIR__ . '/leaderboards.test.php';
 
 echo "\n" . ($GLOBALS['count'] - $GLOBALS['failures']) . '/' . $GLOBALS['count'] . " passed\n";

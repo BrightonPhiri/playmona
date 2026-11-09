@@ -65,7 +65,12 @@ const FILES = [
   // Its checker and letter tiles are the shared ones above.
   'js/data/logos.js',
   'js/logorush/rules.js',
-  'js/logorush/referee.js'
+  'js/logorush/referee.js',
+  // SketchBack: the referee the runner hosts (no crew seats play it), with its objects.
+  // Its answer checker is the shared one above.
+  'js/data/sketches.js',
+  'js/sketchback/rules.js',
+  'js/sketchback/referee.js'
 ];
 
 function stubElement() {

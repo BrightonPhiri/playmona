@@ -41,7 +41,9 @@ window.FF = window.FF || {};
     // Race or Co-op on one puzzle, words checked by the server's referee (js/crossword/referee.js).
     'miniCrossword',
     // Brands picked and answers checked by the server's referee (js/logorush/referee.js).
-    'logoRush'
+    'logoRush',
+    // Objects dealt and answers checked by the server's referee (js/sketchback/referee.js), same clock for everyone.
+    'sketchBack'
     // Brain Battle is deliberately absent: its format is a personal
     // streak run per player, so there is no shared question to race for.
   ];

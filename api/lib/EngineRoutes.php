@@ -109,6 +109,13 @@ class EngineRoutes
         if ($m === 'POST' && $p === '/logorush/nudge') {
             return Response::json($this->app->logorush()->nudge($this->user($req), $req->json(), $now));
         }
+        // SketchBack: the server starts the match; the referee in the runner deals the objects and checks every answer.
+        if ($m === 'POST' && $p === '/sketchback/start') {
+            return Response::json($this->app->sketchback()->start($this->user($req), $req->json(), $now));
+        }
+        if ($m === 'POST' && $p === '/sketchback/nudge') {
+            return Response::json($this->app->sketchback()->nudge($this->user($req), $req->json(), $now));
+        }
 
         // Friends
         if ($m === 'GET' && $p === '/friends') return Response::json($this->app->friends()->overview($this->user($req)->uid, $now));
@@ -215,8 +222,9 @@ class EngineRoutes
                 $dropWhatsmissing = $this->app->whatsmissing()->stillActive((array) ($body['whatsmissing'] ?? []));
                 $dropCrossword = $this->app->crossword()->stillActive((array) ($body['crossword'] ?? []));
                 $dropLogorush = $this->app->logorush()->stillActive((array) ($body['logorush'] ?? []));
+                $dropSketchback = $this->app->sketchback()->stillActive((array) ($body['sketchback'] ?? []));
                 $s = $this->app->crew()->settings();
-                return Response::json(['drop' => $drop, 'dropImposters' => $dropImposters, 'dropWordflow' => $dropWordflow, 'dropBallswap' => $dropBallswap, 'dropSortrush' => $dropSortrush, 'dropGeospin' => $dropGeospin, 'dropWhatsmissing' => $dropWhatsmissing, 'dropCrossword' => $dropCrossword, 'dropLogorush' => $dropLogorush, 'settings' => ['mode' => $s['mode'], 'stopNew' => $s['stopNew']]]);
+                return Response::json(['drop' => $drop, 'dropImposters' => $dropImposters, 'dropWordflow' => $dropWordflow, 'dropBallswap' => $dropBallswap, 'dropSortrush' => $dropSortrush, 'dropGeospin' => $dropGeospin, 'dropWhatsmissing' => $dropWhatsmissing, 'dropCrossword' => $dropCrossword, 'dropLogorush' => $dropLogorush, 'dropSketchback' => $dropSketchback, 'settings' => ['mode' => $s['mode'], 'stopNew' => $s['stopNew']]]);
             case 'report':
                 $matchId = (string) ($body['matchId'] ?? '');
                 $event = (string) ($body['event'] ?? '');
@@ -250,6 +258,10 @@ class EngineRoutes
                 }
                 if ($event === 'logorush') {
                     $this->app->logorush()->recordResult($body, $now);
+                    return Response::json(['ok' => true]);
+                }
+                if ($event === 'sketchback') {
+                    $this->app->sketchback()->recordResult($body, $now);
                     return Response::json(['ok' => true]);
                 }
                 if ($event === 'game') {

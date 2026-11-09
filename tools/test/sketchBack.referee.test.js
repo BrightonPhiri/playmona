@@ -329,3 +329,33 @@ test('sketchback client: a phase is drawn only once it has arrived in full', asy
   assert(!C.ready(null) && !C.ready({}));
   m.ref.stop();
 });
+
+test('sketchback: the inbox rule, the lists that name online games, and the runner know the game', function () {
+  const fs = require('fs');
+  const path = require('path');
+  const ROOT = path.resolve(__dirname, '..', '..');
+  const read = (f) => fs.readFileSync(path.join(ROOT, f), 'utf8');
+  const room = JSON.parse(read('database.rules.json')).rules.rooms.$code;
+  assertEqual(room.skb, undefined, 'rooms/$code/skb is server-only');
+  const inbox = room.skbInbox.$uid.$id;
+  assert(/\$uid === auth\.uid/.test(inbox['.write']) && /!data\.exists\(\)/.test(inbox['.write']), 'written once, by the sender');
+  assert(/child\('skb'\)\.child\('p'\)\.child\(auth\.uid\)/.test(inbox['.write']), 'only seated players');
+  assert(/child\('skb'\)\.child\('matchId'\)/.test(inbox.matchId['.validate']), 'this match only');
+  assert(/'drawings'/.test(inbox.type['.validate']) && /'answers'/.test(inbox.type['.validate']), 'two kinds of command');
+  assertEqual(inbox.art['.validate'], "newData.isString() && newData.val().length <= 200000 && newData.parent().child('type').val() === 'drawings'");
+  assertEqual(inbox.text['.validate'], "newData.isString() && newData.val().length <= 1200 && newData.parent().child('type').val() === 'answers'");
+  assertEqual(inbox.t['.validate'], 'newData.isNumber() && newData.val() === now', 'server-stamped');
+  assertEqual(inbox.$other['.validate'], false);
+  assert(/hasChildren\(\['type', 'matchId'\]\)/.test(inbox['.validate']), 'type and match always');
+  assert(/'answers'/.test(inbox['.validate']) && /hasChildren\(\['text', 't'\]\)/.test(inbox['.validate']), 'answers carry text and a time');
+  assert(/hasChildren\(\['art'\]\)/.test(inbox['.validate']), 'drawings carry the art');
+  const keys = Object.keys(room);
+  assertEqual(keys.indexOf('skbInbox'), keys.indexOf('lrInbox') + 1, 'right after lrInbox');
+  assert(/'sketchBack'/.test(/ONLINE_GAMES = \[([\s\S]*?)\];/.exec(read('js/net/roomUI.js'))[1]), 'roomUI ONLINE_GAMES');
+  assert(/'sketchBack'/.test(/ONLINE_GAMES = \[([\s\S]*?)\];/.exec(read('api/lib/Crew.php'))[1]), 'Crew::ONLINE_GAMES');
+  assert(!/'sketchBack'/.test(/\bGAMES = \[([\s\S]*?)\];/.exec(read('api/lib/Crew.php'))[1]), 'the crew bots do not play it');
+  const loader = read('api/crew/lib/loader.js');
+  ['js/data/sketches.js', 'js/sketchback/rules.js', 'js/sketchback/referee.js'].forEach((f) => assert(loader.indexOf("'" + f + "'") !== -1, 'the runner loads ' + f));
+  const runner = read('api/crew/runner.js');
+  assert(/sketchbackRuns/.test(runner) && /SketchBackReferee/.test(runner) && /sketchbackState/.test(runner) && /dropSketchback/.test(runner), 'the runner referees sketchbackRuns');
+});

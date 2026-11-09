@@ -625,6 +625,32 @@
             }
           }
         },
+        "skbInbox": {
+          "$uid": {
+            "$id": {
+              ".write": "auth != null && $uid === auth.uid && !data.exists() && newData.exists() && !root.child('bans').child(auth.uid).exists() && root.child('rooms').child($code).child('skb').child('p').child(auth.uid).exists()",
+              ".validate": "$id.matches(/^[A-Za-z0-9_-]{6,40}$/) && newData.hasChildren(['type', 'matchId']) && (newData.child('type').val() === 'answers' ? newData.hasChildren(['text', 't']) : newData.hasChildren(['art']))",
+              "type": {
+                ".validate": "newData.isString() && (newData.val() === 'drawings' || newData.val() === 'answers')"
+              },
+              "matchId": {
+                ".validate": "newData.isString() && newData.val() === root.child('rooms').child($code).child('skb').child('matchId').val()"
+              },
+              "art": {
+                ".validate": "newData.isString() && newData.val().length <= 200000 && newData.parent().child('type').val() === 'drawings'"
+              },
+              "text": {
+                ".validate": "newData.isString() && newData.val().length <= 1200 && newData.parent().child('type').val() === 'answers'"
+              },
+              "t": {
+                ".validate": "newData.isNumber() && newData.val() === now"
+              },
+              "$other": {
+                ".validate": false
+              }
+            }
+          }
+        },
         "wmInbox": {
           "$uid": {
             "$id": {
