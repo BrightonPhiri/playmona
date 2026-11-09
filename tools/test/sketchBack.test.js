@@ -259,7 +259,7 @@ test('sketchBack registered: solo, a memory game on the leaderboards, with an ic
 
 test('sketchBack pages load its scripts in order and never the dev referee', function () {
   const order = ['js/answerMatch.js', 'js/data/sketches.js', 'js/data/sketchFiles.js', 'js/sketchback/rules.js', 'js/sketchback/pad.js',
-    'js/games/sketchBack.js'];
+    'js/sketchback/client.js', 'js/games/sketchBack.js'];
   ['play.html', 'admin.html', 'tools/test-seed.html', 'tools/load-check.js'].forEach((f) => {
     const s = read(f);
     let last = -1;

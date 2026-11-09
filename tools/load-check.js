@@ -116,6 +116,7 @@ const ORDER = [
   'js/data/sketchFiles.js',
   'js/sketchback/rules.js',
   'js/sketchback/pad.js',
+  'js/sketchback/client.js',
   'js/games/sketchBack.js'
 ];
 
