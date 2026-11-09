@@ -60,7 +60,12 @@ const FILES = [
   // Mini Crossword: the referee the runner hosts (no crew seats play it), with its puzzles.
   'js/crossword/rules.js',
   'js/data/crosswords.js',
-  'js/crossword/referee.js'
+  'js/crossword/referee.js',
+  // Logo Rush: the referee the runner hosts (no crew seats play it), with its brands.
+  // Its checker and letter tiles are the shared ones above.
+  'js/data/logos.js',
+  'js/logorush/rules.js',
+  'js/logorush/referee.js'
 ];
 
 function stubElement() {

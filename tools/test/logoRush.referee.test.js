@@ -300,3 +300,28 @@ test('logorush referee: a restarted referee carries on from the saved state with
   assertEqual(m.lr().phase, 'reveal');
   again.stop();
 });
+
+test('logorush: the inbox rule, the lists that name online games, and the runner know the game', function () {
+  const fs = require('fs');
+  const path = require('path');
+  const ROOT = path.resolve(__dirname, '..', '..');
+  const read = (f) => fs.readFileSync(path.join(ROOT, f), 'utf8');
+  const room = JSON.parse(read('database.rules.json')).rules.rooms.$code;
+  assertEqual(room.lr, undefined, 'rooms/$code/lr is server-only');
+  const inbox = room.lrInbox.$uid.$id;
+  assert(/\$uid === auth\.uid/.test(inbox['.write']) && /!data\.exists\(\)/.test(inbox['.write']), 'written once, by the sender');
+  assert(/child\('lr'\)\.child\('p'\)\.child\(auth\.uid\)/.test(inbox['.write']), 'only seated players');
+  assert(/child\('lr'\)\.child\('matchId'\)/.test(inbox.matchId['.validate']), 'this match only');
+  assert(/child\('lr'\)\.child\('k'\)/.test(inbox.k['.validate']), 'this round only');
+  assertEqual(inbox.text['.validate'], 'newData.isString() && newData.val().length <= 60');
+  assertEqual(inbox.t['.validate'], 'newData.isNumber() && newData.val() === now', 'server-stamped');
+  assertEqual(inbox.$other['.validate'], false);
+  const keys = Object.keys(room);
+  assertEqual(keys.indexOf('lrInbox'), keys.indexOf('cwInbox') + 1, 'right after cwInbox');
+  assert(/'logoRush'/.test(/ONLINE_GAMES = \[([\s\S]*?)\];/.exec(read('js/net/roomUI.js'))[1]), 'roomUI ONLINE_GAMES');
+  assert(/'logoRush'/.test(/ONLINE_GAMES = \[([\s\S]*?)\];/.exec(read('api/lib/Crew.php'))[1]), 'Crew::ONLINE_GAMES');
+  const loader = read('api/crew/lib/loader.js');
+  ['js/data/logos.js', 'js/logorush/rules.js', 'js/logorush/referee.js'].forEach((f) => assert(loader.indexOf("'" + f + "'") !== -1, 'the runner loads ' + f));
+  const runner = read('api/crew/runner.js');
+  assert(/logorushRuns/.test(runner) && /LogoRushReferee/.test(runner) && /logorushState/.test(runner) && /dropLogorush/.test(runner), 'the runner referees logorushRuns');
+});

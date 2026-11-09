@@ -101,6 +101,8 @@ try {
     if ($abandonedWm) echo "Ended $abandonedWm abandoned What's Missing? match(es).\n";
     $abandonedCw = $app->crossword()->sweep($now);
     if ($abandonedCw) echo "Ended $abandonedCw abandoned Mini Crossword match(es).\n";
+    $abandonedLr = $app->logorush()->sweep($now);
+    if ($abandonedLr) echo "Ended $abandonedLr abandoned Logo Rush match(es).\n";
 } catch (Throwable $e) {
     fwrite(STDERR, 'Crew cleanup failed: ' . $e->getMessage() . "\n");
 }

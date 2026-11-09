@@ -39,7 +39,9 @@ window.FF = window.FF || {};
     // Countries picked and answers checked by the server's referee (js/geospin/referee.js).
     'geoSpin',
     // Race or Co-op on one puzzle, words checked by the server's referee (js/crossword/referee.js).
-    'miniCrossword'
+    'miniCrossword',
+    // Brands picked and answers checked by the server's referee (js/logorush/referee.js).
+    'logoRush'
     // Brain Battle is deliberately absent: its format is a personal
     // streak run per player, so there is no shared question to race for.
   ];

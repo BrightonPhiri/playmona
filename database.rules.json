@@ -599,6 +599,32 @@
             }
           }
         },
+        "lrInbox": {
+          "$uid": {
+            "$id": {
+              ".write": "auth != null && $uid === auth.uid && !data.exists() && newData.exists() && !root.child('bans').child(auth.uid).exists() && root.child('rooms').child($code).child('lr').child('p').child(auth.uid).exists()",
+              ".validate": "$id.matches(/^[A-Za-z0-9_-]{6,40}$/) && newData.hasChildren(['type', 'matchId', 'k', 'text', 't'])",
+              "type": {
+                ".validate": "newData.isString() && newData.val() === 'answer'"
+              },
+              "matchId": {
+                ".validate": "newData.isString() && newData.val() === root.child('rooms').child($code).child('lr').child('matchId').val()"
+              },
+              "k": {
+                ".validate": "newData.isNumber() && newData.val() === root.child('rooms').child($code).child('lr').child('k').val()"
+              },
+              "text": {
+                ".validate": "newData.isString() && newData.val().length <= 60"
+              },
+              "t": {
+                ".validate": "newData.isNumber() && newData.val() === now"
+              },
+              "$other": {
+                ".validate": false
+              }
+            }
+          }
+        },
         "wmInbox": {
           "$uid": {
             "$id": {
