@@ -160,3 +160,60 @@ test('ch signals: 15 in order, each with a name and how', function () {
     'film,book,song,tv,play,saying,words,whichWord,syllables,soundsLike,smallWord,wholeIdea,plural,pastTense,onTheNose');
   R.SIGNALS.forEach((s) => assert(s.name && s.how, s.id + ' has name and how'));
 });
+
+/* ---------- the decks ---------- */
+
+const DATA = ['js/core.js', 'js/data/charadesDecks.js', 'js/charades/rules.js'];
+let dataCached = null;
+const withDecks = () => dataCached || (dataCached = loadFF(DATA));
+const fold = (s) => String(s).toLowerCase().replace(/[^a-z0-9]/g, '');
+
+test('ch decks: 12 decks in order, each with enough cards at every level', function () {
+  const D = withDecks().data.charadesDecks;
+  assertEqual(D.map((d) => d.id).join(','), 'animals,actions,jobs,sports,food,home,feelings,films,songs,books,tv,bible');
+  D.forEach(function (d) {
+    const n = (l) => d.cards.filter((c) => c.l === l).length;
+    assert(d.name && d.glyph, d.id + ' has a name and glyph');
+    assert(d.cards.length >= 40, d.id + ' has ' + d.cards.length + ' cards');
+    assert(n('e') >= 15, d.id + ' easy ' + n('e'));
+    assert(n('n') >= 15, d.id + ' normal ' + n('n'));
+    assert(n('h') >= 10, d.id + ' hard ' + n('h'));
+    d.cards.forEach((c) => assert(['e', 'n', 'h'].indexOf(c.l) !== -1, d.id + ': bad level on ' + c.t));
+  });
+});
+
+test('ch decks: about 600 cards in all', function () {
+  const total = withDecks().data.charadesDecks.reduce((n, d) => n + d.cards.length, 0);
+  assert(total >= 560 && total <= 700, 'total ' + total);
+});
+
+test('ch decks: no card appears twice', function () {
+  const seen = {};
+  withDecks().data.charadesDecks.forEach(function (d) {
+    d.cards.forEach(function (c) {
+      const k = fold(c.t);
+      assert(!seen[k], 'duplicate: ' + c.t + ' in ' + d.id + ' and ' + seen[k]);
+      seen[k] = d.id;
+    });
+  });
+});
+
+test('ch decks: title decks carry a known signal, word decks none', function () {
+  const app2 = withDecks();
+  const known = app2.CharadesRules.SIGNALS.map((s) => s.id);
+  app2.data.charadesDecks.forEach(function (d) {
+    if (d.kind === 'title') assert(known.indexOf(d.signal) !== -1, d.id + ' signal ' + d.signal);
+    else { assertEqual(d.kind, 'word', d.id + ' kind'); assert(!d.signal, d.id + ' has no signal'); }
+  });
+  assertEqual(app2.data.charadesDecks.filter((d) => d.kind === 'title').map((d) => d.id).join(','), 'films,songs,books,tv,bible');
+});
+
+test('ch decks: every card is short enough to act and read', function () {
+  const R = withDecks().CharadesRules;
+  withDecks().data.charadesDecks.forEach(function (d) {
+    d.cards.forEach(function (c) {
+      assert(c.t.length >= 1 && c.t.length <= 40, d.id + ': length of ' + c.t);
+      assert(R.wordCount(c.t) <= 7, d.id + ': too many words in ' + c.t);
+    });
+  });
+});
