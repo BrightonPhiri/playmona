@@ -32,6 +32,7 @@ window.FF = window.FF || {};
   var POINTS = 100;
   var MAX_POINTS = 1200;           // per drawing, so it fits one write
   var MIN_STEP = 4;                // units between kept points
+  var LIST_MIN = 60;               // the game is listed once this many sketches exist
   // Shares of simple / medium / detailed objects per difficulty.
   var MIX = { easy: [6, 3, 1], normal: [3, 5, 2], hard: [1, 4, 5] };
   var TIERS = ['e', 'n', 'h'];
@@ -110,6 +111,16 @@ window.FF = window.FF || {};
       out.push(got.id);
     }
     return out;
+  }
+
+  /* Listed on the games pages: enough sketches, or the dev preview flag. */
+  function listed(ids, preview) { return !!preview || (ids || []).length >= LIST_MIN; }
+
+  /* The naming gallery's order: shuffled for each player, the same after a reload. */
+  function recallOrder(n, seed, uid) {
+    var list = [];
+    for (var i = 0; i < n; i++) list.push(i);
+    return shuffle(list, rng('recall|' + seed + '|' + uid));
   }
 
   /* ---------- answers ---------- */
@@ -213,6 +224,7 @@ window.FF = window.FF || {};
     COUNTS: COUNTS, LEVELS: LEVELS, SECONDS: SECONDS, STANDARD: STANDARD,
     MIN_PLAYERS: MIN_PLAYERS, MAX_PLAYERS: MAX_PLAYERS, RECALL_MS: RECALL_MS, RECALL_NOTE_MS: RECALL_NOTE_MS, POINTS: POINTS,
     sanitize: sanitize, sanitizeRoom: sanitize, isStandard: isStandard, secondsOf: secondsOf,
+    LIST_MIN: LIST_MIN, listed: listed, recallOrder: recallOrder,
     object: object, pool: pool, deal: deal, check: check, score: score,
     encode: encode, decode: decode, hash: hash, rng: rng, shuffle: shuffle
   };

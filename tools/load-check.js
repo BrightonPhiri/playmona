@@ -111,7 +111,12 @@ const ORDER = [
   'js/data/logoFiles.js',
   'js/logorush/rules.js',
   'js/logorush/client.js',
-  'js/games/logoRush.js'
+  'js/games/logoRush.js',
+  'js/data/sketches.js',
+  'js/data/sketchFiles.js',
+  'js/sketchback/rules.js',
+  'js/sketchback/pad.js',
+  'js/games/sketchBack.js'
 ];
 
 const sandbox = {

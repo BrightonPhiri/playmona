@@ -169,6 +169,13 @@
   --cw-terra: #d4563a; --cw-terra-deep: #9c321f; --cw-gold: #f4b740; --cw-gold-hi: #ffe08a; --cw-gold-deep: #b97c10;
   --cw-solved: #d8efc2; --cw-solved-ink: #1f5a2a; --cw-green: #3f9e58; --cw-green-deep: #1d6a33;
   --cw-wrong: #ffd2c8; --cw-wrong-ink: #a5221a; --cw-reveal-ink: #6a3fa8;
+  /* SketchBack (js/games/sketchBack.js): a calm creative studio, the same in both themes: warm
+     off-white desk, white paper, deep navy ink, purple-to-blue accents. */
+  --skb-desk: #f6f1e7; --skb-desk-2: #ece6fb; --skb-paper: #ffffff; --skb-paper-edge: #e3dccd;
+  --skb-ink: #1b2140; --skb-ink-soft: #4a5275; --skb-ink-dim: #575d7e;
+  --skb-violet: #6a3df0; --skb-blue: #2c6fe8; --skb-violet-deep: #4a25c4; --skb-on-accent: #ffffff;
+  --skb-lilac: #eee8ff; --skb-sky: #e3edff;
+  --skb-good: #15803d; --skb-good-soft: #dcfce7; --skb-bad: #be123c; --skb-bad-soft: #ffe4e6; --skb-warn: #c2410c;
   --medal-gold: #ffc83d; --medal-silver: #cfd6f6; --medal-bronze: #ff9a52; --medal-ink: #0b1030;
 }
 

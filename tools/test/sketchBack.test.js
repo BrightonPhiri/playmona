@@ -234,3 +234,55 @@ test('sketchBack pad: strokes() is a copy, so saved drawings never change', func
   assertEqual(m.strokes().length, 2);
   assertEqual(m.strokes()[0].length, 4);
 });
+
+/* ---------- the game ---------- */
+
+test('sketchBack listing: only with 60 sketches, or the dev preview flag', function () {
+  const r = R();
+  assertEqual(r.LIST_MIN, 60);
+  assert(!r.listed([], false), 'no art');
+  assert(!r.listed(new Array(59).fill('x'), false), '59 sketches');
+  assert(r.listed(new Array(60).fill('x'), false), '60 sketches');
+  assert(r.listed([], true), 'preview flag');
+  const src = read('js/games/sketchBack.js');
+  assert(/R\.listed\(/.test(src) && src.indexOf('R.listed(') < src.lastIndexOf('FF.registerGame('), 'registration is guarded');
+});
+
+test('sketchBack registered: solo, a memory game on the leaderboards, with an icon', function () {
+  const src = read('js/games/sketchBack.js');
+  assert(/id:\s*'sketchBack'/.test(src), 'registered');
+  assert(/category:\s*'memory'/.test(src), 'memory category');
+  assert(/leaderboard:\s*true/.test(src), 'leaderboard');
+  assert(/'sketchBack'/.test(read('api/lib/Leaderboards.php')), 'the server leaderboard list');
+  assert(/"sketchBack"/.test(read('js/icons.js')), 'has an icon');
+});
+
+test('sketchBack pages load its scripts in order and never the dev referee', function () {
+  const order = ['js/answerMatch.js', 'js/data/sketches.js', 'js/data/sketchFiles.js', 'js/sketchback/rules.js', 'js/sketchback/pad.js',
+    'js/games/sketchBack.js'];
+  ['play.html', 'admin.html', 'tools/test-seed.html', 'tools/load-check.js'].forEach((f) => {
+    const s = read(f);
+    let last = -1;
+    order.forEach((src) => {
+      const i = s.indexOf(src);
+      assert(i !== -1, f + ' loads ' + src);
+      if (src !== 'js/answerMatch.js') assert(i > last, f + ' loads ' + src + ' in order');
+      last = i;
+    });
+    assert(s.indexOf('js/sketchback/dev.js') === -1, f + ' never loads the dev referee');
+  });
+});
+
+test('sketchBack never uses Math.random outside its fallbacks', function () {
+  ['js/sketchback/rules.js', 'js/sketchback/pad.js', 'js/data/sketches.js'].forEach((f) => assert(!/Math\.random/.test(read(f)), f));
+  const game = read('js/games/sketchBack.js').replace(/FF\._rand \? FF\._rand\(\) : Math\.random\(\)/g, '');
+  assert(!/Math\.random/.test(game), 'the screen draws from the seed');
+});
+
+test('sketchBack recall order: shuffled per player, the same on a reload', function () {
+  const r = R();
+  const a = r.recallOrder(10, 'seed1', 'p1');
+  assertEqual(a.slice().sort((x, y) => x - y).join(','), '0,1,2,3,4,5,6,7,8,9');
+  assertEqual(a.join(','), r.recallOrder(10, 'seed1', 'p1').join(','));
+  assert(a.join(',') !== r.recallOrder(10, 'seed1', 'p2').join(','), 'differs per player');
+});

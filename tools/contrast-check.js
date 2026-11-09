@@ -98,6 +98,20 @@ if (base['wm-sky-1']) {
 }
 
 // GeoSpin night sky: always dark, the same in both themes.
+if (base['skb-desk']) {
+  ['skb-desk', 'skb-desk-2', 'skb-paper', 'skb-lilac', 'skb-sky'].forEach(function (bg) {
+    check('skb ink on ' + bg, base['skb-ink'], base[bg], 4.5);
+    check('skb soft ink on ' + bg, base['skb-ink-soft'], base[bg], 4.5);
+    check('skb dim ink on ' + bg, base['skb-ink-dim'], base[bg], 4.5);
+    check('skb violet on ' + bg, base['skb-violet'], base[bg], 4.5);
+  });
+  ['skb-violet', 'skb-blue', 'skb-violet-deep'].forEach(function (bg) {
+    check('skb text on ' + bg, base['skb-on-accent'], base[bg], 4.5);
+  });
+  check('skb good on soft', base['skb-good'], base['skb-good-soft'], 4.5);
+  check('skb bad on soft', base['skb-bad'], base['skb-bad-soft'], 4.5);
+  check('skb warn on paper', base['skb-warn'], base['skb-paper'], 4.5);
+}
 if (base['cw-night']) {
   ['cw-night', 'cw-night-2', 'cw-walnut'].forEach(function (bg) {
     check('cw cream on ' + bg, base['cw-cream'], base[bg], 4.5);
