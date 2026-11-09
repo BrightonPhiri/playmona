@@ -56,7 +56,11 @@ const FILES = [
   'js/whatsmissing/rules.js',
   'js/whatsmissing/client.js',
   'js/whatsmissing/referee.js',
-  'js/crew/brains/whatsMissing.js'
+  'js/crew/brains/whatsMissing.js',
+  // Mini Crossword: the referee the runner hosts (no crew seats play it), with its puzzles.
+  'js/crossword/rules.js',
+  'js/data/crosswords.js',
+  'js/crossword/referee.js'
 ];
 
 function stubElement() {

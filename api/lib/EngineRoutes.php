@@ -96,6 +96,12 @@ class EngineRoutes
         if ($m === 'POST' && $p === '/whatsmissing/nudge') {
             return Response::json($this->app->whatsmissing()->nudge($this->user($req), $req->json(), $now));
         }
+        if ($m === 'POST' && $p === '/crossword/start') {
+            return Response::json($this->app->crossword()->start($this->user($req), $req->json(), $now));
+        }
+        if ($m === 'POST' && $p === '/crossword/nudge') {
+            return Response::json($this->app->crossword()->nudge($this->user($req), $req->json(), $now));
+        }
 
         // Friends
         if ($m === 'GET' && $p === '/friends') return Response::json($this->app->friends()->overview($this->user($req)->uid, $now));
@@ -200,8 +206,9 @@ class EngineRoutes
                 $dropSortrush = $this->app->sortrush()->stillActive((array) ($body['sortrush'] ?? []));
                 $dropGeospin = $this->app->geospin()->stillActive((array) ($body['geospin'] ?? []));
                 $dropWhatsmissing = $this->app->whatsmissing()->stillActive((array) ($body['whatsmissing'] ?? []));
+                $dropCrossword = $this->app->crossword()->stillActive((array) ($body['crossword'] ?? []));
                 $s = $this->app->crew()->settings();
-                return Response::json(['drop' => $drop, 'dropImposters' => $dropImposters, 'dropWordflow' => $dropWordflow, 'dropBallswap' => $dropBallswap, 'dropSortrush' => $dropSortrush, 'dropGeospin' => $dropGeospin, 'dropWhatsmissing' => $dropWhatsmissing, 'settings' => ['mode' => $s['mode'], 'stopNew' => $s['stopNew']]]);
+                return Response::json(['drop' => $drop, 'dropImposters' => $dropImposters, 'dropWordflow' => $dropWordflow, 'dropBallswap' => $dropBallswap, 'dropSortrush' => $dropSortrush, 'dropGeospin' => $dropGeospin, 'dropWhatsmissing' => $dropWhatsmissing, 'dropCrossword' => $dropCrossword, 'settings' => ['mode' => $s['mode'], 'stopNew' => $s['stopNew']]]);
             case 'report':
                 $matchId = (string) ($body['matchId'] ?? '');
                 $event = (string) ($body['event'] ?? '');
@@ -227,6 +234,10 @@ class EngineRoutes
                 }
                 if ($event === 'whatsmissing') {
                     $this->app->whatsmissing()->recordResult($body, $now);
+                    return Response::json(['ok' => true]);
+                }
+                if ($event === 'crossword') {
+                    $this->app->crossword()->recordResult($body, $now);
                     return Response::json(['ok' => true]);
                 }
                 if ($event === 'game') {

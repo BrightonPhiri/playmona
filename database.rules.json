@@ -564,6 +564,41 @@
             }
           }
         },
+        "cwInbox": {
+          "$uid": {
+            "$id": {
+              ".write": "auth != null && $uid === auth.uid && !data.exists() && newData.exists() && !root.child('bans').child(auth.uid).exists() && root.child('rooms').child($code).child('cw').child('p').child(auth.uid).exists()",
+              ".validate": "$id.matches(/^[A-Za-z0-9_-]{6,40}$/) && newData.hasChildren(['type', 'matchId', 't'])",
+              "type": {
+                ".validate": "newData.isString() && (newData.val() === 'word' || newData.val() === 'grid' || newData.val() === 'fill')"
+              },
+              "matchId": {
+                ".validate": "newData.isString() && newData.val() === root.child('rooms').child($code).child('cw').child('matchId').val()"
+              },
+              "word": {
+                ".validate": "newData.isString() && newData.val().length <= 4"
+              },
+              "text": {
+                ".validate": "newData.isString() && newData.val().length <= 120"
+              },
+              "r": {
+                ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 9"
+              },
+              "c": {
+                ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 9"
+              },
+              "ch": {
+                ".validate": "newData.isString() && newData.val().length <= 1"
+              },
+              "t": {
+                ".validate": "newData.isNumber() && newData.val() === now"
+              },
+              "$other": {
+                ".validate": false
+              }
+            }
+          }
+        },
         "wmInbox": {
           "$uid": {
             "$id": {

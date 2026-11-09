@@ -4007,8 +4007,22 @@ button.imp-card:focus-visible { outline: 3px solid var(--focus-ring); outline-of
 .cw-win__ranks .cw-turn__name { flex: 1; text-align: left; }
 .cw-win__actions { display: flex; gap: var(--sp-2); flex-wrap: wrap; justify-content: center; margin-top: var(--sp-2); }
 
+/* Online rooms (js/crossword/online.js). */
+.cw-wait { grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; gap: var(--sp-2); padding: var(--sp-6) var(--sp-4); text-align: center; }
+.cw-wait__icon { width: 56px; height: 56px; color: var(--cw-gold); animation: cw-wait-spin 1.6s cubic-bezier(.6, 0, .3, 1) infinite; }
+@keyframes cw-wait-spin { 50% { transform: rotate(180deg) scale(0.86); } 100% { transform: rotate(360deg); } }
+.cw-brief__count { font-family: var(--font-display); font-weight: 700; font-size: 3.4rem; line-height: 1; color: var(--cw-gold); text-shadow: 0 0 28px color-mix(in srgb, var(--cw-lamp) 70%, transparent); font-variant-numeric: tabular-nums; }
+.cw-turns--room .cw-turn { --you: var(--cw-gold); }
+.cw-turns--room .cw-turn.is-done { background: color-mix(in srgb, var(--cw-gold) 22%, var(--cw-glass)); }
+.cw-chip--time.is-low { color: var(--cw-ink); background: var(--cw-terra); animation: cw-low 1s ease-in-out infinite alternate; }
+@keyframes cw-low { to { box-shadow: 0 0 18px var(--cw-terra); } }
+.cw-board.is-shake { animation: cw-shake 0.36s ease-out; }
+.cw-rank__place { min-width: 1.6em; text-align: center; font-family: var(--font-display); font-weight: 700; color: var(--cw-gold); }
+.cw-rank__meta { display: block; font-size: 0.78rem; font-weight: 700; color: var(--cw-cream-dim); font-variant-numeric: tabular-nums; }
+.cw-win__ranks li.is-me { background: color-mix(in srgb, var(--cw-gold) 14%, transparent); }
+
 @media (prefers-reduced-motion: reduce) {
-  .cw-lamp, .cw-cursor::before, .cw-helpbtn--check.is-ready { animation: none; }
+  .cw-lamp, .cw-cursor::before, .cw-helpbtn--check.is-ready, .cw-wait__icon, .cw-chip--time.is-low, .cw-board.is-shake { animation: none; }
   .cw-tile, .cw-tile *, .cw-demo__cell, .cw-demo__cell span, .cw-win__box, .cw-pass__box, .cw-win__star, .cw-win__best { animation-duration: 0.01s !important; animation-delay: 0s !important; }
   .cw-cursor { transition: opacity 0.2s; }
 }

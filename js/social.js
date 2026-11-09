@@ -326,6 +326,12 @@ window.FF = window.FF || {};
           if (p.o && Array.isArray(p.o.topics)) {
             out.opts = { topics: p.o.topics.filter(function (x) { return typeof x === 'string' && /^[a-z]{2,20}$/.test(x); }).slice(0, 12) };
           }
+          // Mini Crossword: the exact puzzle and how it was checked.
+          if (p.o && typeof p.o.puzzle === 'string' && /^[a-z]{2}-[enh]-\d{3}$/.test(p.o.puzzle)) {
+            out.opts = out.opts || {};
+            out.opts.puzzle = p.o.puzzle;
+            if (p.o.checking === 'on' || p.o.checking === 'expert') out.opts.checking = p.o.checking;
+          }
           return out;
         }
         var topic = FF.QuizRun.topic(p.k).id;

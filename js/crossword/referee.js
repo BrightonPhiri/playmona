@@ -96,7 +96,7 @@ window.FF = window.FF || {};
 
     /* ---------- the start ---------- */
 
-    function blankPlayer() { return { done: 0, solved: {}, finishedAt: null, wrong: null, penalty: 0, last: 0, points: 0 }; }
+    function blankPlayer() { return { done: 0, solved: {}, finishedAt: null, wrong: null, penalty: 0, last: 0, points: 0, misses: 0, missed: null, checks: 0 }; }
 
     function fresh() {
       var seats = list(run.seats);
@@ -250,7 +250,12 @@ window.FF = window.FF || {};
     function raceWord(uid, p, cmd, sentAt) {
       var w = wordById(cmd.word);
       if (!w || p.solved[w.id]) return false;
-      if (!R.checkWord(puzzle, w.id, String(cmd.text).slice(0, 12))) return false;
+      if (!R.checkWord(puzzle, w.id, String(cmd.text).slice(0, 12))) {
+        // Wrong: say so (the count tells a phone this answer is new), but nothing scores.
+        p.misses = (p.misses || 0) + 1;
+        p.missed = w.id;
+        return true;
+      }
       p.solved[w.id] = true;
       p.done++;
       p.last = sentAt;
@@ -262,6 +267,7 @@ window.FF = window.FF || {};
     function raceGrid(uid, p, cmd, sentAt) {
       var rows = String(cmd.text).slice(0, 120).toUpperCase().split('/');
       var bad = R.wrongCells(puzzle, rows);
+      p.checks = (p.checks || 0) + 1;
       if (bad.length) {
         p.wrong = bad.length;
         p.penalty += WRONG_MS;
@@ -339,7 +345,8 @@ window.FF = window.FF || {};
         var ms = p.finishedAt ? p.finishedAt - state.playAt + p.penalty : null;
         var points = p.points;
         if (!coop() && p.finishedAt) {
-          points = Math.max(points, R.score({ level: state.settings.level, ms: ms, help: {}, expert: expert() }).points);
+          // Finishing adds the one-device score for that time, so a faster finish always scores more.
+          points += R.score({ level: state.settings.level, ms: ms, help: {}, expert: expert() }).points;
         }
         return { uid: uid, points: points, words: p.done, ms: ms, last: p.last, finished: !!p.finishedAt };
       });
@@ -411,6 +418,9 @@ window.FF = window.FF || {};
         var p = state.players[uid];
         var row = { done: p.done, total: built.words.length, finishedAt: p.finishedAt || null, wrong: p.wrong, points: p.points };
         if (Object.keys(p.solved).length) row.solved = p.solved;
+        if (p.missed) row.miss = { w: p.missed, n: p.misses };
+        if (p.checks) row.checks = p.checks;
+        if (p.finishedAt) row.ms = p.finishedAt - state.playAt + p.penalty;   // with any Expert penalty
         v.p[uid] = row;
       });
       if (coop()) {

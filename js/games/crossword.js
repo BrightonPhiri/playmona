@@ -11,7 +11,7 @@
    - Puzzles: js/data/crosswords.js (tools/gen-crossword.js).
    - Solo, take turns (one word each) and everyone together on one
      device; daily and friend challenges play the standard settings
-     on a shared deal. Online rooms: js/crossword/client.js.
+     on a shared deal. Online rooms: js/crossword/online.js.
    Classic script, ES5.
    ============================================================ */
 window.FF = window.FF || {};
@@ -25,7 +25,7 @@ window.FF = window.FF || {};
   var BEST_KEY = 'crossword:best';
   var SEEN_KEY = 'crossword:seen';
   var KB_KEY = 'crossword:keyboard';
-  var SEEN_MAX = 80;
+  var SEEN_MAX = 500;
   var WORD_PTS = { easy: 10, normal: 15, hard: 20 };   // per letter, take turns
 
   function t(key, fallback, vars) { return FF.t ? FF.t(key, fallback, vars) : String(fallback).replace(/\{(\w+)\}/g, function (m, k) { return vars && vars[k] != null ? vars[k] : m; }); }
@@ -593,14 +593,21 @@ window.FF = window.FF || {};
 
   /* ================= solo, take turns, everyone together ================= */
 
-  function play(api, cfg, seed, run) {
+  /* fixedId: a friend's challenge names its exact puzzle. */
+  function play(api, cfg, seed, run, fixedId) {
     cfg = R.sanitize(cfg);
     run = run || { solved: 0 };
     var config = api.config;
-    var shared = !!config.sharedDeal || !!config.daily || !!config.challenge;
-    var puzzle = R.pick(FF.data.crosswords, Object.assign({}, cfg, { sharedDeal: shared }), seed, shared ? null : seenIds());
+    // The daily puzzle is the same for everyone. Any other run gets a puzzle this device has not
+    // seen yet; a run that may become a challenge records which one, so the friend gets it too.
+    var fixed = !!config.daily || !!config.challenge;
+    var shared = fixed || !!config.sharedDeal;   // no "Next puzzle": one puzzle is the whole run
+    var puzzle = fixedId ? FF.data.crosswords.filter(function (p) { return p.id === fixedId; })[0] : null;
+    if (puzzle) cfg = R.sanitize({ level: puzzle.level, pack: puzzle.pack, checking: cfg.checking });
+    else puzzle = R.pick(FF.data.crosswords, Object.assign({}, cfg, { sharedDeal: fixed }), seed, fixed ? null : seenIds());
     if (!puzzle) { setupScreen(api, function (c) { play(api, c, Math.floor(rand0() * 4294967296), run); }); return; }
-    if (!shared) markSeen(puzzle.id);
+    if (!fixed) markSeen(puzzle.id);
+    if (config.challengeSeed && !config.challenge) config.dealOptions = { puzzle: puzzle.id, checking: cfg.checking };
     var scorers = scorerList(config);
     var mode = config.mode === 'turn' && scorers.length > 1 ? 'turn' : (config.mode === 'everyone' && scorers.length > 1 ? 'everyone' : 'solo');
     var expert = cfg.checking === 'expert';
@@ -871,7 +878,7 @@ window.FF = window.FF || {};
       else if (bad.length) help.check++;
       bad.forEach(function (rc) { if (filled[keyOf(rc[0], rc[1])]) { wrong[keyOf(rc[0], rc[1])] = true; B.setWrong(rc[0], rc[1], true); } });
       api.audio.play('wrong');
-      api.shell.toast && api.shell.toast(t('cwNWrong', '{n} squares are not right yet', { n: bad.length }), 'hint');
+      api.shell.toast && api.shell.toast(bad.length === 1 ? t('cwOneWrong', '1 square is not right yet') : t('cwNWrong', '{n} squares are not right yet', { n: bad.length }), 'hint');
       drawHelp();
     }
 
@@ -969,6 +976,32 @@ window.FF = window.FF || {};
 
   /* ================= registration ================= */
 
+  /* Online rooms: the host picks Race or Co-op on the lobby's settings card, and the server
+     starts it (js/crossword/client.js, js/crossword/online.js). */
+  function roomFields() {
+    function opt(label, value) { return { label: label, value: value }; }
+    var packs = ['mixed'].concat(R.PACKS.filter(function (x) { return x !== 'mixed'; }));
+    return [
+      { key: 'play', label: t('cwPlay', 'How to play'), options: [opt(t('cwRace', 'Race'), 'race'), opt(t('cwCoop', 'Co-op'), 'coop')] },
+      { key: 'level', label: t('gcLevel', 'Level'), options: R.LEVELS.map(function (l) { return opt(levelName(l), l); }) },
+      { key: 'pack', label: t('cwTheme', 'Theme'), options: packs.map(function (p) { return opt(packName(p), p); }) },
+      { key: 'checking', label: t('cwChecking', 'Checking'), options: [opt(t('cwCheckOn', 'Words checked'), 'on'), opt(t('cwExpert', 'Expert'), 'expert')] }
+    ];
+  }
+  function roomSummary(s) {
+    var c = R.sanitize(s);
+    return (c.play === 'coop' ? t('cwCoop', 'Co-op') : t('cwRace', 'Race')) + ' · ' + levelName(c.level) + ' · ' + packName(c.pack) +
+      (c.checking === 'expert' ? ' · ' + t('cwExpert', 'Expert') : '');
+  }
+  var ROOM = {
+    minPlayers: R.MIN_PLAYERS,
+    defaults: R.STANDARD,
+    fields: function () { return roomFields(); },
+    sanitize: function (s) { return R.sanitize(s); },
+    summary: function (s) { return roomSummary(s); },
+    start: function (room, pick) { return FF.CrosswordApi.start(room, pick); }
+  };
+
   FF.CrosswordGame = { board: board, frame: frame, keys: keys, chip: chip, glyph: glyph, btn: btn, packName: packName, levelName: levelName, clock: clock, animationsOn: animationsOn };
 
   FF.registerGame({
@@ -980,23 +1013,27 @@ window.FF = window.FF || {};
     players: [1, 8],
     difficulty: 'Normal',
     duration: 6,
-    tags: ['spelling', 'puzzle'],
+    tags: ['spelling', 'puzzle', 'online'],
     modes: ['solo', 'turn', 'everyone'],
     defaultMode: 'solo',
     leaderboard: true,
+    room: ROOM,
     howToPlay: [
       'Tap a square or a clue to choose a word. Tap the same square again, or the clue bar, to switch between Across and Down.',
       'Type with the game keyboard under the grid (or your own keyboard). Filled squares are skipped and the next clue follows on.',
       'Letters checked: right words glow gold, wrong letters turn red. Expert: nothing is checked until you press Check grid.',
       'Stuck? Reveal a letter or a word, for a few points and a star.',
-      'Solve it fast and without help for three stars and the most points. Take turns: one word each, then pass the phone.'
+      'Solve it fast and without help for three stars and the most points. Take turns: one word each, then pass the phone.',
+      'Online: race everyone to finish the same puzzle, or solve one grid together in Co-op.'
     ],
     start: function (api) {
       if (!FF.data.crosswords || !FF.data.crosswords.length) { api.end({}); return; }
       var room = FF.Room && FF.Room.current();
       if (racingRoom(api) && room && FF.CrosswordOnline) { FF.CrosswordOnline.start(api, room); return; }
       var seed = Math.floor(rand0() * 4294967296);
-      if (api.config.daily || api.config.challenge) { play(api, R.STANDARD, seed); return; }
+      var ch = api.config.challenge;
+      if (ch && ch.opts && ch.opts.puzzle) { play(api, { checking: ch.opts.checking || 'on' }, seed, null, ch.opts.puzzle); return; }
+      if (api.config.daily || ch) { play(api, R.STANDARD, seed); return; }
       setupScreen(api, function (cfg) { play(api, cfg, seed); });
     }
   });

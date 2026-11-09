@@ -37,7 +37,9 @@ window.FF = window.FF || {};
     // Moves checked by the server's referee (js/sortrush/referee.js), same puzzle for everyone.
     'sortRush',
     // Countries picked and answers checked by the server's referee (js/geospin/referee.js).
-    'geoSpin'
+    'geoSpin',
+    // Race or Co-op on one puzzle, words checked by the server's referee (js/crossword/referee.js).
+    'miniCrossword'
     // Brain Battle is deliberately absent: its format is a personal
     // streak run per player, so there is no shared question to race for.
   ];

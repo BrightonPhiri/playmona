@@ -64,6 +64,8 @@ const ORDER = [
   'js/crossword/cursor.js',
   'js/crossword/keyboard.js',
   'js/games/crossword.js',
+  'js/crossword/client.js',
+  'js/crossword/online.js',
   'js/games/quizMix.js',
   'js/games/quizGames.js',
   'js/games/memoryGames.js',

@@ -132,6 +132,16 @@ test('challenge v2: a link for any game carries the game, seed, score and stats'
   assertEqual(d.at, sent, 'the day it was sent (to the hour)');
 });
 
+test('challenge v2: a crossword link carries the exact puzzle and checking, and drops bad values', function () {
+  const FF = boot2();
+  const rec = { id: 'abcdefgh12345678', v: 2, game: 'memoryMatch', seed: 'k3y9x2p1', role: 'sent',
+    me: { score: 400 }, opts: { puzzle: 'an-n-007', checking: 'expert' } };
+  const c = FF.Challenge.decode(codeOf(FF.Challenge.link(rec)));
+  assertEqual(JSON.stringify(c.opts), JSON.stringify({ puzzle: 'an-n-007', checking: 'expert' }));
+  const bad = FF.Challenge.decode(codeOf(FF.Challenge.link(Object.assign({}, rec, { opts: { puzzle: '<b>', checking: 'cheat' } }))));
+  assert(!bad.opts || (!bad.opts.puzzle && !bad.opts.checking), 'only plain puzzle ids and known checking values');
+});
+
 test('challenge v2: old quiz links still decode as a quiz topic', function () {
   const FF = boot2();
   const rec = { id: 'abcdefgh12345678', seed: 'k3y9x2p1', topic: 'world', role: 'sent', me: { score: 1234, correct: 8, ms: 40000 } };

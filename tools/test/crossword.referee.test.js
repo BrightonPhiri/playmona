@@ -5,6 +5,9 @@
    The answers stay on the server: the room only ever sees the shape, the clues and progress. */
 const crypto = require('crypto');
 const { loadFF, test, assert, assertEqual } = require('./harness');
+const fs = require('fs');
+const path = require('path');
+const ROOT = path.join(__dirname, '..', '..');
 
 const FILES = ['js/core.js', 'js/crossword/rules.js', 'js/data/crosswords.js', 'js/net/transport.js', 'js/crossword/referee.js'];
 
@@ -125,6 +128,7 @@ test('crossword race: right word locks, wrong word does not, finish order ranks'
   const first = m.built().words[0].id;
   await m.word('p1', first, 'QQQQQ'.slice(0, m.answer(first).length));
   assert(!m.cw().p.p1.solved || !m.cw().p.p1.solved[first], 'a wrong word does not lock');
+  assertEqual(JSON.stringify(m.cw().p.p1.miss), JSON.stringify({ w: first, n: 1 }), 'the phone hears the word was wrong');
   await m.word('p1', first);
   assert(m.cw().p.p1.solved[first], 'a right word locks');
   assertEqual(m.cw().p.p1.done, 1);
@@ -138,6 +142,7 @@ test('crossword race: right word locks, wrong word does not, finish order ranks'
   assertEqual(cw.status, 'over', 'everyone finished: the race is over');
   assertEqual(cw.result.rows.map((r) => r.uid).join(), 'p2,p1');
   assertEqual(cw.result.rows[0].place, 1);
+  assert(cw.result.rows[0].points > cw.result.rows[1].points, 'the faster finisher scores more, not just the same word points (' + cw.result.rows.map((r) => r.points).join(' vs ') + ')');
   assertEqual(m.meta().results.gameId, 'miniCrossword');
   const rep = m.reports.filter((r) => r.e === 'crossword');
   assertEqual(rep.length, 1);
@@ -173,14 +178,18 @@ test('crossword race expert: one wrong square gives wrong:1, not finished, and a
   rows[0] = r0.slice(0, c0) + (r0[c0] === 'Q' ? 'Z' : 'Q') + r0.slice(c0 + 1);
   await e.grid('p1', rows);
   assertEqual(e.cw().p.p1.wrong, 1);
+  assertEqual(e.cw().p.p1.checks, 1, 'each check is counted, so a phone knows its answer came');
   assert(!e.cw().p.p1.finishedAt, 'not finished');
   await e.clock.advance(1000);
   await e.grid('p1');
   const p1 = e.cw().p.p1;
   assert(p1.finishedAt, 'the right grid finishes');
+  assert(p1.ms >= 20000 && p1.ms === p1.finishedAt - e.cw().playAt + 20000, 'the view gives the finish time with the penalty in it');
   await e.clock.advance(1000);
   await e.grid('p2');
   const rowsOut = e.cw().result.rows;
+  const pa = rowsOut.filter((r) => r.uid === 'p1')[0].points, pb = rowsOut.filter((r) => r.uid === 'p2')[0].points;
+  assert(pb > pa, 'the faster finish scores more (' + pb + ' vs ' + pa + ')');
   const a = rowsOut.filter((r) => r.uid === 'p1')[0];
   const b = rowsOut.filter((r) => r.uid === 'p2')[0];
   assert(a.ms >= 20000, 'the wrong check added 20 seconds');
@@ -285,4 +294,25 @@ test('crossword referee: a restarted referee carries on with the same puzzle', a
   await flush();
   assertEqual(m.cw().shape.blocks, before);
   assertEqual(m.cw().p.p1.done, 1, 'progress kept');
+});
+
+test('crossword referee: the crew runner loads it with the puzzles, and the runner hosts crosswordRuns', function () {
+  const loader = require(path.join(ROOT, 'api/crew/lib/loader.js'));
+  const S = loader.load();
+  assert(S.CrosswordReferee && typeof S.CrosswordReferee.create === 'function', 'the referee is loaded');
+  assert(S.data.crosswords && S.data.crosswords.length > 100, 'with the puzzles');
+  const runner = fs.readFileSync(path.join(ROOT, 'api/crew/runner.js'), 'utf8');
+  assert(/rtdb\.stream\('crosswordRuns'/.test(runner), 'the runner watches crosswordRuns');
+  assert(/crossword: Array\.from\(crosswords\.keys\(\)\)/.test(runner), 'and reports them in the heartbeat');
+});
+
+test('crossword race: on a big grid the faster finisher still scores more than the slower one', async function () {
+  const m = await match({ settings: { level: 'normal', pack: 'mixed' } });
+  await m.play();
+  await solveAll(m, 'p2');
+  await m.clock.advance(60000);
+  await solveAll(m, 'p1');
+  const rows = m.cw().result.rows;
+  assertEqual(rows[0].uid, 'p2');
+  assert(rows[0].points > rows[1].points, 'faster scores more: ' + rows.map((r) => r.uid + '=' + r.points).join(' '));
 });
