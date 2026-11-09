@@ -17,6 +17,7 @@ FF.AssetManifest = {
     "guessWho": "06291604",
     "imposters": "1275cfc4",
     "letterRush": "b0eb5db2",
+    "logoRush": "7215e088",
     "memoryMatch": "39b80ff8",
     "miniCrossword": "ca1c3143",
     "numberRush": "588554f9",
