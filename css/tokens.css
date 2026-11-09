@@ -139,6 +139,13 @@
   --gs-gold: #ffc940; --gs-gold-hi: #ffe98f; --gs-gold-deep: #cc8418; --gs-gold-ink: #3b1f00;
   --gs-green: #34d65c; --gs-green-hi: #8dff9f; --gs-green-deep: #0f7a2e; --gs-red: #ff5c7a; --gs-red-deep: #b0213f;
   --gs-ink: #ffffff; --gs-ink-soft: #d6d2ff; --gs-ink-dim: #9f9ad6;
+  /* Charades (js/games/charades.js): a little theatre that is the same in both themes, as the
+     cover: plum-black velvet, crimson curtains, a gold spotlight and marquee bulbs, cream cards. */
+  --chr-velvet: #12060c; --chr-velvet-2: #2a0c1a; --chr-plum: #4a1530;
+  --chr-curtain: #b3122f; --chr-curtain-hi: #e23b55; --chr-curtain-deep: #4c0519;
+  --chr-gold: #ffc940; --chr-gold-hi: #ffe7a0; --chr-gold-deep: #b97a12; --chr-gold-ink: #3b1f00;
+  --chr-card: #fff6e3; --chr-card-2: #ffe3a8; --chr-card-ink: #2a0c1a; --chr-card-ink-soft: #6b2c3c;
+  --chr-ink: #fff7ef; --chr-ink-soft: #f2d9df; --chr-ink-dim: #c9a3ad;
   /* What's Missing? (js/games/whatsMissing.js): the cover's magenta-to-tangerine sky with cream
      glossy tiles on pastel sides, the same in both themes. */
   --wm-sky-1: #86198f; --wm-sky-2: #be185d; --wm-sky-3: #c2410c; --wm-plum: #3b0a40; --wm-plum-2: #5b1263;

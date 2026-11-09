@@ -115,6 +115,20 @@ if (base['cw-night']) {
   check('cw cream on green-deep', base['cw-cream'], base['cw-green-deep'], 4.5);
   check('cw ink on gold', base['cw-ink'], base['cw-gold'], 4.5);
 }
+if (base['chr-velvet']) {
+  console.log(' '); console.log('== Charades ==');
+  ['chr-velvet', 'chr-velvet-2', 'chr-plum'].forEach(function (bg) {
+    check('chr ink on ' + bg, base['chr-ink'], base[bg], 4.5);
+    check('chr soft ink on ' + bg, base['chr-ink-soft'], base[bg], 4.5);
+    check('chr gold on ' + bg, base['chr-gold'], base[bg], 4.5);
+  });
+  check('chr dim ink on velvet-2', base['chr-ink-dim'], base['chr-velvet-2'], 4.5);
+  check('chr card ink on card', base['chr-card-ink'], base['chr-card'], 4.5);
+  check('chr card ink on card-2', base['chr-card-ink'], base['chr-card-2'], 4.5);
+  check('chr soft card ink on card-2', base['chr-card-ink-soft'], base['chr-card-2'], 4.5);
+  check('chr gold ink on gold', base['chr-gold-ink'], base['chr-gold'], 4.5);
+  check('chr ink on curtain-deep', base['chr-ink'], base['chr-curtain-deep'], 4.5);
+}
 if (base['gs-night']) {
   console.log(' '); console.log('== GeoSpin ==');
   ['gs-night', 'gs-night-2', 'gs-dusk'].forEach(function (bg) {

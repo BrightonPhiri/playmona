@@ -9,7 +9,7 @@
    - Rules: js/charades/rules.js (FF.CharadesRules).
    - Cards: js/data/charadesDecks.js (12 themed decks, easy/normal/hard).
    - Look: a theatre stage (velvet, curtains, spotlight, marquee bulbs)
-     with GeoSpin's glass panels and arcade buttons (.ch- in games.css).
+     with GeoSpin's glass panels and arcade buttons (.chr- in games.css).
    - TV display: the whole room acts the same card together.
    One device, passed around. No online rooms.
    Classic script, ES5.
@@ -39,17 +39,17 @@ window.FF = window.FF || {};
   function deckIds() { return decks().map(function (d) { return d.id; }); }
   function deckById(id) { return decks().filter(function (d) { return d.id === id; })[0] || null; }
 
-  function deckName(id) { var d = deckById(id); return t('chDeck_' + id, d ? d.name : id); }
+  function deckName(id) { var d = deckById(id); return t('chrDeck_' + id, d ? d.name : id); }
   function levelName(l) { return l === 'easy' ? t('easy', 'Easy') : l === 'hard' ? t('hard', 'Hard') : t('normal', 'Normal'); }
   function signalName(id) {
     var s = R.SIGNALS.filter(function (x) { return x.id === id; })[0];
-    return s ? t('chSig_' + id, s.name) : id;
+    return s ? t('chrSig_' + id, s.name) : id;
   }
   function signalLine(id) {
-    return id === 'film' ? t('chSigLineFilm', 'Film: crank the camera')
-      : id === 'song' ? t('chSigLineSong', 'Song: pretend to sing')
-      : id === 'tv' ? t('chSigLineTv', 'TV: draw a screen')
-      : t('chSigLineBook', 'Book: open your hands');
+    return id === 'film' ? t('chrSigLineFilm', 'Film: crank the camera')
+      : id === 'song' ? t('chrSigLineSong', 'Song: pretend to sing')
+      : id === 'tv' ? t('chrSigLineTv', 'TV: draw a screen')
+      : t('chrSigLineBook', 'Book: open your hands');
   }
 
   /* Small inline drawings (stroke uses currentColor). */
@@ -77,33 +77,33 @@ window.FF = window.FF || {};
   };
   function glyph(name, cls) {
     var s = document.createElement('span');
-    s.className = 'ch-glyph' + (cls ? ' ' + cls : '');
+    s.className = 'chr-glyph' + (cls ? ' ' + cls : '');
     s.setAttribute('aria-hidden', 'true');
     s.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + (GLYPHS[name] || GLYPHS.mix) + '</svg>';
     return s;
   }
   function button(label, cls, icon, onClick) {
-    var b = FF.ui.el('button', { type: 'button', class: 'ch-btn' + (cls ? ' ' + cls : '') });
+    var b = FF.ui.el('button', { type: 'button', class: 'chr-btn' + (cls ? ' ' + cls : '') });
     if (icon) b.appendChild(glyph(icon));
-    b.appendChild(FF.ui.span('ch-btn__label', label));
+    b.appendChild(FF.ui.span('chr-btn__label', label));
     if (onClick) b.addEventListener('click', onClick);
     return b;
   }
   function chip(text, cls, icon) {
-    var c = FF.ui.span('ch-chip' + (cls ? ' ' + cls : ''));
+    var c = FF.ui.span('chr-chip' + (cls ? ' ' + cls : ''));
     if (icon) c.appendChild(glyph(icon));
     c.appendChild(FF.ui.span('', text));
     return c;
   }
   function bulbs() {
-    var b = FF.ui.div('ch-bulbs');
+    var b = FF.ui.div('chr-bulbs');
     b.setAttribute('aria-hidden', 'true');
-    for (var i = 0; i < 14; i++) b.appendChild(FF.ui.span('ch-bulb'));
+    for (var i = 0; i < 14; i++) b.appendChild(FF.ui.span('chr-bulb'));
     return b;
   }
 
   function soundButton() {
-    var b = FF.ui.el('button', { type: 'button', class: 'ch-iconbtn' });
+    var b = FF.ui.el('button', { type: 'button', class: 'chr-iconbtn' });
     function sync() {
       var on = FF.Audio.effectsEnabled !== false;
       FF.ui.clear(b);
@@ -125,13 +125,13 @@ window.FF = window.FF || {};
 
   /* The countdown ring: seconds in the middle, a draining gold arc. */
   function timerRing() {
-    var el = FF.ui.div('ch-timer');
+    var el = FF.ui.div('chr-timer');
     el.setAttribute('role', 'timer');
-    el.innerHTML = '<svg viewBox="0 0 100 100" aria-hidden="true"><circle class="ch-timer__track" cx="50" cy="50" r="44"/>' +
-      '<circle class="ch-timer__arc" cx="50" cy="50" r="44" pathLength="100"/></svg>';
-    var num = FF.ui.span('ch-timer__num', '');
+    el.innerHTML = '<svg viewBox="0 0 100 100" aria-hidden="true"><circle class="chr-timer__track" cx="50" cy="50" r="44"/>' +
+      '<circle class="chr-timer__arc" cx="50" cy="50" r="44" pathLength="100"/></svg>';
+    var num = FF.ui.span('chr-timer__num', '');
     el.appendChild(num);
-    var arc = el.querySelector ? el.querySelector('.ch-timer__arc') : null;
+    var arc = el.querySelector ? el.querySelector('.chr-timer__arc') : null;
     return {
       el: el,
       set: function (rem, total) {
@@ -150,28 +150,28 @@ window.FF = window.FF || {};
   function frame(api, cls, onHelp) {
     var root = api.shell.root;
     FF.ui.clear(root);
-    if (api.shell.el) api.shell.el.classList.add('ch-shell');
-    var ch = FF.ui.div('ch' + (cls ? ' ' + cls : ''));
-    var curtL = FF.ui.div('ch-curtain ch-curtain--l');
-    var curtR = FF.ui.div('ch-curtain ch-curtain--r');
+    if (api.shell.el) api.shell.el.classList.add('chr-shell');
+    var ch = FF.ui.div('chr' + (cls ? ' ' + cls : ''));
+    var curtL = FF.ui.div('chr-curtain chr-curtain--l');
+    var curtR = FF.ui.div('chr-curtain chr-curtain--r');
     curtL.setAttribute('aria-hidden', 'true');
     curtR.setAttribute('aria-hidden', 'true');
     ch.appendChild(curtL);
     ch.appendChild(curtR);
-    var spot = FF.ui.div('ch-spot');
+    var spot = FF.ui.div('chr-spot');
     spot.setAttribute('aria-hidden', 'true');
     ch.appendChild(spot);
 
-    var top = FF.ui.div('ch-top');
-    var brand = FF.ui.div('ch-brand');
-    brand.appendChild(glyph('mask', 'ch-brand__mask'));
-    brand.appendChild(FF.ui.span('ch-brand__name', t('chName', 'Charades')));
+    var top = FF.ui.div('chr-top');
+    var brand = FF.ui.div('chr-brand');
+    brand.appendChild(glyph('mask', 'chr-brand__mask'));
+    brand.appendChild(FF.ui.span('chr-brand__name', t('chrName', 'Charades')));
     top.appendChild(brand);
-    var chips = FF.ui.div('ch-chips');
+    var chips = FF.ui.div('chr-chips');
     top.appendChild(chips);
-    var tools = FF.ui.div('ch-tools');
+    var tools = FF.ui.div('chr-tools');
     if (onHelp) {
-      var help = FF.ui.el('button', { type: 'button', class: 'ch-iconbtn', 'aria-label': t('chSignals', 'Charades signals'), title: t('chSignals', 'Charades signals') });
+      var help = FF.ui.el('button', { type: 'button', class: 'chr-iconbtn', 'aria-label': t('chrSignals', 'Charades signals'), title: t('chrSignals', 'Charades signals') });
       help.appendChild(glyph('help'));
       help.addEventListener('click', onHelp);
       tools.appendChild(help);
@@ -180,9 +180,9 @@ window.FF = window.FF || {};
     top.appendChild(tools);
     ch.appendChild(top);
 
-    var main = FF.ui.div('ch-main');
-    var stage = FF.ui.div('ch-stage');
-    var side = FF.ui.div('ch-side');
+    var main = FF.ui.div('chr-main');
+    var stage = FF.ui.div('chr-stage');
+    var side = FF.ui.div('chr-side');
     main.appendChild(stage);
     main.appendChild(side);
     ch.appendChild(main);
@@ -191,11 +191,11 @@ window.FF = window.FF || {};
   }
 
   function segmented(label, items, current, onPick) {
-    var wrap = FF.ui.div('ch-seg');
-    wrap.appendChild(FF.ui.el('h3', { class: 'ch-h3' }, label));
-    var row = FF.ui.el('div', { class: 'ch-seg__row', role: 'group', 'aria-label': label });
+    var wrap = FF.ui.div('chr-seg');
+    wrap.appendChild(FF.ui.el('h3', { class: 'chr-h3' }, label));
+    var row = FF.ui.el('div', { class: 'chr-seg__row', role: 'group', 'aria-label': label });
     var btns = items.map(function (it) {
-      var b = FF.ui.el('button', { type: 'button', class: 'ch-seg__btn' }, it.label);
+      var b = FF.ui.el('button', { type: 'button', class: 'chr-seg__btn' }, it.label);
       b.addEventListener('click', function () { onPick(it.id); });
       row.appendChild(b);
       return { el: b, id: it.id };
@@ -219,32 +219,32 @@ window.FF = window.FF || {};
     api.shell.hideTimer();
     if (FF.GameLength && FF.GameLength.pause) FF.GameLength.pause();
     var c = R.sanitize(store().get(SETUP_KEY, null) || R.STANDARD, deckIds());
-    var f = frame(api, 'ch--setup', openSignals);
+    var f = frame(api, 'chr--setup', openSignals);
 
-    var hero = FF.ui.div('ch-hero');
+    var hero = FF.ui.div('chr-hero');
     hero.appendChild(bulbs());
-    hero.appendChild(FF.ui.el('h2', { class: 'ch-hero__title' }, t('chTagline', 'Act it out. No talking!')));
-    var how = FF.ui.el('ol', { class: 'ch-how' });
-    [t('chHow1', 'Pass the phone to the actor. Only they look.'), t('chHow2', 'Act as many cards as you can before time runs out.'),
-      t('chHow3', 'Your team shouts guesses. Tap Got it or Pass.')].forEach(function (x, i) {
+    hero.appendChild(FF.ui.el('h2', { class: 'chr-hero__title' }, t('chrTagline', 'Act it out. No talking!')));
+    var how = FF.ui.el('ol', { class: 'chr-how' });
+    [t('chrHow1', 'Pass the phone to the actor. Only they look.'), t('chrHow2', 'Act as many cards as you can before time runs out.'),
+      t('chrHow3', 'Your team shouts guesses. Tap Got it or Pass.')].forEach(function (x, i) {
       var li = FF.ui.el('li', {});
-      li.appendChild(FF.ui.span('ch-how__n', String(i + 1)));
+      li.appendChild(FF.ui.span('chr-how__n', String(i + 1)));
       li.appendChild(FF.ui.span('', x));
       how.appendChild(li);
     });
     hero.appendChild(how);
     f.stage.appendChild(hero);
 
-    var p = FF.ui.div('ch-card ch-setup');
-    p.appendChild(FF.ui.el('h3', { class: 'ch-h3' }, t('chDecks', 'Cards')));
-    var grid = FF.ui.el('div', { class: 'ch-decks', role: 'group', 'aria-label': t('chDecks', 'Cards') });
-    var tiles = [{ id: 'mix', name: t('chMixed', 'Mixed'), glyph: 'mix', n: decks().reduce(function (n, d) { return n + d.cards.length; }, 0) }]
+    var p = FF.ui.div('chr-card chr-setup');
+    p.appendChild(FF.ui.el('h3', { class: 'chr-h3' }, t('chrDecks', 'Cards')));
+    var grid = FF.ui.el('div', { class: 'chr-decks', role: 'group', 'aria-label': t('chrDecks', 'Cards') });
+    var tiles = [{ id: 'mix', name: t('chrMixed', 'Mixed'), glyph: 'mix', n: decks().reduce(function (n, d) { return n + d.cards.length; }, 0) }]
       .concat(decks().map(function (d) { return { id: d.id, name: deckName(d.id), glyph: d.glyph, n: d.cards.length }; }))
       .map(function (d) {
-        var b = FF.ui.el('button', { type: 'button', class: 'ch-deck' + (d.id === 'mix' ? ' ch-deck--mix' : '') });
+        var b = FF.ui.el('button', { type: 'button', class: 'chr-deck' + (d.id === 'mix' ? ' chr-deck--mix' : '') });
         b.appendChild(glyph(d.glyph));
-        b.appendChild(FF.ui.span('ch-deck__name', d.name));
-        b.appendChild(FF.ui.span('ch-deck__n', String(d.n)));
+        b.appendChild(FF.ui.span('chr-deck__name', d.name));
+        b.appendChild(FF.ui.span('chr-deck__n', String(d.n)));
         b.addEventListener('click', function () { toggleDeck(d.id); api.audio.play('tap'); sync(); });
         grid.appendChild(b);
         return { el: b, id: d.id };
@@ -260,18 +260,18 @@ window.FF = window.FF || {};
     }
 
     var level = segmented(t('gcLevel', 'Level'), R.LEVELS.map(function (l) { return { id: l, label: levelName(l) }; }), c.level, function (v) { c.level = v; api.audio.play('select'); sync(); });
-    var secs = segmented(t('chTurnLength', 'Time to act'), R.SECONDS.map(function (n) { return { id: n, label: t('wmSecs', '{n} s', { n: n }) }; }), c.seconds, function (v) { c.seconds = v; api.audio.play('tap'); sync(); });
-    var turns = segmented(t('chTurnsEach', 'Turns each'), R.TURNS.map(function (n) { return { id: n, label: String(n) }; }), c.turns, function (v) { c.turns = v; api.audio.play('tap'); sync(); });
-    var twists = segmented(t('chTwists', 'Acting twists'), [{ id: false, label: t('off', 'Off') }, { id: true, label: t('on', 'On') }], c.twists, function (v) { c.twists = v; api.audio.play('tap'); sync(); });
-    var row = FF.ui.div('ch-setup__row');
+    var secs = segmented(t('chrTurnLength', 'Time to act'), R.SECONDS.map(function (n) { return { id: n, label: t('wmSecs', '{n} s', { n: n }) }; }), c.seconds, function (v) { c.seconds = v; api.audio.play('tap'); sync(); });
+    var turns = segmented(t('chrTurnsEach', 'Turns each'), R.TURNS.map(function (n) { return { id: n, label: String(n) }; }), c.turns, function (v) { c.turns = v; api.audio.play('tap'); sync(); });
+    var twists = segmented(t('chrTwists', 'Acting twists'), [{ id: false, label: t('off', 'Off') }, { id: true, label: t('on', 'On') }], c.twists, function (v) { c.twists = v; api.audio.play('tap'); sync(); });
+    var row = FF.ui.div('chr-setup__row');
     [level, secs, turns, twists].forEach(function (x) { row.appendChild(x.el); });
     p.appendChild(row);
-    var note = FF.ui.el('p', { class: 'ch-note', 'aria-live': 'polite' });
+    var note = FF.ui.el('p', { class: 'chr-note', 'aria-live': 'polite' });
     p.appendChild(note);
 
-    var foot = FF.ui.div('ch-setup__foot');
-    foot.appendChild(button(t('chSignalsShort', 'Signals'), 'ch-btn--ghost', 'help', openSignals));
-    var go = button(t('chStart', 'Start the show'), 'ch-btn--go ch-btn--big', 'mask', function () {
+    var foot = FF.ui.div('chr-setup__foot');
+    foot.appendChild(button(t('chrSignalsShort', 'Signals'), 'chr-btn--ghost', 'help', openSignals));
+    var go = button(t('chrStart', 'Start the show'), 'chr-btn--go chr-btn--big', 'mask', function () {
       var cfg = R.sanitize(c, deckIds());
       try { store().set(SETUP_KEY, cfg); } catch (e) { /* storage full */ }
       api.audio.play('roundStart');
@@ -290,11 +290,11 @@ window.FF = window.FF || {};
       });
       level.sync(c.level); secs.sync(c.seconds); turns.sync(c.turns); twists.sync(c.twists);
       var n = R.pool(decks(), c).length;
-      note.textContent = t('chNReady', '{n} cards ready', { n: n }) + ' · ' +
-        (c.level === 'easy' ? t('chEasyNote', 'Easy: simple words little ones can act.')
-          : c.level === 'hard' ? t('chHardNote', 'Hard: tricky words and titles.')
-          : t('chNormalNote', 'Normal: a mix of easy and medium cards.')) +
-        (c.twists ? ' · ' + t('chTwistNote', 'About 1 card in 4 gets a twist worth +1.') : '');
+      note.textContent = t('chrNReady', '{n} cards ready', { n: n }) + ' · ' +
+        (c.level === 'easy' ? t('chrEasyNote', 'Easy: simple words little ones can act.')
+          : c.level === 'hard' ? t('chrHardNote', 'Hard: tricky words and titles.')
+          : t('chrNormalNote', 'Normal: a mix of easy and medium cards.')) +
+        (c.twists ? ' · ' + t('chrTwistNote', 'About 1 card in 4 gets a twist worth +1.') : '');
     }
     sync();
     if (FF.Nav && FF.Nav.focusFirst) FF.Nav.focusFirst(p);
@@ -329,18 +329,18 @@ window.FF = window.FF || {};
     function teamOf(spec) { return byId[spec.scorerId] || null; }
     function isTeam(spec) { var s = teamOf(spec); return !!(s && s.players); }
     function scoreOf(id) { return api.scoring.get ? (api.scoring.get(id) || 0) : 0; }
-    function turnChip() { return chip(t('chTurnOf', 'Turn {n} of {total}', { n: k + 1, total: order.length }), 'ch-chip--turn'); }
+    function turnChip() { return chip(t('chrTurnOf', 'Turn {n} of {total}', { n: k + 1, total: order.length }), 'chr-chip--turn'); }
 
     function scoreboard(highlightId, pending) {
-      var list = FF.ui.el('ol', { class: 'ch-board' });
+      var list = FF.ui.el('ol', { class: 'chr-board' });
       scorers.slice().sort(function (a, b) { return scoreOf(b.id) - scoreOf(a.id); }).forEach(function (s) {
-        var li = FF.ui.el('li', { class: 'ch-row' + (s.id === highlightId ? ' is-now' : '') });
-        var dot = FF.ui.span('ch-row__dot');
+        var li = FF.ui.el('li', { class: 'chr-row' + (s.id === highlightId ? ' is-now' : '') });
+        var dot = FF.ui.span('chr-row__dot');
         if (s.color) dot.style.background = s.color;
         li.appendChild(dot);
-        li.appendChild(FF.ui.span('ch-row__name', s.name || t('playerLabel', 'Player')));
-        if (pending && s.id === highlightId && pending > 0) li.appendChild(FF.ui.span('ch-row__plus', '+' + pending));
-        li.appendChild(FF.ui.span('ch-row__pts', FF.util.formatNumber(scoreOf(s.id))));
+        li.appendChild(FF.ui.span('chr-row__name', s.name || t('playerLabel', 'Player')));
+        if (pending && s.id === highlightId && pending > 0) li.appendChild(FF.ui.span('chr-row__plus', '+' + pending));
+        li.appendChild(FF.ui.span('chr-row__pts', FF.util.formatNumber(scoreOf(s.id))));
         list.appendChild(li);
       });
       return list;
@@ -357,31 +357,31 @@ window.FF = window.FF || {};
       api.shell.hideTimer();
       var actor = actorOf(spec);
       var team = teamOf(spec);
-      f = frame(api, 'ch--handover', openSignals);
+      f = frame(api, 'chr--handover', openSignals);
       f.chips.appendChild(turnChip());
       api.shell.updateScores(spec.scorerId);
 
-      var box = FF.ui.div('ch-handover');
+      var box = FF.ui.div('chr-handover');
       box.appendChild(bulbs());
-      var ava = FF.ui.div('ch-handover__ava');
+      var ava = FF.ui.div('chr-handover__ava');
       if (FF.Players && FF.Players.avatarEl) ava.appendChild(FF.Players.avatarEl(actor, ''));
       if (team && team.color) ava.style.setProperty('--team', team.color);
       box.appendChild(ava);
-      box.appendChild(FF.ui.el('p', { class: 'ch-handover__pass' }, scorers.length > 1 || order.length > 1 ? t('chPassTo', 'Pass the phone to') : t('chYourTurn', 'Your turn')));
-      box.appendChild(FF.ui.el('h2', { class: 'ch-handover__name' }, actor.name || t('playerLabel', 'Player')));
+      box.appendChild(FF.ui.el('p', { class: 'chr-handover__pass' }, scorers.length > 1 || order.length > 1 ? t('chrPassTo', 'Pass the phone to') : t('chrYourTurn', 'Your turn')));
+      box.appendChild(FF.ui.el('h2', { class: 'chr-handover__name' }, actor.name || t('playerLabel', 'Player')));
       if (isTeam(spec)) {
-        var tm = FF.ui.span('ch-handover__team', team.name);
+        var tm = FF.ui.span('chr-handover__team', team.name);
         if (team.color) tm.style.setProperty('--team', team.color);
         box.appendChild(tm);
       }
-      box.appendChild(FF.ui.el('p', { class: 'ch-handover__only' }, t('chOnlyLooks', 'Only {name} looks at the screen.', { name: actor.name || t('playerLabel', 'Player') })));
-      if (spec.again) box.appendChild(FF.ui.el('p', { class: 'ch-note ch-note--gold' }, t('chActsAgain', '{name} acts again: {team} has fewer players.', { name: actor.name, team: team ? team.name : '' })));
-      var rules = FF.ui.el('ul', { class: 'ch-rules' });
-      [t('chRule1', 'No talking or mouthing words'), t('chRule2', 'No spelling letters in the air'), t('chRule3', 'No pointing at things in the room')].forEach(function (x) {
+      box.appendChild(FF.ui.el('p', { class: 'chr-handover__only' }, t('chrOnlyLooks', 'Only {name} looks at the screen.', { name: actor.name || t('playerLabel', 'Player') })));
+      if (spec.again) box.appendChild(FF.ui.el('p', { class: 'chr-note chr-note--gold' }, t('chrActsAgain', '{name} acts again: {team} has fewer players.', { name: actor.name, team: team ? team.name : '' })));
+      var rules = FF.ui.el('ul', { class: 'chr-rules' });
+      [t('chrRule1', 'No talking or mouthing words'), t('chrRule2', 'No spelling letters in the air'), t('chrRule3', 'No pointing at things in the room')].forEach(function (x) {
         rules.appendChild(FF.ui.el('li', {}, x));
       });
       box.appendChild(rules);
-      var ready = button(t('chReady', 'I’m ready'), 'ch-btn--go ch-btn--big', 'check', function () { api.audio.play('select'); countdown(spec); });
+      var ready = button(t('chrReady', 'I’m ready'), 'chr-btn--go chr-btn--big', 'check', function () { api.audio.play('select'); countdown(spec); });
       box.appendChild(ready);
       f.stage.appendChild(box);
       f.side.appendChild(scoreboard(spec.scorerId));
@@ -391,7 +391,7 @@ window.FF = window.FF || {};
     /* ---------- 2. three, two, one ---------- */
     function countdown(spec) {
       FF.ui.clear(f.stage);
-      var big = FF.ui.div('ch-count');
+      var big = FF.ui.div('chr-count');
       big.setAttribute('aria-live', 'assertive');
       f.stage.appendChild(big);
       var n = 3;
@@ -413,26 +413,26 @@ window.FF = window.FF || {};
     function acting(spec) {
       var turn = R.Turn(dealer, { twists: cfg.twists, rand: rand0 });
       var team = teamOf(spec);
-      f = frame(api, 'ch--act', openSignals);
+      f = frame(api, 'chr--act', openSignals);
       f.chips.appendChild(turnChip());
-      var gotChip = chip(t('chGotN', '{n} got', { n: 0 }), 'ch-chip--got', 'check');
+      var gotChip = chip(t('chrGotN', '{n} got', { n: 0 }), 'chr-chip--got', 'check');
       f.chips.appendChild(gotChip);
 
       var ring = timerRing();
       f.stage.appendChild(ring.el);
-      var cardHost = FF.ui.div('ch-cardhost');
+      var cardHost = FF.ui.div('chr-cardhost');
       f.stage.appendChild(cardHost);
-      var stamp = FF.ui.div('ch-stamp');
+      var stamp = FF.ui.div('chr-stamp');
       stamp.setAttribute('aria-live', 'assertive');
       f.stage.appendChild(stamp);
 
-      var actions = FF.ui.div('ch-actions');
-      var passBtn = button(t('chPass', 'Pass'), 'ch-btn--pass', 'skip', function () { answer(false); });
-      var gotBtn = button(t('chGotIt', 'Got it'), 'ch-btn--go', 'check', function () { answer(true); });
+      var actions = FF.ui.div('chr-actions');
+      var passBtn = button(t('chrPass', 'Pass'), 'chr-btn--pass', 'skip', function () { answer(false); });
+      var gotBtn = button(t('chrGotIt', 'Got it'), 'chr-btn--go', 'check', function () { answer(true); });
       actions.appendChild(passBtn);
       actions.appendChild(gotBtn);
       f.stage.appendChild(actions);
-      f.stage.appendChild(FF.ui.el('p', { class: 'ch-swipe' }, t('chSwipeHint', 'Swipe up for Got it, down to pass')));
+      f.stage.appendChild(FF.ui.el('p', { class: 'chr-swipe' }, t('chrSwipeHint', 'Swipe up for Got it, down to pass')));
       f.side.appendChild(scoreboard(spec.scorerId));
 
       var cardEl = null;
@@ -443,19 +443,19 @@ window.FF = window.FF || {};
         var c = turn.card();
         FF.ui.clear(cardHost);
         if (!c) return;
-        cardEl = FF.ui.div('ch-cardface' + (c.twist ? ' has-twist' : ''));
-        cardEl.appendChild(chip(deckName(c.deck), 'ch-chip--deck', (deckById(c.deck) || {}).glyph));
-        cardEl.appendChild(FF.ui.div('ch-cardface__text' + (c.t.length > 22 ? ' is-long' : ''), c.t));
+        cardEl = FF.ui.div('chr-cardface' + (c.twist ? ' has-twist' : ''));
+        cardEl.appendChild(chip(deckName(c.deck), 'chr-chip--deck', (deckById(c.deck) || {}).glyph));
+        cardEl.appendChild(FF.ui.div('chr-cardface__text' + (c.t.length > 22 ? ' is-long' : ''), c.t));
         if (c.kind === 'title') {
-          var sig = FF.ui.div('ch-cardface__sig');
+          var sig = FF.ui.div('chr-cardface__sig');
           sig.appendChild(glyph(c.signal === 'song' ? 'music' : c.signal === 'tv' ? 'tv' : c.signal === 'film' ? 'film' : 'book'));
-          sig.appendChild(FF.ui.span('', signalLine(c.signal) + ' · ' + t('chNWords', '{n} words', { n: R.wordCount(c.t) })));
+          sig.appendChild(FF.ui.span('', signalLine(c.signal) + ' · ' + t('chrNWords', '{n} words', { n: R.wordCount(c.t) })));
           cardEl.appendChild(sig);
         }
         if (c.twist) {
-          var rib = FF.ui.div('ch-twist');
-          rib.appendChild(FF.ui.span('ch-twist__label', t('chTwist', 'Twist')));
-          rib.appendChild(FF.ui.span('', t('chTw_' + c.twist.id, c.twist.text) + ' (+1)'));
+          var rib = FF.ui.div('chr-twist');
+          rib.appendChild(FF.ui.span('chr-twist__label', t('chrTwist', 'Twist')));
+          rib.appendChild(FF.ui.span('', t('chrTw_' + c.twist.id, c.twist.text) + ' (+1)'));
           cardEl.appendChild(rib);
         }
         cardHost.appendChild(cardEl);
@@ -468,7 +468,7 @@ window.FF = window.FF || {};
         api.audio.play(got ? 'correct' : 'whoosh');
         if (got) turn.got(); else turn.pass();
         var n = turn.entries().filter(function (e) { return e.got; }).length;
-        gotChip.lastChild.textContent = t('chGotN', '{n} got', { n: n });
+        gotChip.lastChild.textContent = t('chrGotN', '{n} got', { n: n });
         if (cardEl) cardEl.classList.add(got ? 'is-got' : 'is-passed');
         later(function () { busy = false; if (!over) drawCard(); }, 220);
       }
@@ -532,31 +532,31 @@ window.FF = window.FF || {};
     function recap(spec, turn) {
       api.shell.hideTimer();
       var actor = actorOf(spec);
-      f = frame(api, 'ch--recap', null);
+      f = frame(api, 'chr--recap', null);
       f.chips.appendChild(turnChip());
-      var box = FF.ui.div('ch-card ch-recap');
+      var box = FF.ui.div('chr-card chr-recap');
       var entries = turn.entries();
-      var head = FF.ui.div('ch-recap__head');
-      var pts = FF.ui.span('ch-recap__pts', '0');
-      head.appendChild(FF.ui.el('h2', { class: 'ch-h2' }, t('chTurnOver', '{name}’s turn', { name: actor.name || t('playerLabel', 'Player') })));
+      var head = FF.ui.div('chr-recap__head');
+      var pts = FF.ui.span('chr-recap__pts', '0');
+      head.appendChild(FF.ui.el('h2', { class: 'chr-h2' }, t('chrTurnOver', '{name}’s turn', { name: actor.name || t('playerLabel', 'Player') })));
       head.appendChild(pts);
       box.appendChild(head);
-      box.appendChild(FF.ui.el('p', { class: 'ch-note' }, entries.length ? t('chFixHint', 'Tap a card to fix a mis-tap.') : t('chNoCards', 'No cards this time. Act faster next turn!')));
-      var list = FF.ui.el('ul', { class: 'ch-recap__list' });
+      box.appendChild(FF.ui.el('p', { class: 'chr-note' }, entries.length ? t('chrFixHint', 'Tap a card to fix a mis-tap.') : t('chrNoCards', 'No cards this time. Act faster next turn!')));
+      var list = FF.ui.el('ul', { class: 'chr-recap__list' });
       entries.forEach(function (e, i) {
         var li = FF.ui.el('li', {});
-        var b = FF.ui.el('button', { type: 'button', class: 'ch-recap__item' });
-        var mark = FF.ui.span('ch-recap__mark');
-        var text = FF.ui.span('ch-recap__text', e.card.t);
+        var b = FF.ui.el('button', { type: 'button', class: 'chr-recap__item' });
+        var mark = FF.ui.span('chr-recap__mark');
+        var text = FF.ui.span('chr-recap__text', e.card.t);
         b.appendChild(mark);
         b.appendChild(text);
-        if (e.twist) b.appendChild(FF.ui.span('ch-recap__twist', t('chTw_' + e.twist.id, e.twist.text)));
+        if (e.twist) b.appendChild(FF.ui.span('chr-recap__twist', t('chrTw_' + e.twist.id, e.twist.text)));
         function paint() {
           b.classList.toggle('is-got', e.got);
           b.setAttribute('aria-pressed', e.got ? 'true' : 'false');
           FF.ui.clear(mark);
           mark.appendChild(glyph(e.got ? 'check' : 'skip'));
-          b.setAttribute('aria-label', e.card.t + ': ' + (e.got ? t('chGotIt', 'Got it') : t('chPassed', 'Passed')));
+          b.setAttribute('aria-label', e.card.t + ': ' + (e.got ? t('chrGotIt', 'Got it') : t('chrPassed', 'Passed')));
         }
         b.addEventListener('click', function () { turn.flip(i); api.audio.play('tap'); paint(); refresh(); });
         paint();
@@ -564,12 +564,12 @@ window.FF = window.FF || {};
         list.appendChild(li);
       });
       box.appendChild(list);
-      var boardHost = FF.ui.div('ch-recap__board');
+      var boardHost = FF.ui.div('chr-recap__board');
       var last = k + 1 >= order.length;
       var nextSpec = last ? null : order[k + 1];
-      var nextLabel = last ? t('chSeeWinners', 'See who won')
-        : t('chNextActor', 'Next: {name}', { name: actorOf(nextSpec).name || t('playerLabel', 'Player') }) + (isTeam(nextSpec) ? ' (' + teamOf(nextSpec).name + ')' : '');
-      var go = button(nextLabel, 'ch-btn--go ch-btn--big', last ? 'trophy' : 'check', function () {
+      var nextLabel = last ? t('chrSeeWinners', 'See who won')
+        : t('chrNextActor', 'Next: {name}', { name: actorOf(nextSpec).name || t('playerLabel', 'Player') }) + (isTeam(nextSpec) ? ' (' + teamOf(nextSpec).name + ')' : '');
+      var go = button(nextLabel, 'chr-btn--go chr-btn--big', last ? 'trophy' : 'check', function () {
         var score = turn.score();
         if (score > 0) api.scoring.add(spec.scorerId, score, { correct: true });
         var guessed = turn.entries().filter(function (e) { return e.got; }).length;
@@ -587,7 +587,7 @@ window.FF = window.FF || {};
       var shown = 0;
       function refresh() {
         var s = turn.score();
-        pts.textContent = t('chPts', '{n} pts', { n: s });
+        pts.textContent = t('chrPts', '{n} pts', { n: s });
         FF.ui.clear(boardHost);
         boardHost.appendChild(scoreboard(spec.scorerId, s));
         shown = s;
@@ -600,26 +600,26 @@ window.FF = window.FF || {};
     /* ---------- 5. the winners ---------- */
     function podium() {
       api.shell.hideTimer();
-      f = frame(api, 'ch--podium', null);
+      f = frame(api, 'chr--podium', null);
       var ranked = scorers.slice().sort(function (a, b) { return scoreOf(b.id) - scoreOf(a.id); });
       var top = ranked.length ? scoreOf(ranked[0].id) : 0;
       var winners = ranked.filter(function (s) { return scoreOf(s.id) === top; });
-      var box = FF.ui.div('ch-podium');
+      var box = FF.ui.div('chr-podium');
       box.appendChild(bulbs());
-      box.appendChild(glyph('trophy', 'ch-podium__trophy'));
-      var title = winners.length > 1 ? t('chTie', 'It’s a tie!')
-        : ranked.length > 1 ? t('chWins', '{name} wins!', { name: winners[0].name || t('playerLabel', 'Player') })
-        : t('chGroupScore', '{n} cards guessed', { n: top });
-      box.appendChild(FF.ui.el('h2', { class: 'ch-podium__title' }, title));
+      box.appendChild(glyph('trophy', 'chr-podium__trophy'));
+      var title = winners.length > 1 ? t('chrTie', 'It’s a tie!')
+        : ranked.length > 1 ? t('chrWins', '{name} wins!', { name: winners[0].name || t('playerLabel', 'Player') })
+        : t('chrGroupScore', '{n} cards guessed', { n: top });
+      box.appendChild(FF.ui.el('h2', { class: 'chr-podium__title' }, title));
       var bestId = null;
       Object.keys(stats).forEach(function (id) { if (!bestId || stats[id].best > stats[bestId].best) bestId = id; });
       if (bestId && stats[bestId].best > 0) {
-        box.appendChild(FF.ui.el('p', { class: 'ch-note ch-note--gold' },
-          t('chBestActor', 'Best actor: {name}, {n} cards in {s} seconds', { name: stats[bestId].name || t('playerLabel', 'Player'), n: stats[bestId].best, s: cfg.seconds })));
+        box.appendChild(FF.ui.el('p', { class: 'chr-note chr-note--gold' },
+          t('chrBestActor', 'Best actor: {name}, {n} cards in {s} seconds', { name: stats[bestId].name || t('playerLabel', 'Player'), n: stats[bestId].best, s: cfg.seconds })));
       }
       f.stage.appendChild(box);
       f.side.appendChild(scoreboard(winners.length === 1 ? winners[0].id : null));
-      f.side.appendChild(button(t('seeResults', 'See results'), 'ch-btn--go ch-btn--big', 'trophy', end));
+      f.side.appendChild(button(t('seeResults', 'See results'), 'chr-btn--go chr-btn--big', 'trophy', end));
       api.audio.play('winner');
       if (FF.Confetti && FF.Confetti.burst && animationsOn()) { try { FF.Confetti.burst(120); } catch (e) { /* no canvas */ } }
     }
@@ -639,8 +639,8 @@ window.FF = window.FF || {};
   function displayStart(api) {
     var pool = R.pool(decks(), { decks: ['mix'], level: 'normal' });
     FF.Display.deck(api, {
-      title: t('chName', 'Charades'),
-      tag: t('chEveryoneActs', 'Everyone acts at once'),
+      title: t('chrName', 'Charades'),
+      tag: t('chrEveryoneActs', 'Everyone acts at once'),
       items: pool,
       interval: 30,
       render: function (item) { return FF.ui.div('dsp-word', item.t); },
