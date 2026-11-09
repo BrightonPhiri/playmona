@@ -20,7 +20,8 @@
   "cards": {
     "to": "assets/images/sketchback/{id}.webp",
     "size": 512,
-    "max_kb": 18,
+    "max_kb": 26,
+    "cut": "drawings",
     "cols": 4,
     "rows": 3
   },

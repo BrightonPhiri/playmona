@@ -20,6 +20,8 @@ Spec (tools/art/<gameId>.json):
   source   folder of raw art, relative to the repo
   cards    { to, size, max_kb, cols, rows }; "{id}" is replaced in to
   sheets   [{ file, title, items: [[id, description], ...] }] in reading order
+  cards.cut "drawings" cuts each separate drawing by where its centre is, for sheets whose
+           drawings cross the grid lines (default: by grid cell)
 """
 import json
 import os
@@ -90,6 +92,64 @@ def boxes_in_grid(alpha, cols, rows):
                 continue
             out.append((cell[0] + bb[0], cell[1] + bb[1], cell[0] + bb[2], cell[1] + bb[3]))
     return out, solid
+
+
+def boxes_by_drawing(alpha, cols, rows):
+    """For sheets whose drawings cross the grid lines: each separate drawing goes to the
+    cell its centre falls in, so nothing is clipped and no neighbour's line comes along.
+    Returns (boxes, masks): per cell the box of its drawings and a mask of just them."""
+    w, h = alpha.size
+    solid = np.asarray(alpha.point(lambda v: 255 if v > 40 else 0)) > 0
+    k = max(3, (min(w, h) // 300) | 1)
+    joined = Image.fromarray((solid * 255).astype(np.uint8)).filter(ImageFilter.MaxFilter(k))
+    lab = joined.convert('I')
+    arr = np.asarray(lab).copy()
+    labels, val = [], 1000
+    while True:
+        ys, xs = np.nonzero(arr == 255)
+        if not len(ys):
+            break
+        ImageDraw.floodfill(lab, (int(xs[0]), int(ys[0])), val)
+        arr = np.asarray(lab).copy()
+        part = (arr == val) & solid
+        if part.any():
+            pys, pxs = np.nonzero(part)
+            labels.append((val, int(part.sum()), float(pxs.mean()), float(pys.mean()),
+                           (int(pxs.min()), int(pys.min()), int(pxs.max()) + 1, int(pys.max()) + 1)))
+        val += 1
+    big = max([x[1] for x in labels] or [1])
+    cells = [[] for _ in range(cols * rows)]
+    for v, n, cx, cy, bb in labels:
+        if n < big * 0.004:
+            continue   # dust
+        bw, bh = bb[2] - bb[0], bb[3] - bb[1]
+        at_edge = bb[0] <= 3 or bb[1] <= 3 or bb[2] >= w - 3 or bb[3] >= h - 3
+        if at_edge and (bw > 12 * bh or bh > 12 * bw):
+            continue   # the paper's edge or a frame line, not a drawing
+        c = min(cols - 1, int(cx * cols / w))
+        r = min(rows - 1, int(cy * rows / h))
+        cells[r * cols + c].append((v, n, bb))
+    # A small blob far from its cell's main drawing is a speck (sheet edge, noise), not part of it.
+    reach = 0.15 * min(w / cols, h / rows)
+    for i, parts in enumerate(cells):
+        if not parts:
+            continue
+        main = max(parts, key=lambda p: p[1])
+        mx0, my0, mx1, my1 = main[2]
+        def near(bb):
+            return bb[2] >= mx0 - reach and bb[0] <= mx1 + reach and bb[3] >= my0 - reach and bb[1] <= my1 + reach
+        cells[i] = [p[0] for p in parts if p is main or p[1] >= main[1] * 0.05 or near(p[2])]
+    boxes, masks = [], []
+    for vals in cells:
+        if not vals:
+            boxes.append(None)
+            masks.append(None)
+            continue
+        m = np.isin(arr, vals)
+        ys, xs = np.nonzero(m & solid)
+        boxes.append((int(xs.min()), int(ys.min()), int(xs.max()) + 1, int(ys.max()) + 1))
+        masks.append(m)
+    return boxes, masks
 
 
 def main_span(counts, keep=0.02):
@@ -221,17 +281,27 @@ def main(argv):
         if check_only or (only and name not in only):
             continue
         rgba, alpha = alpha_mask(Image.open(src))
-        boxes, _ = boxes_in_grid(alpha, cols, rows)
+        by_drawing = cards.get('cut') == 'drawings'
+        if by_drawing:
+            boxes, masks = boxes_by_drawing(alpha, cols, rows)
+        else:
+            boxes, _ = boxes_in_grid(alpha, cols, rows)
         print('%s  (%dx%d)' % (s['file'], rgba.size[0], rgba.size[1]))
         for i, (pid, _) in enumerate(s['items']):
             box = boxes[i] if i < len(boxes) else None
             if not box:
                 problems.append('%s #%d %s: nothing found in its cell' % (name, i + 1, pid))
                 continue
-            if touches_cell_edge(box, cols, rows, rgba.size):
+            src_img = rgba
+            if by_drawing:
+                # Only this cell's drawings: a neighbour inside the box is left out.
+                keep = Image.fromarray((masks[i] * 255).astype(np.uint8))
+                src_img = rgba.copy()
+                src_img.putalpha(ImageChops.multiply(rgba.getchannel('A'), keep))
+            elif touches_cell_edge(box, cols, rows, rgba.size):
                 problems.append('%s #%d %s: runs into a neighbouring cell, check it' % (name, i + 1, pid))
             dest = path(cards['to'].replace('{id}', pid))
-            kb, q = save_webp(card_from(rgba, box, cards['size']), dest, cards['max_kb'])
+            kb, q = save_webp(card_from(src_img, box, cards['size']), dest, cards['max_kb'])
             total_kb += kb
             count += 1
             flag = '' if kb <= cards['max_kb'] else '  OVER %d KB' % cards['max_kb']
