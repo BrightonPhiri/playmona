@@ -156,3 +156,33 @@ test('sketchBack decode ignores rubbish', function () {
   assertEqual(r.decode('zz,??;;').filter((s) => s.length).length, 0);
   r.decode('a,b,c').forEach((s) => assertEqual(s.length % 2, 0, 'pairs'));
 });
+
+/* ---------- art ---------- */
+
+test('sketchBack art: every object is on exactly one sheet of 12, and the cover is listed', function () {
+  const spec = JSON.parse(read('tools/art/sketchBack.json'));
+  assertEqual(spec.game, 'sketchBack');
+  assertEqual(spec.cards.to, 'assets/images/sketchback/{id}.webp');
+  assertEqual(spec.cover.to, 'assets/images/covers/sketchBack.webp');
+  const seen = {};
+  spec.sheets.forEach((sh) => {
+    assert(sh.items.length <= 12 && sh.items.length > 0, sh.file + ' has ' + sh.items.length);
+    sh.items.forEach(([id, desc]) => {
+      assert(!seen[id], id + ' on two sheets');
+      seen[id] = true;
+      assert(typeof desc === 'string' && desc.length > 10, id + ' description');
+    });
+  });
+  ff().SketchData.LIST.forEach((o) => assert(seen[o.id], o.id + ' is on no sheet'));
+  assertEqual(Object.keys(seen).length, ff().SketchData.LIST.length, 'only library objects');
+  const md = read('docs/art/sketchBack-prompts.md');
+  spec.sheets.forEach((sh) => assert(md.indexOf(sh.file) !== -1, 'prompt pack names ' + sh.file));
+});
+
+test('sketchBack art: the sketch list names only files that exist', function () {
+  const F = loadFF(['js/data/sketchFiles.js']).SketchFiles;
+  assert(Array.isArray(F.ids), 'ids');
+  F.ids.forEach((id) => assert(fs.existsSync(path.join(ROOT, 'assets/images/sketchback', id + '.webp')), id + ' missing'));
+  const gen = require(path.join(ROOT, 'tools/sketchback/gen-files.js'));
+  assertEqual(JSON.stringify(gen.list()), JSON.stringify(F.ids), 'sketchFiles.js is up to date');
+});

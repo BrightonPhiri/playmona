@@ -1,0 +1,607 @@
+{
+  "game": "sketchBack",
+  "prompts": "docs/art/sketchBack-prompts.md",
+  "source": "assets/playmona_assets/sketchback",
+  "ids": [],
+  "sets": [],
+  "cover": {
+    "from": "cover.png",
+    "to": "assets/images/covers/sketchBack.webp",
+    "size": [
+      1086,
+      1448
+    ],
+    "max_kb": 240,
+    "focus": [
+      0.5,
+      0.5
+    ]
+  },
+  "cards": {
+    "to": "assets/images/sketchback/{id}.webp",
+    "size": 512,
+    "max_kb": 18,
+    "cols": 4,
+    "rows": 3
+  },
+  "sheets": [
+    {
+      "file": "sheets/sketches-01.png",
+      "title": "Sketches 1",
+      "items": [
+        [
+          "cat",
+          "a sitting cat seen from the front, pointed ears, whiskers and a curled tail"
+        ],
+        [
+          "dog",
+          "a friendly dog sitting side-on, floppy ears, collar and wagging tail"
+        ],
+        [
+          "fish",
+          "a simple fish side-on with a fan tail, one eye, a few scales and fins"
+        ],
+        [
+          "bird",
+          "a small round bird perched side-on, short beak, wing and tail feathers"
+        ],
+        [
+          "snail",
+          "a snail side-on with a spiral shell and two eye stalks"
+        ],
+        [
+          "snake",
+          "a snake coiled in an S shape with a forked tongue and a few pattern marks"
+        ],
+        [
+          "butterfly",
+          "a butterfly seen from above with four patterned wings and two antennae"
+        ],
+        [
+          "elephant",
+          "an elephant side-on with big ears, a curled trunk and small tusks"
+        ],
+        [
+          "turtle",
+          "a turtle side-on with a domed patterned shell, head and four legs"
+        ],
+        [
+          "rabbit",
+          "a rabbit sitting side-on with long upright ears and a fluffy tail"
+        ],
+        [
+          "owl",
+          "an owl seen from the front with big round eyes, ear tufts and folded wings"
+        ],
+        [
+          "spider",
+          "a spider seen from above with eight bent legs and a round body"
+        ]
+      ]
+    },
+    {
+      "file": "sheets/sketches-02.png",
+      "title": "Sketches 2",
+      "items": [
+        [
+          "duck",
+          "a duck side-on with a flat bill, a wing and webbed feet"
+        ],
+        [
+          "bee",
+          "a bee side-on with a striped body, two wings and a little stinger"
+        ],
+        [
+          "whale",
+          "a whale side-on with a big head, a tail fluke and a water spout"
+        ],
+        [
+          "giraffe",
+          "a whole giraffe side-on with a long neck, patches and small horns, sitting so it fits"
+        ],
+        [
+          "octopus",
+          "an octopus with a round head and eight curling tentacles with suckers"
+        ],
+        [
+          "frog",
+          "a frog sitting front three-quarter, big eyes on top, bent back legs"
+        ],
+        [
+          "crab",
+          "a crab seen from the front with two big claws, eye stalks and six legs"
+        ],
+        [
+          "horse",
+          "a horse standing side-on with a mane, a tail and hooves"
+        ],
+        [
+          "lion",
+          "a lion head and shoulders from the front with a big shaggy mane"
+        ],
+        [
+          "apple",
+          "an apple with a short stalk and one leaf"
+        ],
+        [
+          "banana",
+          "a single curved banana with a stalk end"
+        ],
+        [
+          "pizza",
+          "a triangle slice of pizza with a crust and round toppings"
+        ]
+      ]
+    },
+    {
+      "file": "sheets/sketches-03.png",
+      "title": "Sketches 3",
+      "items": [
+        [
+          "donut",
+          "a round ring doughnut with icing drips and sprinkles"
+        ],
+        [
+          "iceCream",
+          "an ice cream cone with two scoops and a criss-cross cone pattern"
+        ],
+        [
+          "cherry",
+          "two cherries joined at the stalks with a leaf"
+        ],
+        [
+          "carrot",
+          "a carrot with a pointed tip, a few lines across it and leafy top"
+        ],
+        [
+          "lollipop",
+          "a round spiral lollipop on a stick"
+        ],
+        [
+          "egg",
+          "a fried egg seen from above, wavy white edge and round yolk"
+        ],
+        [
+          "burger",
+          "a burger side-on with a sesame bun, lettuce, cheese and patty layers"
+        ],
+        [
+          "cake",
+          "a round layered birthday cake with icing drips and three candles"
+        ],
+        [
+          "pear",
+          "a pear with a stalk and one leaf"
+        ],
+        [
+          "strawberry",
+          "a strawberry with seed dots and a leafy top"
+        ],
+        [
+          "grapes",
+          "a bunch of grapes with a stalk and a leaf"
+        ],
+        [
+          "cupcake",
+          "a cupcake with a ridged paper case and a swirl of icing with a cherry"
+        ]
+      ]
+    },
+    {
+      "file": "sheets/sketches-04.png",
+      "title": "Sketches 4",
+      "items": [
+        [
+          "watermelon",
+          "a half-moon slice of watermelon with rind lines and seeds"
+        ],
+        [
+          "pineapple",
+          "a pineapple with a criss-cross skin pattern and a spiky leaf crown"
+        ],
+        [
+          "hotDog",
+          "a hot dog in a bun side-on with a squiggle of mustard"
+        ],
+        [
+          "sandwich",
+          "a triangle sandwich side-on showing layers of bread, cheese and lettuce"
+        ],
+        [
+          "croissant",
+          "a curved croissant with its rolled segments"
+        ],
+        [
+          "pretzel",
+          "a twisted knot pretzel with salt dots"
+        ],
+        [
+          "tree",
+          "a tree with a sturdy trunk, a few branches and a cloud-shaped leafy crown"
+        ],
+        [
+          "flower",
+          "a daisy-like flower with round petals, a centre, a stem and two leaves"
+        ],
+        [
+          "mushroom",
+          "a mushroom with a domed spotted cap and a thick stem"
+        ],
+        [
+          "sun",
+          "a round sun with straight rays all around"
+        ],
+        [
+          "cloud",
+          "a fluffy cloud with three or four rounded bumps"
+        ],
+        [
+          "moon",
+          "a crescent moon with a couple of small craters"
+        ]
+      ]
+    },
+    {
+      "file": "sheets/sketches-05.png",
+      "title": "Sketches 5",
+      "items": [
+        [
+          "star",
+          "a five-pointed star"
+        ],
+        [
+          "lightning",
+          "a zig-zag lightning bolt"
+        ],
+        [
+          "raindrop",
+          "a single teardrop-shaped raindrop with a small shine line"
+        ],
+        [
+          "mountain",
+          "two pointed mountain peaks with snow caps"
+        ],
+        [
+          "leaf",
+          "a single leaf with a stalk and veins"
+        ],
+        [
+          "cactus",
+          "a tall cactus with two arms, ribs and little spines, in a small pot"
+        ],
+        [
+          "rainbow",
+          "a rainbow arc of four bands ending in two small clouds"
+        ],
+        [
+          "wave",
+          "a curling ocean wave with foam lines"
+        ],
+        [
+          "acorn",
+          "an acorn with its textured cap and a little stalk"
+        ],
+        [
+          "feather",
+          "a single long feather with a quill and side barbs"
+        ],
+        [
+          "shell",
+          "a scallop seashell with ridges fanning out"
+        ],
+        [
+          "palmTree",
+          "a palm tree with a curved ringed trunk, big fronds and coconuts"
+        ]
+      ]
+    },
+    {
+      "file": "sheets/sketches-06.png",
+      "title": "Sketches 6",
+      "items": [
+        [
+          "volcano",
+          "a cone-shaped volcano with lava dripping and a puff of smoke"
+        ],
+        [
+          "snowflake",
+          "a six-armed snowflake with branches on each arm"
+        ],
+        [
+          "island",
+          "a small round island with one palm tree and waves around it"
+        ],
+        [
+          "pineCone",
+          "a pine cone with overlapping scales"
+        ],
+        [
+          "car",
+          "a small car side-on with two wheels, windows and door lines"
+        ],
+        [
+          "boat",
+          "a small sailing boat side-on with a hull, mast and triangle sail"
+        ],
+        [
+          "bicycle",
+          "a bicycle side-on with two spoked wheels, frame, seat and handlebars"
+        ],
+        [
+          "aeroplane",
+          "a passenger aeroplane seen from the side and slightly above, wings, tail and windows"
+        ],
+        [
+          "bus",
+          "a bus side-on with a row of windows, a door and wheels"
+        ],
+        [
+          "rocket",
+          "a rocket standing upright with fins, a round window and flame at the bottom"
+        ],
+        [
+          "truck",
+          "a truck side-on with a cab and a box trailer and three wheels"
+        ],
+        [
+          "scooter",
+          "a kick scooter side-on with a deck, two small wheels and a T handlebar"
+        ]
+      ]
+    },
+    {
+      "file": "sheets/sketches-07.png",
+      "title": "Sketches 7",
+      "items": [
+        [
+          "skateboard",
+          "a skateboard three-quarter view showing the deck and four wheels"
+        ],
+        [
+          "parachute",
+          "an open parachute canopy with lines down to a small hanging person shape"
+        ],
+        [
+          "trafficLight",
+          "a traffic light on a pole with three round lights"
+        ],
+        [
+          "anchor",
+          "a ship anchor with a ring on top, crossbar and curved arms"
+        ],
+        [
+          "train",
+          "a steam train engine side-on with a funnel, cab, wheels and puffs of smoke"
+        ],
+        [
+          "helicopter",
+          "a helicopter side-on with top rotor blades, tail rotor and skids"
+        ],
+        [
+          "motorbike",
+          "a motorbike side-on with two wheels, seat, handlebars and engine"
+        ],
+        [
+          "tractor",
+          "a farm tractor side-on with a big back wheel, small front wheel and cab"
+        ],
+        [
+          "submarine",
+          "a submarine side-on with a tower, periscope and round portholes"
+        ],
+        [
+          "hotAirBalloon",
+          "a hot air balloon with striped panels and a basket hanging below"
+        ],
+        [
+          "fireEngine",
+          "a fire engine side-on with a ladder on top, wheels and a light"
+        ],
+        [
+          "rollerSkate",
+          "a roller skate boot side-on with laces and four wheels"
+        ]
+      ]
+    },
+    {
+      "file": "sheets/sketches-08.png",
+      "title": "Sketches 8",
+      "items": [
+        [
+          "steeringWheel",
+          "a car steering wheel seen from the front with three spokes"
+        ],
+        [
+          "chair",
+          "a wooden chair three-quarter view with four legs and a back"
+        ],
+        [
+          "table",
+          "a simple table three-quarter view with four legs"
+        ],
+        [
+          "clock",
+          "a round wall clock with numbers shown as dashes and two hands"
+        ],
+        [
+          "door",
+          "a front door with panels, a handle and a small window"
+        ],
+        [
+          "window",
+          "a house window with four panes and open curtains"
+        ],
+        [
+          "cup",
+          "a mug with a handle and a little steam"
+        ],
+        [
+          "fork",
+          "a dinner fork with four prongs"
+        ],
+        [
+          "spoon",
+          "a spoon with a rounded bowl"
+        ],
+        [
+          "candle",
+          "a candle with a flame and a drip of wax"
+        ],
+        [
+          "lamp",
+          "a table lamp with a cone shade and round base"
+        ],
+        [
+          "television",
+          "an old-style television set with a screen, two knobs and antennae"
+        ]
+      ]
+    },
+    {
+      "file": "sheets/sketches-09.png",
+      "title": "Sketches 9",
+      "items": [
+        [
+          "bed",
+          "a bed side-on with a headboard, pillow and blanket"
+        ],
+        [
+          "sofa",
+          "a three-seat sofa from the front with cushions and armrests"
+        ],
+        [
+          "broom",
+          "a broom with a long handle and bristles"
+        ],
+        [
+          "bucket",
+          "a bucket with a handle"
+        ],
+        [
+          "fryingPan",
+          "a frying pan from above at an angle with a long handle"
+        ],
+        [
+          "lightBulb",
+          "a light bulb with a screw base and a filament inside"
+        ],
+        [
+          "teapot",
+          "a teapot side-on with a spout, lid, knob and handle"
+        ],
+        [
+          "bathtub",
+          "a clawfoot bathtub side-on with bubbles and a tap"
+        ],
+        [
+          "kettle",
+          "an electric kettle side-on with a handle, spout and switch"
+        ],
+        [
+          "toaster",
+          "a toaster with two slices of toast popping up"
+        ],
+        [
+          "umbrella",
+          "an open umbrella with panels and a curved handle"
+        ],
+        [
+          "key",
+          "an old-style key with a round loop and teeth"
+        ]
+      ]
+    },
+    {
+      "file": "sheets/sketches-10.png",
+      "title": "Sketches 10",
+      "items": [
+        [
+          "book",
+          "a closed hardback book three-quarter view with page lines"
+        ],
+        [
+          "pencil",
+          "a pencil lying at an angle with a sharpened tip and an eraser"
+        ],
+        [
+          "hat",
+          "a top hat with a band"
+        ],
+        [
+          "sock",
+          "a single sock with stripes at the top and a heel"
+        ],
+        [
+          "balloon",
+          "a round party balloon with a knot and a curly string"
+        ],
+        [
+          "envelope",
+          "a closed envelope with the flap lines"
+        ],
+        [
+          "shoe",
+          "a lace-up trainer side-on with a sole and laces"
+        ],
+        [
+          "glasses",
+          "a pair of glasses from the front with round lenses and arms"
+        ],
+        [
+          "scissors",
+          "a pair of open scissors with two finger loops"
+        ],
+        [
+          "present",
+          "a gift box with a ribbon and a bow on top"
+        ],
+        [
+          "crown",
+          "a king crown with five points and jewels"
+        ],
+        [
+          "hammer",
+          "a claw hammer with a handle"
+        ]
+      ]
+    },
+    {
+      "file": "sheets/sketches-11.png",
+      "title": "Sketches 11",
+      "items": [
+        [
+          "ladder",
+          "a wooden ladder standing slightly angled with rungs"
+        ],
+        [
+          "tShirt",
+          "a short-sleeved T-shirt laid flat from the front"
+        ],
+        [
+          "telephone",
+          "an old desk telephone with a rotary dial and handset on top"
+        ],
+        [
+          "backpack",
+          "a school backpack from the front with a pocket and straps"
+        ],
+        [
+          "camera",
+          "a camera from the front with a big lens, flash and button"
+        ],
+        [
+          "guitar",
+          "an acoustic guitar with a sound hole, strings and tuning pegs"
+        ],
+        [
+          "trophy",
+          "a trophy cup with two handles on a stepped base"
+        ],
+        [
+          "headphones",
+          "a pair of over-ear headphones with a headband"
+        ]
+      ]
+    }
+  ]
+}
