@@ -711,6 +711,333 @@ window.FF = window.FF || {};
     next();
   }
 
+  /* ================= online Race ================= */
+
+  /* Slots from the referee's masked letters ('_' a letter, ' ' between gap words, marks as they are). */
+  function maskedCells(masked) {
+    var cells = [];
+    String(masked || '').split('').forEach(function (ch) {
+      if (ch === '_') cells.push({ ch: '', letter: true });
+      else if (ch === ' ') cells.push({ ch: ' ', gap: true });
+      else cells.push({ ch: ch, fixed: true });
+    });
+    return cells;
+  }
+
+  /* Everyone gets the same saying at once; the server's referee (js/saywhat/referee.js) checks,
+     times and scores every answer. Each phone keeps its own look. */
+  function online(api, room) {
+    var f = frame(api, { className: 'sw--play sw--online' });
+    api.shell.hideTimer();
+    if (FF.Race && FF.Race.begin) FF.Race.begin(api.def.id, { rounds: 1, mode: 'parallel' });
+    var client = FF.SayWhatClient.create({ room: room, onChange: schedule });
+    var ended = false, pending = null, nudged = {}, autoScores = null;
+    var shownRound = null, board = null, card = null, cardRound = null, sentText = null, revealShown = null, finishedShown = false, opened = null;
+    var lastScores = {};
+    var ring = timerRing();
+    f.stage.appendChild(ring.el);
+    var cardHost = FF.ui.div('sw-cardhost');
+    f.stage.appendChild(cardHost);
+    var roundChip = chip('', 'sw-chip--round');
+    f.chips.appendChild(roundChip);
+    var levelHolder = FF.ui.span('');
+    f.chips.appendChild(levelHolder);
+    var flameHost = FF.ui.span('sw-flamehost');
+    f.chips.appendChild(flameHost);
+    var boardBox = FF.ui.div('sw-card-s sw-score');
+    f.side.appendChild(boardBox);
+    var ticker = setInterval(tick, 200);
+
+    function expected() { return room.meta && room.meta.swMatch; }
+    function who(uid) {
+      var p = (room.players || {})[uid] || {};
+      return { id: uid, uid: uid, name: p.name || t('playerLabel', 'Player'), avatar: p.avatar || null, color: p.color || null };
+    }
+    function schedule() { if (!pending) pending = setTimeout(function () { pending = null; render(); }, 0); }
+    function cleanup() {
+      if (ended) return;
+      ended = true;
+      clearInterval(ticker);
+      if (pending) clearTimeout(pending);
+      if (autoScores) clearTimeout(autoScores);
+      if (board) board.destroy();
+      client.stop();
+      if (FF.Race && FF.Race.end) { try { FF.Race.end(); } catch (e) { /* not running */ } }
+    }
+    function finish() { if (ended) return; cleanup(); api.end({}); }
+    function maybeNudge(key, due) {
+      if (nudged[key] || !due) return;
+      if (client.serverNow() - due < NUDGE_MS) return;
+      nudged[key] = true;
+      FF.SayWhatApi.nudge(room.code);
+    }
+
+    /* The race board: points, who has answered (a tick, never what), and the round's results at the reveal. */
+    function drawLeader(sw) {
+      FF.ui.clear(boardBox);
+      boardBox.appendChild(FF.ui.el('p', { class: 'sw-card-s__title' }, t('swRace', 'Saying race')));
+      var rows = FF.ui.el('ol', { class: 'sw-board' });
+      var reveal = sw.phase === 'reveal' && sw.last && sw.last.k === sw.k;
+      var order = (sw.order || []).slice().sort(function (a, b) { return ((sw.p[b] || {}).score || 0) - ((sw.p[a] || {}).score || 0); });
+      order.forEach(function (uid, i) {
+        var row = sw.p[uid] || {};
+        var li = FF.ui.el('li', { class: 'sw-row' + (uid === client.uid ? ' is-me' : '') });
+        li.appendChild(FF.ui.span('sw-row__place', String(i + 1)));
+        var ava = FF.ui.span('sw-row__ava');
+        if (FF.Players && FF.Players.avatarEl) ava.appendChild(FF.Players.avatarEl(who(uid), ''));
+        li.appendChild(ava);
+        li.appendChild(FF.ui.span('sw-row__name', who(uid).name + (uid === client.uid ? ' ' + t('youTag', '(you)') : '')));
+        var pts = FF.ui.span('sw-row__pts', FF.util.formatNumber(row.score || 0));
+        li.appendChild(pts);
+        if ((sw.phase === 'open' || sw.phase === 'ready') && row.inK === sw.k) {
+          var tickEl = FF.ui.span('sw-row__in', '✓');
+          tickEl.setAttribute('aria-label', t('swAnswered', 'answered'));
+          li.appendChild(tickEl);
+        }
+        if (reveal) {
+          var res = sw.last.results[uid] || {};
+          li.classList.add(res.ok ? 'is-good' : 'is-bad');
+          var before = lastScores[uid] != null ? lastScores[uid] : (row.score || 0) - (res.points || 0);
+          if (before !== (row.score || 0) && G() && G().countUp) G().countUp(pts, before, row.score || 0, 900);
+        }
+        lastScores[uid] = row.score || 0;
+        rows.appendChild(li);
+      });
+      boardBox.appendChild(rows);
+      FF.ui.clear(flameHost);
+      var me = sw.p[client.uid];
+      if (me) flameHost.appendChild(flame(me.streak || 0));
+    }
+
+    function waiting(title, sub) {
+      FF.ui.clear(cardHost);
+      FF.ui.clear(f.panel);
+      var w = FF.ui.div('sw-wait');
+      w.appendChild(FF.ui.div('sw-wait__spin'));
+      w.appendChild(FF.ui.el('h2', { class: 'sw-h' }, title));
+      if (sub) w.appendChild(FF.ui.el('p', { class: 'sw-note' }, sub));
+      f.panel.appendChild(w);
+    }
+
+    function tick() {
+      if (ended) return;
+      var sw = client.view().sw;
+      if (!sw || sw.matchId !== expected()) return;
+      var now = client.serverNow();
+      if (sw.phase === 'open' && sw.round) ring.set((sw.closeAt - now) / 1000, sw.round.seconds || 1);
+      var due = sw.phase === 'starting' ? sw.readyAt : sw.phase === 'ready' ? sw.openAt : sw.phase === 'open' ? sw.closeAt : sw.phase === 'reveal' ? sw.nextAt : 0;
+      if (due) maybeNudge(sw.phase + sw.k, due);
+    }
+
+    function render() {
+      if (ended) return;
+      if (!f.root.isConnected) { cleanup(); return; }
+      var v = client.view();
+      var sw = v.sw;
+      if (!sw || (expected() && sw.matchId !== expected()) || !FF.SayWhatClient.ready(sw)) {
+        if (!sw || sw.matchId !== expected()) waiting(t('swGettingReady', 'Choosing the sayings…'), t('swGettingReadySub', 'Everyone gets the same saying at the same moment.'));
+        return;
+      }
+      FF.ui.clear(levelHolder);
+      levelHolder.appendChild(chip(levelName(sw.settings.level), 'sw-chip--lv sw-lv-' + sw.settings.level));
+      roundChip.textContent = sw.k >= 0 ? t('swRoundOf', 'Saying {r} of {n}', { r: sw.k + 1, n: sw.total }) : t('gsGetReady', 'Get ready');
+      drawLeader(sw);
+      if (sw.phase === 'ended') { if (!finishedShown) showEnd(sw, v); return; }
+      if (sw.phase === 'starting') {
+        ring.idle();
+        waiting(t('swBrief', 'Fill in the missing word.'), sw.settings.answer === 'choice'
+          ? t('swBriefChoice', 'Pick the missing word from four. Faster right answers score more, and a streak adds a bonus. One answer per saying.')
+          : t('swBriefTiles', 'Spell the missing word with the letter tiles. Faster right answers score more, and a streak adds a bonus. One answer per saying.'));
+        return;
+      }
+      if (!v.seated) {
+        waiting(t('gsWatching', 'This game started without you'), t('gsWatchingSub', 'You can join the next one.'));
+        return;
+      }
+      var key = sw.matchId + '|' + sw.k;
+      if (shownRound !== key) buildRound(sw, key);
+      if (sw.phase === 'open' && board && opened !== key) {
+        opened = key;
+        board.open();
+        api.audio.play('land');
+        if (FF.Nav && FF.Nav.focusFirst) FF.Nav.focusFirst(board.el);
+      }
+      var me = sw.p[v.uid] || {};
+      if ((sw.phase === 'open' || sw.phase === 'ready') && me.inK === sw.k && board && !board.sent) {
+        board.sent = true;
+        board.lock();
+      }
+      if (sw.phase === 'reveal' && revealShown !== key) showReveal(sw, v, key);
+    }
+
+    function buildRound(sw, key) {
+      shownRound = key;
+      revealShown = null;
+      sentText = null;
+      if (board) board.destroy();
+      FF.ui.clear(cardHost);
+      FF.ui.clear(f.panel);
+      f.root.classList.remove('is-revealed');
+      ring.idle();
+      var rd = sw.round;
+      var choice = sw.settings.answer === 'choice';
+      cardRound = { words: rd.words, gaps: [], cells: choice ? [] : maskedCells(rd.cells), tiles: rd.tiles || [], letters: [], choices: rd.choices || [] };
+      card = sayingCard(cardRound);
+      cardHost.appendChild(card.el);
+      var lock = FF.ui.el('p', { class: 'sw-locked', 'aria-live': 'polite' });
+      function onSubmit(text) {
+        if (board.sent) return;
+        if (!client.send(text)) return;
+        board.sent = true;
+        sentText = text;
+        board.lock();
+        api.audio.play('select');
+        lock.textContent = t('bqLockedIn', 'Answer locked in. Waiting for everyone…');
+        lock.classList.add('is-on');
+      }
+      var inner = choice ? choiceBoard(api, cardRound, onSubmit) : tilesBoard(api, cardRound, card, onSubmit);
+      board = {
+        el: inner.el, sent: false,
+        open: inner.open, finish: inner.finish, destroy: inner.destroy,
+        lock: function () { inner.el.classList.add('is-locked'); if (inner.lock) inner.lock(); }
+      };
+      f.panel.appendChild(board.el);
+      f.panel.appendChild(lock);
+      f.panel.appendChild(FF.ui.div('sw-after'));
+    }
+
+    function showReveal(sw, v, key) {
+      revealShown = key;
+      var last = sw.last;
+      var mine = last.results[v.uid] || { ok: false, points: 0, text: '' };
+      var choice = sw.settings.answer === 'choice';
+      cardRound.gaps = last.gaps;
+      if (board) board.finish(!!mine.ok, last.target);
+      card.reveal(!!mine.ok, mine.ok ? '' : (mine.text || ''), last.meaning, packName(last.pack));
+      ring.set(0, 1);
+      f.root.classList.add('is-revealed');
+      api.audio.play(mine.ok ? (((sw.p[v.uid] || {}).streak || 0) >= 3 ? 'streak' : 'correct') : 'wrong');
+      if (mine.ok && animationsOn() && FF.Confetti) FF.Confetti.burst(40);
+      var lockEl = f.panel.querySelector('.sw-locked');
+      if (lockEl) lockEl.classList.remove('is-on');
+      var after = f.panel.querySelector('.sw-after') || f.panel.appendChild(FF.ui.div('sw-after'));
+      FF.ui.clear(after);
+      var text = mine.text || sentText;
+      after.appendChild(revealBar({
+        state: mine.ok ? 'good' : text ? 'bad' : 'late', points: mine.points || 0,
+        breakdown: mine.ok ? breakdownOf(mine, sw) : null,
+        said: mine.ok ? '' : saidLine(text, null, choice)
+      }));
+      // Everyone's result for this saying, quickest right answer first.
+      var list = FF.ui.el('ul', { class: 'sw-results' });
+      (sw.order || []).slice().sort(function (a, b) {
+        var ra = last.results[a] || {}, rb = last.results[b] || {};
+        return (rb.ok ? 1 : 0) - (ra.ok ? 1 : 0) || (ra.ms || 0) - (rb.ms || 0);
+      }).forEach(function (uid) {
+        var r = last.results[uid] || {};
+        var li = FF.ui.el('li', { class: 'sw-results__row ' + (r.ok ? 'is-good' : 'is-bad') });
+        li.appendChild(FF.ui.span('sw-results__name', who(uid).name));
+        li.appendChild(FF.ui.span('sw-results__said', r.ok ? (r.ms / 1000).toFixed(1) + 's' : r.text ? '“' + String(r.text).toLowerCase() + '”' : t('swNoAnswer', 'no answer')));
+        li.appendChild(FF.ui.span('sw-results__pts', '+' + FF.util.formatNumber(r.points || 0)));
+        list.appendChild(li);
+      });
+      after.appendChild(list);
+      after.appendChild(FF.ui.el('p', { class: 'sw-note sw-nextin' }, sw.k + 1 >= sw.total ? t('gsFinalSoon', 'Final results coming up…') : t('swNextSoon', 'Next saying in a moment…')));
+    }
+
+    /* The referee sends the total and the streak bonus; the rest is worked out the same way it scored. */
+    function breakdownOf(mine, sw) {
+      var rd = sw.round || {};
+      var base = 100 * (R.WEIGHT[rd.level] || 1);
+      var two = rd.two ? 50 : 0;
+      var bonus = mine.bonus || 0;
+      return { base: base, speed: Math.max(0, (mine.points || 0) - base - two - bonus), two: two, streak: bonus };
+    }
+
+    function showEnd(sw, v) {
+      finishedShown = true;
+      if (board) board.destroy();
+      board = null;
+      ring.idle();
+      ring.el.style.display = 'none';
+      FF.ui.clear(cardHost);
+      FF.ui.clear(f.panel);
+      f.root.classList.add('is-recap');
+      var rows = (sw.result && sw.result.rows) || [];
+      var box = FF.ui.div('sw-recap sw-recap--room');
+      var top = rows[0];
+      var meWon = top && top.uid === v.uid && !(rows[1] && rows[1].place === 1);
+      box.appendChild(FF.ui.el('h2', { class: 'sw-h sw-h--xl' }, meWon ? t('swYouWin', 'You win the saying race!')
+        : top ? t('swWinner', '{name} wins the saying race!', { name: who(top.uid).name }) : t('gsOver', 'Game over')));
+      var podium = FF.ui.div('sw-podium');
+      [1, 0, 2].forEach(function (i) {
+        var r = rows[i];
+        if (!r) return;
+        var col = FF.ui.div('sw-podium__col sw-podium__col--' + (i + 1));
+        var ava = FF.ui.span('sw-podium__ava');
+        if (FF.Players && FF.Players.avatarEl) ava.appendChild(FF.Players.avatarEl(who(r.uid), ''));
+        col.appendChild(ava);
+        col.appendChild(FF.ui.span('sw-podium__name', who(r.uid).name));
+        col.appendChild(FF.ui.span('sw-podium__pts', FF.util.formatNumber(r.points || 0)));
+        var step = FF.ui.div('sw-podium__step');
+        step.appendChild(FF.ui.span('', String(r.place || i + 1)));
+        col.appendChild(step);
+        podium.appendChild(col);
+      });
+      box.appendChild(podium);
+      var list = FF.ui.el('ol', { class: 'sw-board sw-board--big' });
+      rows.forEach(function (r) {
+        var li = FF.ui.el('li', { class: 'sw-row' + (r.uid === v.uid ? ' is-me' : '') + (r.place === 1 ? ' is-top' : '') });
+        li.appendChild(FF.ui.span('sw-row__place', String(r.place)));
+        var ava = FF.ui.span('sw-row__ava');
+        if (FF.Players && FF.Players.avatarEl) ava.appendChild(FF.Players.avatarEl(who(r.uid), ''));
+        li.appendChild(ava);
+        var nm = FF.ui.span('sw-row__name');
+        nm.appendChild(FF.ui.span('', who(r.uid).name));
+        var bits = [t('qmRightOf', '{c}/{a} right', { c: r.right || 0, a: sw.total })];
+        if (r.best > 1) bits.push(t('qmBestStreak', 'best streak {n}', { n: r.best }));
+        nm.appendChild(FF.ui.span('sw-row__meta', bits.join(' · ')));
+        li.appendChild(nm);
+        li.appendChild(FF.ui.span('sw-row__pts', FF.util.formatNumber(r.points || 0)));
+        list.appendChild(li);
+      });
+      box.appendChild(list);
+      var go = FF.ui.el('button', { type: 'button', class: 'sw-btn sw-btn--go sw-btn--big' });
+      go.appendChild(FF.Icons.icon('trophy'));
+      go.appendChild(FF.ui.span('', t('srtSeeScores', 'See scores')));
+      go.addEventListener('click', function () { api.audio.play('click'); finish(); });
+      box.appendChild(go);
+      f.panel.appendChild(box);
+      api.audio.play(meWon ? 'winner' : 'roundEnd');
+      if (meWon && animationsOn() && FF.Confetti) FF.Confetti.burst(100);
+      if (FF.Nav && FF.Nav.focusFirst) FF.Nav.focusFirst(box);
+      if (!autoScores) autoScores = setTimeout(finish, AUTO_SCORES_MS);
+    }
+
+    render();
+  }
+
+  /* ================= room settings ================= */
+
+  function roomFields() {
+    function opt(label, value) { return { label: label, value: value }; }
+    return [
+      { key: 'answer', label: t('gsAnswerStyle', 'How do you answer?'), options: R.ANSWERS.map(function (a) { return opt(answerName(a), a); }) },
+      { key: 'level', label: t('gcLevel', 'Level'), options: ['normal', 'hard'].map(function (l) { return opt(levelName(l), l); }) },
+      { key: 'time', label: t('swTimeEach', 'Time for each saying'), options: ['quick', 'normal', 'relaxed'].map(function (x) { return opt(timeName(x), x); }) },
+      { key: 'rounds', label: t('swSayings', 'Sayings'), options: R.ROUNDS.map(function (n) { return opt(String(n), n); }) }
+    ];
+  }
+
+  var ROOM = {
+    minPlayers: R.MIN_PLAYERS,
+    defaults: R.STANDARD,
+    fields: function () { return roomFields(); },
+    sanitize: function (s) { return R.sanitizeRoom(s); },
+    summary: function (s) { var c = R.sanitizeRoom(s); return [levelName(c.level), answerName(c.answer), t('swNSayings', '{n} sayings', { n: c.rounds })].join(' · '); },
+    start: function (room, pick) { return FF.SayWhatApi.start(room, pick); }
+  };
+
   /* ================= turns (pure) ================= */
 
   /* Whose go it is, and each player's points and streak. */
@@ -757,10 +1084,10 @@ window.FF = window.FF || {};
       'After each one, see the whole saying and what it means.',
       'Pick Everyday, African proverbs, Bible or Kids sayings, and a Speech bubble or Chalkboard look.'
     ],
-    room: null,
+    room: ROOM,
     start: function (api) {
       var room = FF.Room && FF.Room.current();
-      if (racingRoom(api) && room && FF.SayWhatGame.online) { FF.SayWhatGame.online(api, room); return; }
+      if (racingRoom(api) && room) { online(api, room); return; }
       // One number decides the whole deal, drawn first so a challenge deals the same everywhere.
       var seed = Math.floor(rand0() * 4294967296);
       var playMode = playModeOf(api.config);
@@ -777,6 +1104,7 @@ window.FF = window.FF || {};
   FF.SayWhatGame = {
     frame: frame, sayingCard: sayingCard, choiceBoard: choiceBoard, tilesBoard: tilesBoard, revealBar: revealBar,
     timerRing: timerRing, flame: flame, chip: chip, summary: summary, packName: packName, levelName: levelName,
-    answerName: answerName, timeName: timeName, look: look, AUTO_SCORES_MS: AUTO_SCORES_MS, NUDGE_MS: NUDGE_MS
+    answerName: answerName, timeName: timeName, look: look, AUTO_SCORES_MS: AUTO_SCORES_MS, NUDGE_MS: NUDGE_MS,
+    online: online, maskedCells: maskedCells, room: ROOM
   };
 })();

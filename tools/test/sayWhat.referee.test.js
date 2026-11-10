@@ -331,3 +331,85 @@ test('saywhat referee: a restarted referee carries on from the saved state with 
   assert(m.sw().last.results.p1.ok, 'p1\'s kept answer still scores');
   again.stop();
 });
+
+/* ---------- the phone's client ---------- */
+
+async function phone(m, uid) {
+  const FF = loadFF(FILES.concat(['js/saywhat/client.js']));
+  const T = FF.Transport.dev({ bus: m.bus, root: 'rooms/ROOM01' });
+  await T.connect();
+  T.serverNow = () => m.clock.now;
+  let changes = 0;
+  const c = FF.SayWhatClient.create({ room: { transport: T, uid, code: 'ROOM01' }, onChange: () => { changes++; } });
+  await flush();
+  return { FF, c, changes: () => changes };
+}
+
+test('saywhat client: one answer per saying, sent only while it is open, and the referee takes it', async function () {
+  const m = await match();
+  const a = await phone(m, 'p1');
+  const b = await phone(m, 'p2');
+  await m.clock.advance(1000 + m.RF.BRIEF_MS + 10);
+  assertEqual(a.c.view().sw.phase, 'ready');
+  assertEqual(a.c.send(m.right()), false, 'not before the clock starts');
+  await m.open();
+  assert(a.c.view().seated && a.c.view().me, 'p1 is seated');
+  assertEqual(a.c.send('  ' + m.right() + ' '), true);
+  assertEqual(a.c.send('again'), false, 'one answer per saying');
+  await flush();
+  assertEqual(m.sw().p.p1.inK, 0, 'the referee took it');
+  assertEqual(b.c.send('zebra'), true);
+  await flush();
+  assertEqual(m.sw().phase, 'reveal');
+  assert(m.sw().last.results.p1.ok && !m.sw().last.results.p2.ok);
+  assertEqual(a.c.send('late'), false, 'not after the reveal');
+  assert(a.changes() > 0, 'the screen hears about changes');
+  a.c.stop();
+  b.c.stop();
+});
+
+test('saywhat client: a phase is drawn only once its round has arrived in full', async function () {
+  const m = await match();
+  const { FF } = await phone(m, 'p1');
+  const C = FF.SayWhatClient;
+  const copy = () => C.tidy(JSON.parse(JSON.stringify(m.sw())));
+  assert(C.ready(copy()), 'starting is ready');
+  await m.clock.advance(1000 + m.RF.BRIEF_MS + 10);
+  assert(C.ready(copy()), 'a full ready view is ready');
+  assert(Array.isArray(copy().round.words) && copy().round.words.length > 0, 'words come back as a list');
+  for (const field of ['words', 'cells', 'tiles', 'seconds']) {
+    const v = copy();
+    delete v.round[field];
+    assert(!C.ready(v), 'ready without ' + field + ' is not');
+  }
+  const stale = copy();
+  stale.round.k = stale.k - 1;
+  assert(!C.ready(stale), 'last round\'s saying is not this one');
+  await m.open();
+  await m.answer('p1', m.right());
+  await m.answer('p2', m.right());
+  assert(C.ready(copy()), 'a full reveal is ready');
+  const rev = copy();
+  delete rev.last;
+  assert(!C.ready(rev), 'a reveal without the answer is not');
+  assert(!C.ready(null) && !C.ready({}));
+  const ch = await match({ settings: { answer: 'choice' } });
+  await ch.open();
+  const v = C.tidy(JSON.parse(JSON.stringify(ch.sw())));
+  assert(C.ready(v) && Array.isArray(v.round.choices) && v.round.choices.length === 4, 'choices come back as a list');
+  assert(v.round.choices.indexOf(ch.right()) !== -1, 'the right words are one of them');
+  delete v.round.choices;
+  assert(!C.ready(v), 'choice round without its choices is not ready');
+});
+
+test('saywhat client: the answer is sent as spelt, only extra spaces tidied', async function () {
+  const m = await match();
+  const a = await phone(m, 'p1');
+  await m.open();
+  const sent = [];
+  m.bus.subscribe((k) => { const v = m.bus.read('rooms/ROOM01'); if (v && v.swInbox && v.swInbox.p1) Object.values(v.swInbox.p1).forEach((c) => { if (c && c.text) sent.push(c.text); }); });
+  assertEqual(a.c.send('  Moss   stones '), true);
+  await flush();
+  assert(sent.indexOf('Moss stones') !== -1, 'sent: ' + JSON.stringify(sent));
+  a.c.stop();
+});

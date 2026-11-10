@@ -5088,3 +5088,33 @@ button.imp-card:focus-visible { outline: 3px solid var(--focus-ring); outline-of
 }
 .sw-punct { margin-left: -4px; font-family: var(--swx-font); font-weight: 700; }
 @media (max-width: 899px) { .sw--play .sw-chip--lv { display: none; } }
+
+/* ---------- Say What? online Race ---------- */
+.sw-row.is-me { outline: 2px solid color-mix(in srgb, var(--swx-accent) 70%, transparent); outline-offset: -2px; }
+.sw-row.is-good { background: var(--swx-good-soft); }
+.sw-row.is-bad { background: var(--swx-bad-soft); }
+.sw-row__in { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--swx-good); color: #fff; font-size: .8rem; font-weight: 800; }
+.sw-wait { display: flex; flex-direction: column; align-items: center; gap: var(--sp-2); width: 100%; max-width: 560px; padding: var(--sp-4) var(--sp-3); text-align: center; border-radius: 22px; background: var(--swx-panel); border: 1.5px solid var(--swx-panel-edge); color: var(--swx-ink); }
+.sw-wait__spin { width: 44px; height: 44px; border-radius: 50%; border: 4px solid color-mix(in srgb, var(--swx-accent) 30%, transparent); border-top-color: var(--swx-accent); animation: sw-spin 1s linear infinite; }
+@keyframes sw-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .sw-wait__spin { animation: none; } }
+.sw .is-locked { pointer-events: none; opacity: .75; }
+.sw-locked { min-height: 1.4em; margin: 6px 0 0; text-align: center; font-weight: 700; color: var(--swx-ink-soft); opacity: 0; transition: opacity .2s; }
+.sw-locked.is-on { opacity: 1; }
+.sw-results { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 4px; width: 100%; }
+.sw-results__row { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 10px; color: var(--swx-ink); }
+.sw-results__row.is-good { background: var(--swx-good-soft); }
+.sw-results__row.is-bad { background: var(--swx-bad-soft); }
+.sw-results__name { font-weight: 700; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sw-results__said { color: var(--swx-ink-soft); font-size: .92rem; }
+.sw-results__pts { font-family: var(--swx-font); font-weight: 800; min-width: 3.2em; text-align: right; }
+.sw-nextin { margin-top: 8px; text-align: center; }
+.sw-podium { display: flex; justify-content: center; align-items: flex-end; gap: var(--sp-2); margin: var(--sp-2) 0; }
+.sw-podium__col { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 96px; color: var(--swx-ink); }
+.sw-podium__ava { width: 48px; height: 48px; }
+.sw-podium__name { font-weight: 700; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sw-podium__pts { font-family: var(--swx-font); font-weight: 800; }
+.sw-podium__step { display: grid; place-items: center; width: 100%; border-radius: 12px 12px 4px 4px; font-family: var(--swx-font); font-weight: 800; font-size: 1.4rem; color: var(--swx-accent-ink); background: linear-gradient(180deg, var(--swx-accent-hi), var(--swx-accent)); }
+.sw-podium__col--1 .sw-podium__step { height: 92px; }
+.sw-podium__col--2 .sw-podium__step { height: 64px; opacity: .85; }
+.sw-podium__col--3 .sw-podium__step { height: 44px; opacity: .7; }

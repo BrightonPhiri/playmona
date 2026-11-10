@@ -120,6 +120,7 @@ const ORDER = [
   'js/games/sketchBack.js',
   'js/data/sayings.js',
   'js/saywhat/rules.js',
+  'js/saywhat/client.js',
   'js/games/sayWhat.js'
 ];
 
