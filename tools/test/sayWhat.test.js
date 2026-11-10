@@ -335,3 +335,34 @@ test('turns: next goes round the players and wraps', function () {
   for (let i = 0; i < 5; i++) { seen.push(s.order[s.cur]); s = T.next(s); }
   assertEqual(seen, ['a', 'b', 'c', 'a', 'b']);
 });
+
+test('daily and challenge: the standard round, the same for everyone, with no history read or written', function () {
+  const FF = loadFF(GAME);
+  const S = FF.SayWhatGame;
+  const R = FF.SayWhatRules;
+  const seen = {};
+  R.items(R.STANDARD).slice(0, 200).forEach((it) => { seen[it.key] = 1; });
+  const mine = { level: 'hard', packs: ['kids'], answer: 'choice', time: 'quick', rounds: 20 };
+  ['daily', 'challenge'].forEach((kind) => {
+    const config = {}; config[kind] = kind === 'daily' ? '2026-11-10' : { seed: 1 };
+    const a = S.dealFor(config, mine, 12345, 1, seen);
+    const b = S.dealFor(config, mine, 12345, 1, {});
+    assertEqual(JSON.stringify(a.cfg), JSON.stringify(R.sanitize(R.STANDARD)), kind + ' plays the standard');
+    assertEqual(a.items.map((i) => i.key).join(), b.items.map((i) => i.key).join(), kind + ' ignores history');
+    assertEqual(a.seen, null, kind + ' writes no history');
+    assertEqual(a.items.length, 10);
+  });
+  const solo = S.dealFor({}, mine, 12345, 1, {});
+  assertEqual(solo.cfg.answer, 'choice', 'a solo run plays the player\'s own settings');
+  assert(solo.seen && Object.keys(solo.seen).length === solo.items.length, 'and remembers what it dealt');
+  const turns = S.dealFor({}, R.STANDARD, 7, 3, {});
+  assertEqual(turns.items.length, 30, 'turns deal sayings x players');
+});
+
+test('sayWhat cover: processed and in the asset manifest', function () {
+  const fs = require('fs');
+  const path = require('path');
+  const ROOT = path.resolve(__dirname, '..', '..');
+  assert(fs.existsSync(path.join(ROOT, 'assets/images/covers/sayWhat.webp')), 'cover file');
+  assert(/"sayWhat"/.test(fs.readFileSync(path.join(ROOT, 'js/data/assetManifest.js'), 'utf8')), 'has a cover');
+});

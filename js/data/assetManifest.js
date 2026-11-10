@@ -24,6 +24,7 @@ FF.AssetManifest = {
     "pictureQuiz": "ccce77b0",
     "quickTap": "1020b24c",
     "rememberSequence": "f1924cf8",
+    "sayWhat": "3295ea65",
     "sketchBack": "64466eee",
     "sortRush": "50e83102",
     "stacoend": "4f134bbc",

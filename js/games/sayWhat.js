@@ -478,6 +478,23 @@ window.FF = window.FF || {};
     return t('swYouGave', 'You spelt “{x}”.', { x: shown });
   }
 
+  /* Daily, challenge and shared deals play the standard round from the seed alone, so everyone
+     gets the same sayings: no history is read or written. */
+  function sharedDeal(config) { return !!(config && (config.sharedDeal || config.daily || config.challenge)); }
+
+  /* The round's settings and sayings. seen: this device's history (null when shared). Returns
+     { cfg, items, seen: the history to save, or null, capped, reset }. */
+  function dealFor(config, cfg, seed, players, seen) {
+    var shared = sharedDeal(config);
+    cfg = R.sanitize(config && (config.daily || config.challenge) ? R.STANDARD : cfg);
+    var history = shared ? null : (seen || {});
+    var dealt = R.deal(cfg, seed, cfg.rounds * Math.max(1, players || 1), history || undefined);
+    return {
+      cfg: cfg, items: dealt.items, capped: dealt.capped, reset: dealt.reset,
+      seen: history ? R.markSeen(dealt.reset ? {} : history, dealt.items) : null
+    };
+  }
+
   function play(api, cfg, seed, playMode) {
     cfg = R.sanitize(cfg);
     var config = api.config;
@@ -485,10 +502,9 @@ window.FF = window.FF || {};
     var turns = playMode === 'turn' && scorers.length > 1;
     if (!turns) scorers = scorers.slice(0, 1);
     var n = scorers.length;
-    var shared = !!config.sharedDeal || !!config.daily || !!config.challenge;
-    var seen = shared ? null : seenGet();
-    var dealt = R.deal(cfg, seed, cfg.rounds * n, seen || undefined);
-    if (!shared) seenSave(R.markSeen(dealt.reset ? {} : seen, dealt.items));
+    var dealt = dealFor(config, cfg, seed, n, sharedDeal(config) ? null : seenGet());
+    cfg = dealt.cfg;
+    if (dealt.seen) seenSave(dealt.seen);
     var list = dealt.items;
     var rounds = list.length;
     var turn = FF.SayWhatTurns.create(scorers.map(function (e) { return e.id; }));
@@ -1105,6 +1121,6 @@ window.FF = window.FF || {};
     frame: frame, sayingCard: sayingCard, choiceBoard: choiceBoard, tilesBoard: tilesBoard, revealBar: revealBar,
     timerRing: timerRing, flame: flame, chip: chip, summary: summary, packName: packName, levelName: levelName,
     answerName: answerName, timeName: timeName, look: look, AUTO_SCORES_MS: AUTO_SCORES_MS, NUDGE_MS: NUDGE_MS,
-    online: online, maskedCells: maskedCells, room: ROOM
+    online: online, maskedCells: maskedCells, room: ROOM, dealFor: dealFor
   };
 })();
