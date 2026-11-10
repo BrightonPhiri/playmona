@@ -14,6 +14,9 @@
      board.open();            // when the clock starts (hidden until then)
      board.finish(correct);   // lock it and show the answer in the slots
 
+   Optional board opts.onChange(chars) hears the slot letters (null
+   when empty) after every change (Say What? fills its saying live).
+
    Tap a tile to send it to the next empty slot, tap a filled slot to
    send it back; Undo, Clear and Check. A full row checks itself, and
    Check also sends a shorter accepted name (USA from United States).
@@ -249,6 +252,7 @@ window.FF = window.FF || {};
       undoBtn.disabled = locked || !history.length;
       clearBtn.disabled = locked || !history.length;
       checkBtn.disabled = locked || !history.length;
+      if (opts.onChange) opts.onChange(slots.map(function (s) { return s.tile ? s.tile.ch : null; }));
     }
 
     // Capture phase: these keys belong to the tiles, not the app's own
