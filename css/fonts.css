@@ -51,3 +51,11 @@
   font-display: swap;
   src: url('../assets/fonts/atkinson-700.woff2') format('woff2');
 }
+
+@font-face {
+  font-family: 'Patrick Hand';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../assets/fonts/patrickhand-400.woff2') format('woff2');
+}

@@ -117,7 +117,10 @@ const ORDER = [
   'js/sketchback/rules.js',
   'js/sketchback/pad.js',
   'js/sketchback/client.js',
-  'js/games/sketchBack.js'
+  'js/games/sketchBack.js',
+  'js/data/sayings.js',
+  'js/saywhat/rules.js',
+  'js/games/sayWhat.js'
 ];
 
 const sandbox = {

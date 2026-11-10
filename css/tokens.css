@@ -145,6 +145,18 @@
   --lgo-bright: #3d9bff; --lgo-bright-deep: #1d5fd1;
   --lgo-ink: #ffffff; --lgo-ink-soft: #d6ecff; --lgo-ink-dim: #a9cbf0;
   --lgo-tile: #ffffff; --lgo-tile-2: #e4eef9; --lgo-tile-ink: #0a2a55;
+  /* Say What? (js/games/sayWhat.js): two looks, the same in both themes.
+     Speech bubble, as the cover: cream to apricot sky, a deep-teal bubble, cream word pills, gold.
+     Chalkboard: a green board in a wooden frame, chalk-white words, yellow chalk, wooden letter blocks. */
+  --sw-sky-top: #fff4dc; --sw-sky-mid: #ffd9a3; --sw-sky-bottom: #ffb36b;
+  --sw-bubble: #0f766e; --sw-bubble-hi: #14a394; --sw-bubble-deep: #084d47;
+  --sw-cream: #fff8ec; --sw-cream-2: #f3e4c8; --sw-ink: #0b3b36; --sw-ink-soft: #3f615c;
+  --sw-gold: #f5b82e; --sw-gold-hi: #ffd978; --sw-gold-deep: #b27a0a; --sw-gold-ink: #3b2500;
+  --sw-good: #15803d; --sw-good-soft: #dcfce7; --sw-bad: #c2322f; --sw-bad-soft: #fde2e1;
+  --sw-chalk-board: #1f3a2e; --sw-chalk-board-2: #16291f; --sw-chalk-ink: #f4f1e8; --sw-chalk-dim: #b9c4b5;
+  --sw-chalk-yellow: #fde68a; --sw-chalk-pink: #f9b4d6; --sw-chalk-green: #a7f3c4; --sw-chalk-red: #fca5a5;
+  --sw-wood: #8b5a2b; --sw-wood-hi: #b8834b; --sw-wood-deep: #4e3014;
+  --sw-block: #ecd2a4; --sw-block-hi: #f8e6c4; --sw-block-ink: #3a2410;
   /* Charades (js/games/charades.js): a little theatre that is the same in both themes, as the
      cover: plum-black velvet, crimson curtains, a gold spotlight and marquee bulbs, cream cards. */
   --chr-velvet: #12060c; --chr-velvet-2: #2a0c1a; --chr-plum: #4a1530;

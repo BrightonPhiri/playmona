@@ -55,7 +55,9 @@ const FONTS = [
   { id: 'fredoka',   family: 'Fredoka',               url: 'https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&display=swap' },
   { id: 'baloo',     family: 'Baloo 2',               url: 'https://fonts.googleapis.com/css2?family=Baloo+2:wght@400..800&display=swap' },
   { id: 'quicksand', family: 'Quicksand',             url: 'https://fonts.googleapis.com/css2?family=Quicksand:wght@300..700&display=swap' },
-  { id: 'atkinson',  family: 'Atkinson Hyperlegible', url: 'https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap' }
+  { id: 'atkinson',  family: 'Atkinson Hyperlegible', url: 'https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap' },
+  // Say What?'s chalkboard look.
+  { id: 'patrickhand', family: 'Patrick Hand',        url: 'https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap' }
 ];
 
 async function downloadFonts() {

@@ -24,6 +24,7 @@ All are licensed under the **SIL Open Font License 1.1** (distributed via Google
 - **Baloo 2** — designed by Ek Type.
 - **Quicksand** — designed by Andrew Paglinawan.
 - **Atkinson Hyperlegible** — designed by the Braille Institute.
+- **Patrick Hand** — designed by Patrick Wagesreiter (Say What?'s chalkboard look).
 
 ## Icons
 
