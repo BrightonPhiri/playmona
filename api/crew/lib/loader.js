@@ -70,7 +70,13 @@ const FILES = [
   // Its answer checker is the shared one above.
   'js/data/sketches.js',
   'js/sketchback/rules.js',
-  'js/sketchback/referee.js'
+  'js/sketchback/referee.js',
+  // Say What?: the referee the runner hosts and the crew seats' brain, with the sayings.
+  // Its checker and letter tiles are the shared ones above.
+  'js/data/sayings.js',
+  'js/saywhat/rules.js',
+  'js/saywhat/referee.js',
+  'js/crew/brains/sayWhat.js'
 ];
 
 function stubElement() {

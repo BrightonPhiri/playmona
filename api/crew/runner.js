@@ -82,6 +82,7 @@ async function main() {
   const crosswords = new Map(); // Mini Crossword matchId -> { ref, transport }
   const logorushes = new Map(); // Logo Rush matchId -> { ref, transport }
   const sketchbacks = new Map(); // SketchBack matchId -> { ref, transport }
+  const saywhats = new Map(); // Say What? matchId -> { ref, transport }
   let lastActive = Date.now();
   const isQuiet = (w) => FF.Words.isQuiet(w);
   const isWord = (w) => FF.Words.isWord(w);
@@ -439,9 +440,44 @@ async function main() {
     if (sketchbacks.size) lastActive = Date.now();
   }, log);
 
+  /* Say What?: the runner is the referee for every online match the API started (saywhatRuns). */
+  function startSayWhat(matchId, run) {
+    if (!run || !run.roomCode || !run.seats) return;
+    const code = run.roomCode;
+    const transport = roomTransport(rtdb, code, serverNow, (m) => log(matchId + ': ' + m));
+    const stopIt = () => {
+      const r = saywhats.get(matchId);
+      if (!r) return;
+      r.ref.stop();
+      transport.close();
+      saywhats.delete(matchId);
+      lastActive = Date.now();
+    };
+    const ref = FF.SayWhatReferee.create({
+      run, room: transport,
+      store: {
+        load: () => rtdb.get('saywhatState/' + matchId),
+        save: (s) => rtdb.set('saywhatState/' + matchId, s)
+      },
+      randomInt: (n) => crypto.randomInt(n),
+      log: (m) => log(matchId + ': ' + m),
+      report: (event, payload) => api('report', Object.assign({}, payload, { matchId, event })),
+      onEnd: () => setTimeout(stopIt, 60000)
+    });
+    saywhats.set(matchId, { ref, transport });
+    log('refereeing Say What? ' + matchId + ' in ' + code);
+    ref.start().catch((e) => { log(matchId + ': referee failed: ' + (e && e.message)); stopIt(); });
+  }
+
+  const saywhatRuns = rtdb.stream('saywhatRuns', (all) => {
+    all = all || {};
+    Object.keys(all).forEach((id) => { if (!saywhats.has(id)) startSayWhat(id, all[id]); });
+    if (saywhats.size) lastActive = Date.now();
+  }, log);
+
   async function beat() {
     try {
-      const res = await api('heartbeat', { pid: process.pid, matches: Array.from(playing.keys()), imposters: Array.from(referees.keys()), wordflow: Array.from(wordflows.keys()), ballswap: Array.from(ballswaps.keys()), sortrush: Array.from(sortrushes.keys()), geospin: Array.from(geospins.keys()), whatsmissing: Array.from(whatsmissings.keys()), crossword: Array.from(crosswords.keys()), logorush: Array.from(logorushes.keys()), sketchback: Array.from(sketchbacks.keys()) });
+      const res = await api('heartbeat', { pid: process.pid, matches: Array.from(playing.keys()), imposters: Array.from(referees.keys()), wordflow: Array.from(wordflows.keys()), ballswap: Array.from(ballswaps.keys()), sortrush: Array.from(sortrushes.keys()), geospin: Array.from(geospins.keys()), whatsmissing: Array.from(whatsmissings.keys()), crossword: Array.from(crosswords.keys()), logorush: Array.from(logorushes.keys()), sketchback: Array.from(sketchbacks.keys()), saywhat: Array.from(saywhats.keys()) });
       (res.drop || []).forEach((id) => { const m = playing.get(id); if (m) m.ctl.stop(); });
       (res.dropImposters || []).forEach((id) => {
         const r = referees.get(id);
@@ -479,10 +515,14 @@ async function main() {
         const r = sketchbacks.get(id);
         if (r) { r.ref.stop(); r.transport.close(); sketchbacks.delete(id); }
       });
+      (res.dropSaywhat || []).forEach((id) => {
+        const r = saywhats.get(id);
+        if (r) { r.ref.stop(); r.transport.close(); saywhats.delete(id); }
+      });
     } catch (e) {
       log('heartbeat failed: ' + e.message);
     }
-    if (!playing.size && !referees.size && !wordflows.size && !ballswaps.size && !sortrushes.size && !geospins.size && !whatsmissings.size && !crosswords.size && !logorushes.size && !sketchbacks.size && Date.now() - lastActive > (cfg.idleMinutes || 5) * 60000) {
+    if (!playing.size && !referees.size && !wordflows.size && !ballswaps.size && !sortrushes.size && !geospins.size && !whatsmissings.size && !crosswords.size && !logorushes.size && !sketchbacks.size && !saywhats.size && Date.now() - lastActive > (cfg.idleMinutes || 5) * 60000) {
       log('nothing to play; stopping');
       runs.close();
       imposterRuns.close();
@@ -494,6 +534,7 @@ async function main() {
       crosswordRuns.close();
       logorushRuns.close();
       sketchbackRuns.close();
+      saywhatRuns.close();
       try { await api('stopped', { pid: process.pid }); } catch (e) { /* the API notices anyway */ }
       process.exit(0);
     }
@@ -512,6 +553,7 @@ async function main() {
     crosswordRuns.close();
     logorushRuns.close();
     sketchbackRuns.close();
+    saywhatRuns.close();
     playing.forEach((m) => { try { m.transport.close(); } catch (e) { /* gone */ } });
     referees.forEach((r) => { try { r.ref.stop(); r.transport.close(); } catch (e) { /* gone */ } });
     wordflows.forEach((r) => { try { r.ref.stop(); r.transport.close(); } catch (e) { /* gone */ } });
@@ -522,6 +564,7 @@ async function main() {
     crosswords.forEach((r) => { try { r.ref.stop(); r.transport.close(); } catch (e) { /* gone */ } });
     logorushes.forEach((r) => { try { r.ref.stop(); r.transport.close(); } catch (e) { /* gone */ } });
     sketchbacks.forEach((r) => { try { r.ref.stop(); r.transport.close(); } catch (e) { /* gone */ } });
+    saywhats.forEach((r) => { try { r.ref.stop(); r.transport.close(); } catch (e) { /* gone */ } });
     cleanup();   // free the lock for the new copy
     try {
       const child = spawn(process.execPath, process.argv.slice(1), { detached: true, stdio: 'inherit' });

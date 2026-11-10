@@ -105,6 +105,8 @@ try {
     if ($abandonedLr) echo "Ended $abandonedLr abandoned Logo Rush match(es).\n";
     $abandonedSkb = $app->sketchback()->sweep($now);
     if ($abandonedSkb) echo "Ended $abandonedSkb abandoned SketchBack match(es).\n";
+    $abandonedSw = $app->saywhat()->sweep($now);
+    if ($abandonedSw) echo "Ended $abandonedSw abandoned Say What? match(es).\n";
 } catch (Throwable $e) {
     fwrite(STDERR, 'Crew cleanup failed: ' . $e->getMessage() . "\n");
 }

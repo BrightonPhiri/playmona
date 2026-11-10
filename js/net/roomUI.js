@@ -43,7 +43,9 @@ window.FF = window.FF || {};
     // Brands picked and answers checked by the server's referee (js/logorush/referee.js).
     'logoRush',
     // Objects dealt and answers checked by the server's referee (js/sketchback/referee.js), same clock for everyone.
-    'sketchBack'
+    'sketchBack',
+    // Sayings dealt and answers checked by the server's referee (js/saywhat/referee.js), same clock for everyone.
+    'sayWhat'
     // Brain Battle is deliberately absent: its format is a personal
     // streak run per player, so there is no shared question to race for.
   ];

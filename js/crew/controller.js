@@ -230,6 +230,21 @@ window.FF = window.FF || {};
       wmSeats.start();
     }
 
+    /* Say What? online is refereed by the server: its seats recognise the masked saying and
+       answer through the inbox while the round is open (js/crew/brains/sayWhat.js). */
+    var swSeats = null, swKey = null;
+    function onSayWhat() {
+      var playing = meta && meta.status === 'playing' && meta.gameId === 'sayWhat' && meta.swMatch && FF.CrewSayWhat;
+      var key = playing ? gameKey() : null;
+      if (swSeats && swKey !== key) { swSeats.stop(); swSeats = null; }
+      if (!playing || swSeats) return;
+      swKey = key;
+      swSeats = FF.CrewSayWhat.create({
+        transport: T, uids: function () { return uids.filter(present); }, crew: crew, later: later, log: log
+      });
+      swSeats.start();
+    }
+
     function onMeta(v) {
       meta = v;
       if (!meta) { stop(); return; }
@@ -240,6 +255,7 @@ window.FF = window.FF || {};
       onImposters();
       onWordFlow();
       onWhatsMissing();
+      onSayWhat();
     }
 
     function stop() {
@@ -248,6 +264,7 @@ window.FF = window.FF || {};
       if (impSeats) { impSeats.stop(); impSeats = null; }
       if (wfSeats) { wfSeats.stop(); wfSeats = null; }
       if (wmSeats) { wmSeats.stop(); wmSeats = null; }
+      if (swSeats) { swSeats.stop(); swSeats = null; }
       offs.forEach(function (off) { try { off(); } catch (e) { /* already closed */ } });
       offs = [];
       pending.forEach(function (id) { timers.clearTimeout(id); });

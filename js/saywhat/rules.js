@@ -255,6 +255,35 @@ window.FF = window.FF || {};
     return { ok: ok, near: near };
   }
 
+  /* ---------- solving (crew) ---------- */
+
+  /* The saying behind a masked view, as a person who knows it would recognise it: the shown
+     words and each gap's length. Returns { id, gaps } or null. Used by the crew brain, which
+     never sees the referee's seed. */
+  var solveIndex = null;
+  function signature(words) {
+    return words.map(function (w) { return typeof w === 'string' ? w : '{' + w.gap + ':' + w.len + '}'; }).join('\u0001');
+  }
+  function solve(words) {
+    if (words && !Array.isArray(words) && typeof words === 'object') {
+      words = Object.keys(words).sort(function (a, b) { return a - b; }).map(function (k) { return words[k]; });
+    }
+    if (!Array.isArray(words) || !words.length) return null;
+    if (!solveIndex) {
+      solveIndex = {};
+      data().rows.forEach(function (r) {
+        var gaps = data().gapsOf(r.text);
+        var sets = gaps.map(function (g) { return [g]; });
+        if (r.two) sets.push(gaps.filter(function (g) { return r.two.indexOf(g) !== -1; }));
+        sets.forEach(function (set) { solveIndex[signature(wordsOf(r, set))] = { id: r.id, gaps: set }; });
+      });
+    }
+    var hit = solveIndex[signature(words.map(function (w) {
+      return typeof w === 'string' ? w : { gap: Number(w && w.gap), len: Number(w && w.len) };
+    }))];
+    return hit ? { id: hit.id, gaps: hit.gaps.slice() } : null;
+  }
+
   /* ---------- points ---------- */
 
   /* streak: right answers in a row, this one included. */
@@ -278,6 +307,6 @@ window.FF = window.FF || {};
     sanitize: sanitize, sanitizeRoom: sanitizeRoom, isStandard: isStandard,
     row: rowById, rows: rows, items: items, levelCounts: levelCounts,
     deal: deal, markSeen: markSeen, roundAt: roundAt, check: check, same: same,
-    secondsFor: secondsFor, points: points
+    secondsFor: secondsFor, points: points, solve: solve
   };
 })();
