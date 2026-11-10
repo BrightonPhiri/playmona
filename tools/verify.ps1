@@ -28,7 +28,7 @@ if ($missing.Count) { Write-Host "MISSING (referenced but not on disk):" -Foregr
 if ($unref) { Write-Host "UNREFERENCED (on disk but not in play.html):" -ForegroundColor Yellow; $unref | ForEach-Object { Write-Host "  $_" } }
 
 Write-Host "`n=== 3. Game registry ===" -ForegroundColor Cyan
-$gameIds = @('letterRush','wordScramble','wordBuilder','wordChain','miniCrossword','familyQuiz','trueOrFalse','brainBattle','guessWho','pictureQuiz','memoryMatch','pictureMemory','whatsMissing','rememberSequence','quickTap','colorReaction','numberChallenge','higherOrLower','charades','visualCharades','dontSayIt','drawingChallenge','pictionary','wouldYouRather','thisOrThat','whoIsMostLikely','guessCountry','guessLandmark','guessAnimal','guessFood','guessObject','guessSport','guessVehicle','spotDifference','picturePuzzle','hiddenObject','visualRiddle','whereInWorld','mapChallenge','capitalChallenge','guessFlag','imposters','wordFlow')
+$gameIds = @('letterRush','wordScramble','wordChain','miniCrossword','familyQuiz','trueOrFalse','guessWho','pictureQuiz','memoryMatch','whatsMissing','rememberSequence','quickTap','colorReaction','numberChallenge','higherOrLower','charades','dontSayIt','drawingChallenge','pictionary','wouldYouRather','thisOrThat','whoIsMostLikely','guessCountry','guessLandmark','guessAnimal','guessFood','guessObject','guessSport','guessVehicle','spotDifference','picturePuzzle','hiddenObject','visualRiddle','whereInWorld','mapChallenge','capitalChallenge','imposters','wordFlow')
 $allGameCode = (Get-ChildItem -Recurse -Filter *.js -Path (Join-Path $root 'js\games') | ForEach-Object { Get-Content $_.FullName -Raw }) -join "`n"
 foreach ($id in $gameIds) {
   if ($allGameCode -notmatch "id:\s*['""]$id['""]") { Write-Host "NOT REGISTERED: $id" -ForegroundColor Red }
@@ -37,7 +37,7 @@ Write-Host "Checked $($gameIds.Count) expected game ids."
 
 Write-Host "`n=== 4. Data namespace ===" -ForegroundColor Cyan
 $dataCode = (Get-ChildItem -Recurse -Filter *.js -Path (Join-Path $root 'js\data') | ForEach-Object { Get-Content $_.FullName -Raw }) -join "`n"
-foreach ($prop in @('questions','trueFalse','guessWho','pictureQuiz','dictionary','scramble','categories','missingLetters','crosswords','countries','charades','dontSayIt','drawingPrompts','pictionary','wouldYouRather','thisOrThat','whoIsMostLikely','finishSentence','describeIt','animals','food','landmarks','objects','sports','vehicles','visualCharades','visualRiddles')) {
+foreach ($prop in @('questions','trueFalse','guessWho','pictureQuiz','dictionary','scramble','categories','missingLetters','crosswords','countries','charades','dontSayIt','drawingPrompts','pictionary','wouldYouRather','thisOrThat','whoIsMostLikely','finishSentence','describeIt','animals','food','landmarks','objects','sports','vehicles','visualRiddles')) {
   if ($dataCode -notmatch $prop) { Write-Host "MISSING DATA: $prop" -ForegroundColor Red }
 }
 Write-Host "Checked data properties."

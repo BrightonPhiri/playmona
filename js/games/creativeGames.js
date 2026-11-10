@@ -1,7 +1,6 @@
 /* ============================================================
    PLAYMONA — creativeGames.js
-   Four creative/party games (Charades has its own file, games/charades.js):
-   - visualCharades     (act out an illustrated scene)
+   Three creative/party games (Charades has its own file, games/charades.js):
    - dontSayIt          (describe without forbidden words)
    - drawingChallenge   (draw, then players vote)
    - pictionary         (draw, teammates guess)
@@ -44,7 +43,7 @@ window.FF = window.FF || {};
   }
 
 
-  /* ---------- shared "reveal then act" flow (charades / visualCharades / dontSayIt) ---------- */
+  /* ---------- shared "reveal then act" flow (Don't Say It) ---------- */
   function runRevealGame(api, items, opts) {
     var root = api.shell.root;
     FF.ui.clear(root);
@@ -262,69 +261,6 @@ window.FF = window.FF || {};
 
   /* ---------- get items with fallbacks ---------- */
   function party() { return (FF.data && FF.data.party) ? FF.data.party : null; }
-  function visual() { return (FF.data && FF.data.visual) ? FF.data.visual : null; }
-
-  /* ============================================================
-     2. VISUAL CHARADES
-     ============================================================ */
-  FF.registerGame({
-    id: 'visualCharades',
-    name: 'Visual Charades',
-    description: 'Act out the picture on screen for everyone to guess.',
-    category: 'creative',
-    icon: '🖼️',
-    players: [1, 8],
-    difficulty: 'Easy',
-    duration: 6,
-    modes: ['solo', 'turn', 'team'],
-    defaultMode: 'turn',
-    howToPlay: [
-      'Pass the device to the active player.',
-      'Tap Reveal to see a picture.',
-      'Act out what the picture shows.',
-      'Others guess; tap Correct when solved.'
-    ],
-    display: true,
-    displayStart: function (api) {
-      var v = visual();
-      var items = (v && v.visualCharades && v.visualCharades.length) ? v.visualCharades : null;
-      if (!items) {
-        var p = party();
-        if (!p || !p.charades || !p.charades.length) { showMissing(api, 'No visual charades yet'); return; }
-        items = p.charades.map(function (c) { return { name: c.word, svg: null }; });
-      }
-      FF.Display.deck(api, {
-        title: 'Visual Charades',
-        tag: 'Everyone plays: act it out',
-        items: items,
-        interval: 30,
-        render: function (item) {
-          if (item.svg) return [api.assets.illustration(item.svg, 'dsp-illustration', item.name), FF.ui.div('dsp-word', item.name)];
-          return FF.ui.div('dsp-word', item.name);
-        },
-        label: function () { return 'Act out the picture — others guess.'; }
-      });
-    },
-    start: function (api) {
-      var v = visual();
-      var items = (v && v.visualCharades && v.visualCharades.length) ? v.visualCharades : null;
-      if (items) {
-        runRevealGame(api, items, {
-          instruction: 'Act out the picture — others guess aloud.',
-          render: function (item) {
-            return [api.assets.illustration(item.svg, 'rv-img', item.name), FF.ui.div('rv-word', item.name)];
-          }
-        });
-      } else {
-        var p = party();
-        if (!p || !p.charades || !p.charades.length) { showMissing(api, 'No visual charades yet'); return; }
-        runRevealGame(api, p.charades, {
-          instruction: 'Act it out — others guess aloud.',
-          render: function (item) { return FF.ui.div('rv-word', item.word); }
-        });
-      }
-    }
-  });
 
   /* ============================================================
      3. DON'T SAY IT

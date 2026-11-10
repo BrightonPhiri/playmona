@@ -17,7 +17,7 @@ window.FF = window.FF || {};
     'bibleQuiz', 'trueOrFalse', 'guessWho', 'pictureQuiz', 'familyQuiz',
     'numberChallenge', 'visualRiddle', 'colorReaction',
     'guessCountry', 'guessLandmark', 'guessAnimal', 'guessFood', 'guessObject', 'guessSport', 'guessVehicle',
-    'whereInWorld', 'mapChallenge', 'capitalChallenge', 'guessFlag'
+    'whereInWorld', 'mapChallenge', 'capitalChallenge'
   ];
 
   var U = FF.CrewBrains.util;

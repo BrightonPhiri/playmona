@@ -41,7 +41,7 @@ function crewGames() {
 test('crew brains: every crew game is online and has a brain', function () {
   const online = onlineGames();
   const games = crewGames();
-  assertEqual(games.length, 25);
+  assertEqual(games.length, 24);
   games.forEach((g) => {
     assert(online.indexOf(g) !== -1, g + ' is not an online game');
     assert(B.forGame(g), 'no brain for ' + g);
@@ -89,11 +89,11 @@ test('crew brains: brains do not touch the room\'s seeded random stream', functi
 });
 
 test('crew brains: skill, level and room difficulty move accuracy and speed the right way', function () {
-  const weak = many('guessFlag', { skill: 15, level: 'easy' });
-  const strong = many('guessFlag', { skill: 90, level: 'hard' });
+  const weak = many('capitalChallenge', { skill: 15, level: 'easy' });
+  const strong = many('capitalChallenge', { skill: 90, level: 'hard' });
   assert(rate(strong) > rate(weak) + 0.3, 'accuracy ' + rate(weak) + ' vs ' + rate(strong));
   assert(avgMs(strong) < avgMs(weak), 'strong players answer sooner');
-  assert(rate(many('guessFlag', { difficulty: 'hard' })) < rate(many('guessFlag', { difficulty: 'easy' })), 'hard rooms are harder');
+  assert(rate(many('capitalChallenge', { difficulty: 'hard' })) < rate(many('capitalChallenge', { difficulty: 'easy' })), 'hard rooms are harder');
   assert(rate(weak) > 0.15 && rate(strong) < 0.98, 'nobody is perfect or hopeless');
   const fast = many('quickTap', { skill: 90, level: 'hard' }).filter((p) => p.answer.kind === 'tap');
   const slow = many('quickTap', { skill: 10, level: 'easy' }).filter((p) => p.answer.kind === 'tap');

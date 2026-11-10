@@ -224,7 +224,8 @@ test('ch registered: own file, old block gone, scripts listed in order', functio
   assert(/id:\s*'charades'/.test(read('js/games/charades.js')), 'registered in charades.js');
   const creative = read('js/games/creativeGames.js');
   assert(!/id:\s*'charades'/.test(creative), 'no longer in creativeGames.js');
-  assert(/id:\s*'visualCharades'/.test(creative) && /id:\s*'dontSayIt'/.test(creative), 'the other reveal games stay');
+  assert(/id:\s*'dontSayIt'/.test(creative), 'Don\'t Say It stays');
+  assert(!/id:\s*'visualCharades'/.test(creative), 'Visual Charades was removed');
   [['play.html', 'js/'], ['tools/test-seed.html', '../js/'], ['tools/load-check.js', 'js/']].forEach(function (pair) {
     const src = read(pair[0]);
     const at = (f) => src.indexOf(pair[1] + f);

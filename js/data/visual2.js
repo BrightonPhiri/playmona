@@ -65,50 +65,6 @@ window.FF = window.FF || {};
     ['Tram', '<rect x="30" y="70" width="140" height="70" rx="10" fill="#dc2626"/><rect x="40" y="80" width="24" height="20" rx="3" fill="#bfdbfe"/><rect x="74" y="80" width="24" height="20" rx="3" fill="#bfdbfe"/><rect x="108" y="80" width="24" height="20" rx="3" fill="#bfdbfe"/><circle cx="70" cy="140" r="14" fill="#111"/><circle cx="130" cy="140" r="14" fill="#111"/><line x1="60" y1="40" x2="60" y2="70" stroke="#111" stroke-width="5"/><line x1="140" y1="40" x2="140" y2="70" stroke="#111" stroke-width="5"/>']
   ];
 
-  /* Visual charades: a stick figure plus a distinctive prop. */
-  var CHARADES = [
-    ['Riding a bicycle', person('#0f172a') + '<circle cx="60" cy="150" r="22" fill="none" stroke="#111" stroke-width="6"/><circle cx="130" cy="150" r="22" fill="none" stroke="#111" stroke-width="6"/><path d="M60 150 L95 150 L95 108 L130 150" stroke="#111" stroke-width="5" fill="none"/>'],
-    ['Brushing teeth', person('#0f172a', 'up') + '<rect x="120" y="66" width="34" height="10" rx="5" fill="#0ea5e9"/>'],
-    ['Taking a selfie', person('#0f172a', 'up') + '<rect x="118" y="56" width="26" height="34" rx="4" fill="#111"/><circle cx="131" cy="70" r="6" fill="#38bdf8"/>'],
-    ['Eating spaghetti', person('#0f172a', 'up') + '<circle cx="126" cy="74" r="16" fill="#fff" stroke="#111" stroke-width="3"/><path d="M120 64 q4 -10 0 -18 M132 64 q-4 -10 0 -18" stroke="#eab308" stroke-width="4" fill="none"/>'],
-    ['Walking a dog', person('#0f172a', 'out') + '<circle cx="60" cy="150" r="12" fill="#a16207"/><rect x="50" y="150" width="20" height="14" rx="6" fill="#a16207"/><line x1="100" y1="110" x2="70" y2="150" stroke="#111" stroke-width="3"/>'],
-    ['Playing guitar', person('#0f172a', 'out') + '<circle cx="120" cy="110" r="18" fill="#a16207"/><rect x="134" y="96" width="8" height="40" rx="4" fill="#713f12"/>'],
-    ['Swimming', person('#0f172a', 'out') + '<path d="M20 90 q30 -24 60 0 q30 24 60 0" stroke="#0ea5e9" stroke-width="10" fill="none" stroke-linecap="round"/>'],
-    ['Dancing', person('#ec4899', 'up') + '<circle cx="60" cy="40" r="8" fill="#facc15"/><circle cx="140" cy="44" r="8" fill="#facc15"/>'],
-    ['Sleeping', '<rect x="60" y="120" width="120" height="40" rx="10" fill="#3b82f6"/><circle cx="120" cy="110" r="14" fill="#0f172a"/><path d="M150 104 q10 6 20 0" stroke="#0f172a" stroke-width="4" fill="none"/><text x="146" y="86" font-size="24" fill="#111">z</text><text x="162" y="74" font-size="18" fill="#111">z</text>'],
-    ['Reading a book', person('#0f172a', 'out') + '<rect x="96" y="108" width="50" height="34" rx="4" fill="#f43f5e"/><line x1="121" y1="108" x2="121" y2="142" stroke="#fff" stroke-width="3"/>'],
-    ['Cooking', person('#0f172a', 'out') + '<path d="M60 140 q20 -30 40 0" stroke="#111" stroke-width="6" fill="none"/><rect x="130" y="120" width="34" height="16" rx="4" fill="#78716c"/>'],
-    ['Climbing', person('#0f172a', 'up') + '<rect x="140" y="30" width="24" height="140" fill="#a16207"/><path d="M140 40 l24 16 M140 70 l24 16 M140 100 l24 16" stroke="#713f12" stroke-width="4"/>'],
-    ['Flying a kite', person('#0f172a', 'up') + '<path d="M120 60 L140 20 L160 60 L140 80 Z" fill="#ef4444"/><line x1="120" y1="110" x2="140" y2="60" stroke="#111" stroke-width="3"/>'],
-    ['Fishing', person('#0f172a', 'out') + '<line x1="110" y1="100" x2="150" y2="150" stroke="#111" stroke-width="4"/><path d="M150 150 q14 8 0 18" stroke="#111" stroke-width="4" fill="none"/>'],
-    ['Gardening', person('#0f172a', 'out') + '<path d="M60 150 q0 -30 14 -40" stroke="#111" stroke-width="5" fill="none"/><rect x="60" y="106" width="16" height="8" rx="3" fill="#713f12"/>'],
-    ['Painting', person('#0f172a', 'up') + '<rect x="120" y="90" width="40" height="40" rx="4" fill="#fff" stroke="#111" stroke-width="3"/><circle cx="140" cy="110" r="8" fill="#ef4444"/>'],
-    ['Sweeping', person('#0f172a', 'out') + '<line x1="130" y1="80" x2="130" y2="160" stroke="#a16207" stroke-width="5"/><path d="M130 160 L150 170 L150 180 Z" fill="#78716c"/>'],
-    ['Blowing bubbles', person('#0f172a', 'up') + '<circle cx="140" cy="70" r="8" fill="none" stroke="#0ea5e9" stroke-width="3"/><circle cx="152" cy="52" r="10" fill="none" stroke="#0ea5e9" stroke-width="3"/><circle cx="120" cy="40" r="6" fill="none" stroke="#0ea5e9" stroke-width="3"/>'],
-    ['Jumping rope', person('#0f172a', 'up') + '<path d="M60 30 Q130 170 170 30" stroke="#111" stroke-width="5" fill="none"/>'],
-    ['Playing football', person('#0f172a', 'out') + '<circle cx="70" cy="160" r="16" fill="#fff" stroke="#111" stroke-width="3"/>'],
-    ['Talking on the phone', person('#0f172a', 'up') + '<rect x="120" y="62" width="20" height="34" rx="6" fill="#111"/>'],
-    ['Yawning', person('#0f172a', 'up') + '<ellipse cx="100" cy="68" rx="10" ry="14" fill="#fde047"/>'],
-    ['Sneezing', person('#0f172a') + '<path d="M128 64 l16 -8 M128 72 l18 0 M128 80 l16 8" stroke="#0ea5e9" stroke-width="4" stroke-linecap="round"/>'],
-    ['Laughing', person('#0f172a') + '<path d="M86 66 q6 8 12 0 M102 66 q6 8 12 0" stroke="#111" stroke-width="4" fill="none"/>'],
-    ['Crying', person('#0f172a') + '<path d="M86 66 l6 8 M114 66 l-6 8" stroke="#38bdf8" stroke-width="5" stroke-linecap="round"/>'],
-    ['Waving', person('#0f172a', 'up') + '<line x1="122" y1="70" x2="134" y2="50" stroke="#0f172a" stroke-width="9" stroke-linecap="round"/>'],
-    ['Hugging', person('#0f172a', 'out') + '<circle cx="70" cy="60" r="12" fill="#ec4899"/><path d="M70 72 L70 120 M70 90 L52 106 M70 90 L88 106 M70 120 L56 158 M70 120 L84 158" stroke="#ec4899" stroke-width="8" stroke-linecap="round" fill="none"/>'],
-    ['Clapping', person('#0f172a', 'out') + '<path d="M120 70 l10 -14 M130 70 l10 -14" stroke="#eab308" stroke-width="5" stroke-linecap="round"/>'],
-    ['Typing', person('#0f172a', 'out') + '<rect x="96" y="108" width="50" height="22" rx="4" fill="#cbd5e1"/><path d="M104 118 h34 M104 124 h22" stroke="#111" stroke-width="3"/>'],
-    ['Driving', person('#0f172a', 'out') + '<circle cx="130" cy="130" r="26" stroke="#111" stroke-width="6" fill="none"/>'],
-    ['Washing dishes', person('#0f172a', 'out') + '<rect x="120" y="120" width="40" height="30" rx="4" fill="#e5e7eb" stroke="#111" stroke-width="3"/><circle cx="140" cy="132" r="8" fill="#fff"/>'],
-    ['Ironing', person('#0f172a', 'out') + '<path d="M120 120 L150 128 L150 142 L120 134 Z" fill="#111"/>'],
-    ['Singing', person('#0f172a', 'up') + '<path d="M128 60 l14 0 M132 52 l6 16" stroke="#111" stroke-width="4" stroke-linecap="round"/>'],
-    ['Playing piano', person('#0f172a', 'out') + '<rect x="100" y="120" width="70" height="30" rx="4" fill="#111"/><rect x="104" y="120" width="8" height="30" fill="#fff"/><rect x="120" y="120" width="8" height="30" fill="#fff"/><rect x="136" y="120" width="8" height="30" fill="#fff"/>'],
-    ['Riding a horse', person('#0f172a') + '<rect x="50" y="130" width="70" height="30" rx="12" fill="#a16207"/><path d="M70 130 L84 108 L60 116 Z" fill="#713f12"/>'],
-    ['Skiing', person('#0f172a') + '<path d="M40 170 L90 90 L150 30" stroke="#fff" stroke-width="24"/><line x1="70" y1="140" x2="100" y2="150" stroke="#111" stroke-width="6"/><line x1="70" y1="140" x2="100" y2="130" stroke="#111" stroke-width="6"/>'],
-    ['Surfing', person('#0f172a') + '<path d="M20 110 q40 -30 80 0 q40 30 80 0" stroke="#0891b2" stroke-width="14" fill="none"/><rect x="80" y="122" width="80" height="12" rx="6" fill="#eab308"/>'],
-    ['Weightlifting', person('#0f172a', 'up') + '<line x1="70" y1="70" x2="130" y2="70" stroke="#111" stroke-width="6"/><circle cx="66" cy="70" r="10" fill="#111"/><circle cx="134" cy="70" r="10" fill="#111"/>'],
-    ['Stretching', person('#0f172a', 'up') + '<line x1="70" y1="40" x2="130" y2="40" stroke="#0ea5e9" stroke-width="6" stroke-linecap="round"/>'],
-    ['Hopping', person('#0f172a', 'up') + '<path d="M84 168 L84 152 M116 168 L116 152" stroke="#0f172a" stroke-width="9" stroke-linecap="round"/>']
-  ];
-
   var RIDDLES = [
     { type: 'what-comes-next', question: 'Which shape comes next?', options: ['Circle', 'Square', 'Triangle', 'Star'], answer: 1, svg: svg('#fef9c3', '<circle cx="40" cy="100" r="22" fill="#3b82f6"/><rect x="72" y="78" width="44" height="44" fill="#ef4444"/><circle cx="150" cy="100" r="22" fill="#3b82f6"/><text x="182" y="112" font-size="40" fill="#111">?</text>') },
     { type: 'odd-one-out', question: 'Which one is different?', options: ['The red circle', 'The blue square', 'The green triangle', 'The red star'], answer: 3, svg: svg('#e0f2fe', '<circle cx="50" cy="100" r="24" fill="#ef4444"/><rect x="86" y="76" width="44" height="44" fill="#3b82f6"/><polygon points="150,76 176,120 124,120" fill="#10b981"/><polygon points="52,150 62,120 82,120 66,106 72,86 52,100 32,86 38,106 22,120 42,120" fill="#ef4444" transform="translate(118,-40) scale(0.9)"/>') },
@@ -141,6 +97,5 @@ window.FF = window.FF || {};
 
   FF.data.visual.sports = SPORTS.map(function (s) { return { name: s[0], svg: svg(s[1], s[2]) }; });
   FF.data.visual.vehicles = VEHICLES.map(function (v) { return { name: v[0], svg: svg('#f1f5f9', v[1]) }; });
-  FF.data.visual.visualCharades = CHARADES.map(function (c) { return { name: c[0], svg: svg('#eef2ff', c[1]) }; });
   FF.data.visual.visualRiddles = RIDDLES;
 })();

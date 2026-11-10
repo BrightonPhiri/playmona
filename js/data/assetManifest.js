@@ -8,7 +8,6 @@ FF.AssetManifest = {
     "bibleVerseRush": "1b79d2f3",
     "bibleWhoAmI": "9d93644c",
     "blinkRemember": "962f5b00",
-    "brainBattle": "138a01ea",
     "charades": "410c931d",
     "familyQuiz": "398a13de",
     "geoSpin": "8e264823",

@@ -340,7 +340,6 @@ FF.data.visual = {
   sports: [ { name, svg } ],                    // 16+
   vehicles: [ { name, svg } ],                  // 20+
   visualRiddles: [ { type, question, options:[4], answer, svg } ],  // 30+ (what comes next / odd one out / which completes pattern / which shadow / which doesn't belong)
-  visualCharades: [ { name, svg } ]             // 40+
 };
 ```
 SVG illustrations: viewBox `"0 0 200 200"`, flat vector style, suitable for all ages, high contrast,

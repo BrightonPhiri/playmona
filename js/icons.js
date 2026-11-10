@@ -100,13 +100,11 @@ window.FF = window.FF || {};
   var game = {
   "letterRush": "keyboard",
   "wordScramble": "shuffle",
-  "wordBuilder": "stack",
   "stacoend": "text-aa",
   "wordChain": "link",
   "miniCrossword": "squares-four",
   "familyQuiz": "brain",
   "trueOrFalse": "scales",
-  "brainBattle": "lightning",
   "guessWho": "detective",
   "pictureQuiz": "image",
   "picturePuzzle": "puzzle-piece",
@@ -122,13 +120,11 @@ window.FF = window.FF || {};
   "guessSport": "medal",
   "guessVehicle": "car",
   "memoryMatch": "cards",
-  "pictureMemory": "images",
   "whatsMissing": "eye-slash",
   "rememberSequence": "list-numbers",
   "quickTap": "hand-tap",
   "colorReaction": "drop",
   "charades": "person-arms-spread",
-  "visualCharades": "image-square",
   "dontSayIt": "x-circle",
   "drawingChallenge": "pencil",
   "pictionary": "chalkboard",
@@ -148,8 +144,7 @@ window.FF = window.FF || {};
   "guessCountry": "globe",
   "whereInWorld": "map-pin",
   "mapChallenge": "map-trifold",
-  "capitalChallenge": "city",
-  "guessFlag": "flag"
+  "capitalChallenge": "city"
 };
   var ui = {
   "play": "play",

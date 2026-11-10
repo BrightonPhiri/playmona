@@ -159,7 +159,6 @@ window.FF = window.FF || {};
   FF.Icons.game.bibleWhoAmI = 'detective';
   FF.Icons.game.bibleVerseRush = 'scroll';
   FF.Icons.game.bibleBooks = 'list-numbers';
-  FF.Icons.game.brainBattle = FF.Icons.game.brainBattle || 'lightning';
 
   /* ---------- Icon style (custom vs. bundled Phosphor) ---------- */
   FF.Icons.getStyle = function () { return FF.Storage.get('iconStyle', 'custom'); };

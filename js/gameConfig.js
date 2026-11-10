@@ -27,7 +27,7 @@ window.FF = window.FF || {};
   // Games a guest can play until the admin portal says otherwise.
   // One or two from each kind of game, so guests get a real taste.
   var GUEST_GAMES = [
-    'familyQuiz', 'trueOrFalse', 'wordScramble', 'guessFlag', 'memoryMatch',
+    'familyQuiz', 'trueOrFalse', 'wordScramble', 'guessCountry', 'memoryMatch',
     'quickTap', 'higherOrLower', 'wouldYouRather', 'guessAnimal', 'bibleQuiz'
   ];
 

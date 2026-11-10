@@ -1,9 +1,7 @@
 /* ============================================================
    PLAYMONA — memoryGames.js
-   Two memory-category games (Remember the Sequence lives in sequence.js,
-   What's Missing? in whatsMissing.js):
-   - memoryMatch        (picture decks, js/data/memoryDecks.js)
-   - pictureMemory      (SVG illustration pairs)
+   Memory Match (picture decks, js/data/memoryDecks.js). Remember the
+   Sequence lives in sequence.js, What's Missing? in whatsMissing.js.
    Classic script, global window.FF, no modules/network.
    ============================================================ */
 window.FF = window.FF || {};
@@ -12,12 +10,6 @@ window.FF = window.FF || {};
   'use strict';
 
   /* ---------- shared constants & helpers ---------- */
-
-  var EMOJI = [
-    '🐶', '🐱', '🦊', '🐼', '🦁', '🐸', '🦄', '🐯', '🐨', '🦉',
-    '🐙', '🦖', '🐳', '🐵', '🦋', '🐢', '🦜', '🐬', '🍎', '🍌',
-    '🍓', '🍕', '🍩', '🎈', '🚗', '🚀', '⚽', '🎸', '🌈', '⭐'
-  ];
 
   function bonusFor(difficulty) {
     if (difficulty === 'easy') return 1;
@@ -51,7 +43,7 @@ window.FF = window.FF || {};
 
 
 
-  /* ---------- shared card-matching engine (memoryMatch + pictureMemory) ---------- */
+  /* ---------- card-matching engine ---------- */
 
   var MAX_CARD = 168;   // px; bigger cards only look empty
 
@@ -425,29 +417,6 @@ window.FF = window.FF || {};
     });
   }
 
-  /* ---------- pictureMemory data helper ---------- */
-
-  function getPictureItems(count) {
-    var visual = (window.FF && FF.data && FF.data.visual) ? FF.data.visual : null;
-    var out = [];
-    var seen = {};
-    if (visual) {
-      var groups = [];
-      if (visual.animals && visual.animals.length) groups.push(visual.animals);
-      if (visual.food && visual.food.length) groups.push(visual.food);
-      if (visual.objects && visual.objects.length) groups.push(visual.objects);
-      groups.forEach(function (g) {
-        FF.util.shuffle(g).forEach(function (it) {
-          if (out.length < count && it && it.name && it.svg && !seen[it.name]) {
-            seen[it.name] = true;
-            out.push({ name: it.name, svg: it.svg });
-          }
-        });
-      });
-    }
-    return out;
-  }
-
   /* ============================================================
      1. MEMORY MATCH
      Picture decks from js/data/memoryDecks.js. A card shows its
@@ -601,62 +570,4 @@ window.FF = window.FF || {};
     start: function (api) { mmPlay(api); }
   });
 
-  /* ============================================================
-     2. PICTURE MEMORY
-     ============================================================ */
-  FF.registerGame({
-    id: 'pictureMemory',
-    name: 'Picture Memory',
-    description: 'Match pairs of beautiful picture cards.',
-    category: 'memory',
-    icon: '🖼️',
-    players: [1, 8],
-    difficulty: 'Normal',
-    duration: 4,
-    tags: ['visual', 'pairs'],
-    modes: ['solo', 'turn'],
-    defaultMode: 'turn',
-    howToPlay: [
-      'Take turns flipping two cards.',
-      'Match the pictures to score and go again.',
-      'No match? The cards flip back and the next player goes.',
-      'Find all the pairs to win.'
-    ],
-    start: function (api) {
-      var d = api.config.difficulty;
-      var cfg = {
-        easy: { pairs: 6 },
-        normal: { pairs: 8 },
-        hard: { pairs: 10 }
-      };
-      var c = cfg[d] || cfg.normal;
-      var game = {
-        deal: function () {
-          var items = getPictureItems(c.pairs);
-          while (items.length < c.pairs) items.push(EMOJI[items.length % EMOJI.length]);
-          return items;
-        },
-        label: function (item) { return typeof item === 'string' ? item : item.name; },
-        render: function (item) {
-          if (typeof item === 'string') return api.ui.span('match-emoji', item);
-          var face = api.assets.illustration(item.svg, 'mem-img', item.name);
-          var cap = api.ui.div('mem-caption', item.name);
-          var wrap = api.ui.div('match-face-wrap');
-          wrap.appendChild(face);
-          wrap.appendChild(cap);
-          return wrap;
-        }
-      };
-      if (FF.Parallel && FF.Parallel.active()) {
-        // Online: the same pictures, in the same places, on every phone.
-        matchOnline(api, Object.assign({
-          rounds: 2,
-          seconds: 45 + c.pairs * 7,
-          watch: function () { return FF.t('pmWatch', 'Everyone is matching the same {n} picture pairs', { n: c.pairs }); }
-        }, game));
-        return;
-      }
-      runMatch(api, game);
-    }
-  });
 })();

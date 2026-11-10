@@ -37,7 +37,7 @@ window.FF = window.FF || {};
   var REPEAT_DAYS = 14;
   var CELEBRATE_DEFAULT = 20;
   // Shown until the server has counted a week of plays (api/cron.php).
-  var DEFAULT_FEATURED = ['familyQuiz', 'guessFlag', 'wordScramble', 'quickTap', 'memoryMatch',
+  var DEFAULT_FEATURED = ['familyQuiz', 'guessCountry', 'wordScramble', 'quickTap', 'memoryMatch',
     'trueOrFalse', 'guessAnimal', 'capitalChallenge', 'letterRush', 'higherOrLower'];
 
   function utcKey(d) { return (d || new Date()).toISOString().slice(0, 10); }

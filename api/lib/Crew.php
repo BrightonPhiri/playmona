@@ -19,18 +19,18 @@ class Crew
 
     /** Every game playable online: must match ONLINE_GAMES in js/net/roomUI.js (a test compares them). Live match pairs people on any of these. */
     public const ONLINE_GAMES = [
-        'bibleQuiz', 'whereInWorld', 'mapChallenge', 'capitalChallenge', 'guessFlag',
+        'bibleQuiz', 'whereInWorld', 'mapChallenge', 'capitalChallenge',
         'guessCountry', 'guessLandmark', 'guessAnimal', 'guessFood', 'guessObject', 'guessSport',
         'guessVehicle', 'familyQuiz', 'trueOrFalse', 'guessWho', 'pictureQuiz', 'quickTap',
         'colorReaction', 'letterRush', 'whatsMissing', 'numberChallenge', 'visualRiddle',
-        'higherOrLower', 'wordScramble', 'bibleWhoAmI', 'bibleVerseRush', 'memoryMatch', 'pictureMemory',
-        'rememberSequence', 'picturePuzzle', 'spotDifference', 'hiddenObject', 'wordBuilder', 'bibleBooks', 'numberRush',
+        'higherOrLower', 'wordScramble', 'bibleWhoAmI', 'bibleVerseRush', 'memoryMatch',
+        'rememberSequence', 'picturePuzzle', 'spotDifference', 'hiddenObject', 'bibleBooks', 'numberRush',
         'wouldYouRather', 'thisOrThat', 'whoIsMostLikely', 'imposters', 'wordFlow', 'ballSwap', 'blinkRemember', 'sortRush', 'stacoend', 'geoSpin', 'miniCrossword', 'logoRush', 'sketchBack', 'sayWhat',
     ];
 
     /** The online games crew can play (each has a brain in js/crew/brains). Crew are only seated in these. */
     public const GAMES = [
-        'bibleQuiz', 'whereInWorld', 'mapChallenge', 'capitalChallenge', 'guessFlag',
+        'bibleQuiz', 'whereInWorld', 'mapChallenge', 'capitalChallenge',
         'guessCountry', 'guessLandmark', 'guessAnimal', 'guessFood', 'guessObject', 'guessSport',
         'guessVehicle', 'familyQuiz', 'trueOrFalse', 'guessWho', 'pictureQuiz', 'quickTap',
         'colorReaction', 'letterRush', 'whatsMissing', 'numberChallenge', 'visualRiddle', 'imposters', 'wordFlow', 'sayWhat',
@@ -236,7 +236,7 @@ class Crew
         'quizzer' => ['base' => [45, 60], 'strong' => ['familyQuiz', 'trueOrFalse', 'guessWho', 'bibleQuiz'], 'traits' => ['accuracy' => 20, 'patience' => 10]],
         'speedster' => ['base' => [40, 55], 'strong' => ['quickTap', 'colorReaction'], 'traits' => ['reaction' => 30, 'risk' => 15, 'patience' => -15]],
         'wordsmith' => ['base' => [45, 60], 'strong' => ['letterRush', 'guessWho', 'visualRiddle'], 'traits' => ['strategy' => 20, 'patience' => 15]],
-        'traveller' => ['base' => [40, 55], 'strong' => ['capitalChallenge', 'guessFlag', 'whereInWorld', 'mapChallenge', 'guessCountry', 'guessLandmark'], 'traits' => ['accuracy' => 15]],
+        'traveller' => ['base' => [40, 55], 'strong' => ['capitalChallenge', 'whereInWorld', 'mapChallenge', 'guessCountry', 'guessLandmark'], 'traits' => ['accuracy' => 15]],
         'casual' => ['base' => [30, 45], 'strong' => ['guessAnimal', 'guessFood', 'pictureQuiz'], 'traits' => ['friendliness' => 20, 'competitiveness' => -20, 'consistency' => -10]],
         'thinker' => ['base' => [45, 60], 'strong' => ['numberChallenge', 'visualRiddle', 'whatsMissing'], 'traits' => ['strategy' => 25, 'reaction' => -10]],
         'allrounder' => ['base' => [50, 65], 'strong' => [], 'traits' => ['consistency' => 15, 'competitiveness' => 15]],

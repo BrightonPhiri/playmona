@@ -12,14 +12,12 @@ const ROOT = path.join(__dirname, '..', '..');
 
 const GAMES = {
   memoryMatch: 'memoryGames.js',
-  pictureMemory: 'memoryGames.js',
   rememberSequence: 'sequence.js',
   blinkRemember: 'blinkRemember.js',
   stacoend: 'stacoend.js',
   picturePuzzle: 'puzzleGames.js',
   spotDifference: 'puzzleGames.js',
   hiddenObject: 'puzzleGames.js',
-  wordBuilder: 'wordGames.js',
   bibleBooks: 'bibleGames.js'
 };
 
@@ -30,7 +28,6 @@ const EXPOSE = {
   'blinkRemember.js': [],
   'stacoend.js': [],
   'puzzleGames.js': ['puzzlePoints', 'spotPoints', 'hiddenPoints'],
-  'wordGames.js': ['longestWord'],
   'bibleGames.js': ['booksPoints']
 };
 
@@ -177,7 +174,6 @@ test('parallel: points reward accuracy and speed in every game', function () {
   const b = FF.__booksPoints;
   assertEqual(b({ points: 300, right: 3, total: 6 }, 0, 30000), 350, 'speed bonus scaled by right answers');
   assertEqual(b({ points: 300, right: 3, total: 6 }, null, 30000), 300, 'out of time: no speed bonus');
-  assertEqual(FF.__longestWord(['cat', 'planet', 'tan']), 'planet');
 });
 
 test('parallel: two phones with the same round seed get the same puzzle', function () {

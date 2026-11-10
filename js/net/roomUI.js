@@ -9,7 +9,7 @@ window.FF = window.FF || {};
 
   var ONLINE_GAMES = [
     'bibleQuiz',
-    'whereInWorld', 'mapChallenge', 'capitalChallenge', 'guessFlag',
+    'whereInWorld', 'mapChallenge', 'capitalChallenge',
     'guessCountry', 'guessLandmark', 'guessAnimal', 'guessFood',
     'guessObject', 'guessSport', 'guessVehicle',
     'familyQuiz', 'trueOrFalse', 'guessWho', 'pictureQuiz',
@@ -23,9 +23,9 @@ window.FF = window.FF || {};
     'higherOrLower', 'wordScramble', 'bibleWhoAmI', 'bibleVerseRush',
     // Parallel challenges (js/net/parallel.js): the same puzzle on every
     // phone at once, each player keeps their own score.
-    'memoryMatch', 'pictureMemory', 'rememberSequence',
+    'memoryMatch', 'rememberSequence',
     'picturePuzzle', 'spotDifference', 'hiddenObject',
-    'wordBuilder', 'bibleBooks', 'numberRush', 'blinkRemember', 'stacoend',
+    'bibleBooks', 'numberRush', 'blinkRemember', 'stacoend',
     // Votes: everyone votes on their own phone, then sees the same split.
     'wouldYouRather', 'thisOrThat', 'whoIsMostLikely',
     // Secret words dealt by the server's referee (js/imposters/referee.js).

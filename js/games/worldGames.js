@@ -4,7 +4,6 @@
      · Where in the World?   (flag / landmark / food / capital clues)
      · Map Challenge          (continent / borders / capital)
      · Capital Challenge      (country -> capital)
-     · Guess the Flag         (fast flag identification)
    Classic script (no ES modules). Offline, suitable for all ages.
    ============================================================ */
 window.FF = window.FF || {};
@@ -530,27 +529,8 @@ window.FF = window.FF || {};
     };
   }
 
-  /* --- Guess the Flag : fast flag identification --- */
-  function guessFlagBuilder(api) {
-    var pool = allCountries().filter(function (c) { return c.flag; });
-    return function () {
-      var correct = FF.util.pick(pool);
-      var others = sampleDistractorCountries(pool, [correct.name], 3);
-      var made = makeOptionsFromNames(correct.name, others.map(function (c) { return c.name; }));
-      return {
-        promptTitle: FF.t('whoseFlag', 'Whose flag is this?'),
-        flagNode: renderFlagNode(api, correct, 260),
-        flagImage: flagImage(correct),
-        options: made.options,
-        answer: made.answer,
-        answerText: correct.name,
-        feedbackFlagNode: renderFlagNode(api, correct, 180)
-      };
-    };
-  }
-
   /* ============================================================
-     Register the four games
+     Register the three games
      ============================================================ */
 
   FF.registerGame({
@@ -622,26 +602,4 @@ window.FF = window.FF || {};
     }
   });
 
-  FF.registerGame({
-    id: 'guessFlag',
-    name: 'Guess the Flag',
-    description: 'Fast flag identification — how many can you name?',
-    category: 'world',
-    icon: '🚩',
-    players: [1, 8],
-    difficulty: 'Easy',
-    duration: 4,
-    tags: ['quick'],
-    modes: ['solo', 'turn', 'team'],
-    defaultMode: 'turn',
-    howToPlay: [
-      'A big flag appears on screen.',
-      'Pick the matching country from four choices.',
-      'Answer fast for a speed bonus!',
-      'The next flag follows automatically.'
-    ],
-    start: function (api) {
-      startWorldGame(api, { rounds: 10, buildQuestion: guessFlagBuilder(api) });
-    }
-  });
 })();

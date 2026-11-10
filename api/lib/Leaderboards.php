@@ -20,14 +20,14 @@ class Leaderboards
      */
     public const GAMES = [
         'bibleQuiz', 'bibleWhoAmI', 'bibleVerseRush', 'bibleBooks',
-        'letterRush', 'memoryMatch', 'pictureMemory', 'whatsMissing', 'rememberSequence', 'blinkRemember',
+        'letterRush', 'memoryMatch', 'whatsMissing', 'rememberSequence', 'blinkRemember',
         'numberChallenge', 'higherOrLower', 'numberRush',
         'picturePuzzle', 'spotDifference', 'hiddenObject', 'visualRiddle', 'sortRush',
-        'trueOrFalse', 'brainBattle', 'guessWho', 'pictureQuiz', 'familyQuiz',
+        'trueOrFalse', 'guessWho', 'pictureQuiz', 'familyQuiz',
         'quickTap', 'colorReaction',
         'guessCountry', 'geoSpin', 'logoRush', 'sketchBack', 'sayWhat', 'guessLandmark', 'guessAnimal', 'guessFood', 'guessObject', 'guessSport', 'guessVehicle',
-        'wordScramble', 'wordBuilder', 'stacoend', 'wordChain', 'miniCrossword',
-        'whereInWorld', 'mapChallenge', 'capitalChallenge', 'guessFlag',
+        'wordScramble', 'stacoend', 'wordChain', 'miniCrossword',
+        'whereInWorld', 'mapChallenge', 'capitalChallenge',
     ];
     public const REPEAT_DAYS = 14;
     public const FEATURED = 10;
