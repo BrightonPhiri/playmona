@@ -309,3 +309,29 @@ test('sayWhat looks: tokens for the speech bubble and the chalkboard, and a self
   assert(fs.existsSync(path.join(ROOT, 'css', m[1])) || fs.existsSync(path.join(ROOT, m[1].replace(/^\.\.\//, ''))), 'font file exists: ' + m[1]);
   assert(/Patrick Hand/.test(read('tools/download-assets.js')), 'font in the download list');
 });
+
+/* ---------- turns on one device ---------- */
+
+const GAME = RULES.concat(['js/registry.js', 'js/games/sayWhat.js']);
+
+test('turns: points and streak go to the player who answered', function () {
+  const T = loadFF(GAME).SayWhatTurns;
+  let s = T.create(['a', 'b', 'c']);
+  s = T.award(s, 'a', 150, true);
+  s = T.award(s, 'a', 200, true);
+  assertEqual(s.points, { a: 350, b: 0, c: 0 });
+  assertEqual(s.streak, { a: 2, b: 0, c: 0 });
+  s = T.award(s, 'b', 0, false);
+  assertEqual(s.streak.a, 2, 'a wrong answer by b leaves a alone');
+  s = T.award(s, 'a', 0, false);
+  assertEqual(s.streak.a, 0, 'a wrong answer resets only that player');
+  assertEqual(s.best.a, 2, 'best streak kept');
+});
+
+test('turns: next goes round the players and wraps', function () {
+  const T = loadFF(GAME).SayWhatTurns;
+  let s = T.create(['a', 'b', 'c']);
+  const seen = [];
+  for (let i = 0; i < 5; i++) { seen.push(s.order[s.cur]); s = T.next(s); }
+  assertEqual(seen, ['a', 'b', 'c', 'a', 'b']);
+});
