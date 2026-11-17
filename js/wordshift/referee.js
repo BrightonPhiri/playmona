@@ -271,12 +271,13 @@ window.FF = window.FF || {};
       if (cmd.k !== state.k || state.phase !== 'open' || r.done) return false;
       var sentAt = Math.min(cmd.t, now());
       if (sentAt < state.openAt || sentAt > state.closeAt + GRACE_MS) return false;
-      if (r.moves + r.invalid >= R.MAX_MOVES) return false;
+      if (r.moves >= R.MAX_MOVES) return false;
       var p = puzzleAt(state.k);
       var word = R.clean(cmd.word).slice(0, 12);
       var res = R.checkMove(r.word, word, r.used, isWord);
       if (!res.ok) {
-        if (res.reason !== 'same') r.invalid++;
+        // A real one-letter try costs a move even when refused; a slip the screen never sends costs nothing.
+        if (R.counts(res)) { r.invalid++; r.moves++; }
         publishMine(uid, { word: word, ok: false, reason: res.reason });
         return true;
       }

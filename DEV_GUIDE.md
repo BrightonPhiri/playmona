@@ -304,14 +304,18 @@ Online Race and Co-op: `js/crossword/referee.js` on the crew runner (`crosswordR
 phones read `rooms/<code>/cw` and write `cwInbox` (`js/crossword/client.js`, `online.js`).
 
 ### `FF.data.wordshift` (js/data/wordshiftPuzzles.js, generated)
-WordShift puzzles: `{ v: 1, puzzles: [{ id, s, t, n, lv }] }` (start, target, shortest number of moves,
-level easy/normal/hard/expert). Never edit by hand: run `node tools/gen-wordshift.js` (a few minutes).
+WordShift puzzles: `{ v: 1, puzzles: [{ id, s, t, n, lv, p }] }` (start, target, shortest number of moves,
+level easy/normal/hard/expert, and `p`: the words in between on one shortest path, shown only once a
+puzzle is over). `FF.WordShiftRules.keyLetters(puzzle)` gives the puzzle's keys: the target's and the
+path's letters, every vowel, then letters drawn by the puzzle id up to ten more than the word length.
+Each letter is checked as it is typed (no Enter); a refused one-letter try (not a word, or used) still
+counts as a move (`FF.WordShiftRules.counts`), on the phone, in the server replay and in the referee. Never edit by hand: run `node tools/gen-wordshift.js` (a few minutes).
 It builds a graph of everyday words (tiers 1-2) per length, checks every puzzle's shortest path, and
 also writes the server's copies, `api/data/wordshift-puzzles.json` and `api/data/wordshift-words.txt`
 (the accepted words, tiers 1-4). Words in `FF.WordShiftRules.AVOID` are never in a puzzle and never
 played by crew; the generator's `ODD` list keeps archaic or stilted words from being a start or target.
 Solo and Daily runs are checked by `api/lib/WordShift.php` (`/wordshift/begin` gives a ticket kept at
-`wordshiftTickets/<id>`; `/wordshift/finish` replays the moves and writes the boards). The Daily board
+`wordshiftTickets/<id>`; `/wordshift/finish` replays every counted try, refused ones included, counts the refused ones itself and writes the boards). The Daily board
 is `wordshiftDaily/<day>/<uid>`.
 Online Race: `js/wordshift/referee.js` on the crew runner (`wordshiftRuns/<id>`), phones read
 `rooms/<code>/ws` (counts only) and write their moves to `wordshiftInbox/<code>/<uid>/<id>`

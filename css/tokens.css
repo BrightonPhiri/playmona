@@ -145,16 +145,18 @@
   --lgo-bright: #3d9bff; --lgo-bright-deep: #1d5fd1;
   --lgo-ink: #ffffff; --lgo-ink-soft: #d6ecff; --lgo-ink-dim: #a9cbf0;
   --lgo-tile: #ffffff; --lgo-tile-2: #e4eef9; --lgo-tile-ink: #0a2a55;
-  /* WordShift (js/games/wordShift.js): the cover's night-blue to violet sky, cream tiles with
-     indigo letters, gold for the target and the path, vivid green for letters in place.
-     The same in both themes. */
-  --ws-sky-1: #0b1f7a; --ws-sky-2: #2a2fb8; --ws-sky-3: #6d2fd6; --ws-sky-4: #8b3be8;
-  --ws-ink: #ffffff; --ws-ink-soft: #d9dcff; --ws-ink-dim: #b7bcf2;
-  --ws-tile: #fff8ec; --ws-tile-2: #ecdfff; --ws-tile-ink: #1d1b6b; --ws-tile-edge: #b9a9f0;
-  --ws-teal: #2de0c8; --ws-teal-deep: #0b8f86; --ws-teal-ink: #05302d;
-  --ws-gold: #ffc533; --ws-gold-hi: #ffe28a; --ws-gold-deep: #c98a0c; --ws-gold-ink: #3a2300;
-  --ws-green: #16a34a; --ws-green-hi: #6ee79a; --ws-green-deep: #14532d; --ws-green-ink: #ffffff;
-  --ws-bad: #e11d48; --ws-panel: rgba(255, 255, 255, 0.1); --ws-panel-edge: rgba(255, 255, 255, 0.22);
+  /* WordShift (js/games/wordShift.js): warm paper with white letter tiles, coral for the
+     tile you picked, teal for the start, amber for the target, green for letters in place.
+     Dark theme: warm charcoal (below). */
+  --ws-bg-1: #fffaf2; --ws-bg-2: #fbeedb; --ws-dot: rgba(120, 86, 50, 0.09);
+  --ws-ink: #2b2118; --ws-ink-soft: #5d4b3b; --ws-ink-dim: #7d6957;
+  --ws-tile: #ffffff; --ws-tile-2: #f7f0e5; --ws-tile-ink: #2b2118; --ws-tile-edge: #dfcfb6;
+  --ws-accent: #e8532e; --ws-accent-deep: #b93c1c; --ws-accent-soft: rgba(232, 83, 46, 0.14); --ws-accent-ink: #ffffff;
+  --ws-teal: #17998d; --ws-teal-deep: #0f7168; --ws-teal-ink: #ffffff;
+  --ws-gold: #f5b532; --ws-gold-hi: #ffd76e; --ws-gold-deep: #c4860b; --ws-gold-ink: #3a2300;
+  --ws-green: #1e9a52; --ws-green-hi: #2fbf6c; --ws-green-deep: #13703b; --ws-green-ink: #ffffff;
+  --ws-bad: #d6334a; --ws-bad-soft: #fde4e7; --ws-bad-ink: #b0233a;
+  --ws-panel: #ffffff; --ws-panel-2: #fdf7ee; --ws-panel-edge: #eadbc4; --ws-shadow: 0 2px 10px rgba(92, 62, 30, 0.08);
   /* Say What? (js/games/sayWhat.js): two looks, the same in both themes.
      Speech bubble, as the cover: cream to apricot sky, a deep-teal bubble, cream word pills, gold.
      Chalkboard: a green board in a wooden frame, chalk-white words, yellow chalk, wooden letter blocks. */
@@ -294,4 +296,13 @@
   --radius-sm: var(--r-sm);
   --lamp: #f4efe4;
   --ink: #08141f;
+}
+/* WordShift in the dark theme: warm charcoal, the same accents. */
+:root[data-theme="dark"] {
+  --ws-bg-1: #1f1a16; --ws-bg-2: #171310; --ws-dot: rgba(255, 228, 196, 0.05);
+  --ws-ink: #f8efe4; --ws-ink-soft: #d9c9b6; --ws-ink-dim: #ab9886;
+  --ws-tile: #fffaf2; --ws-tile-2: #efe4d4; --ws-tile-ink: #2b2118; --ws-tile-edge: #a8937a;
+  --ws-accent: #ff7a52; --ws-accent-deep: #e0552e; --ws-accent-soft: rgba(255, 122, 82, 0.2); --ws-accent-ink: #2b1208;
+  --ws-bad-soft: rgba(214, 51, 74, 0.22); --ws-bad-ink: #ff9aa8;
+  --ws-panel: #2a231d; --ws-panel-2: #241e19; --ws-panel-edge: #3e3329; --ws-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
 }

@@ -48,7 +48,7 @@ second checker.
 | Bible Quiz | `js/games/bibleQuiz.js` | "Who said it?" and "Finish the verse" with short answers (2–14 letters, no commas) are spelled; the other choices are never accepted. No 50:50 on those. +6 s, +50. |
 | Logo Rush | `js/games/logoRush.js` | Letter tiles are standard; Expert is "Type it": a plain text box, no tiles, checked by `FF.AnswerMatch` over every brand's names and aliases (Man Utd, Maccas…). +6 s, +50. Rooms play tiles or choices. |
 | What's Missing? | `js/games/whatsMissing.js` | Expert spells each gone picture (Gone and Several gone); Added and Swapped are still tapped. Other names from `js/data/memoryAliases.js` (Doughnut, Chips, Teddy…). +6 s, +50 per right gap. Rooms play Normal to Expert, never Endless. |
-| WordShift | `js/games/wordShift.js` | Every move is a spelled word, typed on the on-screen keyboard or a real one (`FF.WordShiftBoard`), checked against the word bank. Expert is 6 to 8 letters. No hints at all. Rooms play every level. |
+| WordShift | `js/games/wordShift.js` | Every move is a spelled word, typed on the puzzle's own keys or a real keyboard (`FF.WordShiftBoard`), checked letter by letter against the word bank. Expert is 6 to 8 letters. No hints at all. Rooms play every level. |
 | Say What? | `js/games/sayWhat.js` | Spelling is the standard: letter tiles with twice the answer's letters, scrambled (shared `FF.SpellTiles`, `difficulty: 'hard'`), checked by `FF.AnswerMatch` with each gap's accepted variants (Practise/Practice). Hard hides two words in some sayings (+10 s, +50). Pick a word is the easier option and never counts for leaderboards. Rooms play tiles or choices, Normal or Hard. |
 
 ### Already upgraded, Expert still missing

@@ -30,7 +30,7 @@ window.FF = window.FF || {};
     if (FF.Race && FF.Race.begin) FF.Race.begin(api.def.id, { rounds: 1, mode: 'parallel' });
     var client = FF.WordShiftClient.create({ room: room, onChange: schedule });
     var ended = false, pendingDraw = null, nudged = {}, autoScores = null, finishedShown = false;
-    var shownKey = null, revealKey = null, lastSeen = null, board = null, built = null;
+    var shownKey = null, revealKey = null, lastSeen = null, built = null, surf = null;
 
     var roundChip = g.chip('', 'ws-chip--round');
     f.chips.appendChild(roundChip);
@@ -56,7 +56,7 @@ window.FF = window.FF || {};
       clearInterval(ticker);
       if (pendingDraw) clearTimeout(pendingDraw);
       if (autoScores) clearTimeout(autoScores);
-      document.removeEventListener('keydown', onKey, true);
+      if (surf) { surf.stop(); surf = null; }
       client.stop();
       if (FF.Race && FF.Race.end) { try { FF.Race.end(); } catch (e) { /* not running */ } }
     }
@@ -85,7 +85,7 @@ window.FF = window.FF || {};
           dots.setAttribute('aria-label', t('wsInPlaceN', '{n} of {m} letters in place', { n: row.greens || 0, m: n }));
           for (var i = 0; i < n; i++) dots.appendChild(FF.ui.span('ws-race__dot' + (i < (row.greens || 0) ? ' is-green' : '')));
           li.appendChild(dots);
-          li.appendChild(FF.ui.span('ws-race__meta', row.done ? ordinal(row.place || 1) : t('wsMovesN', '{n} moves', { n: row.moves || 0 })));
+          li.appendChild(FF.ui.span('ws-race__meta', row.done ? ordinal(row.place || 1) : g.movesText(row.moves || 0)));
         }
         li.appendChild(FF.ui.span('ws-race__pts', FF.util.formatNumber(row.score || 0)));
         race.appendChild(li);
@@ -93,7 +93,8 @@ window.FF = window.FF || {};
     }
 
     function waiting(title, sub) {
-      board = null; built = null; shownKey = null;
+      if (surf) { surf.stop(); surf = null; }
+      built = null; shownKey = null;
       FF.ui.clear(stage);
       var w = FF.ui.div('ws-wait');
       w.appendChild(FF.ui.div('ws-wait__spin'));
@@ -143,92 +144,37 @@ window.FF = window.FF || {};
 
     /* ---------- a round ---------- */
 
+    function fullPuzzle(p) {
+      var all = (FF.data.wordshift && FF.data.wordshift.puzzles) || [];
+      return R.byId(all, p.id) || p;
+    }
+
     function buildRound(ws, roundKey) {
+      if (surf) surf.stop();
       shownKey = roundKey;
       lastSeen = null;
       FF.ui.clear(stage);
-      var p = ws.puzzle;
-      var b = built = { p: p };
-      var goal = FF.ui.div('ws-goal');
-      var startBox = FF.ui.div('ws-goal__start');
-      startBox.appendChild(FF.ui.span('ws-label', t('wsStart', 'Start')));
-      startBox.appendChild(g.tileRow(p.s, 'ws-row--mini ws-row--start').el);
-      goal.appendChild(startBox);
-      var targetBox = FF.ui.div('ws-goal__target');
-      targetBox.appendChild(FF.ui.span('ws-label', t('wsTarget', 'Target')));
-      targetBox.appendChild(g.tileRow(p.t, 'ws-row--target').el);
-      goal.appendChild(targetBox);
-      stage.appendChild(goal);
-      b.ladder = FF.ui.el('ol', { class: 'ws-ladder', 'aria-label': t('wsYourWords', 'Your words') });
-      stage.appendChild(b.ladder);
-      var wrap = FF.ui.div('ws-board');
-      b.tilesEl = FF.ui.div('ws-row ws-row--board');
-      b.tilesEl.style.setProperty('--n', String(p.s.length));
-      b.tilesEl.setAttribute('role', 'group');
-      b.tilesEl.setAttribute('aria-label', t('wsCurrent', 'Your word. Pick a letter, then type.'));
-      wrap.appendChild(b.tilesEl);
-      b.msg = FF.ui.el('p', { class: 'ws-msg', role: 'status', 'aria-live': 'polite' }, '');
-      wrap.appendChild(b.msg);
-      stage.appendChild(wrap);
-      b.kb = FF.ui.div('ws-kb');
-      g.KEYS.forEach(function (row, r) {
-        var line = FF.ui.div('ws-kb__row');
-        if (r === 2) line.appendChild(key('enter', t('wsEnter', 'Enter'), 'ws-key--wide ws-key--enter'));
-        row.split('').forEach(function (ch) { line.appendChild(key(ch, ch.toUpperCase())); });
-        if (r === 2) line.appendChild(key('back', '⌫', 'ws-key--wide', t('wsBack', 'Undo letter')));
-        b.kb.appendChild(line);
+      var p = fullPuzzle(ws.puzzle);
+      var b = built = { p: p, opened: false };
+      surf = g.surface(api, p, {
+        parent: stage,
+        canPlay: canMove,
+        onTry: function (next) {
+          if (client.send(next)) surf.checking();
+          else { surf.release(); surf.say(t('wsNotNow', 'That move could not be sent. Try again.'), 'warn'); }
+        }
       });
-      stage.appendChild(b.kb);
-      b.tileEls = [];
-      for (var i = 0; i < p.s.length; i++) {
-        (function (idx) {
-          var el = FF.ui.el('button', { type: 'button', class: 'ws-tile ws-tile--big' });
-          el.addEventListener('click', function () { if (!canMove()) return; api.audio.play('tap'); board.select(idx); draw(); });
-          b.tilesEl.appendChild(el);
-          b.tileEls.push(el);
-        })(i);
-      }
-      board = FF.WordShiftBoard.create(p.s);
-      b.word = p.s;
-      b.steps = 0;
-      b.opened = false;
-      draw();
-    }
-    function key(k, label, cls, aria) {
-      var el = FF.ui.el('button', { type: 'button', class: 'ws-key' + (cls ? ' ' + cls : '') }, label);
-      if (aria) el.setAttribute('aria-label', aria);
-      el.addEventListener('click', function () { press(k); });
-      return el;
+      b.tilesEl = surf.tiles;
     }
 
     function canMove() {
       var v = client.view();
-      return !!(board && built && v.ws && v.ws.phase === 'open' && v.mine && !v.mine.done);
+      return !!(surf && built && v.ws && v.ws.phase === 'open' && v.mine && !v.mine.done);
     }
 
-    function say(text, kind) {
-      if (!built) return;
-      built.msg.textContent = text;
-      built.msg.className = 'ws-msg' + (kind ? ' ws-msg--' + kind : '');
-    }
+    function say(text, kind) { if (surf) surf.say(text, kind); }
 
-    function draw() {
-      if (!built || !board) return;
-      var letters = board.letters();
-      var edited = board.edited();
-      var sel = board.selected();
-      var greens = R.greens(built.word, built.p.t);
-      built.tileEls.forEach(function (el, i) {
-        el.textContent = letters[i].toUpperCase();
-        el.classList.toggle('ws-tile--green', !!greens[i] && edited.indexOf(i) === -1);
-        el.classList.toggle('ws-tile--edited', edited.indexOf(i) !== -1);
-        el.classList.toggle('is-selected', i === sel);
-        el.setAttribute('aria-pressed', i === sel ? 'true' : 'false');
-        el.setAttribute('aria-label', t('wsTileAria', 'Letter {n}: {l}', { n: i + 1, l: letters[i].toUpperCase() }) + (greens[i] ? ' · ' + t('wsInPlace', 'in place') : ''));
-      });
-    }
-
-    /* What the referee said since the last draw: my word, my ladder, a refused move. */
+    /* What the referee said since the last draw: an accepted word, a refused try, the end. */
     function update(ws, v) {
       var b = built;
       var mine = v.mine;
@@ -236,89 +182,43 @@ window.FF = window.FF || {};
       if (open && !b.opened) {
         b.opened = true;
         api.audio.play('land');
-        say(t('wsGo', 'Go! Tap a letter, then type its new letter.'), '');
+        say(t('wsGo', 'Go! Tap a letter, then tap its new letter.'), '');
       } else if (!open && !b.opened) say(t('wsReady', 'Get ready…'), '');
-      b.kb.classList.toggle('is-off', !open || !mine || mine.done);
+      surf.keys.classList.toggle('is-off', !open || !mine || mine.done);
       if (!mine) return;
-      var answered = (mine.moves || 0) + (mine.invalid || 0) + '|' + (mine.last ? mine.last.word + (mine.last.ok ? '+' : '-') : '');
+      // A move the referee never answered stops holding the board.
+      if (surf.busy() && !v.pending) surf.release();
+      var answered = (mine.moves || 0) + '|' + (mine.invalid || 0) + '|' + (mine.last ? mine.last.word + (mine.last.ok ? '+' : '-' + mine.last.reason) : '');
       if (answered === lastSeen) return;
+      var first = lastSeen === null;
       lastSeen = answered;
-      var steps = mine.used.slice(1);
-      if (steps.length !== b.steps) {
-        FF.ui.clear(b.ladder);
-        steps.forEach(function (w) {
-          var li = FF.ui.el('li', { class: 'ws-ladder__step' });
-          li.appendChild(g.tileRow(w, 'ws-row--mini', R.greens(w, b.p.t)).el);
-          b.ladder.appendChild(li);
-        });
-        if (b.ladder.scrollTo) b.ladder.scrollTop = b.ladder.scrollHeight;
+      if (first || !mine.last) {
+        // Joining (or coming back to) a round: draw what the referee has.
+        surf.trailFrom(mine.used.slice(1));
+        surf.setWord(mine.word);
+      } else if (mine.last.ok && mine.last.word === mine.word && surf.word() !== mine.word) {
+        var r = surf.accept(mine.word);
+        if (!mine.done) say(r.newGreen ? t('wsInPlaceNow', 'That letter is in place.') : t('wsNice', '{w} works.', { w: mine.word.toUpperCase() }), r.newGreen ? 'good' : '');
+      } else if (!mine.last.ok && R.counts({ ok: false, reason: mine.last.reason })) {
+        surf.refuse(mine.last.word, mine.last.reason);
+      } else {
+        surf.release();
       }
-      var grew = steps.length > b.steps;
-      var before = R.greens(b.word, b.p.t);
-      var changedAt = -1;
-      if (grew) for (var i = 0; i < mine.word.length; i++) if (mine.word[i] !== b.word[i]) changedAt = i;
-      b.steps = steps.length;
-      if (mine.word !== b.word || (mine.last && !mine.last.ok)) { b.word = mine.word; board.reset(mine.word); }
-      draw();
+      if (surf.word() !== mine.word) { surf.trailFrom(mine.used.slice(1)); surf.setWord(mine.word); }
       if (mine.done) {
-        b.tileEls.forEach(function (el, i) { el.classList.add('ws-tile--green'); el.style.animationDelay = (i * 90) + 'ms'; g.retrigger(el, 'is-wave'); });
+        surf.stop();
+        surf.win();
         say(t('wsDoneRace', 'You reached {w}! Waiting for the others…', { w: b.p.t.toUpperCase() }), 'good');
         api.audio.play('winner');
-        return;
       }
-      if (mine.last && !mine.last.ok) {
-        api.audio.play('wrong');
-        say((g.REASONS[mine.last.reason] || g.REASONS.word)(), 'bad');
-        g.retrigger(b.tilesEl, 'is-shake');
-        return;
-      }
-      if (grew && changedAt >= 0) {
-        g.retrigger(b.tileEls[changedAt], 'is-flip');
-        var nowGreen = R.greens(mine.word, b.p.t);
-        var newGreen = nowGreen[changedAt] && !before[changedAt];
-        if (newGreen) g.retrigger(b.tileEls[changedAt], 'is-pop');
-        api.audio.play(newGreen ? 'correct' : 'land');
-        say(newGreen ? t('wsInPlaceNow', 'That letter is in place.') : t('wsNice', '{w} works.', { w: mine.word.toUpperCase() }), newGreen ? 'good' : '');
-      }
-    }
-
-    function onKey(e) {
-      if (ended) return;
-      if (!f.root.isConnected) { cleanup(); return; }
-      var tag = e.target && e.target.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
-      var k = FF.WordShiftBoard.keyFilter(e);
-      if (!k || !board) return;
-      if (k === 'enter' && e.target && e.target.tagName === 'BUTTON' && !e.target.classList.contains('ws-tile')) return;
-      e.preventDefault();
-      e.stopPropagation();
-      press(k);
-    }
-    document.addEventListener('keydown', onKey, true);
-
-    function press(k) {
-      if (!canMove()) return;
-      if (k === 'enter') { submit(); return; }
-      if (k === 'back') { if (board.back()) api.audio.play('tap'); draw(); return; }
-      if (k === 'left') { board.move(-1); draw(); return; }
-      if (k === 'right') { board.move(1); draw(); return; }
-      if (board.selected() < 0) { say(t('wsPickFirst', 'Tap the letter you want to change first.'), 'warn'); return; }
-      if (board.type(k)) { api.audio.play('tap'); draw(); g.retrigger(built.tileEls[board.selected()], 'is-typed'); }
-    }
-
-    function submit() {
-      var word = board.word();
-      if (word === built.word) { api.audio.play('wrong'); say(g.REASONS.same(), 'bad'); g.retrigger(built.tilesEl, 'is-shake'); return; }
-      if (client.view().pending) { say(t('wsChecking', 'Checking your last word…'), 'warn'); return; }
-      if (client.send(word)) say(t('wsChecking', 'Checking your last word…'), '');
-      else say(t('wsNotNow', 'That move could not be sent. Try again.'), 'warn');
     }
 
     /* ---------- between rounds and the end ---------- */
 
     function showReveal(ws, v, key) {
       revealKey = key;
-      shownKey = null; board = null; built = null;
+      if (surf) { surf.stop(); surf = null; }
+      shownKey = null; built = null;
       FF.ui.clear(stage);
       var last = ws.last;
       var mineR = last.results[v.uid] || {};
@@ -329,7 +229,9 @@ window.FF = window.FF || {};
       pair.appendChild(FF.ui.span('ws-reveal__arrow', '→'));
       pair.appendChild(g.tileRow(last.t, 'ws-row--mini', R.greens(last.t, last.t)).el);
       card.appendChild(pair);
-      card.appendChild(FF.ui.el('p', { class: 'ws-note' }, t('wsShortestWas', 'The shortest path was {n} moves.', { n: last.n })));
+      var sol = g.solution(fullPuzzle(ws.puzzle), false);
+      if (sol && ws.puzzle && ws.puzzle.s === last.s && ws.puzzle.t === last.t) card.appendChild(sol);
+      else card.appendChild(FF.ui.el('p', { class: 'ws-note' }, t('wsShortestWas', 'The shortest path was {n} moves.', { n: last.n })));
       var rows = FF.ui.el('ol', { class: 'ws-race ws-race--reveal' });
       (ws.order || []).slice().sort(function (a, b) {
         var ra = last.results[a] || {}, rb = last.results[b] || {};
@@ -338,7 +240,7 @@ window.FF = window.FF || {};
         var r = last.results[uid] || {};
         var li = FF.ui.el('li', { class: 'ws-race__row' + (uid === v.uid ? ' is-me' : '') + (r.done ? ' is-done' : '') });
         li.appendChild(FF.ui.span('ws-race__name', who(uid).name));
-        li.appendChild(FF.ui.span('ws-race__meta', r.done ? ordinal(r.place) + ' · ' + t('wsMovesN', '{n} moves', { n: r.moves }) : t('wsNotThere', 'not there')));
+        li.appendChild(FF.ui.span('ws-race__meta', r.done ? ordinal(r.place) + ' · ' + g.movesText(r.moves || 0) : t('wsNotThere', 'not there')));
         li.appendChild(FF.ui.span('ws-race__pts', '+' + FF.util.formatNumber(r.points || 0)));
         rows.appendChild(li);
       });
@@ -349,7 +251,8 @@ window.FF = window.FF || {};
 
     function showEnd(ws, v) {
       finishedShown = true;
-      board = null; built = null;
+      if (surf) { surf.stop(); surf = null; }
+      built = null;
       FF.ui.clear(stage);
       clock.textContent = '';
       var rows = (ws.result && ws.result.rows) || [];

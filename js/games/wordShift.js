@@ -2,9 +2,11 @@
    PLAYMONA — games/wordShift.js
    WordShift: change the start word into the target word, one
    letter at a time. Every step must be a real word, and no word
-   twice. A letter that matches the target's letter in its place
-   turns green. No hints of any kind: nothing is suggested, picked
-   or revealed (the shortest length shows only once it is over).
+   twice. Each letter is checked as it is typed: a real word keeps it
+   (green in its target place), a refused one shakes back and still
+   counts as a move. The keys hold only the puzzle's letters
+   (FF.WordShiftRules.keyLetters). No hints while playing; one
+   shortest path is shown only once the puzzle is over.
 
    - Rules: js/wordshift/rules.js (FF.WordShiftRules), typing model
      js/wordshift/board.js (FF.WordShiftBoard), puzzles
@@ -28,7 +30,6 @@ window.FF = window.FF || {};
   var SETUP_KEY = 'wordShift:setup';
   var SEEN_KEY = 'wordShift:seen';
   var SEEN_MAX = 1500;
-  var KEYS = ['qwertyuiop', 'asdfghjkl', 'zxcvbnm'];
 
   function t(key, fallback, vars) { return FF.t ? FF.t(key, fallback, vars) : String(fallback).replace(/\{(\w+)\}/g, function (m, k) { return vars && vars[k] != null ? vars[k] : m; }); }
   function store() { return FF.Storage || { get: function (k, d) { return d; }, set: function () {} }; }
@@ -52,6 +53,7 @@ window.FF = window.FF || {};
     return l === 'easy' ? t('wsLetters3', '3 letters') : l === 'normal' ? t('wsLetters4', '4 letters') : l === 'hard' ? t('wsLetters5', '5 letters') : t('wsLetters6', '6–8 letters');
   }
   function modeName(m) { return m === 'timed' ? t('wsTimed', 'Time Challenge') : t('wsClassic', 'Classic'); }
+  function movesText(n) { return n === 1 ? t('wsMoves1', '1 move') : t('wsMovesN', '{n} moves', { n: n }); }
   function clockText(ms) {
     var s = Math.max(0, Math.round(ms / 1000));
     return Math.floor(s / 60) + ':' + (s % 60 < 10 ? '0' : '') + (s % 60);
@@ -60,8 +62,8 @@ window.FF = window.FF || {};
     length: function () { return t('wsBadLength', 'Keep the same number of letters.'); },
     same: function () { return t('wsBadSame', 'Change one letter first.'); },
     many: function () { return t('wsBadMany', 'Change just one letter.'); },
-    word: function () { return t('wsBadWord', 'Not in our word list.'); },
-    used: function () { return t('wsBadUsed', 'You already used that word.'); }
+    word: function (w) { return w ? t('wsBadWordW', '{w} is not in our word list. That counts as a move.', { w: w.toUpperCase() }) : t('wsBadWord', 'Not in our word list.'); },
+    used: function (w) { return w ? t('wsBadUsedW', 'You already used {w}. That counts as a move.', { w: w.toUpperCase() }) : t('wsBadUsed', 'You already used that word.'); }
   };
 
   function seenGet() { var s = store().get(SEEN_KEY, null); return s && s.length ? s : []; }
@@ -134,7 +136,7 @@ window.FF = window.FF || {};
     var how = FF.ui.el('ul', { class: 'ws-how' });
     [t('wsHow1', 'Change one letter at a time to reach the target word.'),
       t('wsHow2', 'Every step must be a real word, and you can’t use a word twice.'),
-      t('wsHow3', 'Letters in the right place turn green. Fewer moves score more.')].forEach(function (x, i) {
+      t('wsHow3', 'Each letter is checked as you type it: a letter in its target place turns green, a wrong word shakes back and still counts as a move.')].forEach(function (x, i) {
       var li = FF.ui.el('li', {});
       li.appendChild(FF.ui.span('ws-how__n', String(i + 1)));
       li.appendChild(FF.ui.span('', x));
@@ -231,6 +233,259 @@ window.FF = window.FF || {};
     }).catch(function () { /* offline: no board */ });
   }
 
+  /* ================= the play surface (solo and the online Race) ================= */
+
+  // Start -> target in one card.
+  function goalCard(p) {
+    var goal = FF.ui.div('ws-goal');
+    var a = FF.ui.div('ws-goal__side ws-goal__side--start');
+    a.appendChild(FF.ui.span('ws-label', t('wsStart', 'Start')));
+    a.appendChild(tileRow(p.s, 'ws-row--goal ws-row--start').el);
+    goal.appendChild(a);
+    goal.appendChild(FF.ui.span('ws-goal__arrow', '→'));
+    var b = FF.ui.div('ws-goal__side ws-goal__side--target');
+    b.appendChild(FF.ui.span('ws-label', t('wsTarget', 'Target')));
+    b.appendChild(tileRow(p.t, 'ws-row--goal ws-row--target').el);
+    goal.appendChild(b);
+    return goal;
+  }
+
+  function changedAt(a, b) {
+    for (var i = 0; i < Math.min(a.length, b.length); i++) if (a.charAt(i) !== b.charAt(i)) return i;
+    return -1;
+  }
+
+  /* The tiles, your words so far, the message line and this puzzle's keys. A letter is
+     checked the moment it is typed (no Enter): the screen answers each try with
+     accept(word) (the letter stays, green when it is in its target place) or
+     refuse(word, reason) (the tile shakes and the old letter comes back).
+
+     opts: { parent, keys?, canPlay() -> bool, onTry(word, index) }
+     -> { accept, refuse, checking, release, setWord, trailFrom, say, stop, win, word, busy, board, tiles } */
+  function surface(api, p, opts) {
+    var keys = opts.keys || R.keyLetters(p);
+    var parent = opts.parent;
+    parent.appendChild(goalCard(p));
+
+    var trail = FF.ui.div('ws-trail');
+    var head = FF.ui.div('ws-trail__head');
+    head.appendChild(FF.ui.span('ws-label', t('wsYourWords', 'Your words')));
+    trail.appendChild(head);
+    var list = FF.ui.el('ol', { class: 'ws-trail__list', 'aria-label': t('wsYourWords', 'Your words') });
+    trail.appendChild(list);
+    parent.appendChild(trail);
+
+    var boardWrap = FF.ui.div('ws-board');
+    var tilesEl = FF.ui.div('ws-row ws-row--board');
+    tilesEl.style.setProperty('--n', String(p.s.length));
+    tilesEl.setAttribute('role', 'group');
+    tilesEl.setAttribute('aria-label', t('wsCurrent', 'Your word. Pick a letter, then type its new letter.'));
+    boardWrap.appendChild(tilesEl);
+    var msg = FF.ui.el('p', { class: 'ws-msg', role: 'status', 'aria-live': 'polite' }, t('wsPick', 'Tap a letter, then type its new letter.'));
+    boardWrap.appendChild(msg);
+    parent.appendChild(boardWrap);
+
+    var kb = FF.ui.div('ws-kb');
+    kb.style.setProperty('--cols', String(keys.length <= 16 ? Math.ceil(keys.length / 2) : Math.ceil(keys.length / 3)));
+    kb.setAttribute('role', 'group');
+    kb.setAttribute('aria-label', t('wsKeys', 'Letters for this puzzle'));
+    var keyEls = {};
+    keys.forEach(function (ch) {
+      var b = FF.ui.el('button', { type: 'button', class: 'ws-key' }, ch.toUpperCase());
+      b.addEventListener('click', function () { press(ch); });
+      kb.appendChild(b);
+      keyEls[ch] = b;
+    });
+    parent.appendChild(kb);
+
+    var board = FF.WordShiftBoard.create(p.s);
+    var word = p.s;
+    var busy = null;        // { word, idx, miss?, checking? }: a try on the board, not settled yet
+    var missTimer = null;
+    var off = false;
+    var tileEls = [];
+    for (var i = 0; i < p.s.length; i++) {
+      (function (idx) {
+        var b = FF.ui.el('button', { type: 'button', class: 'ws-tile ws-tile--big' });
+        b.addEventListener('click', function () {
+          if (off || !opts.canPlay()) return;
+          api.audio.play('tap');
+          board.select(idx);
+          draw();
+        });
+        tilesEl.appendChild(b);
+        tileEls.push(b);
+      })(i);
+    }
+
+    function say(text, kind) {
+      msg.textContent = text;
+      msg.className = 'ws-msg' + (kind ? ' ws-msg--' + kind : '');
+    }
+
+    function onKey(e) {
+      if (off) return;
+      if (!parent.isConnected) { stop(); return; }
+      var tag = e.target && e.target.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      var k = FF.WordShiftBoard.keyFilter(e);
+      if (!k) return;
+      e.preventDefault();
+      e.stopPropagation();
+      if (keyEls[k]) { var hit = keyEls[k]; hit.classList.add('is-hit'); setTimeout(function () { hit.classList.remove('is-hit'); }, 120); }
+      press(k);
+    }
+    document.addEventListener('keydown', onKey, true);
+
+    function press(k) {
+      if (off || !opts.canPlay()) return;
+      if (k === 'left' || k === 'right') { board.move(k === 'left' ? -1 : 1); draw(); return; }
+      if (keys.indexOf(k) === -1) { say(t('wsNotOnKeys', '{l} is not one of this puzzle’s letters.', { l: k.toUpperCase() }), 'warn'); return; }
+      if (busy) return;   // the last try is still settling
+      if (board.selected() < 0) {
+        say(t('wsPickFirst', 'Tap the letter you want to change first.'), 'warn');
+        tileEls.forEach(function (b, i) { b.style.animationDelay = (i * 60) + 'ms'; retrigger(b, 'is-nudge'); });
+        return;
+      }
+      var next = board.candidate(k);
+      if (!next) return;   // the same letter: nothing to check
+      busy = { word: next, idx: board.selected() };
+      api.audio.play('tap');
+      draw();
+      opts.onTry(next, busy.idx);
+    }
+
+    function draw() {
+      var letters = board.letters();
+      var greens = R.greens(word, p.t);
+      var sel = board.selected();
+      tileEls.forEach(function (b, i) {
+        var trying = !!busy && busy.idx === i;
+        var ch = trying ? busy.word.charAt(i) : letters[i];
+        b.textContent = ch.toUpperCase();
+        b.classList.toggle('ws-tile--green', !!greens[i] && !trying);
+        b.classList.toggle('is-selected', i === sel && !(trying && busy.miss));
+        b.classList.toggle('is-trying', trying && !busy.miss);
+        b.classList.toggle('is-checking', trying && !!busy.checking);
+        b.classList.toggle('is-miss', trying && !!busy.miss);
+        b.setAttribute('aria-pressed', i === sel ? 'true' : 'false');
+        b.setAttribute('aria-label', t('wsTileAria', 'Letter {n}: {l}', { n: i + 1, l: ch.toUpperCase() }) + (greens[i] && !trying ? ' · ' + t('wsInPlace', 'in place') : ''));
+      });
+    }
+
+    function addStep(w, isNew) {
+      var empty = list.querySelector('.ws-trail__empty');
+      if (empty) list.removeChild(empty);
+      var li = FF.ui.el('li', { class: 'ws-trail__step' + (isNew && animationsOn() ? ' is-new' : '') });
+      li.appendChild(tileRow(w, 'ws-row--mini', R.greens(w, p.t)).el);
+      list.appendChild(li);
+      list.scrollTop = list.scrollHeight;
+    }
+    function addMiss(w) {
+      var empty = list.querySelector('.ws-trail__empty');
+      if (empty) list.removeChild(empty);
+      var li = FF.ui.el('li', { class: 'ws-trail__step' });
+      var m = FF.ui.span('ws-trail__miss', w.toUpperCase());
+      m.setAttribute('aria-label', t('wsMissAria', '{w}: refused, counted as a move', { w: w.toUpperCase() }));
+      li.appendChild(m);
+      list.appendChild(li);
+      list.scrollTop = list.scrollHeight;
+    }
+    function trailFrom(words) {
+      FF.ui.clear(list);
+      if (!words.length) list.appendChild(FF.ui.el('li', { class: 'ws-trail__empty' }, t('wsTrailEmpty', 'Each word you make shows here.')));
+      words.forEach(function (w) { addStep(w, false); });
+    }
+    trailFrom([]);
+
+    // The word is real and new: keep the letter (green if it is in its target place).
+    function accept(next) {
+      var idx = busy ? busy.idx : changedAt(word, next);
+      var before = R.greens(word, p.t);
+      word = next;
+      board.reset(next, true);
+      busy = null;
+      addStep(next, true);
+      draw();
+      var newGreen = idx >= 0 && R.greens(next, p.t)[idx] && !before[idx];
+      if (idx >= 0) {
+        retrigger(tileEls[idx], 'is-flip');
+        if (newGreen) retrigger(tileEls[idx], 'is-pop');
+      }
+      api.audio.play(newGreen ? 'correct' : 'land');
+      return { newGreen: !!newGreen };
+    }
+
+    // Not a word, or used already: shake, count it, then put the old letter back.
+    function refuse(next, reason) {
+      var idx = busy ? busy.idx : changedAt(word, next);
+      if (idx < 0) { release(); return; }
+      busy = { word: next, idx: idx, miss: true };
+      draw();
+      retrigger(tileEls[idx], 'is-shake');
+      api.audio.play('wrong');
+      addMiss(next);
+      say((REASONS[reason] || REASONS.word)(next), 'bad');
+      if (missTimer) clearTimeout(missTimer);
+      missTimer = setTimeout(function () { missTimer = null; if (busy && busy.miss) { busy = null; draw(); } }, animationsOn() ? 520 : 200);
+    }
+
+    function checking() { if (busy) { busy.checking = true; draw(); } }
+    function release() { busy = null; draw(); }
+    function setWord(w) { word = w; board.reset(w, true); busy = null; draw(); }
+
+    function stop() {
+      off = true;
+      document.removeEventListener('keydown', onKey, true);
+      if (missTimer) { clearTimeout(missTimer); missTimer = null; }
+      kb.classList.add('is-off');
+      busy = null;
+      board.reset(word);
+      draw();
+    }
+    function win() {
+      tileEls.forEach(function (b, i) {
+        b.classList.add('ws-tile--green');
+        b.style.animationDelay = (i * 90) + 'ms';
+        retrigger(b, 'is-wave');
+      });
+    }
+
+    draw();
+    return {
+      accept: accept, refuse: refuse, checking: checking, release: release, setWord: setWord, trailFrom: trailFrom,
+      say: say, stop: stop, win: win,
+      word: function () { return word; },
+      // A try waiting for its answer (a refused one still shaking back does not count).
+      busy: function () { return !!busy && !busy.miss; },
+      board: boardWrap, keys: kb, tiles: tilesEl
+    };
+  }
+
+  /* One shortest path, start to target, the changed letter ringed on each step. When
+     `animate`, the steps appear one at a time. -> the element, or null for a puzzle without a path. */
+  function solution(p, animate) {
+    if (!p || !Array.isArray(p.p)) return null;
+    var route = [p.s].concat(p.p, [p.t]);
+    var box = FF.ui.div('ws-sol');
+    box.appendChild(FF.ui.el('p', { class: 'ws-sol__title' }, t('wsSolTitle', 'One way in {n} moves', { n: route.length - 1 })));
+    var ol = FF.ui.el('ol', { class: 'ws-sol__list' });
+    var items = route.map(function (w, i) {
+      var li = FF.ui.el('li', { class: 'ws-sol__step' });
+      li.appendChild(FF.ui.span('ws-sol__n', i === 0 ? '' : String(i)));
+      var row = tileRow(w, 'ws-row--mini' + (i === 0 ? ' ws-row--start' : ''), i === 0 ? null : R.greens(w, p.t));
+      var at = i === 0 ? -1 : changedAt(route[i - 1], w);
+      if (at >= 0) row.tiles[at].classList.add('is-changed');
+      li.appendChild(row.el);
+      ol.appendChild(li);
+      return li;
+    });
+    box.appendChild(ol);
+    if (!animate || !animationsOn()) items.forEach(function (li) { li.classList.add('is-shown'); });
+    else items.forEach(function (li, i) { setTimeout(function () { li.classList.add('is-shown'); }, 120 + i * 650); });
+    return box;
+  }
+
   /* ================= one puzzle ================= */
 
   /* opts: { mode, seconds, daily: null | 'ws' | 'platform', onDone(result), onNext, onReplay, single } */
@@ -245,178 +500,85 @@ window.FF = window.FF || {};
     var clock = chip('', 'ws-chip--clock');
     if (timed) f.chips.appendChild(clock);
 
-    var goal = FF.ui.div('ws-goal');
-    var startBox = FF.ui.div('ws-goal__start');
-    startBox.appendChild(FF.ui.span('ws-label', t('wsStart', 'Start')));
-    startBox.appendChild(tileRow(p.s, 'ws-row--mini ws-row--start').el);
-    goal.appendChild(startBox);
-    var targetBox = FF.ui.div('ws-goal__target');
-    targetBox.appendChild(FF.ui.span('ws-label', t('wsTarget', 'Target')));
-    targetBox.appendChild(tileRow(p.t, 'ws-row--target').el);
-    goal.appendChild(targetBox);
-    f.main.appendChild(goal);
-
-    var ladder = FF.ui.el('ol', { class: 'ws-ladder', 'aria-label': t('wsYourWords', 'Your words') });
-    f.main.appendChild(ladder);
-
-    var boardWrap = FF.ui.div('ws-board');
-    var tilesEl = FF.ui.div('ws-row ws-row--board');
-    tilesEl.style.setProperty('--n', String(p.s.length));
-    tilesEl.setAttribute('role', 'group');
-    tilesEl.setAttribute('aria-label', t('wsCurrent', 'Your word. Pick a letter, then type.'));
-    boardWrap.appendChild(tilesEl);
-    var msg = FF.ui.el('p', { class: 'ws-msg', role: 'status', 'aria-live': 'polite' }, t('wsPick', 'Tap a letter, then type its new letter.'));
-    boardWrap.appendChild(msg);
-    f.main.appendChild(boardWrap);
-
-    var kb = FF.ui.div('ws-kb');
-    f.main.appendChild(kb);
-    var giveUp = FF.ui.el('button', { type: 'button', class: 'ws-link' }, t('wsGiveUp', 'Give up'));
-    f.main.appendChild(giveUp);
-
-    var board = FF.WordShiftBoard.create(p.s);
     var cur = p.s;
     var used = [p.s];
-    var moves = [];
+    var tries = [];      // every counted try, refused ones too: what the server replays
     var invalid = 0;
-    var greensNow = R.greens(cur, p.t);
     var over = false;
     var started = Date.now();
     var timer = null;
-    var ticket = null;
     var ticketP = FF.WordShiftApi.begin({ puzzleId: p.id, mode: opts.mode, seconds: timed ? opts.seconds : undefined, daily: opts.daily || undefined })
-      .then(function (r) { ticket = r && r.ticket; return ticket; });
+      .then(function (r) { return r && r.ticket; });
     seenAdd(p.id);
 
-    var tileEls = [];
-    for (var i = 0; i < p.s.length; i++) {
-      (function (idx) {
-        var b = FF.ui.el('button', { type: 'button', class: 'ws-tile ws-tile--big' });
-        b.addEventListener('click', function () { if (over) return; api.audio.play('tap'); board.select(idx); draw(); });
-        tilesEl.appendChild(b);
-        tileEls.push(b);
-      })(i);
-    }
-
-    KEYS.forEach(function (row, r) {
-      var line = FF.ui.div('ws-kb__row');
-      if (r === 2) line.appendChild(key('enter', t('wsEnter', 'Enter'), 'ws-key--wide ws-key--enter'));
-      row.split('').forEach(function (ch) { line.appendChild(key(ch, ch.toUpperCase())); });
-      if (r === 2) line.appendChild(key('back', '⌫', 'ws-key--wide', t('wsBack', 'Undo letter')));
-      kb.appendChild(line);
+    var s = surface(api, p, {
+      parent: f.main,
+      canPlay: function () { return !over && !left(); },
+      onTry: function (next) {
+        var res = R.checkMove(cur, next, used, isWord);
+        if (!R.counts(res)) { s.release(); return; }
+        tries.push(next);
+        if (!res.ok) {
+          invalid++;
+          s.refuse(next, res.reason);
+        } else {
+          cur = next;
+          used.push(next);
+          var r = s.accept(next);
+          if (next === p.t) { drawMoves(); win(); return; }
+          s.say(r.newGreen ? t('wsInPlaceNow', 'That letter is in place.') : t('wsNice', '{w} works.', { w: next.toUpperCase() }), r.newGreen ? 'good' : '');
+        }
+        drawMoves();
+        if (tries.length >= R.MAX_MOVES) lose('moves');
+      }
     });
-    function key(k, label, cls, aria) {
-      var b = FF.ui.el('button', { type: 'button', class: 'ws-key' + (cls ? ' ' + cls : '') }, label);
-      if (aria) b.setAttribute('aria-label', aria);
-      b.addEventListener('click', function () { press(k); });
-      return b;
-    }
 
-    // The player left the game screen (quit, back): drop the clock and the key listener.
+    var foot = FF.ui.div('ws-foot');
+    var giveUp = FF.ui.el('button', { type: 'button', class: 'ws-link' }, t('wsGiveUp', 'Give up'));
+    foot.appendChild(giveUp);
+    f.main.appendChild(foot);
+    var confirmTimer = null;
+    giveUp.addEventListener('click', function () {
+      if (over) return;
+      if (!giveUp.classList.contains('is-confirm')) {
+        giveUp.classList.add('is-confirm');
+        giveUp.textContent = t('wsGiveUpSure', 'Tap again to give up');
+        confirmTimer = setTimeout(function () { giveUp.classList.remove('is-confirm'); giveUp.textContent = t('wsGiveUp', 'Give up'); }, 3000);
+        return;
+      }
+      if (confirmTimer) clearTimeout(confirmTimer);
+      lose('quit');
+    });
+
+    function drawMoves() { movesChip.textContent = movesText(tries.length); }
+
+    // The player left the game screen (quit, back): drop the clock and the keys.
     function left() {
       if (stillShown(api)) return false;
-      over = true;
-      document.removeEventListener('keydown', onKey, true);
+      if (!over) { over = true; s.stop(); }
       if (timer) { clearInterval(timer); timer = null; }
       return true;
     }
 
-    function onKey(e) {
-      if (over || left()) return;
-      var tag = e.target && e.target.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
-      var k = FF.WordShiftBoard.keyFilter(e);
-      if (!k) return;
-      if (k === 'enter' && e.target && e.target.tagName === 'BUTTON' && !e.target.classList.contains('ws-tile')) return;   // let the focused button act
-      e.preventDefault();
-      e.stopPropagation();
-      press(k);
-    }
-    document.addEventListener('keydown', onKey, true);
-
-    function press(k) {
-      if (over) return;
-      if (k === 'enter') { submit(); return; }
-      if (k === 'back') { if (board.back()) api.audio.play('tap'); draw(); return; }
-      if (k === 'left') { board.move(-1); draw(); return; }
-      if (k === 'right') { board.move(1); draw(); return; }
-      if (board.selected() < 0) { say(t('wsPickFirst', 'Tap the letter you want to change first.'), 'warn'); return; }
-      if (board.type(k)) { api.audio.play('tap'); draw(); retrigger(tileEls[board.selected()], 'is-typed'); }
-    }
-
-    function say(text, kind) {
-      msg.textContent = text;
-      msg.className = 'ws-msg' + (kind ? ' ws-msg--' + kind : '');
-    }
-
-    function draw() {
-      var letters = board.letters();
-      var edited = board.edited();
-      var sel = board.selected();
-      tileEls.forEach(function (b, i) {
-        b.textContent = letters[i].toUpperCase();
-        b.classList.toggle('ws-tile--green', !!greensNow[i] && edited.indexOf(i) === -1);
-        b.classList.toggle('ws-tile--edited', edited.indexOf(i) !== -1);
-        b.classList.toggle('is-selected', i === sel);
-        b.setAttribute('aria-pressed', i === sel ? 'true' : 'false');
-        b.setAttribute('aria-label', t('wsTileAria', 'Letter {n}: {l}', { n: i + 1, l: letters[i].toUpperCase() }) + (greensNow[i] ? ' · ' + t('wsInPlace', 'in place') : ''));
-      });
-      movesChip.textContent = t('wsMovesN', '{n} moves', { n: moves.length });
-    }
-
-    function submit() {
-      var word = board.word();
-      var res = R.checkMove(cur, word, used, isWord);
-      if (!res.ok) {
-        if (res.reason !== 'same') invalid++;
-        api.audio.play('wrong');
-        say(REASONS[res.reason](), 'bad');
-        retrigger(tilesEl, 'is-shake');
-        return;
-      }
-      var before = greensNow;
-      var changed = board.edited()[0];
-      cur = word;
-      used.push(word);
-      moves.push(word);
-      greensNow = R.greens(cur, p.t);
-      var li = FF.ui.el('li', { class: 'ws-ladder__step' });
-      li.appendChild(tileRow(word, 'ws-row--mini', greensNow).el);
-      ladder.appendChild(li);
-      if (ladder.scrollTo) ladder.scrollTop = ladder.scrollHeight;
-      board.reset(word);
-      draw();
-      retrigger(tileEls[changed], 'is-flip');
-      var newGreen = greensNow[changed] && !before[changed];
-      if (newGreen) retrigger(tileEls[changed], 'is-pop');
-      api.audio.play(newGreen ? 'correct' : 'land');
-      if (word === p.t) { win(); return; }
-      say(newGreen ? t('wsInPlaceNow', 'That letter is in place.') : t('wsNice', '{w} works.', { w: word.toUpperCase() }), newGreen ? 'good' : '');
-    }
-
     function stop() {
       over = true;
-      document.removeEventListener('keydown', onKey, true);
       if (timer) { clearInterval(timer); timer = null; }
+      if (confirmTimer) clearTimeout(confirmTimer);
       api.shell.hideTimer();
       api.shell.setOnTick(null);
-      kb.classList.add('is-off');
-      giveUp.style.display = 'none';
+      s.stop();
+      foot.style.display = 'none';
     }
 
     function win() {
       var ms = Date.now() - started;
       stop();
-      tileEls.forEach(function (b, i) {
-        b.classList.add('ws-tile--green');
-        b.style.animationDelay = (i * 90) + 'ms';
-        retrigger(b, 'is-wave');
-      });
-      say(t('wsSolved', 'You reached {w}!', { w: p.t.toUpperCase() }), 'good');
+      s.win();
+      s.say(t('wsSolved', 'You reached {w}!', { w: p.t.toUpperCase() }), 'good');
       api.audio.play('winner');
       if (animationsOn() && FF.Confetti) FF.Confetti.burst(90);
-      var local = R.score({ finished: true, moves: moves.length, shortest: p.n, invalid: invalid, timed: timed, secondsLeft: timed ? Math.floor((opts.seconds * 1000 - ms) / 1000) : 0 });
-      ticketP.then(function (tk) { return FF.WordShiftApi.finish(tk, moves, invalid); }).then(function (server) {
+      var local = R.score({ finished: true, moves: tries.length, shortest: p.n, invalid: invalid, timed: timed, secondsLeft: timed ? Math.floor((opts.seconds * 1000 - ms) / 1000) : 0 });
+      ticketP.then(function (tk) { return FF.WordShiftApi.finish(tk, tries, invalid); }).then(function (server) {
         if (!stillShown(api)) return;
         var result = server && server.finished
           ? { score: server.score, ms: server.ms, ranked: !!server.ranked, places: server.places || [], shortest: server.shortest }
@@ -444,7 +606,8 @@ window.FF = window.FF || {};
         }).catch(function () { /* offline */ });
       }
       var card = FF.ui.div('ws-done' + (solved ? ' is-solved' : ''));
-      card.appendChild(FF.ui.el('h2', { class: 'ws-h ws-h--xl' }, solved ? t('wsDoneTitle', 'Shifted!') : r.reason === 'time' ? t('wsTimeUp', 'Time’s up') : t('wsGaveUp', 'Puzzle over')));
+      card.appendChild(FF.ui.el('h2', { class: 'ws-h ws-h--xl' }, solved ? t('wsDoneTitle', 'Shifted!')
+        : r.reason === 'time' ? t('wsTimeUp', 'Time’s up') : r.reason === 'moves' ? t('wsTooMany', 'Out of moves') : t('wsGaveUp', 'Puzzle over')));
       var stats = FF.ui.el('dl', { class: 'ws-stats' });
       function stat(label, value, cls) {
         var d = FF.ui.div('ws-stat' + (cls ? ' ' + cls : ''));
@@ -452,28 +615,40 @@ window.FF = window.FF || {};
         d.appendChild(FF.ui.el('dd', {}, value));
         stats.appendChild(d);
       }
-      stat(t('wsMoves', 'Moves'), String(moves.length));
+      stat(t('wsMoves', 'Moves'), String(tries.length));
       stat(t('wsShortest', 'Shortest'), String(r.shortest));
       stat(t('wsTime', 'Time'), clockText(r.ms));
       stat(t('wsScore', 'Score'), FF.util.formatNumber(r.score), 'ws-stat--score');
       card.appendChild(stats);
       if (solved) {
-        var extra = moves.length - r.shortest;
+        var extra = tries.length - r.shortest;
         card.appendChild(FF.ui.el('p', { class: 'ws-note' }, extra <= 0 ? t('wsPerfect', 'A perfect path: as short as it gets.') : t('wsExtra', '{n} more than the shortest path.', { n: extra })));
       }
+      if (invalid) card.appendChild(FF.ui.el('p', { class: 'ws-note' }, invalid === 1 ? t('wsMissedOne', 'That includes 1 refused try.') : t('wsMissedN', 'That includes {n} refused tries.', { n: invalid })));
       card.appendChild(FF.ui.el('p', { class: 'ws-note ws-note--rank' }, r.ranked
         ? t('wsRanked', 'Checked by the server and counted.')
         : FF.WordShiftApi.canRank() ? t('wsNotRanked', 'This run was not counted on the boards.') : t('wsSignInRank', 'Sign in to put your scores on the boards.')));
+
+      // How it could have been solved, one letter at a time.
+      var solHolder = FF.ui.div('');
+      if (Array.isArray(p.p) && (!solved || tries.length > p.n)) {
+        var show = btn('eye', solved ? t('wsSeeShortest', 'See a shortest path') : t('wsSeeSolution', 'See the solution'), solved ? 'ws-btn--ghost' : 'ws-btn--go', function () {
+          FF.ui.clear(solHolder);
+          solHolder.appendChild(solution(p, true));
+          show.lastChild.textContent = t('wsSolAgain', 'Play the solution again');
+        });
+        card.appendChild(show);
+        card.appendChild(solHolder);
+      }
       var row = FF.ui.div('ws-done__btns');
-      if (opts.onNext) row.appendChild(btn('arrow-right', t('wsNext', 'Next puzzle'), 'ws-btn--go', opts.onNext));
+      if (opts.onNext) row.appendChild(btn('arrow-right', t('wsNext', 'Next puzzle'), solved ? 'ws-btn--go' : '', opts.onNext));
       if (opts.onReplay) row.appendChild(btn('play', t('wsReplay', 'Replay'), '', opts.onReplay));
       row.appendChild(btn('trophy', t('seeResults', 'See results'), opts.onNext ? 'ws-btn--ghost' : 'ws-btn--go', opts.onDone));
       card.appendChild(row);
-      FF.ui.clear(boardWrap);
-      boardWrap.appendChild(tilesEl);
-      boardWrap.appendChild(card);
-      kb.style.display = 'none';
-      if (FF.Nav && FF.Nav.focusFirst) FF.Nav.focusFirst(row);
+      s.keys.style.display = 'none';
+      f.main.insertBefore(card, s.keys);
+      if (card.scrollIntoView && animationsOn()) { try { card.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (e) { /* old browser */ } }
+      if (FF.Nav && FF.Nav.focusFirst) FF.Nav.focusFirst(card);
     }
     function btn(icon, label, cls, fn) {
       var b = FF.ui.el('button', { type: 'button', class: 'ws-btn ' + (cls || '') });
@@ -482,8 +657,6 @@ window.FF = window.FF || {};
       b.addEventListener('click', function () { api.audio.play('click'); fn(); });
       return b;
     }
-
-    giveUp.addEventListener('click', function () { if (!over) lose('quit'); });
 
     if (timed) {
       var endAt = started + opts.seconds * 1000;
@@ -497,7 +670,7 @@ window.FF = window.FF || {};
       tick();
       timer = setInterval(tick, 250);
     }
-    draw();
+    drawMoves();
   }
 
   /* ================= a session of puzzles ================= */
@@ -557,11 +730,13 @@ window.FF = window.FF || {};
     serverScored: true,
     howToPlay: [
       'You get a start word and a target word with the same number of letters.',
-      'Tap a letter, type its new letter and press Enter. Change exactly one letter each move.',
+      'Tap a letter, then tap its new letter. It is checked at once: no Enter needed.',
+      'A real word keeps the letter (green when it is in the target’s place). A wrong word shakes, the old letter comes back, and it still counts as a move.',
+      'The keys hold only this puzzle’s letters: the target’s, every vowel and a few more.',
       'Every word you make must be a real word, and you can’t use a word twice.',
       'Letters that match the target in the same place turn green.',
       'Reach the target in as few moves as you can. Time Challenge adds points for time left.',
-      'There are no hints: find your own way.'
+      'There are no hints. If you give up, you can see one way it could have been solved.'
     ],
     room: ROOM,
     start: function (api) {
@@ -588,6 +763,7 @@ window.FF = window.FF || {};
 
   FF.WordShiftGame = {
     frame: frame, tileRow: tileRow, chip: chip, levelName: levelName, clockText: clockText,
-    retrigger: retrigger, animationsOn: animationsOn, REASONS: REASONS, KEYS: KEYS, isWord: isWord, room: ROOM
+    movesText: movesText, retrigger: retrigger, animationsOn: animationsOn, REASONS: REASONS, isWord: isWord, room: ROOM,
+    surface: surface, solution: solution, goalCard: goalCard
   };
 })();

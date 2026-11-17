@@ -67,14 +67,18 @@ class WordShift
     }
 
     /**
-     * Plays the moves from the start word. Returns ['finished' => bool, 'moves' => int] or,
-     * for a bad move, ['reason' => 'length'|'same'|'many'|'word'|'used', 'at' => index].
+     * Plays the tries from the start word, in order. A one-letter try that is not a word, or
+     * a word used already, is refused but still counts as a move (FF.WordShiftRules.counts):
+     * the screen checks each letter as it is typed. Returns ['finished' => bool, 'moves' => int
+     * (every counted try), 'invalid' => int (the refused ones)] or, for a try the screen can
+     * never send, ['reason' => 'length'|'same'|'many', 'at' => index].
      */
     public static function replay(array $p, array $moves): array
     {
         $words = self::words();
         $cur = $p['s'];
         $used = [$cur => true];
+        $invalid = 0;
         foreach (array_values($moves) as $i => $next) {
             $next = is_string($next) ? strtolower($next) : '';
             $reason = null;
@@ -87,12 +91,13 @@ class WordShift
                 elseif (!isset($words[$next])) $reason = 'word';
                 elseif (isset($used[$next])) $reason = 'used';
             }
+            if ($reason === 'word' || $reason === 'used') { $invalid++; continue; }
             if ($reason !== null) return ['reason' => $reason, 'at' => $i];
             $used[$next] = true;
             $cur = $next;
-            if ($cur === $p['t']) return ['finished' => $i === count($moves) - 1, 'moves' => $i + 1];
+            if ($cur === $p['t']) return ['finished' => $i === count($moves) - 1, 'moves' => $i + 1, 'invalid' => $invalid];
         }
-        return ['finished' => false, 'moves' => count($moves)];
+        return ['finished' => false, 'moves' => count($moves), 'invalid' => $invalid];
     }
 
     /** As FF.WordShiftRules.score. */
@@ -162,7 +167,7 @@ class WordShift
 
         $ms = max(0, $now - (int) $t['t']);
         $timed = $t['mode'] === 'timed';
-        $invalid = max(0, min(10_000, (int) ($body['invalid'] ?? 0)));
+        $invalid = $r['invalid'];   // counted by the replay, never taken from the phone
         $late = $timed && $ms > (int) $t['seconds'] * 1000 + self::GRACE_MS;
         $expired = $ms > self::TICKET_TTL_MS;
         $out = ['ok' => true, 'finished' => $r['finished'], 'score' => 0, 'ms' => $ms, 'shortest' => (int) $p['n'], 'moves' => $r['moves'], 'ranked' => false, 'places' => []];

@@ -108,58 +108,99 @@ test('wordShift rules: sanitize keeps only known settings', function () {
 let boardFF = null;
 const B = () => (boardFF || (boardFF = loadFF(['js/core.js', 'js/wordshift/rules.js', 'js/wordshift/board.js']))).WordShiftBoard;
 
-test('wordShift board: key filter keeps letters and the editing keys only', function () {
+test('wordShift board: key filter keeps letters and the arrow keys only', function () {
   const k = B().keyFilter;
   assertEqual(k({ key: 'A' }), 'a');
   assertEqual(k({ key: 'r', ctrlKey: true }), null);
   assertEqual(k({ key: 'r', metaKey: true }), null);
   assertEqual(k({ key: 'x', altKey: true }), null);
-  assertEqual(k({ key: 'Enter' }), 'enter');
-  assertEqual(k({ key: 'Backspace' }), 'back');
+  assertEqual(k({ key: 'Enter' }), null, 'no Enter: every letter is checked at once');
   assertEqual(k({ key: 'ArrowLeft' }), 'left');
   assertEqual(k({ key: 'ArrowRight' }), 'right');
   assertEqual(k({ key: '1' }), null);
   assertEqual(k({ key: 'é' }), null);
 });
 
-test('wordShift board: typing into the selected tile changes only that letter', function () {
+test('wordShift board: a letter in the selected tile gives the word to check, without changing the board', function () {
   const b = B().create('sing');
   b.select(1);
-  b.type('a');
-  assertEqual(b.word(), 'sang');
-  assertEqual(b.edited().join(), '1');
-  b.back();
-  assertEqual(b.word(), 'sing');
-  assertEqual(b.edited().length, 0);
+  assertEqual(b.candidate('a'), 'sang');
+  assertEqual(b.word(), 'sing', 'the board waits for the check');
+  assertEqual(b.candidate('i'), null, 'the same letter is not a move');
 });
 
 test('wordShift board: nothing is chosen for the player at the start', function () {
   const b = B().create('sing');
   assertEqual(b.selected(), -1, 'no tile is picked for them');
-  b.type('a');
-  assertEqual(b.word(), 'sing', 'typing with no tile selected changes nothing');
+  assertEqual(b.candidate('a'), null, 'no tile, no move');
   assertEqual(Object.keys(b).filter((k) => /hint|suggest|solve|next/i.test(k)).length, 0, 'no helpers');
 });
 
-test('wordShift board: two edited tiles are kept so the move can be refused', function () {
+test('wordShift board: an accepted word keeps the selected tile; arrows move the selection', function () {
   const b = B().create('sing');
-  b.select(0); b.type('b');
-  b.select(1); b.type('a');
-  assertEqual(b.word(), 'bang');
-  assertEqual(b.edited().join(), '0,1');
-  b.reset('bang');
-  assertEqual(b.word(), 'bang');
-  assertEqual(b.edited().length, 0);
-  assertEqual(b.selected(), -1);
-});
-
-test('wordShift board: typing the same letter is not an edit; arrows move the selection', function () {
-  const b = B().create('sing');
-  b.select(0); b.type('s');
-  assertEqual(b.edited().length, 0);
+  b.select(1);
+  b.reset('sang', true);
+  assertEqual(b.word(), 'sang');
+  assertEqual(b.selected(), 1);
+  b.reset('bear');
+  assertEqual(b.selected(), -1, 'a new puzzle starts with nothing selected');
+  b.select(0);
   b.move(1); assertEqual(b.selected(), 1);
   b.move(5); assertEqual(b.selected(), 3, 'stays on the word');
   b.move(-9); assertEqual(b.selected(), 0);
+});
+
+/* ---------- moves that count ---------- */
+
+test('wordShift rules: a refused real try (not a word, or used) counts as a move', function () {
+  const R = rules();
+  assertEqual(R.counts({ ok: true }), true);
+  assertEqual(R.counts({ ok: false, reason: 'word' }), true);
+  assertEqual(R.counts({ ok: false, reason: 'used' }), true);
+  assertEqual(R.counts({ ok: false, reason: 'same' }), false);
+  assertEqual(R.counts({ ok: false, reason: 'many' }), false);
+});
+
+/* ---------- the keyboard ---------- */
+
+const PZ = { id: 'n7', s: 'cold', t: 'warm', n: 4, lv: 'normal', p: ['cord', 'card', 'ward'] };
+
+test('wordShift rules: the keys hold the target, the path and every vowel, ten more than the word', function () {
+  const keys = rules().keyLetters(PZ);
+  'warm'.split('').concat('cordcardward'.split(''), 'aeiou'.split('')).forEach(function (ch) { assert(keys.indexOf(ch) !== -1, ch + ' on the keys'); });
+  assertEqual(keys.length, 14, '4 letters + 10');
+  assertEqual(keys.join(''), keys.slice().sort().join(''), 'in a-z order');
+  assertEqual(new Set(keys).size, keys.length, 'no repeats');
+});
+
+test('wordShift rules: the keys are the same for a puzzle every time, and differ between puzzles', function () {
+  const R = rules();
+  assertEqual(R.keyLetters(PZ).join(''), R.keyLetters(PZ).join(''));
+  const other = Object.assign({}, PZ, { id: 'n8' });
+  const sets = new Set();
+  for (let i = 0; i < 20; i++) sets.add(R.keyLetters(Object.assign({}, PZ, { id: 'n' + i })).join(''));
+  assert(sets.size > 5, 'the extra letters change with the puzzle');
+  assert(R.keyLetters(other).length === 14);
+});
+
+test('wordShift rules: a long path never loses a letter it needs', function () {
+  const big = { id: 'x1', s: 'planets', t: 'strings', n: 6, lv: 'expert', p: ['plantes', 'blaming', 'quizzed', 'jukebox', 'fyvhwer'] };
+  const keys = rules().keyLetters(big);
+  (big.t + big.p.join('') + 'aeiou').split('').forEach(function (ch) { assert(keys.indexOf(ch) !== -1, ch); });
+  assert(keys.length >= 17);
+});
+
+test('wordShift rules: every puzzle in the bank can be solved on its own keys', function () {
+  const FF = loadFF(['js/core.js', 'js/wordshift/rules.js', 'js/data/wordshiftPuzzles.js']);
+  const R = FF.WordShiftRules;
+  FF.data.wordshift.puzzles.forEach(function (p) {
+    assert(Array.isArray(p.p) && p.p.length === p.n - 1, p.id + ' has its path');
+    const keys = R.keyLetters(p);
+    [p.s].concat(p.p, [p.t]).reduce(function (a, b) {
+      for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) assert(keys.indexOf(b[i]) !== -1, p.id + ' needs ' + b[i]);
+      return b;
+    });
+  });
 });
 
 /* ---------- registration ---------- */

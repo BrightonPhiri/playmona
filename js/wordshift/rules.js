@@ -49,6 +49,32 @@ window.FF = window.FF || {};
     return { ok: true };
   }
 
+  /* Does a checked try use up a move? A real one-letter try does, refused or not
+     (not a word, or used already); a slip that changes nothing or too much does not. */
+  function counts(res) {
+    return !!res && (res.ok || res.reason === 'word' || res.reason === 'used');
+  }
+
+  /* The letters on a puzzle's keyboard, a-z order: the target's letters, every letter on
+     the puzzle's own shortest path (so it can always be solved), every vowel, then
+     letters drawn by the puzzle's id until there are ten more keys than the word has
+     letters. The same for everyone and every time, so a Race is fair. */
+  var VOWELS = 'aeiou';
+  function keyLetters(p) {
+    var have = {};
+    var out = [];
+    function add(ch) { if (/^[a-z]$/.test(ch) && !have[ch]) { have[ch] = true; out.push(ch); } }
+    var len = clean(p && p.t).length;
+    (clean(p && p.t) + (p && p.p ? p.p.map(clean).join('') : '') + VOWELS).split('').forEach(add);
+    var rest = 'abcdefghijklmnopqrstuvwxyz'.split('').filter(function (ch) { return !have[ch]; });
+    var x = fnv('keys|' + (p && p.id)) || 1;
+    while (out.length < len + 10 && rest.length) {
+      x = (Math.imul ? Math.imul(x, 1664525) : (x * 1664525) % 4294967296) + 1013904223 >>> 0;
+      add(rest.splice(x % rest.length, 1)[0]);
+    }
+    return out.sort();
+  }
+
   function greens(word, target) {
     word = clean(word);
     target = clean(target);
@@ -159,7 +185,7 @@ window.FF = window.FF || {};
     LEVELS: LEVELS, MODES: MODES, CLOCKS: CLOCKS, DEFAULT_CLOCK: DEFAULT_CLOCK,
     ROOM_ROUNDS: ROOM_ROUNDS, ROOM_CLOCKS: ROOM_CLOCKS, SCORING: SCORING, STANDARD: STANDARD,
     MIN_PLAYERS: 2, MAX_PLAYERS: 8, MAX_MOVES: 200, REVEAL_MS: 6000, raceDeal: raceDeal,
-    clean: clean, checkMove: checkMove, greens: greens, greenCount: greenCount,
+    clean: clean, checkMove: checkMove, counts: counts, keyLetters: keyLetters, greens: greens, greenCount: greenCount,
     score: score, racePoints: racePoints, fnv: fnv, dailyPuzzle: dailyPuzzle,
     pick: pick, byId: byId, sanitize: sanitize, sanitizeRoom: sanitizeRoom, isStandard: isStandard
   };

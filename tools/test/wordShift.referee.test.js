@@ -148,18 +148,20 @@ test('wordShift referee: a good move advances only that player; nobody\'s words 
   m.views.forEach(function (v) { assert(v.indexOf('"' + route[0] + '"') === -1 || route[0] === p.t, 'a move leaked into the view'); });
 });
 
-test('wordShift referee: refused moves are counted, not applied, and say why', async function () {
+test('wordShift referee: a refused real try counts as a move, is not applied, and says why', async function () {
   const m = await match();
   await m.open();
   const p = m.ws().puzzle;
-  await m.send('p1', p.t);            // jumps too far
+  await m.send('p1', p.t);            // jumps too far: the screen never sends this, so it costs nothing
   assertEqual(m.ws().p.p1.moves, 0);
-  assertEqual(m.ws().p.p1.invalid, 1);
+  assertEqual(m.ws().p.p1.invalid, 0);
   assertEqual(m.mine('p1').last.reason, 'many');
   assertEqual(m.mine('p1').word, p.s);
   await m.send('p1', p.s.slice(0, -1) + 'q');   // one letter changed, but not a word
   assertEqual(m.mine('p1').last.reason, 'word');
-  assertEqual(m.ws().p.p1.invalid, 2);
+  assertEqual(m.ws().p.p1.invalid, 1);
+  assertEqual(m.ws().p.p1.moves, 1, 'the refused try is a move');
+  assertEqual(m.mine('p1').word, p.s, 'and the word goes back');
 });
 
 test('wordShift referee: first to the target gets 100, second 70, plus efficiency; round ends when all are done', async function () {
@@ -218,7 +220,7 @@ test('wordShift referee: a command seen again (a late echo, a restart) is never 
   const m = await match();
   await m.open();
   const g = m.ws();
-  const cmd = { matchId: g.matchId, k: g.k, word: 'zzzz', t: m.clock.now };
+  const cmd = { matchId: g.matchId, k: g.k, word: g.puzzle.s.slice(0, -1) + 'q', t: m.clock.now };
   await m.inbox.set('p1/cdup1', cmd);
   await flush();
   assertEqual(m.mine('p1').invalid, 1);

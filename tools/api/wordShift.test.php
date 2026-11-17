@@ -43,6 +43,17 @@ function wsPuzzle(string $id): array
     return [$p, $route];
 }
 
+/** A one-letter try from `$from` that is not a word: refused, but it counts as a move. */
+function wsMiss(string $from): string
+{
+    $words = WordShift::words();
+    foreach (str_split('qxzjvkw') as $ch) {
+        $try = $ch . substr($from, 1);
+        if ($try !== $from && !isset($words[$try])) return $try;
+    }
+    throw new RuntimeException('no miss for ' . $from);
+}
+
 function ann(): AuthUser { return new AuthUser('ann', 'password', null, 'Ann'); }
 
 test('wordshift: a finished run is replayed, scored and put on the boards', function () {
@@ -50,9 +61,12 @@ test('wordshift: a finished run is replayed, scored and put on the boards', func
     [$p, $route] = wsPuzzle('n1');
     $b = $w['ws']->begin(ann(), ['puzzleId' => 'n1', 'mode' => 'classic'], WS_T0);
     eq('n1', $b['puzzle']['id']);
-    $r = $w['ws']->finish(ann(), ['ticket' => $b['ticket'], 'moves' => $route, 'invalid' => 1], WS_T0 + 42_000);
+    // One refused try first: it counts as a move and costs the invalid points. The phone's own
+    // count is not trusted ('invalid' => 0): the server counts the refused tries it replays.
+    $r = $w['ws']->finish(ann(), ['ticket' => $b['ticket'], 'moves' => array_merge([wsMiss($p['s'])], $route), 'invalid' => 0], WS_T0 + 42_000);
     // The server's own word list can find a route shorter than the bank's (it accepts rarer words), never longer.
-    $extra = max(0, count($route) - $p['n']);
+    $extra = max(0, count($route) + 1 - $p['n']);
+    eq(count($route) + 1, $r['moves']);
     eq(true, $r['ok']);
     eq(true, $r['ranked']);
     eq(100 + max(0, 100 - 15 * $extra) - 5, $r['score']);
@@ -80,14 +94,25 @@ test('wordshift: a move that changes two letters is refused', function () {
     throwsHttp(422, fn () => $w['ws']->finish(ann(), ['ticket' => $b['ticket'], 'moves' => [$p['t']], 'invalid' => 0], WS_T0 + 5000));
 });
 
-test('wordshift: made-up words and repeats are refused, rare real words are fine', function () {
+test('wordshift: made-up words and repeats are refused but counted, rare real words are fine', function () {
     $w = wsWorld();
     $words = WordShift::words();
     eq(true, isset($words['sing']) && isset($words['sang']));
     eq(false, isset($words['sinx']));
     $p = ['s' => 'sing', 't' => 'sang', 'n' => 1];
-    eq('word', WordShift::replay($p, ['sinx'])['reason']);
-    eq('used', WordShift::replay(['s' => 'sing', 't' => 'bear', 'n' => 6], ['sang', 'sing'])['reason']);
+    $miss = WordShift::replay($p, ['sinx']);
+    eq(false, $miss['finished']);
+    eq(1, $miss['moves']);
+    eq(1, $miss['invalid']);
+    $again = WordShift::replay(['s' => 'sing', 't' => 'bear', 'n' => 6], ['sang', 'sing']);
+    eq(2, $again['moves']);
+    eq(1, $again['invalid'], 'going back to a used word is refused');
+    $after = WordShift::replay($p, ['sinx', 'sang']);
+    eq(true, $after['finished']);
+    eq(2, $after['moves']);
+    eq(1, $after['invalid']);
+    eq('many', WordShift::replay($p, ['bang'])['reason'], 'two letters at once cannot come from the screen');
+    eq('same', WordShift::replay($p, ['sing'])['reason']);
     eq(true, WordShift::replay($p, ['sang'])['finished']);
     eq(false, WordShift::replay(['s' => 'sing', 't' => 'bear', 'n' => 6], ['sang'])['finished']);
 });
@@ -120,7 +145,7 @@ test('wordshift: a lower score does not replace the best', function () {
     $b = $w['ws']->begin(ann(), ['puzzleId' => 'n1', 'mode' => 'classic'], WS_T0);
     $best = $w['ws']->finish(ann(), ['ticket' => $b['ticket'], 'moves' => $route, 'invalid' => 0], WS_T0 + 5000)['score'];
     $b = $w['ws']->begin(ann(), ['puzzleId' => 'n1', 'mode' => 'classic'], WS_T0);
-    $w['ws']->finish(ann(), ['ticket' => $b['ticket'], 'moves' => $route, 'invalid' => 10], WS_T0 + 5000);
+    $w['ws']->finish(ann(), ['ticket' => $b['ticket'], 'moves' => array_merge([wsMiss($p['s']), wsMiss($p['s'])], $route), 'invalid' => 0], WS_T0 + 5000);
     eq($best, $w['rtdb']->get('leaderboards/wordShift/all/ann')['score']);
 });
 
