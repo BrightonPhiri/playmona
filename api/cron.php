@@ -107,6 +107,8 @@ try {
     if ($abandonedSkb) echo "Ended $abandonedSkb abandoned SketchBack match(es).\n";
     $abandonedSw = $app->saywhat()->sweep($now);
     if ($abandonedSw) echo "Ended $abandonedSw abandoned Say What? match(es).\n";
+    $staleWs = $app->wordshift()->sweepTickets($now);
+    if ($staleWs) echo "Dropped $staleWs unfinished WordShift run(s).\n";
 } catch (Throwable $e) {
     fwrite(STDERR, 'Crew cleanup failed: ' . $e->getMessage() . "\n");
 }

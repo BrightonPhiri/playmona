@@ -24,7 +24,7 @@ const RESULT = "newData.hasChildren(['name', 'score', 't']) && newData.child('na
 // A score on a leaderboard (js/leaderboards.js). Scores are capped; points differ a lot between games.
 const SCORE = "newData.child('name').isString() && newData.child('name').val().length <= 40 && newData.child('score').isNumber() && newData.child('score').val() >= 0 && newData.child('score').val() <= 1000000 && newData.child('t').isNumber() && newData.child('t').val() <= now + 60000 && (!newData.child('avatar').exists() || (newData.child('avatar').isString() && newData.child('avatar').val().length <= 60))";
 // The daily challenge: one game a day (dailyMeta/<day>/game), one result per player.
-const DAILY_RESULT = "newData.hasChildren(['name', 'score', 't', 'game']) && " + SCORE + " && newData.child('game').val() === root.child('dailyMeta').child($day).child('game').val() && (!newData.child('correct').exists() || (newData.child('correct').isNumber() && newData.child('correct').val() >= 0 && newData.child('correct').val() <= 1000)) && (!newData.child('ms').exists() || newData.child('ms').isNumber())";
+const DAILY_RESULT = "newData.hasChildren(['name', 'score', 't', 'game']) && " + SCORE + " && newData.child('game').val() === root.child('dailyMeta').child($day).child('game').val() && newData.child('game').val() !== 'wordShift' && (!newData.child('correct').exists() || (newData.child('correct').isNumber() && newData.child('correct').val() >= 0 && newData.child('correct').val() <= 1000)) && (!newData.child('ms').exists() || newData.child('ms').isNumber())";
 // A player's best on a game board: only a higher score replaces it.
 const BEST = {
   ".write": ACCOUNT + " && auth.uid === $uid && " + NOT_BANNED,
@@ -192,7 +192,7 @@ const rules = {
     leaderboards: {
       featured: { ".read": true },
       "$game": {
-        ".validate": "$game.matches(" + ID + ")",
+        ".validate": "$game.matches(" + ID + ") && $game !== 'wordShift'",  // WordShift: server-written (api/lib/WordShift.php)
         week: {
           "$week": {
             ".read": ACCOUNT,
@@ -207,6 +207,13 @@ const rules = {
           "$uid": BEST
         },
         "$other": { ".validate": false }
+      }
+    },
+    // WordShift's own daily puzzle board, written by the server only.
+    wordshiftDaily: {
+      "$day": {
+        ".read": ACCOUNT,
+        ".indexOn": ["score"]
       }
     },
     challenges: {

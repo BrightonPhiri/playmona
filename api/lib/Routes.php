@@ -113,6 +113,10 @@ class App
     {
         return $this->make('saywhat', fn () => new SayWhat($this->db(), $this->rtdb(), $this->runner()));
     }
+    public function wordshift(): WordShift
+    {
+        return $this->make('wordshift', fn () => new WordShift($this->db(), $this->rtdb(), $this->runner()));
+    }
     public function wordflowJudge(): WordFlowJudge { return $this->make('wordflowJudge', fn () => new WordFlowJudge($this->ai(), $this->wordflow())); }
     public function leaderboards(): Leaderboards { return $this->make('leaderboards', fn () => new Leaderboards($this->rtdb())); }
     public function friends(): Friends { return $this->make('friends', fn () => new Friends($this->db(), $this->rtdb(), $this->crew())); }

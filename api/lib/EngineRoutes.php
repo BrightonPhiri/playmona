@@ -117,6 +117,12 @@ class EngineRoutes
             return Response::json($this->app->sketchback()->nudge($this->user($req), $req->json(), $now));
         }
         // Say What?: the server starts the Race; the referee in the runner deals the sayings and checks every answer.
+        if ($m === 'POST' && $p === '/wordshift/begin') {
+            return Response::json($this->app->wordshift()->begin($this->user($req), $req->json(), $now));
+        }
+        if ($m === 'POST' && $p === '/wordshift/finish') {
+            return Response::json($this->app->wordshift()->finish($this->user($req), $req->json(), $now));
+        }
         if ($m === 'POST' && $p === '/saywhat/start') {
             return Response::json($this->app->saywhat()->start($this->user($req), $req->json(), $now));
         }
