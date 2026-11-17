@@ -22,6 +22,9 @@ Spec (tools/art/<gameId>.json):
   sheets   [{ file, title, items: [[id, description], ...] }] in reading order
   cards.cut "drawings" cuts each separate drawing by where its centre is, for sheets whose
            drawings cross the grid lines (default: by grid cell)
+           "photos" keeps each cell's full-bleed photo: the white gutter is trimmed off and the
+           photo cropped to a centred square (no background removal). Guess It! uses this.
+  "{topic}" in cards.to is replaced by the sheet's "topic".
 """
 import json
 import os
@@ -195,6 +198,39 @@ def touches_cell_edge(box, cols, rows, size):
     return not (inner_x and inner_y)
 
 
+def photo_tiles(img, cols, rows):
+    """For "photos" sheets: per grid cell, the box of its photo with the white gutter trimmed
+    (a few pixels further in, so no pale anti-aliased rim is kept), or None."""
+    rgb = img.convert('RGB')
+    w, h = rgb.size
+    px = np.asarray(rgb)
+    photo = px.min(axis=2) < WHITE_CUTOFF
+    out = []
+    for r in range(rows):
+        for c in range(cols):
+            x0, y0, x1, y1 = int(c * w / cols), int(r * h / rows), int((c + 1) * w / cols), int((r + 1) * h / rows)
+            bb = trimmed_bbox(photo[y0:y1, x0:x1])
+            if not bb:
+                out.append(None)
+                continue
+            inset = 3
+            out.append((x0 + bb[0] + inset, y0 + bb[1] + inset, x0 + bb[2] - inset, y0 + bb[3] - inset))
+    return rgb, out
+
+
+def photo_card(rgb, box, size):
+    """The middle square of a tile's photo, resized to size x size."""
+    bw, bh = box[2] - box[0], box[3] - box[1]
+    side = min(bw, bh)
+    x0 = box[0] + (bw - side) // 2
+    y0 = box[1] + (bh - side) // 2
+    return rgb.crop((x0, y0, x0 + side, y0 + side)).resize((size, size), Image.LANCZOS)
+
+
+def dest_for(cards, sheet, pid):
+    return path(cards['to'].replace('{topic}', sheet.get('topic', '')).replace('{id}', pid))
+
+
 def card_from(rgba, box, size):
     """The object centred on a transparent square card."""
     obj = rgba.crop(box)
@@ -228,7 +264,7 @@ def contact_sheet(spec, dest):
     """Every card on a checkerboard (to show any leftover halo), labelled with its id."""
     cell, pad, label_h, per_row = 128, 10, 18, 12
     cards = spec['cards']
-    items = [it for s in spec['sheets'] for it in s['items']]
+    items = [(it[0], s) for s in spec['sheets'] for it in s['items']]
     rows = (len(items) + per_row - 1) // per_row
     sheet = Image.new('RGB', (per_row * (cell + pad) + pad, rows * (cell + label_h + pad) + pad), (24, 22, 34))
     check = Image.new('RGB', (cell, cell), (200, 200, 200))
@@ -239,11 +275,11 @@ def contact_sheet(spec, dest):
                 cd.rectangle((x, y, x + 15, y + 15), fill=(160, 160, 160))
     d = ImageDraw.Draw(sheet)
     f = label_font(13)
-    for i, (pid, _) in enumerate(items):
+    for i, (pid, owner) in enumerate(items):
         x = pad + (i % per_row) * (cell + pad)
         y = pad + (i // per_row) * (cell + label_h + pad)
         d.text((x, y + 2), pid, font=f, fill=(235, 235, 245))
-        src = path(cards['to'].replace('{id}', pid))
+        src = dest_for(cards, owner, pid)
         if os.path.exists(src):
             tile = check.copy()
             img = Image.open(src).convert('RGBA').resize((cell, cell), Image.LANCZOS)
@@ -280,6 +316,24 @@ def main(argv):
             continue
         if check_only or (only and name not in only):
             continue
+        if cards.get('cut') == 'photos':
+            rgb, tiles = photo_tiles(Image.open(src), cols, rows)
+            print('%s  (%dx%d)' % (s['file'], rgb.size[0], rgb.size[1]))
+            for i, (pid, _) in enumerate(s['items']):
+                box = tiles[i] if i < len(tiles) else None
+                if not box:
+                    problems.append('%s #%d %s: no photo found in its cell' % (name, i + 1, pid))
+                    continue
+                bw, bh = box[2] - box[0], box[3] - box[1]
+                if min(bw, bh) < 0.85 * max(bw, bh):
+                    problems.append('%s #%d %s: tile is not square (%dx%d), its sides are cropped' % (name, i + 1, pid, bw, bh))
+                if min(bw, bh) < cards['size'] * 0.7:
+                    problems.append('%s #%d %s: tile is small (%d px), it will look soft' % (name, i + 1, pid, min(bw, bh)))
+                kb, q = save_webp(photo_card(rgb, box, cards['size']), dest_for(cards, s, pid), cards['max_kb'])
+                total_kb += kb
+                count += 1
+                print('  %-24s %5.1f KB  q%d' % (pid, kb, q))
+            continue
         rgba, alpha = alpha_mask(Image.open(src))
         by_drawing = cards.get('cut') == 'drawings'
         if by_drawing:
@@ -300,7 +354,7 @@ def main(argv):
                 src_img.putalpha(ImageChops.multiply(rgba.getchannel('A'), keep))
             elif touches_cell_edge(box, cols, rows, rgba.size):
                 problems.append('%s #%d %s: runs into a neighbouring cell, check it' % (name, i + 1, pid))
-            dest = path(cards['to'].replace('{id}', pid))
+            dest = dest_for(cards, s, pid)
             kb, q = save_webp(card_from(src_img, box, cards['size']), dest, cards['max_kb'])
             total_kb += kb
             count += 1

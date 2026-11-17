@@ -1,0 +1,914 @@
+{
+  "game": "guessIt",
+  "prompts": "docs/art/guessIt-prompts.md",
+  "source": "assets/playmona_assets/guess-it",
+  "cards": {
+    "to": "assets/images/games/guessIt/{topic}/{id}.webp",
+    "size": 512,
+    "max_kb": 70,
+    "cols": 3,
+    "rows": 2,
+    "cut": "photos"
+  },
+  "sheets": [
+    {
+      "file": "sheets/food-1.png",
+      "title": "Food 1",
+      "topic": "food",
+      "items": [
+        [
+          "croissant",
+          "two golden flaky croissants on a wooden board"
+        ],
+        [
+          "bagel",
+          "a sesame bagel cut open with cream cheese, on a plate"
+        ],
+        [
+          "pretzel",
+          "a large soft pretzel with coarse salt on baking paper"
+        ],
+        [
+          "doughnut",
+          "a glazed ring doughnut with pink icing and sprinkles"
+        ],
+        [
+          "pancakes",
+          "a tall stack of fluffy pancakes with syrup dripping and butter on top"
+        ],
+        [
+          "waffles",
+          "two square golden waffles with strawberries on a white plate"
+        ]
+      ]
+    },
+    {
+      "file": "sheets/food-2.png",
+      "title": "Food 2",
+      "topic": "food",
+      "items": [
+        [
+          "pizza",
+          "a whole margherita pizza with melted mozzarella and basil, seen from above"
+        ],
+        [
+          "spaghetti",
+          "a bowl of spaghetti with red tomato meat sauce and grated cheese"
+        ],
+        [
+          "lasagne",
+          "a square slice of lasagne showing its layers, on a plate"
+        ],
+        [
+          "ramen",
+          "a bowl of ramen with noodles, a halved soft egg, spring onion and broth"
+        ],
+        [
+          "pad-thai",
+          "a plate of pad thai noodles with prawns, peanuts and a lime wedge"
+        ],
+        [
+          "dumplings",
+          "a bamboo steamer full of pleated steamed dumplings"
+        ]
+      ]
+    },
+    {
+      "file": "sheets/food-3.png",
+      "title": "Food 3",
+      "topic": "food",
+      "items": [
+        [
+          "sushi",
+          "a neat row of sushi pieces on a slate board with chopsticks"
+        ],
+        [
+          "paella",
+          "a wide shallow pan of paella with yellow rice, prawns and mussels"
+        ],
+        [
+          "jollof-rice",
+          "a plate of orange-red jollof rice with fried plantain and chicken"
+        ],
+        [
+          "biryani",
+          "a pot of biryani with long-grain spiced rice, herbs and fried onions"
+        ],
+        [
+          "fried-rice",
+          "a bowl of egg fried rice with peas, carrots and spring onion"
+        ],
+        [
+          "nshima",
+          "a white smooth mound of nshima maize porridge with a bowl of green vegetable relish beside it"
+        ]
+      ]
+    },
+    {
+      "file": "sheets/food-4.png",
+      "title": "Food 4",
+      "topic": "food",
+      "items": [
+        [
+          "burger",
+          "a tall beef burger with cheese, lettuce and tomato in a sesame bun"
+        ],
+        [
+          "hot-dog",
+          "a hot dog in a soft bun with mustard and ketchup lines"
+        ],
+        [
+          "tacos",
+          "three soft tacos with meat, onion, coriander and lime"
+        ],
+        [
+          "chips",
+          "a paper cone of golden chips, French fries"
+        ],
+        [
+          "burrito",
+          "a burrito cut in half showing rice, beans and meat inside"
+        ],
+        [
+          "samosa",
+          "three golden triangle samosas with a small bowl of green chutney"
+        ]
+      ]
+    },
+    {
+      "file": "sheets/food-5.png",
+      "title": "Food 5",
+      "topic": "food",
+      "items": [
+        [
+          "ice-cream",
+          "two scoops of ice cream in a waffle cone"
+        ],
+        [
+          "cupcake",
+          "a cupcake with swirled pink frosting in a paper case"
+        ],
+        [
+          "cheesecake",
+          "a slice of cheesecake with a biscuit base and berry topping"
+        ],
+        [
+          "macarons",
+          "a neat row of colourful French macarons"
+        ],
+        [
+          "apple-pie",
+          "an apple pie with a golden lattice crust, one slice cut out"
+        ],
+        [
+          "chocolate-cake",
+          "a slice of layered chocolate cake with glossy chocolate icing"
+        ]
+      ]
+    },
+    {
+      "file": "sheets/landmarks-1.png",
+      "title": "Landmarks 1",
+      "topic": "landmarks",
+      "items": [
+        [
+          "eiffel-tower",
+          "the Eiffel Tower in Paris against a blue sky"
+        ],
+        [
+          "big-ben",
+          "the Big Ben clock tower in London beside the Houses of Parliament"
+        ],
+        [
+          "leaning-tower-of-pisa",
+          "the white Leaning Tower of Pisa on green grass"
+        ],
+        [
+          "burj-khalifa",
+          "the very tall Burj Khalifa skyscraper rising above Dubai"
+        ],
+        [
+          "golden-gate-bridge",
+          "the red-orange Golden Gate Bridge over the bay"
+        ],
+        [
+          "tower-bridge",
+          "Tower Bridge in London with its two stone towers over the River Thames"
+        ]
+      ]
+    },
+    {
+      "file": "sheets/landmarks-2.png",
+      "title": "Landmarks 2",
+      "topic": "landmarks",
+      "items": [
+        [
+          "colosseum",
+          "the Colosseum in Rome, its arches in warm sunlight"
+        ],
+        [
+          "pyramids-of-giza",
+          "the Pyramids of Giza in the desert"
+        ],
+        [
+          "stonehenge",
+          "the ring of standing stones at Stonehenge on a grassy plain"
+        ],
+        [
+          "parthenon",
+          "the Parthenon temple with its columns on the Acropolis hill"
+        ],
+        [
+          "petra",
+          "the Treasury of Petra carved into a pink rock cliff"
+        ],
+        [
+          "machu-picchu",
+          "the ruins of Machu Picchu on a green mountain ridge"
+        ]
+      ]
+    },
+    {
+      "file": "sheets/landmarks-3.png",
+      "title": "Landmarks 3",
+      "topic": "landmarks",
+      "items": [
+        [
+          "victoria-falls",
+          "Victoria Falls, a wide curtain of water with spray and a rainbow"
+        ],
+        [
+          "niagara-falls",
+          "the horseshoe curve of Niagara Falls with mist rising"
+        ],
+        [
+          "mount-kilimanjaro",
+          "snow-capped Mount Kilimanjaro above the savanna with acacia trees"
+        ],
+        [
+          "table-mountain",
+          "flat-topped Table Mountain behind Cape Town"
+        ],
+        [
+          "mount-fuji",
+          "snow-capped Mount Fuji with cherry blossoms in front"
+        ],
+        [
+          "great-wall-of-china",
+          "the Great Wall of China winding over green hills"
+        ]
+      ]
+    },
+    {
+      "file": "sheets/landmarks-4.png",
+      "title": "Landmarks 4",
+      "topic": "landmarks",
+      "items": [
+        [
+          "statue-of-liberty",
+          "the green Statue of Liberty holding up her torch"
+        ],
+        [
+          "christ-the-redeemer",
+          "the Christ the Redeemer statue with open arms above Rio"
+        ],
+        [
+          "taj-mahal",
+          "the white marble Taj Mahal reflected in its long pool"
+        ],
+        [
+          "angkor-wat",
+          "the towers of Angkor Wat temple at sunrise over a pond"
+        ],
+        [
+          "sagrada-familia",
+          "the tall spires of the Sagrada Família church"
+        ],
+        [
+          "sydney-opera-house",
+          "the Sydney Opera House with its white sail roofs by the harbour"
+        ]
+      ]
+    },
+    {
+      "file": "sheets/objects-1.png",
+      "title": "Objects 1",
+      "topic": "objects",
+      "items": [
+        [
+          "kettle",
+          "a shiny electric kettle"
+        ],
+        [
+          "toaster",
+          "a two-slot toaster with two slices of toast popping up"
+        ],
+        [
+          "frying-pan",
+          "a black frying pan with a long handle"
+        ],
+        [
+          "whisk",
+          "a metal balloon whisk"
+        ],
+        [
+          "teapot",
+          "a white china teapot"
+        ],
+        [
+          "blender",
+          "a kitchen blender jug with fruit inside"
+        ]
+      ]
+    },
+    {
+      "file": "sheets/objects-2.png",
+      "title": "Objects 2",
+      "topic": "objects",
+      "items": [
+        [
+          "scissors",
+          "a pair of scissors with blue handles"
+        ],
+        [
+          "stapler",
+          "a black office stapler"
+        ],
+        [
+          "calculator",
+          "a pocket calculator with grey buttons"
+        ],
+        [
+          "pencil-sharpener",
+          "a small metal pencil sharpener with pencil shavings"
+        ],
+        [
+          "globe",
+          "a classroom globe on a stand"
+        ],
+        [
+          "backpack",
+          "a red school backpack"
+        ]
+      ]
+    },
+    {
+      "file": "sheets/objects-3.png",
+      "title": "Objects 3",
+      "topic": "objects",
+      "items": [
+        [
+          "hammer",
+          "a claw hammer with a wooden handle"
+        ],
+        [
+          "screwdriver",
+          "a screwdriver with a yellow handle"
+        ],
+        [
+          "spanner",
+          "a shiny metal spanner wrench"
+        ],
+        [
+          "tape-measure",
+          "a yellow tape measure with the tape pulled out"
+        ],
+        [
+          "padlock",
+          "a brass padlock, closed"
+        ],
+        [
+          "torch",
+          "a black torch flashlight, switched on"
+        ]
+      ]
+    },
+    {
+      "file": "sheets/objects-4.png",
+      "title": "Objects 4",
+      "topic": "objects",
+      "items": [
+        [
+          "umbrella",
+          "an open red umbrella"
+        ],
+        [
+          "alarm-clock",
+          "a classic twin-bell alarm clock"
+        ],
+        [
+          "light-bulb",
+          "a clear glowing light bulb"
+        ],
+        [
+          "candle",
+          "a lit white candle on a holder"
+        ],
+        [
+          "key",
+          "a bunch of metal house keys on a ring"
+        ],
+        [
+          "remote-control",
+          "a black TV remote control"
+        ]
+      ]
+    },
+    {
+      "file": "sheets/objects-5.png",
+      "title": "Objects 5",
+      "topic": "objects",
+      "items": [
+        [
+          "headphones",
+          "a pair of over-ear headphones"
+        ],
+        [
+          "camera",
+          "a classic camera with a lens"
+        ],
+        [
+          "sunglasses",
+          "a pair of black sunglasses"
+        ],
+        [
+          "wristwatch",
+          "a wristwatch with a leather strap"
+        ],
+        [
+          "toothbrush",
+          "a toothbrush with toothpaste on the bristles"
+        ],
+        [
+          "hairdryer",
+          "a pink hairdryer"
+        ]
+      ]
+    },
+    {
+      "file": "sheets/sports-1.png",
+      "title": "Sports 1",
+      "topic": "sports",
+      "items": [
+        [
+          "football",
+          "a football player kicking the ball on a grass pitch"
+        ],
+        [
+          "basketball",
+          "a basketball player jumping to dunk the ball into the hoop"
+        ],
+        [
+          "volleyball",
+          "two volleyball players jumping at the net to block a ball"
+        ],
+        [
+          "rugby",
+          "a rugby player running with the oval ball under the arm"
+        ],
+        [
+          "netball",
+          "a netball player shooting at a tall hoop without a backboard"
+        ],
+        [
+          "hockey",
+          "a field hockey player hitting the ball with a curved stick on blue turf"
+        ]
+      ]
+    },
+    {
+      "file": "sheets/sports-2.png",
+      "title": "Sports 2",
+      "topic": "sports",
+      "items": [
+        [
+          "tennis",
+          "a tennis player hitting a yellow ball with a racket on a court"
+        ],
+        [
+          "badminton",
+          "a badminton player smashing a white shuttlecock"
+        ],
+        [
+          "table-tennis",
+          "a table tennis player hitting a small ball over a table net"
+        ],
+        [
+          "cricket",
+          "a cricket batter in white swinging a flat bat in front of the wicket"
+        ],
+        [
+          "baseball",
+          "a baseball batter in a helmet swinging a round bat"
+        ],
+        [
+          "golf",
+          "a golfer swinging a club on a green golf course"
+        ]
+      ]
+    },
+    {
+      "file": "sheets/sports-3.png",
+      "title": "Sports 3",
+      "topic": "sports",
+      "items": [
+        [
+          "swimming",
+          "a swimmer doing front crawl in a pool lane"
+        ],
+        [
+          "surfing",
+          "a surfer riding a big blue wave"
+        ],
+        [
+          "rowing",
+          "a rowing crew in a long narrow boat on a lake"
+        ],
+        [
+          "boxing",
+          "a boxer with red gloves punching in a ring"
+        ],
+        [
+          "cycling",
+          "racing cyclists on road bikes with helmets"
+        ],
+        [
+          "gymnastics",
+          "a gymnast doing a leap on a balance beam"
+        ]
+      ]
+    },
+    {
+      "file": "sheets/vehicles-1.png",
+      "title": "Vehicles 1",
+      "topic": "vehicles",
+      "items": [
+        [
+          "car",
+          "a red family car on a road"
+        ],
+        [
+          "bus",
+          "a red double-decker bus"
+        ],
+        [
+          "lorry",
+          "a big lorry truck with a long trailer on a highway"
+        ],
+        [
+          "motorbike",
+          "a motorbike motorcycle parked on a street"
+        ],
+        [
+          "taxi",
+          "a yellow taxi cab with a taxi sign on the roof (no writing)"
+        ],
+        [
+          "tractor",
+          "a green tractor in a farm field"
+        ]
+      ]
+    },
+    {
+      "file": "sheets/vehicles-2.png",
+      "title": "Vehicles 2",
+      "topic": "vehicles",
+      "items": [
+        [
+          "fire-engine",
+          "a red fire engine with ladders on top"
+        ],
+        [
+          "ambulance",
+          "a white and yellow ambulance with blue lights (no readable writing)"
+        ],
+        [
+          "police-car",
+          "a police car with blue lights on the roof (no readable writing)"
+        ],
+        [
+          "digger",
+          "a yellow digger excavator scooping earth"
+        ],
+        [
+          "forklift",
+          "a yellow forklift lifting a wooden pallet in a warehouse"
+        ],
+        [
+          "cement-mixer",
+          "a cement mixer truck with its striped drum"
+        ]
+      ]
+    },
+    {
+      "file": "sheets/vehicles-3.png",
+      "title": "Vehicles 3",
+      "topic": "vehicles",
+      "items": [
+        [
+          "aeroplane",
+          "a white passenger aeroplane flying in a blue sky"
+        ],
+        [
+          "helicopter",
+          "a helicopter flying"
+        ],
+        [
+          "hot-air-balloon",
+          "a colourful hot air balloon over green hills"
+        ],
+        [
+          "rocket",
+          "a space rocket lifting off with flames and smoke"
+        ],
+        [
+          "sailing-boat",
+          "a sailing boat with white sails on the sea"
+        ],
+        [
+          "cargo-ship",
+          "a huge cargo ship stacked with colourful containers"
+        ]
+      ]
+    },
+    {
+      "file": "sheets/vehicles-4.png",
+      "title": "Vehicles 4",
+      "topic": "vehicles",
+      "items": [
+        [
+          "canoe",
+          "a red canoe with a paddler on a calm river"
+        ],
+        [
+          "submarine",
+          "a dark submarine on the sea surface"
+        ],
+        [
+          "steam-train",
+          "a black steam train puffing smoke"
+        ],
+        [
+          "bullet-train",
+          "a white high-speed bullet train with a long pointed nose"
+        ],
+        [
+          "tram",
+          "a modern tram on rails in a city street"
+        ],
+        [
+          "cable-car",
+          "a cable car gondola hanging from wires above mountains"
+        ]
+      ]
+    },
+    {
+      "file": "sheets/jobs-1.png",
+      "title": "Jobs 1",
+      "topic": "jobs",
+      "items": [
+        [
+          "doctor",
+          "a doctor in a white coat with a stethoscope"
+        ],
+        [
+          "nurse",
+          "a nurse in scrubs taking a patient’s blood pressure"
+        ],
+        [
+          "dentist",
+          "a dentist with a mask and mirror tool examining a smiling patient’s teeth"
+        ],
+        [
+          "vet",
+          "a vet checking a dog on an examination table"
+        ],
+        [
+          "pharmacist",
+          "a pharmacist in a white coat holding a box of medicine in front of shelves"
+        ],
+        [
+          "paramedic",
+          "a paramedic in a green uniform with a medical bag beside an ambulance"
+        ]
+      ]
+    },
+    {
+      "file": "sheets/jobs-2.png",
+      "title": "Jobs 2",
+      "topic": "jobs",
+      "items": [
+        [
+          "chef",
+          "a chef in a white hat and jacket cooking with a flaming pan"
+        ],
+        [
+          "baker",
+          "a baker pulling fresh loaves out of an oven"
+        ],
+        [
+          "waiter",
+          "a waiter in a black apron carrying plates in a restaurant"
+        ],
+        [
+          "farmer",
+          "a farmer in a hat holding a basket of vegetables in a field"
+        ],
+        [
+          "fisherman",
+          "a fisherman pulling a net into a small boat"
+        ],
+        [
+          "butcher",
+          "a butcher in an apron cutting meat at a counter"
+        ]
+      ]
+    },
+    {
+      "file": "sheets/jobs-3.png",
+      "title": "Jobs 3",
+      "topic": "jobs",
+      "items": [
+        [
+          "builder",
+          "a builder in a hard hat laying bricks"
+        ],
+        [
+          "electrician",
+          "an electrician fixing wires in a wall switch box"
+        ],
+        [
+          "plumber",
+          "a plumber fixing pipes under a sink with a wrench"
+        ],
+        [
+          "mechanic",
+          "a mechanic working on a car engine with the bonnet open"
+        ],
+        [
+          "carpenter",
+          "a carpenter sawing a plank of wood in a workshop"
+        ],
+        [
+          "painter",
+          "a painter in overalls painting a wall with a roller"
+        ]
+      ]
+    },
+    {
+      "file": "sheets/jobs-4.png",
+      "title": "Jobs 4",
+      "topic": "jobs",
+      "items": [
+        [
+          "pilot",
+          "an airline pilot in uniform in the cockpit"
+        ],
+        [
+          "firefighter",
+          "a firefighter in a helmet spraying water from a hose"
+        ],
+        [
+          "police-officer",
+          "a police officer in uniform and cap (no readable badges)"
+        ],
+        [
+          "astronaut",
+          "an astronaut in a white spacesuit floating in space"
+        ],
+        [
+          "teacher",
+          "a teacher pointing at a chalkboard in front of a class"
+        ],
+        [
+          "hairdresser",
+          "a hairdresser cutting a customer’s hair with scissors and comb"
+        ]
+      ]
+    },
+    {
+      "file": "sheets/instruments-1.png",
+      "title": "Instruments 1",
+      "topic": "instruments",
+      "items": [
+        [
+          "violin",
+          "a violin and its bow"
+        ],
+        [
+          "cello",
+          "a cello standing upright with its bow"
+        ],
+        [
+          "guitar",
+          "an acoustic guitar"
+        ],
+        [
+          "ukulele",
+          "a small four-string ukulele"
+        ],
+        [
+          "harp",
+          "a tall golden concert harp"
+        ],
+        [
+          "banjo",
+          "a banjo with a round white drum body"
+        ]
+      ]
+    },
+    {
+      "file": "sheets/instruments-2.png",
+      "title": "Instruments 2",
+      "topic": "instruments",
+      "items": [
+        [
+          "trumpet",
+          "a shiny brass trumpet"
+        ],
+        [
+          "saxophone",
+          "a golden saxophone"
+        ],
+        [
+          "trombone",
+          "a brass trombone with its slide"
+        ],
+        [
+          "flute",
+          "a silver flute lying on dark cloth"
+        ],
+        [
+          "clarinet",
+          "a black clarinet with silver keys"
+        ],
+        [
+          "french-horn",
+          "a coiled brass French horn"
+        ]
+      ]
+    },
+    {
+      "file": "sheets/instruments-3.png",
+      "title": "Instruments 3",
+      "topic": "instruments",
+      "items": [
+        [
+          "drum-kit",
+          "a drum kit with cymbals"
+        ],
+        [
+          "djembe",
+          "a carved wooden djembe drum with a goatskin top"
+        ],
+        [
+          "xylophone",
+          "a xylophone with wooden bars and two mallets"
+        ],
+        [
+          "tambourine",
+          "a tambourine with metal jingles"
+        ],
+        [
+          "maracas",
+          "a pair of colourful maracas"
+        ],
+        [
+          "mbira",
+          "an mbira thumb piano with metal keys on a wooden board"
+        ]
+      ]
+    },
+    {
+      "file": "sheets/instruments-4.png",
+      "title": "Instruments 4",
+      "topic": "instruments",
+      "items": [
+        [
+          "piano",
+          "a black grand piano with its lid open"
+        ],
+        [
+          "accordion",
+          "a red accordion with its bellows open"
+        ],
+        [
+          "harmonica",
+          "a silver harmonica"
+        ],
+        [
+          "bagpipes",
+          "a set of tartan bagpipes"
+        ],
+        [
+          "recorder",
+          "a wooden recorder"
+        ],
+        [
+          "sitar",
+          "a sitar with a long neck and round gourd body"
+        ]
+      ]
+    }
+  ]
+}
