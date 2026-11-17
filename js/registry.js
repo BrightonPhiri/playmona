@@ -42,6 +42,9 @@ window.FF = window.FF || {};
   FF.Games = {
     _registry: {},
     _order: [],
+    // Old game ids folded into another game (guessFood -> Guess It! on Food),
+    // so saved favourites, old links and old challenges still open something.
+    _moved: {},
 
     register: function (def) {
       if (!def || !def.id) return;
@@ -53,7 +56,19 @@ window.FF = window.FF || {};
       if (this._order.indexOf(def.id) === -1) this._order.push(def.id);
     },
 
-    get: function (id) { return Object.prototype.hasOwnProperty.call(FF.Games._registry, id) ? FF.Games._registry[id] : null; },
+    get: function (id) {
+      var reg = FF.Games._registry;
+      if (Object.prototype.hasOwnProperty.call(reg, id)) return reg[id];
+      var moved = FF.Games.movedTo(id);
+      return moved && Object.prototype.hasOwnProperty.call(reg, moved.id) ? reg[moved.id] : null;
+    },
+
+    /* oldId now lives inside newId; opts are the challenge options that replay it (e.g. its topic). */
+    alias: function (oldId, newId, opts) { this._moved[oldId] = { id: newId, opts: opts || null }; },
+    movedTo: function (id) {
+      if (Object.prototype.hasOwnProperty.call(FF.Games._registry, id)) return null;
+      return Object.prototype.hasOwnProperty.call(FF.Games._moved, id) ? FF.Games._moved[id] : null;
+    },
     // Games switched off in the admin portal are left out of every list.
     all: function () {
       var list = this._order.map(function (id) { return FF.Games._registry[id]; });
@@ -469,8 +484,20 @@ window.FF = window.FF || {};
       return config;
     },
 
+    /* An old game id opens the game it moved into; an old challenge for it replays its topic. */
+    _resolveLaunch: function (id, overrides) {
+      var moved = FF.Games.movedTo(id);
+      if (!moved) return { id: id, overrides: overrides };
+      var o = overrides ? Object.assign({}, overrides) : overrides;
+      if (o && o.challenge && !o.challenge.opts && moved.opts) o.challenge = Object.assign({}, o.challenge, { opts: moved.opts });
+      return { id: moved.id, overrides: o };
+    },
+
     launch: function (id, overrides) {
       if (FF.Advance) FF.Advance.cancelAll();
+      const to = FF.GameFlow._resolveLaunch(id, overrides);
+      id = to.id;
+      overrides = to.overrides;
       const def = FF.Games.get(id);
       if (!def) { FF.Nav.go('home'); return; }
       // Room games follow the host; everything else checks the switches, guest access and the paywall.

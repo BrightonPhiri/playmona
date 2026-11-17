@@ -16,7 +16,7 @@ window.FF = window.FF || {};
   var GAMES = [
     'bibleQuiz', 'guessWho', 'familyQuiz',
     'numberChallenge', 'visualRiddle',
-    'guessCountry', 'guessLandmark', 'guessAnimal', 'guessFood', 'guessObject', 'guessSport', 'guessVehicle'
+    'guessIt'
   ];
 
   var U = FF.CrewBrains.util;

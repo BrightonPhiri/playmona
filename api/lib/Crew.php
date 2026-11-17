@@ -20,8 +20,7 @@ class Crew
     /** Every game playable online: must match ONLINE_GAMES in js/net/roomUI.js (a test compares them). Live match pairs people on any of these. */
     public const ONLINE_GAMES = [
         'bibleQuiz',
-        'guessCountry', 'guessLandmark', 'guessAnimal', 'guessFood', 'guessObject', 'guessSport',
-        'guessVehicle', 'familyQuiz', 'guessWho', 'quickTap',
+        'guessIt', 'familyQuiz', 'guessWho', 'quickTap',
         'letterRush', 'whatsMissing', 'numberChallenge', 'visualRiddle',
         'wordScramble', 'bibleWhoAmI', 'bibleVerseRush', 'memoryMatch',
         'rememberSequence', 'picturePuzzle', 'spotDifference', 'hiddenObject', 'bibleBooks', 'numberRush',
@@ -31,8 +30,7 @@ class Crew
     /** The online games crew can play (each has a brain in js/crew/brains). Crew are only seated in these. */
     public const GAMES = [
         'bibleQuiz',
-        'guessCountry', 'guessLandmark', 'guessAnimal', 'guessFood', 'guessObject', 'guessSport',
-        'guessVehicle', 'familyQuiz', 'guessWho', 'quickTap',
+        'guessIt', 'familyQuiz', 'guessWho', 'quickTap',
         'letterRush', 'whatsMissing', 'numberChallenge', 'visualRiddle', 'imposters', 'wordFlow', 'sayWhat', 'wordShift',
     ];
 
@@ -236,13 +234,13 @@ class Crew
         'quizzer' => ['base' => [45, 60], 'strong' => ['familyQuiz', 'guessWho', 'bibleQuiz'], 'traits' => ['accuracy' => 20, 'patience' => 10]],
         'speedster' => ['base' => [40, 55], 'strong' => ['quickTap'], 'traits' => ['reaction' => 30, 'risk' => 15, 'patience' => -15]],
         'wordsmith' => ['base' => [45, 60], 'strong' => ['letterRush', 'guessWho', 'visualRiddle'], 'traits' => ['strategy' => 20, 'patience' => 15]],
-        'traveller' => ['base' => [40, 55], 'strong' => ['guessCountry', 'guessLandmark'], 'traits' => ['accuracy' => 15]],
-        'casual' => ['base' => [30, 45], 'strong' => ['guessAnimal', 'guessFood'], 'traits' => ['friendliness' => 20, 'competitiveness' => -20, 'consistency' => -10]],
+        'traveller' => ['base' => [40, 55], 'strong' => ['guessIt', 'geoSpin'], 'traits' => ['accuracy' => 15]],
+        'casual' => ['base' => [30, 45], 'strong' => ['guessIt'], 'traits' => ['friendliness' => 20, 'competitiveness' => -20, 'consistency' => -10]],
         'thinker' => ['base' => [45, 60], 'strong' => ['numberChallenge', 'visualRiddle', 'whatsMissing'], 'traits' => ['strategy' => 25, 'reaction' => -10]],
         'allrounder' => ['base' => [50, 65], 'strong' => [], 'traits' => ['consistency' => 15, 'competitiveness' => 15]],
-        'sporty' => ['base' => [38, 52], 'strong' => ['guessSport', 'guessVehicle', 'quickTap'], 'traits' => ['social' => 15, 'risk' => 10]],
-        'pictures' => ['base' => [40, 55], 'strong' => ['guessObject', 'guessLandmark', 'whatsMissing'], 'traits' => ['patience' => 10]],
-        'learner' => ['base' => [25, 40], 'strong' => ['bibleQuiz', 'guessAnimal'], 'traits' => ['friendliness' => 15, 'accuracy' => -10, 'patience' => 15]],
+        'sporty' => ['base' => [38, 52], 'strong' => ['guessIt', 'quickTap'], 'traits' => ['social' => 15, 'risk' => 10]],
+        'pictures' => ['base' => [40, 55], 'strong' => ['guessIt', 'whatsMissing'], 'traits' => ['patience' => 10]],
+        'learner' => ['base' => [25, 40], 'strong' => ['bibleQuiz', 'guessIt'], 'traits' => ['friendliness' => 15, 'accuracy' => -10, 'patience' => 15]],
     ];
 
     private const FIRST = ['Tariro', 'Tendai', 'Rudo', 'Farai', 'Nyasha', 'Chipo', 'Tatenda', 'Kuda', 'Thandi', 'Sipho', 'Rumbi', 'Tinashe',

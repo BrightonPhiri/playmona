@@ -10,7 +10,7 @@ const vm = require('vm');
 const { loadFF, test, assert, assertEqual, ROOT } = require('./harness');
 
 function load() {
-  const FF = loadFF(['js/core.js', 'js/data/animals.js', 'js/data/guessIt.js', 'js/answerMatch.js', 'js/spellTiles.js']);
+  const FF = loadFF(['js/core.js', 'js/i18n.js', 'js/data/animals.js', 'js/data/guessIt.js', 'js/answerMatch.js', 'js/spellTiles.js']);
   FF.__defs = [];
   FF.registerGame = function (def) { FF.__defs.push(def); };
   vm.runInContext(fs.readFileSync(path.join(ROOT, 'js/games/guessIt.js'), 'utf8'), FF.__sandbox, { filename: 'guessIt.js' });
@@ -189,4 +189,26 @@ test('guess it: shared runs fix the topic, whatever this phone last picked', fun
   assertEqual(G.sharedTopic({ challenge: {} }), 'mix');
   assertEqual(G.sharedTopic({}, { topic: 'flags' }), 'flags', 'a room plays the host’s topic');
   assertEqual(G.sharedTopic({}), null, 'a local run lets the player pick');
+});
+
+test('guess it room: no Expert or open clock in a race, topic and pictures kept', function () {
+  const room = FF.__defs[0].room;
+  assert(room, 'the game has room settings');
+  assertEqual(room.defaults, { topic: 'mix', level: 'normal', time: 8, questions: 10 });
+  const s = room.sanitize({ topic: 'jobs', level: 'expert', time: 0, twist: 'zoom', questions: 15 });
+  assertEqual(s.topic, 'jobs');
+  assertEqual(s.level, 'normal', 'Expert is solo only');
+  assertEqual(s.time, 8, 'every race round has a clock');
+  assertEqual(s.twist, 'none');
+  assertEqual(s.questions, 15);
+  assertEqual(s.difficulty, 'normal', 'room points read the level');
+  assertEqual(room.sanitize({ topic: 'nope', questions: 7 }).topic, 'mix');
+  assertEqual(room.sanitize({ questions: 7 }).questions, 10);
+  assertEqual(room.sanitize({ level: 'hard' }).difficulty, 'hard');
+  const keys = room.fields({}, { players: 3 }).map(function (f) { return f.key; });
+  assertEqual(keys, ['topic', 'level', 'time', 'questions']);
+  const levels = room.fields({}, { players: 3 })[1].options.map(function (o) { return o.value; });
+  assertEqual(levels, ['easy', 'normal', 'hard']);
+  const sum = room.summary({ topic: 'flags', level: 'hard', time: 5, questions: 20 }, 3);
+  assert(/Flags/.test(sum) && /20/.test(sum), 'summary names the topic and the count: ' + sum);
 });

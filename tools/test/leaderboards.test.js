@@ -80,7 +80,7 @@ test('leaderboards: a game switched off, or off the leaderboards, is not active'
 test('leaderboards: the server\'s game list matches the app\'s rule (api/lib/Leaderboards.php)', function () {
   const FF = boot();
   const games = realGames();
-  assert(games.length >= 40, 'found the games: ' + games.length);
+  assert(games.length >= 30, 'found the games: ' + games.length);
   const app = games.filter(function (g) { return FF.Leaderboards.eligible(g); }).map(function (g) { return g.id; }).sort();
   const php = fs.readFileSync(path.join(ROOT, 'api/lib/Leaderboards.php'), 'utf8');
   const list = php.match(/public const GAMES = \[([\s\S]*?)\];/)[1].match(/'([A-Za-z]+)'/g).map(function (s) { return s.replace(/'/g, ''); }).sort();

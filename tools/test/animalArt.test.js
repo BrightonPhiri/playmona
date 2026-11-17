@@ -1,6 +1,6 @@
 'use strict';
-/* Guess the Animal: the roster, its photos, and the four choices each
-   difficulty builds (js/data/animals.js, js/games/visualGames.js). */
+/* Guess It! animals: the roster, its photos, and the choices each level
+   builds (js/data/animals.js, js/games/guessIt.js). */
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
@@ -10,12 +10,14 @@ const ROOT = path.join(__dirname, '..', '..');
 const WATCH_SRC = /^assets\/[A-Za-z0-9_\/.-]+\.(svg|png|jpe?g|webp)$/;   // js/watch/tv.js
 
 function load() {
-  const FF = loadFF(['js/core.js', 'js/data/animals.js']);
+  const FF = loadFF(['js/core.js', 'js/i18n.js', 'js/data/animals.js', 'js/data/guessIt.js', 'js/answerMatch.js', 'js/spellTiles.js']);
   const sb = FF.__sandbox;
   FF.registerGame = function () {};
-  vm.runInContext(fs.readFileSync(path.join(ROOT, 'js/games/visualGames.js'), 'utf8'), sb, { filename: 'visualGames.js' });
+  vm.runInContext(fs.readFileSync(path.join(ROOT, 'js/games/guessIt.js'), 'utf8'), sb, { filename: 'guessIt.js' });
   return FF;
 }
+
+function animalItems(FF) { return FF.GuessIt.itemsFor('animals'); }
 
 test('every animal has an id, name, group, kind and fact', function () {
   const FF = load();
@@ -41,9 +43,8 @@ test('the art spec lists exactly the roster', function () {
 
 test('photo paths are ones people watching can show', function () {
   const FF = load();
-  FF.data.animals.forEach(function (a) {
-    [false, true].forEach(function (closeup) {
-      const src = FF.AnimalGame.src(a, closeup);
+  animalItems(FF).forEach(function (a) {
+    [FF.GuessIt.photoSrc(a), FF.GuessIt.closeupSrc(a)].forEach(function (src) {
       assert(WATCH_SRC.test(src) && src.length <= 200, src);
     });
   });
@@ -53,44 +54,37 @@ test('every animal has its photo and close-up once the art is processed', functi
   const FF = load();
   const dir = path.join(ROOT, 'assets/images/games/guessAnimal');
   if (!fs.existsSync(dir)) { console.log('    (skipped: no photos processed yet)'); return; }
-  FF.data.animals.forEach(function (a) {
-    [false, true].forEach(function (closeup) {
-      const file = path.join(ROOT, FF.AnimalGame.src(a, closeup));
+  animalItems(FF).forEach(function (a) {
+    [FF.GuessIt.photoSrc(a), FF.GuessIt.closeupSrc(a)].forEach(function (src) {
+      const file = path.join(ROOT, src);
       assert(fs.existsSync(file), path.basename(file) + ' exists');
       assert(fs.statSync(file).size <= 150 * 1024, path.basename(file) + ' is under 150 KB');
     });
   });
 });
 
-test('each difficulty gives four different choices including the answer', function () {
+test('each level gives different choices including the answer, lookalikes only past Easy', function () {
   const FF = load();
-  const animals = FF.data.animals;
+  const animals = animalItems(FF);
   const byName = {};
   animals.forEach(function (a) { byName[a.name] = a; });
-  ['easy', 'normal', 'hard'].forEach(function (d) {
+  const want = { easy: 4, normal: 4, hard: 6 };
+  Object.keys(want).forEach(function (d) {
     animals.forEach(function (a) {
       for (let i = 0; i < 5; i++) {
-        const opts = FF.AnimalGame.options(a, animals, d);
-        assertEqual(opts.length, 4, a.id + ' ' + d + ': four choices');
-        assertEqual(new Set(opts).size, 4, a.id + ' ' + d + ': all different');
+        const opts = FF.GuessIt.options(a, animals, d, Math.random);
+        assertEqual(opts.length, want[d], a.id + ' ' + d + ': choice count');
+        assertEqual(new Set(opts).size, want[d], a.id + ' ' + d + ': all different');
         assert(opts.indexOf(a.name) !== -1, a.id + ' ' + d + ': includes the answer');
-        const near = FF.data.animalNearGroups[a.group];
-        const alike = opts.filter(function (n) { return n !== a.name && (byName[n].group === a.group || near.indexOf(byName[n].group) !== -1); }).length;
-        if (d === 'easy') assertEqual(alike, 0, a.id + ' easy: no lookalikes');
-        if (d === 'hard') assertEqual(alike, 3, a.id + ' hard: all lookalikes');
-        if (d === 'normal') assert(alike >= 2, a.id + ' normal: at least two lookalikes');
+        const same = opts.filter(function (n) { return n !== a.name && byName[n].group === a.group; }).length;
+        if (d === 'easy') assertEqual(same, 0, a.id + ' easy: no same-group lookalikes');
       }
     });
   });
 });
 
-test('normal shows the close-up, hard blurs it, and the alt text keeps the answer out', function () {
-  const src = fs.readFileSync(path.join(ROOT, 'js/games/visualGames.js'), 'utf8');
-  const game = src.slice(src.indexOf("id: 'guessAnimal'"), src.indexOf('4. Guess the Food'));
-  assert(/var closeup = difficulty !== 'easy'/.test(game), 'normal and hard use the close-up');
-  assert(/animalPhoto\(api, item, closeup, difficulty === 'hard'\)/.test(game), 'only hard is blurred');
-  const css = fs.readFileSync(path.join(ROOT, 'css/games.css'), 'utf8');
-  assert(/\.ffv-photo--blur \.ffv-photo__img:not\(\.ffv-photo__full\) \{ filter: blur\(/.test(css), 'the reveal photo is never blurred');
-  assert(/image: \{ src: animalSrc\(item, closeup\) \}/.test(game), 'watchers see the same picture');
-  assert(!/alt: [^,]*item\.name/.test(src), 'alt text never names the animal');
+test('the alt text keeps the answer out, and watchers see the photo the players see', function () {
+  const src = fs.readFileSync(path.join(ROOT, 'js/games/guessIt.js'), 'utf8');
+  assert(!/alt: [^,}]*\.name/.test(src), 'alt text never names the picture');
+  assert(/image: \{ src: photo\.src \}/.test(src), 'watchers see the same picture');
 });

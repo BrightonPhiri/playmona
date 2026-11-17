@@ -9,8 +9,7 @@ window.FF = window.FF || {};
 
   var ONLINE_GAMES = [
     'bibleQuiz',
-    'guessCountry', 'guessLandmark', 'guessAnimal', 'guessFood',
-    'guessObject', 'guessSport', 'guessVehicle',
+    'guessIt',
     'familyQuiz', 'guessWho',
     'quickTap',
     // Parallel play: same letters for everyone, each keeps their own score.

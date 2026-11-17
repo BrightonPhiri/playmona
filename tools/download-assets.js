@@ -124,8 +124,7 @@ const GAME = {
   // visual
   picturePuzzle: 'puzzle-piece', spotDifference: 'magnifying-glass',
   hiddenObject: 'binoculars', visualRiddle: 'question',
-  guessLandmark: 'buildings', guessAnimal: 'paw-print', guessFood: 'fork-knife',
-  guessObject: 'cube', guessSport: 'medal', guessVehicle: 'car',
+  guessIt: 'images',
   // memory
   memoryMatch: 'cards', whatsMissing: 'eye-slash',
   rememberSequence: 'list-numbers',
@@ -138,8 +137,6 @@ const GAME = {
   numberChallenge: 'hash', numberRush: 'target', ballSwap: 'arrows-left-right', blinkRemember: 'eye', sortRush: 'stack', geoSpin: 'globe-hemisphere-west',
   // party
   whoIsMostLikely: 'target',
-  // world
-  guessCountry: 'globe',
 };
 // extra UI chrome icons used by the shell
 const UI = {

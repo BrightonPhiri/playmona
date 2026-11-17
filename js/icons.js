@@ -111,12 +111,7 @@ window.FF = window.FF || {};
   "visualRiddle": "question",
   "imposters": "detective",
   "wordFlow": "pencil",
-  "guessLandmark": "buildings",
-  "guessAnimal": "paw-print",
-  "guessFood": "fork-knife",
-  "guessObject": "cube",
-  "guessSport": "medal",
-  "guessVehicle": "car",
+  "guessIt": "images",
   "memoryMatch": "cards",
   "whatsMissing": "eye-slash",
   "rememberSequence": "list-numbers",
@@ -136,7 +131,6 @@ window.FF = window.FF || {};
   "wordShift": "text-aa",
   "sketchBack": "pencil",
   "whoIsMostLikely": "target",
-  "guessCountry": "globe",
 };
   var ui = {
   "play": "play",

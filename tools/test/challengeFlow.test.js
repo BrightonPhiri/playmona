@@ -108,3 +108,23 @@ test('review: game ids that are built-in object names are not games', function (
   assertEqual(FF.Games.get('constructor'), null);
   assertEqual(FF.Games.get('toString'), null);
 });
+
+test('moved games: an old id opens the game it moved into, and its challenge keeps the topic', function () {
+  const FF = boot();
+  FF.Games.register({ id: 'guessIt', name: 'Guess It!', category: 'visual', players: [1, 8], modes: ['solo'] });
+  FF.Games.alias('guessFood', 'guessIt', { topics: ['food'] });
+  assertEqual(FF.Games.get('guessFood').id, 'guessIt');
+  assertEqual(FF.Games.movedTo('quickTap'), null, 'a real game has not moved');
+  assertEqual(FF.Games.get('constructor'), null, 'built-in names are still not games');
+  assertEqual(FF.Games.all().filter(function (g) { return g.id === 'guessIt'; }).length, 1, 'listed once');
+  const ch = FF.GameFlow._resolveLaunch('guessFood', { challenge: { id: 'c1', seed: 'k3y9x2p1', opts: null }, skipIntro: true });
+  assertEqual(ch.id, 'guessIt');
+  assertEqual(ch.overrides.challenge.opts, { topics: ['food'] }, 'an old challenge plays its own topic');
+  assertEqual(ch.overrides.skipIntro, true);
+  const own = FF.GameFlow._resolveLaunch('guessFood', { challenge: { id: 'c2', seed: 's', opts: { topics: ['jobs'] } } });
+  assertEqual(own.overrides.challenge.opts, { topics: ['jobs'] }, 'a challenge that names its topic keeps it');
+  const plain = FF.GameFlow._resolveLaunch('guessFood');
+  assertEqual(plain.id, 'guessIt');
+  const same = FF.GameFlow._resolveLaunch('quickTap', { skipIntro: true });
+  assertEqual(same, { id: 'quickTap', overrides: { skipIntro: true } });
+});

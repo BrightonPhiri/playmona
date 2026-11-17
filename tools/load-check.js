@@ -84,7 +84,6 @@ const ORDER = [
   'js/games/creativeGames.js',
   'js/games/charades.js',
   'js/games/partyGames.js',
-  'js/games/visualGames.js',
   'js/games/puzzleGames.js',
   'js/games/bibleQuiz.js',
   'js/games/guessCountry.js',

@@ -232,7 +232,7 @@ window.FF = window.FF || {};
   function save(k, v) { try { store().set(k, v); } catch (e) { /* storage full */ } }
   function rand0() { return FF._rand ? FF._rand() : Math.random(); }
   function racingNow() { return !!(FF.Race && FF.Race.active && FF.Race.active() && FF.Room && FF.Room.current()); }
-  function stillShown(api) { return !!(api.shell.root && document.body && document.body.contains(api.shell.root)); }
+  function stillShown(api) { return !!(api.shell.root && api.shell.root.isConnected); }
   function roomSettings() {
     var r = FF.Room && FF.Room.current();
     return (r && r.meta && r.meta.settings) || {};
@@ -717,7 +717,7 @@ window.FF = window.FF || {};
       // The clock starts when the photo is on screen, not before.
       var ready = photoReady(photo.src);
       if (race) {
-        race.describe({ kind: 'choice', text: askFor(item.topic), options: r.options.map(function (o) { return String(o).replace(/­/g, ''); }), image: { src: photoSrc(item) } }, r.options.indexOf(item.name));
+        race.describe({ kind: 'choice', text: askFor(item.topic), options: r.options.map(function (o) { return String(o).replace(/­/g, ''); }), image: { src: photo.src } }, r.options.indexOf(item.name));
       }
       var thisRound = round;
       function openQuestion() {
@@ -919,7 +919,7 @@ window.FF = window.FF || {};
     if (racing) FF.Random.seed(FF.Random.roundSeed(FF.Room.current().meta.seed, api.def.id, 'deck'));
     var seed = Math.floor(rand0() * 4294967296);
     if (fixed) {
-      var cfg = racing ? sanitize(roomSettings()) : sanitize({ topic: fixed });
+      var cfg = racing ? roomSanitize(roomSettings()) : sanitize({ topic: fixed });
       if (!racing) { cfg.level = STANDARD.level; cfg.time = STANDARD.time; cfg.twist = STANDARD.twist; }
       play(api, cfg, seed);
       return;
@@ -940,6 +940,49 @@ window.FF = window.FF || {};
     pickAgain();
   }
   FF.GuessIt.start = start;
+
+  if (FF.Games && FF.Games.alias) {
+    Object.keys(LEGACY).forEach(function (old) { FF.Games.alias(old, 'guessIt', { topics: [LEGACY[old]] }); });
+  }
+
+  /* ================= rooms ================= */
+
+  // A race has no Expert (spelling is solo) and no open clock (every round must end).
+  var ROOM_TIMES = [5, 8, 12];
+  var ROOM_COUNTS = [5, 10, 15, 20];
+  var ROOM_DEFAULTS = { topic: 'mix', level: 'normal', time: 8, questions: 10 };
+
+  function roomSanitize(s) {
+    s = s || {};
+    var c = sanitize({ topic: s.topic, level: s.level, time: s.time });
+    var level = c.level === 'expert' ? ROOM_DEFAULTS.level : c.level;
+    return {
+      topic: c.topic, level: level, difficulty: level, twist: 'none',
+      time: pick(ROOM_TIMES, Number(s.time), ROOM_DEFAULTS.time),
+      questions: pick(ROOM_COUNTS, Number(s.questions), ROOM_DEFAULTS.questions)
+    };
+  }
+
+  function roomFields() {
+    function opt(label, value) { return { label: label, value: value }; }
+    return [
+      { key: 'topic', label: t('giWhatToGuess', 'What to guess'), options: TOPICS.map(function (x) { return opt(topicName(x), x); }) },
+      { key: 'level', label: t('gcLevel', 'Level'), options: ['easy', 'normal', 'hard'].map(function (l) { return opt(levelName(l), l); }) },
+      { key: 'time', label: t('giTimeEach', 'Time for each picture'), options: ROOM_TIMES.map(function (s) { return opt(timeName(s), s); }) },
+      { key: 'questions', label: t('giPictures', 'Pictures'), options: ROOM_COUNTS.map(function (n) { return opt(String(n), n); }) }
+    ];
+  }
+
+  var ROOM = {
+    defaults: ROOM_DEFAULTS,
+    fields: function () { return roomFields(); },
+    sanitize: function (s) { return roomSanitize(s); },
+    summary: function (s) {
+      var c = roomSanitize(s);
+      return summary(c) + ' · ' + t('giNPictures', '{n} pictures', { n: c.questions });
+    }
+  };
+  FF.GuessIt.roomSanitize = roomSanitize;
 
   /* ================= registration ================= */
 
@@ -963,6 +1006,7 @@ window.FF = window.FF || {};
       'Quicker right answers score more, and three in a row earns a bonus.',
       'Twists: Flash hides the photo after a moment, Zoom out starts close up and slowly shows more.'
     ],
+    room: ROOM,
     start: function (api) { FF.GuessIt.start(api); }
   });
 })();
