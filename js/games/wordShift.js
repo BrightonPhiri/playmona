@@ -62,8 +62,8 @@ window.FF = window.FF || {};
     length: function () { return t('wsBadLength', 'Keep the same number of letters.'); },
     same: function () { return t('wsBadSame', 'Change one letter first.'); },
     many: function () { return t('wsBadMany', 'Change just one letter.'); },
-    word: function (w) { return w ? t('wsBadWordW', '{w} is not in our word list. That counts as a move.', { w: w.toUpperCase() }) : t('wsBadWord', 'Not in our word list.'); },
-    used: function (w) { return w ? t('wsBadUsedW', 'You already used {w}. That counts as a move.', { w: w.toUpperCase() }) : t('wsBadUsed', 'You already used that word.'); }
+    word: function (w) { return w ? t('wsBadWordW', '{w} is not in our word list.', { w: w.toUpperCase() }) : t('wsBadWord', 'Not in our word list.'); },
+    used: function (w) { return w ? t('wsBadUsedW', 'You already used {w}.', { w: w.toUpperCase() }) : t('wsBadUsed', 'You already used that word.'); }
   };
 
   function seenGet() { var s = store().get(SEEN_KEY, null); return s && s.length ? s : []; }
