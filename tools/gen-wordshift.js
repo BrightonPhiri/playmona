@@ -29,9 +29,14 @@ const LEVELS = [
   { lv: 'expert', len: 7, min: 4, max: 8, want: 120, tier: 1, prefix: 'x' },
   { lv: 'expert', len: 8, min: 4, max: 8, want: 60, tier: 1, prefix: 'x' }
 ];
-// Never in a puzzle at all (real words, but not for a family game).
-const AVOID = new Set(('crap craps piss damn damned hell sex sexy butt butts fart farts poop puke booze drunk slut bum bums ass tit tits hoe hoes ' +
-  'kill kills killed killer drug drugs dope gun guns knife bomb bombs nazi rape porn nude nudes bra bras gay gays lust boob boobs bust busty pee poo wee hump').split(' '));
+// Never in a puzzle at all (real words, but not for a family game). One list, in the rules,
+// so crew players skip the same words (js/crew/brains/wordShift.js).
+const AVOID = new Set(require('./test/harness').loadFF(['js/core.js', 'js/wordshift/rules.js']).WordShiftRules.AVOID);
+// Fine to pass through, but too odd to be a start or a target (archaic, technical or stilted).
+const ODD = new Set(('sic thy thee ken nay per via huh mod con cam bob don nil ion err ' +
+  'baud buss saki wive lain rend vend sine ' +
+  'inter leach prise parse ' +
+  'livest extant congest assort terming flawing cabling coining rending porting nicking fining deeming manning suing').split(' '));
 // Starts and targets read better as plain words: no plurals or -ed forms.
 function plainEnd(w) { return !/[^s]s$/.test(w) && !/ed$/.test(w); }
 const MAX_USES = 3;          // a word is a start (or a target) at most this often per level
@@ -142,7 +147,7 @@ function build(Words) {
   LEVELS.forEach(function (L) {
     const g = graphWords(Words, L.len);
     const rand = mulberry(fnv('wordshift|' + L.lv + '|' + L.len));
-    const ends = shuffle(g.words.filter(function (w) { return Words.tier(w) <= L.tier && plainEnd(w); }), rand);
+    const ends = shuffle(g.words.filter(function (w) { return Words.tier(w) <= L.tier && plainEnd(w) && !ODD.has(w); }), rand);
     const endSet = new Set(ends);
     const asStart = new Map();
     const asTarget = new Map();
@@ -208,6 +213,6 @@ function main() {
   console.log('total ' + puzzles.length + ' puzzles, ' + words.length + ' accepted words');
 }
 
-module.exports = { AVOID, plainEnd, graphWords, neighbours, distances, bfs, pathsWithin, fnv, build, acceptedWords };
+module.exports = { AVOID, ODD, plainEnd, graphWords, neighbours, distances, bfs, pathsWithin, fnv, build, acceptedWords };
 
 if (require.main === module) main();

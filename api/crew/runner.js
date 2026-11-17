@@ -80,6 +80,7 @@ async function main() {
   const geospins = new Map();   // GeoSpin matchId -> { ref, transport }
   const whatsmissings = new Map(); // What's Missing? matchId -> { ref, transport }
   const crosswords = new Map(); // Mini Crossword matchId -> { ref, transport }
+  const wordshifts = new Map(); // WordShift matchId -> { ref, transport }
   const logorushes = new Map(); // Logo Rush matchId -> { ref, transport }
   const sketchbacks = new Map(); // SketchBack matchId -> { ref, transport }
   const saywhats = new Map(); // Say What? matchId -> { ref, transport }
@@ -96,6 +97,8 @@ async function main() {
       log: (m) => log(matchId + ': ' + m),
       // Imposters: each crew seat reads its own secret, never anyone else's.
       secretOf: (uid) => (run.crew[uid] ? rtdb.get('imposterSecrets/' + run.roomCode + '/' + uid) : Promise.resolve(null)),
+      // WordShift: each crew seat reads its own words, never anyone else's.
+      mineOf: (uid) => (run.crew[uid] ? rtdb.get('wordshiftMine/' + run.roomCode + '/' + uid) : Promise.resolve(null)),
       isQuiet, isWord,
       // WordFlow: a crew seat's next word from the AI (null: it uses its word bank).
       suggestWord: (req) => api('wordflow/word', req).then((r) => (r.suggestion && r.suggestion.word) || null, () => null),
@@ -475,9 +478,48 @@ async function main() {
     if (saywhats.size) lastActive = Date.now();
   }, log);
 
+  /* WordShift: the runner is the referee for every online match the API started (wordshiftRuns). */
+  function startWordShift(matchId, run) {
+    if (!run || !run.roomCode || !run.seats) return;
+    const code = run.roomCode;
+    const transport = roomTransport(rtdb, code, serverNow, (m) => log(matchId + ': ' + m));
+    const stopIt = () => {
+      const r = wordshifts.get(matchId);
+      if (!r) return;
+      r.ref.stop();
+      transport.close();
+      wordshifts.delete(matchId);
+      lastActive = Date.now();
+    };
+    const ref = FF.WordShiftReferee.create({
+      run, room: transport,
+      mine: {
+        set: (uid, v) => rtdb.set('wordshiftMine/' + code + '/' + uid, v),
+        clear: () => rtdb.set('wordshiftMine/' + code, null)
+      },
+      store: {
+        load: () => rtdb.get('wordshiftState/' + matchId),
+        save: (s) => rtdb.set('wordshiftState/' + matchId, s)
+      },
+      randomInt: (n) => crypto.randomInt(n),
+      log: (m) => log(matchId + ': ' + m),
+      report: (event, payload) => api('report', Object.assign({}, payload, { matchId, event })),
+      onEnd: () => setTimeout(stopIt, 60000)
+    });
+    wordshifts.set(matchId, { ref, transport });
+    log('refereeing WordShift ' + matchId + ' in ' + code);
+    ref.start().catch((e) => { log(matchId + ': referee failed: ' + (e && e.message)); stopIt(); });
+  }
+
+  const wordshiftRuns = rtdb.stream('wordshiftRuns', (all) => {
+    all = all || {};
+    Object.keys(all).forEach((id) => { if (!wordshifts.has(id)) startWordShift(id, all[id]); });
+    if (wordshifts.size) lastActive = Date.now();
+  }, log);
+
   async function beat() {
     try {
-      const res = await api('heartbeat', { pid: process.pid, matches: Array.from(playing.keys()), imposters: Array.from(referees.keys()), wordflow: Array.from(wordflows.keys()), ballswap: Array.from(ballswaps.keys()), sortrush: Array.from(sortrushes.keys()), geospin: Array.from(geospins.keys()), whatsmissing: Array.from(whatsmissings.keys()), crossword: Array.from(crosswords.keys()), logorush: Array.from(logorushes.keys()), sketchback: Array.from(sketchbacks.keys()), saywhat: Array.from(saywhats.keys()) });
+      const res = await api('heartbeat', { pid: process.pid, matches: Array.from(playing.keys()), imposters: Array.from(referees.keys()), wordflow: Array.from(wordflows.keys()), ballswap: Array.from(ballswaps.keys()), sortrush: Array.from(sortrushes.keys()), geospin: Array.from(geospins.keys()), whatsmissing: Array.from(whatsmissings.keys()), crossword: Array.from(crosswords.keys()), logorush: Array.from(logorushes.keys()), sketchback: Array.from(sketchbacks.keys()), saywhat: Array.from(saywhats.keys()), wordshift: Array.from(wordshifts.keys()) });
       (res.drop || []).forEach((id) => { const m = playing.get(id); if (m) m.ctl.stop(); });
       (res.dropImposters || []).forEach((id) => {
         const r = referees.get(id);
@@ -514,6 +556,10 @@ async function main() {
       (res.dropSketchback || []).forEach((id) => {
         const r = sketchbacks.get(id);
         if (r) { r.ref.stop(); r.transport.close(); sketchbacks.delete(id); }
+      });
+      (res.dropWordshift || []).forEach((id) => {
+        const r = wordshifts.get(id);
+        if (r) { r.ref.stop(); r.transport.close(); wordshifts.delete(id); }
       });
       (res.dropSaywhat || []).forEach((id) => {
         const r = saywhats.get(id);

@@ -76,7 +76,13 @@ const FILES = [
   'js/data/sayings.js',
   'js/saywhat/rules.js',
   'js/saywhat/referee.js',
-  'js/crew/brains/sayWhat.js'
+  'js/crew/brains/sayWhat.js',
+  // WordShift: the referee the runner hosts and the crew seats' brain, with the puzzles.
+  // Words are checked against the word bank above.
+  'js/data/wordshiftPuzzles.js',
+  'js/wordshift/rules.js',
+  'js/wordshift/referee.js',
+  'js/crew/brains/wordShift.js'
 ];
 
 function stubElement() {

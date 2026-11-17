@@ -25,7 +25,7 @@ class Crew
         'colorReaction', 'letterRush', 'whatsMissing', 'numberChallenge', 'visualRiddle',
         'higherOrLower', 'wordScramble', 'bibleWhoAmI', 'bibleVerseRush', 'memoryMatch',
         'rememberSequence', 'picturePuzzle', 'spotDifference', 'hiddenObject', 'bibleBooks', 'numberRush',
-        'wouldYouRather', 'thisOrThat', 'whoIsMostLikely', 'imposters', 'wordFlow', 'ballSwap', 'blinkRemember', 'sortRush', 'stacoend', 'geoSpin', 'miniCrossword', 'logoRush', 'sketchBack', 'sayWhat',
+        'wouldYouRather', 'thisOrThat', 'whoIsMostLikely', 'imposters', 'wordFlow', 'ballSwap', 'blinkRemember', 'sortRush', 'stacoend', 'geoSpin', 'miniCrossword', 'logoRush', 'sketchBack', 'sayWhat', 'wordShift',
     ];
 
     /** The online games crew can play (each has a brain in js/crew/brains). Crew are only seated in these. */
@@ -33,7 +33,7 @@ class Crew
         'bibleQuiz', 'whereInWorld', 'mapChallenge', 'capitalChallenge',
         'guessCountry', 'guessLandmark', 'guessAnimal', 'guessFood', 'guessObject', 'guessSport',
         'guessVehicle', 'familyQuiz', 'trueOrFalse', 'guessWho', 'pictureQuiz', 'quickTap',
-        'colorReaction', 'letterRush', 'whatsMissing', 'numberChallenge', 'visualRiddle', 'imposters', 'wordFlow', 'sayWhat',
+        'colorReaction', 'letterRush', 'whatsMissing', 'numberChallenge', 'visualRiddle', 'imposters', 'wordFlow', 'sayWhat', 'wordShift',
     ];
 
     public const TRAITS = ['competitiveness', 'friendliness', 'reaction', 'accuracy', 'risk', 'strategy', 'patience', 'consistency', 'social'];

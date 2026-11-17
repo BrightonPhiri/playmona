@@ -120,6 +120,12 @@ class EngineRoutes
         if ($m === 'POST' && $p === '/wordshift/begin') {
             return Response::json($this->app->wordshift()->begin($this->user($req), $req->json(), $now));
         }
+        if ($m === 'POST' && $p === '/wordshift/start') {
+            return Response::json($this->app->wordshift()->start($this->user($req), $req->json(), $now));
+        }
+        if ($m === 'POST' && $p === '/wordshift/nudge') {
+            return Response::json($this->app->wordshift()->nudge($this->user($req), $req->json(), $now));
+        }
         if ($m === 'POST' && $p === '/wordshift/finish') {
             return Response::json($this->app->wordshift()->finish($this->user($req), $req->json(), $now));
         }
@@ -237,8 +243,9 @@ class EngineRoutes
                 $dropLogorush = $this->app->logorush()->stillActive((array) ($body['logorush'] ?? []));
                 $dropSketchback = $this->app->sketchback()->stillActive((array) ($body['sketchback'] ?? []));
                 $dropSaywhat = $this->app->saywhat()->stillActive((array) ($body['saywhat'] ?? []));
+                $dropWordshift = $this->app->wordshift()->stillActive((array) ($body['wordshift'] ?? []));
                 $s = $this->app->crew()->settings();
-                return Response::json(['drop' => $drop, 'dropImposters' => $dropImposters, 'dropWordflow' => $dropWordflow, 'dropBallswap' => $dropBallswap, 'dropSortrush' => $dropSortrush, 'dropGeospin' => $dropGeospin, 'dropWhatsmissing' => $dropWhatsmissing, 'dropCrossword' => $dropCrossword, 'dropLogorush' => $dropLogorush, 'dropSketchback' => $dropSketchback, 'dropSaywhat' => $dropSaywhat, 'settings' => ['mode' => $s['mode'], 'stopNew' => $s['stopNew']]]);
+                return Response::json(['drop' => $drop, 'dropImposters' => $dropImposters, 'dropWordflow' => $dropWordflow, 'dropBallswap' => $dropBallswap, 'dropSortrush' => $dropSortrush, 'dropGeospin' => $dropGeospin, 'dropWhatsmissing' => $dropWhatsmissing, 'dropCrossword' => $dropCrossword, 'dropLogorush' => $dropLogorush, 'dropSketchback' => $dropSketchback, 'dropSaywhat' => $dropSaywhat, 'dropWordshift' => $dropWordshift, 'settings' => ['mode' => $s['mode'], 'stopNew' => $s['stopNew']]]);
             case 'report':
                 $matchId = (string) ($body['matchId'] ?? '');
                 $event = (string) ($body['event'] ?? '');
@@ -276,6 +283,10 @@ class EngineRoutes
                 }
                 if ($event === 'sketchback') {
                     $this->app->sketchback()->recordResult($body, $now);
+                    return Response::json(['ok' => true]);
+                }
+                if ($event === 'wordshift') {
+                    $this->app->wordshift()->recordResult($body, $now);
                     return Response::json(['ok' => true]);
                 }
                 if ($event === 'saywhat') {

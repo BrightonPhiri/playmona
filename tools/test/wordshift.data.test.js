@@ -40,7 +40,13 @@ test('wordshift data: every puzzle is solvable within its level range', function
     assert(FF.Words.tier(p.s) === 1 && FF.Words.tier(p.t) === 1, p.id + ' start/target not everyday words');
     assert(gen.plainEnd(p.s) && gen.plainEnd(p.t), p.id + ' start/target is a plural or -ed form');
     route.forEach(function (w) { assert(!gen.AVOID.has(w), p.id + ' route uses ' + w); });
+    assert(!gen.ODD.has(p.s) && !gen.ODD.has(p.t), p.id + ' starts or ends on an odd word: ' + p.s + ' ' + p.t);
   });
+});
+
+test('wordshift data: no swearing anywhere, and odd words are never a start or a target', function () {
+  ['bugger', 'bloody', 'slag', 'sod', 'crap'].forEach((w) => assert(gen.AVOID.has(w), w + ' is avoided'));
+  ['sic', 'thy', 'thee', 'livest', 'flawing', 'baud'].forEach((w) => assert(gen.ODD.has(w), w + ' is odd'));
 });
 
 test('wordshift data: enough puzzles per level', function () {

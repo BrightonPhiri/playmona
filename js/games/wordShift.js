@@ -537,7 +537,7 @@ window.FF = window.FF || {};
     defaults: { level: 'normal', rounds: 3, clock: 120 },
     fields: function () { return roomFields(); },
     sanitize: function (s) { return R.sanitizeRoom(s); },
-    summary: function (s) { var c = R.sanitizeRoom(s); return [levelName(c.level), t('wsNPuzzles', '{n} puzzles', { n: c.rounds })].join(' · '); },
+    summary: function (s) { var c = R.sanitizeRoom(s); return [levelName(c.level), (c.rounds === 1 ? t('wsOnePuzzle', '1 puzzle') : t('wsNPuzzles', '{n} puzzles', { n: c.rounds }))].join(' · '); },
     start: function (room, pick) { return FF.WordShiftOnline.start(room, pick); }
   };
 

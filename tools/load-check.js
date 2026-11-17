@@ -126,7 +126,9 @@ const ORDER = [
   'js/wordshift/rules.js',
   'js/wordshift/board.js',
   'js/wordshift/api.js',
-  'js/games/wordShift.js'
+  'js/games/wordShift.js',
+  'js/wordshift/client.js',
+  'js/wordshift/online.js'
 ];
 
 const sandbox = {

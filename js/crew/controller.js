@@ -245,6 +245,21 @@ window.FF = window.FF || {};
       swSeats.start();
     }
 
+    /* WordShift online is refereed by the server: its seats find their own way to the target and
+       move through the inbox, each reading only its own words (js/crew/brains/wordShift.js). */
+    var wsSeats = null, wsKey = null;
+    function onWordShift() {
+      var playing = meta && meta.status === 'playing' && meta.gameId === 'wordShift' && meta.wsMatch && FF.CrewWordShift && opts.mineOf;
+      var key = playing ? gameKey() : null;
+      if (wsSeats && wsKey !== key) { wsSeats.stop(); wsSeats = null; }
+      if (!playing || wsSeats) return;
+      wsKey = key;
+      wsSeats = FF.CrewWordShift.create({
+        transport: T, uids: function () { return uids.filter(present); }, crew: crew, later: later, log: log, mineOf: opts.mineOf
+      });
+      wsSeats.start();
+    }
+
     function onMeta(v) {
       meta = v;
       if (!meta) { stop(); return; }
@@ -256,6 +271,7 @@ window.FF = window.FF || {};
       onWordFlow();
       onWhatsMissing();
       onSayWhat();
+      onWordShift();
     }
 
     function stop() {
@@ -265,6 +281,7 @@ window.FF = window.FF || {};
       if (wfSeats) { wfSeats.stop(); wfSeats = null; }
       if (wmSeats) { wmSeats.stop(); wmSeats = null; }
       if (swSeats) { swSeats.stop(); swSeats = null; }
+      if (wsSeats) { wsSeats.stop(); wsSeats = null; }
       offs.forEach(function (off) { try { off(); } catch (e) { /* already closed */ } });
       offs = [];
       pending.forEach(function (id) { timers.clearTimeout(id); });

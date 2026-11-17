@@ -106,6 +106,18 @@ window.FF = window.FF || {};
     return pool[Math.min(pool.length - 1, Math.floor((rand || Math.random)() * pool.length))];
   }
 
+  // An online Race's puzzles: `rounds` different ids of the level, shuffled by the match's secret seed.
+  function raceDeal(puzzles, level, seed, rounds) {
+    var ids = ofLevel(puzzles, level).map(function (p) { return p.id; });
+    var x = fnv('race|' + seed) || 1;
+    for (var i = ids.length - 1; i > 0; i--) {
+      x = (Math.imul ? Math.imul(x, 1664525) : (x * 1664525) % 4294967296) + 1013904223 >>> 0;
+      var j = x % (i + 1);
+      var tmp = ids[i]; ids[i] = ids[j]; ids[j] = tmp;
+    }
+    return ids.slice(0, Math.max(1, rounds));
+  }
+
   function byId(puzzles, id) {
     for (var i = 0; i < (puzzles || []).length; i++) if (puzzles[i].id === id) return puzzles[i];
     return null;
@@ -136,10 +148,17 @@ window.FF = window.FF || {};
     return s.mode === STANDARD.mode && s.level === STANDARD.level;
   }
 
+  /* Real words, but never in a puzzle and never played by crew: not for a family game.
+     Players may still type them (they are in the word list); tools/gen-wordshift.js reads this. */
+  var AVOID = ('crap craps piss damn damned hell sex sexy butt butts fart farts poop puke booze drunk slut bum bums ass tit tits hoe hoes ' +
+    'kill kills killed killer drug drugs dope gun guns knife bomb bombs nazi rape porn nude nudes bra bras gay gays lust boob boobs bust busty pee poo wee hump ' +
+    'bugger bloody slag sod sods coke gin').split(' ');
+
   FF.WordShiftRules = {
+    AVOID: AVOID,
     LEVELS: LEVELS, MODES: MODES, CLOCKS: CLOCKS, DEFAULT_CLOCK: DEFAULT_CLOCK,
     ROOM_ROUNDS: ROOM_ROUNDS, ROOM_CLOCKS: ROOM_CLOCKS, SCORING: SCORING, STANDARD: STANDARD,
-    MIN_PLAYERS: 2, MAX_PLAYERS: 8, MAX_MOVES: 200,
+    MIN_PLAYERS: 2, MAX_PLAYERS: 8, MAX_MOVES: 200, REVEAL_MS: 6000, raceDeal: raceDeal,
     clean: clean, checkMove: checkMove, greens: greens, greenCount: greenCount,
     score: score, racePoints: racePoints, fnv: fnv, dailyPuzzle: dailyPuzzle,
     pick: pick, byId: byId, sanitize: sanitize, sanitizeRoom: sanitizeRoom, isStandard: isStandard
