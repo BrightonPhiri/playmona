@@ -119,8 +119,8 @@ const GAME = {
   letterRush: 'keyboard', wordScramble: 'shuffle', stacoend: 'text-aa',
   wordChain: 'link', miniCrossword: 'squares-four',
   // quiz
-  familyQuiz: 'brain', trueOrFalse: 'scales',
-  guessWho: 'detective', pictureQuiz: 'image',
+  familyQuiz: 'brain',
+  guessWho: 'detective',
   // visual
   picturePuzzle: 'puzzle-piece', spotDifference: 'magnifying-glass',
   hiddenObject: 'binoculars', visualRiddle: 'question',
@@ -130,18 +130,16 @@ const GAME = {
   memoryMatch: 'cards', whatsMissing: 'eye-slash',
   rememberSequence: 'list-numbers',
   // reaction
-  quickTap: 'hand-tap', colorReaction: 'drop',
+  quickTap: 'hand-tap',
   // creative
   charades: 'person-arms-spread',
   dontSayIt: 'x-circle', drawingChallenge: 'pencil', pictionary: 'chalkboard',
   // numbers
-  numberChallenge: 'hash', numberRush: 'target', ballSwap: 'arrows-left-right', blinkRemember: 'eye', sortRush: 'stack', geoSpin: 'globe-hemisphere-west', higherOrLower: 'chart-line',
+  numberChallenge: 'hash', numberRush: 'target', ballSwap: 'arrows-left-right', blinkRemember: 'eye', sortRush: 'stack', geoSpin: 'globe-hemisphere-west',
   // party
-  wouldYouRather: 'arrows-left-right', thisOrThat: 'split-horizontal',
   whoIsMostLikely: 'target',
   // world
-  guessCountry: 'globe', whereInWorld: 'map-pin', mapChallenge: 'map-trifold',
-  capitalChallenge: 'city'
+  guessCountry: 'globe',
 };
 // extra UI chrome icons used by the shell
 const UI = {

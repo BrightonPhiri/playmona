@@ -38,7 +38,7 @@ window.FF = window.FF || {};
   var CELEBRATE_DEFAULT = 20;
   // Shown until the server has counted a week of plays (api/cron.php).
   var DEFAULT_FEATURED = ['familyQuiz', 'guessCountry', 'wordScramble', 'quickTap', 'memoryMatch',
-    'trueOrFalse', 'guessAnimal', 'capitalChallenge', 'letterRush', 'higherOrLower'];
+    'guessAnimal', 'letterRush'];
 
   function utcKey(d) { return (d || new Date()).toISOString().slice(0, 10); }
 

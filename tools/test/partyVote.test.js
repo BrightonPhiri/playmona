@@ -107,7 +107,7 @@ test('party vote: the same seed draws the same prompts, without repeats', functi
   FF.Random.unseed();
 });
 
-test('party vote: all three games play online with the vote race', function () {
+test('party vote: Who Is Most Likely plays online with the vote race', function () {
   const src = fs.readFileSync(path.join(ROOT, 'js/games/partyGames.js'), 'utf8');
   const online = src.slice(src.indexOf('online rooms ====='), src.indexOf('registrations ====='));
   assert(/mode: 'vote'/.test(online), 'vote race mode');
@@ -116,10 +116,10 @@ test('party vote: all three games play online with the vote race', function () {
   assert(/FF\.Room\.on\('rounds'/.test(online), 'shows live who has voted');
   assert(/FF\.Advance\.button\([\s\S]*ms: VOTE\.REVEAL_MS/.test(online), 'the room moves on together');
   assert(!/#[0-9a-fA-F]{3,6}\b|<style|\.style\.(color|background)/.test(online), 'looks live in css/games.css');
-  assertEqual((src.match(/runVoteOnline\(api, \{ kind: '(choice|likely)'/g) || []).length, 2, 'both engines hand over to the online runner');
+  assertEqual((src.match(/runVoteOnline\(api, \{ kind: '(choice|likely)'/g) || []).length, 1, 'the game hands over to the online runner');
   const ui = fs.readFileSync(path.join(ROOT, 'js/net/roomUI.js'), 'utf8');
   const list = /ONLINE_GAMES = \[([\s\S]*?)\];/.exec(ui)[1];
-  ['wouldYouRather', 'thisOrThat', 'whoIsMostLikely'].forEach(function (id) {
+  ['whoIsMostLikely'].forEach(function (id) {
     assert(list.indexOf("'" + id + "'") !== -1, id + ' is offered in rooms');
   });
 });

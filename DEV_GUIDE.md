@@ -271,7 +271,6 @@ FF.data.quiz = {
   questions: [ { q, options:[4 strings], answer: index, explanation, difficulty:'easy'|'normal'|'hard', category } ],  // aim 400+ total
   trueFalse: [ { q, answer: true|false, explanation, difficulty } ],  // 120+
   guessWho:  [ { answer, clues:[3-4 strings], category, difficulty } ],  // 60+
-  pictureQuiz: [ { q, options:[4], answer: index, explanation, imageKey } ]  // 40+ (imageKey references FF.data.visual)
 };
 ```
 Categories for `questions` should include at least: General Knowledge, Geography, Science,
@@ -347,8 +346,6 @@ FF.data.party = {
   dontSayIt: [ { word, forbidden:[4 strings], category } ],  // 80+
   drawingPrompts: [ 'bicycle', ... ],  // 120+ (simple nouns, easy to draw)
   pictionary: [ { word, category, hint } ],  // 120+
-  wouldYouRather: [ { a, b, aIcon:'🏝️', bIcon:'🏔️' } ],  // 120+ (aIcon/bIcon are emoji)
-  thisOrThat: [ { a, b, aIcon, bIcon } ],  // 100+
   whoIsMostLikely: [ 'Forget where they put their phone?', ... ],  // 80+
   finishSentence: [ 'The best thing about weekends is...', ... ],  // 60+
   describeIt: [ { word, category } ]  // 80+

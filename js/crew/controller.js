@@ -25,7 +25,7 @@ window.FF = window.FF || {};
   var ALONE_MS = 30000;              // no real player for this long: leave
 
   // Each online game's race mode and round timer (as the games call FF.Race.begin).
-  var MODES = { quickTap: 'ranked', colorReaction: 'fastest', letterRush: 'parallel' };
+  var MODES = { quickTap: 'ranked', letterRush: 'parallel' };
 
   function online(p, now) {
     return !!p && p.online !== false && (p.lastSeen == null || now - p.lastSeen <= PRESENCE_STALE_MS);

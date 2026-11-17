@@ -21,13 +21,12 @@ class Leaderboards
     public const GAMES = [
         'bibleQuiz', 'bibleWhoAmI', 'bibleVerseRush', 'bibleBooks',
         'letterRush', 'memoryMatch', 'whatsMissing', 'rememberSequence', 'blinkRemember',
-        'numberChallenge', 'higherOrLower', 'numberRush',
+        'numberChallenge', 'numberRush',
         'picturePuzzle', 'spotDifference', 'hiddenObject', 'visualRiddle', 'sortRush',
-        'trueOrFalse', 'guessWho', 'pictureQuiz', 'familyQuiz',
-        'quickTap', 'colorReaction',
+        'guessWho', 'familyQuiz',
+        'quickTap',
         'guessCountry', 'geoSpin', 'logoRush', 'sketchBack', 'sayWhat', 'wordShift', 'guessLandmark', 'guessAnimal', 'guessFood', 'guessObject', 'guessSport', 'guessVehicle',
         'wordScramble', 'stacoend', 'wordChain', 'miniCrossword',
-        'whereInWorld', 'mapChallenge', 'capitalChallenge',
     ];
     public const REPEAT_DAYS = 14;
     public const FEATURED = 10;

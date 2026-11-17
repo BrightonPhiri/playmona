@@ -104,9 +104,7 @@ window.FF = window.FF || {};
   "wordChain": "link",
   "miniCrossword": "squares-four",
   "familyQuiz": "brain",
-  "trueOrFalse": "scales",
   "guessWho": "detective",
-  "pictureQuiz": "image",
   "picturePuzzle": "puzzle-piece",
   "spotDifference": "magnifying-glass",
   "hiddenObject": "binoculars",
@@ -123,7 +121,6 @@ window.FF = window.FF || {};
   "whatsMissing": "eye-slash",
   "rememberSequence": "list-numbers",
   "quickTap": "hand-tap",
-  "colorReaction": "drop",
   "charades": "person-arms-spread",
   "dontSayIt": "x-circle",
   "drawingChallenge": "pencil",
@@ -138,14 +135,8 @@ window.FF = window.FF || {};
   "sayWhat": "chalkboard",
   "wordShift": "text-aa",
   "sketchBack": "pencil",
-  "higherOrLower": "chart-line",
-  "wouldYouRather": "arrows-left-right",
-  "thisOrThat": "split-horizontal",
   "whoIsMostLikely": "target",
   "guessCountry": "globe",
-  "whereInWorld": "map-pin",
-  "mapChallenge": "map-trifold",
-  "capitalChallenge": "city"
 };
   var ui = {
   "play": "play",

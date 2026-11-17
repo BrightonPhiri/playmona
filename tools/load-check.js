@@ -85,7 +85,6 @@ const ORDER = [
   'js/games/partyGames.js',
   'js/games/visualGames.js',
   'js/games/puzzleGames.js',
-  'js/games/worldGames.js',
   'js/games/bibleQuiz.js',
   'js/games/guessCountry.js',
   'js/games/bibleGames.js',
@@ -197,7 +196,7 @@ try {
   if (sandbox.FF && sandbox.FF.data) {
     console.log('data namespaces: ' + Object.keys(sandbox.FF.data).join(', '));
     const d = sandbox.FF.data;
-    if (d.quiz) console.log('quiz: questions=' + (d.quiz.questions || []).length + ' trueFalse=' + (d.quiz.trueFalse || []).length + ' guessWho=' + (d.quiz.guessWho || []).length + ' pictureQuiz=' + (d.quiz.pictureQuiz || []).length);
+    if (d.quiz) console.log('quiz: questions=' + (d.quiz.questions || []).length + ' trueFalse=' + (d.quiz.trueFalse || []).length + ' guessWho=' + (d.quiz.guessWho || []).length);
     if (d.words) console.log('words: dictionary=' + (d.words.dictionary || []).length + ' scramble=' + (d.words.scramble || []).length + ' categories=' + (d.words.categories || []).length + ' missingLetters=' + (d.words.missingLetters || []).length);
     console.log('crosswords: ' + (d.crosswords || []).length);
     if (d.countries) console.log('countries: ' + d.countries.length);

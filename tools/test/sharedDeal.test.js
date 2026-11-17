@@ -9,7 +9,7 @@
      Fixed: a shared deal plays Everything and leaves the seen list alone.
    - quickTap: stores a personal best only (shown, not dealt). Fine.
    - Every other game deals only through FF.Random / FF.util with no saved history.
-   - letterRush, quickTap/colorReaction, wordGames, worldGames shuffle the player order when
+   - letterRush, quickTap, wordGames shuffle the player order when
      the randomOrder setting is on; GameFlow turns it off for shared solo runs. */
 const fs = require('fs');
 const path = require('path');

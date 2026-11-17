@@ -1,5 +1,5 @@
 'use strict';
-/* Higher or Lower, Word Scramble, Who Am I? (Bible), Verse Rush, Bible Quiz and Guess the Country in a room:
+/* Word Scramble, Who Am I? (Bible), Verse Rush, Bible Quiz and Guess the Country in a room:
    each game runs headless on two devices sharing a room seed, against a
    stand-in race layer, and both must deal exactly the same rounds. */
 const fs = require('fs');
@@ -10,7 +10,6 @@ const ROOT = path.join(__dirname, '..', '..');
 
 const BASE = ['js/core.js', 'js/i18n.js', 'js/icons.js', 'js/ui-kit.js', 'js/gameUI.js', 'js/gameLength.js'];
 const FILES = {
-  higherOrLower: ['js/games/numberGames.js'],
   wordScramble: ['js/data/words.js', 'js/games/wordGames.js'],
   bibleWhoAmI: ['js/data/bible.js', 'js/games/bibleGames.js'],
   bibleVerseRush: ['js/data/bible.js', 'js/games/bibleGames.js'],
@@ -133,30 +132,7 @@ test('race modes: a typed or picked answer is first, a guess or a build is ranke
     d.start();
     modes[id] = d.log.opts.mode || 'first';
   });
-  assertEqual(modes, { higherOrLower: 'ranked', wordScramble: 'first', bibleWhoAmI: 'first', bibleVerseRush: 'ranked', bibleQuiz: 'first', guessCountry: 'first' });
-});
-
-test('higher or lower: a guess goes to the race and waits for the reveal', async function () {
-  const d = await playRounds('higherOrLower', 'u1', 'room42', 1);
-  const shown = d.log.described[0];
-  // The DOM stub has no selectors: find the two buttons in its tree.
-  const buttons = [];
-  (function walk(n) { (n.children || []).forEach(function (c) { if (c && c.tagName === 'BUTTON') buttons.push(c); walk(c); }); })(d.api.shell.root);
-  assertEqual(buttons.length, 2, 'higher and lower');
-  buttons[0].dispatch('click');
-  assertEqual(d.log.submitted.length, 1, 'one guess per round');
-  assertEqual(d.log.submitted[0].choice, 'higher');
-  assertEqual(d.log.submitted[0].correct, shown.answer === 0, 'judged against the shared card');
-  assertEqual(d.log.submitted[0].ms, 500, 'timed from the shared open instant');
-  buttons[1].dispatch('click');
-  assertEqual(d.log.submitted.length, 1, 'a second tap changes nothing');
-});
-
-test('higher or lower: online points reward every right guess, fastest most', function () {
-  const d = device('higherOrLower', 'u1', 's');
-  d.start();
-  const pts = d.log.opts.pointsFor;
-  assertEqual([pts({}, 1), pts({}, 2), pts({}, 3), pts({}, 6)], [225, 188, 150, 150]);
+  assertEqual(modes, { wordScramble: 'first', bibleWhoAmI: 'first', bibleVerseRush: 'ranked', bibleQuiz: 'first', guessCountry: 'first' });
 });
 
 test('verse rush: online points by finishing place', function () {
@@ -173,10 +149,10 @@ test('word scramble and who am I send what the answer was worth', function () {
   assert(/race\.submit\(chosenName, isCorrect, null, \{ value: /.test(bible), 'who am I sends its clue value');
 });
 
-test('the four games are offered in online rooms', function () {
+test('the three race games are offered in online rooms', function () {
   const src = fs.readFileSync(path.join(ROOT, 'js/net/roomUI.js'), 'utf8');
   const list = /ONLINE_GAMES = \[([\s\S]*?)\];/.exec(src)[1];
-  ['higherOrLower', 'wordScramble', 'bibleWhoAmI', 'bibleVerseRush'].forEach(function (id) {
+  ['wordScramble', 'bibleWhoAmI', 'bibleVerseRush'].forEach(function (id) {
     assert(list.indexOf("'" + id + "'") !== -1, id + ' is online');
   });
 });

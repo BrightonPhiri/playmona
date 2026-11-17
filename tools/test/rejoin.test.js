@@ -92,15 +92,15 @@ test('rejoin: the host cannot start another game while others are still playing'
   await tick(20);
   assertEqual(A.Room.gameRunningWithoutMe(), true, 'the host sees the game is still on');
   let err = null;
-  try { await A.Room.startGame('trueOrFalse', {}); } catch (e) { err = e; }
+  try { await A.Room.startGame('familyQuiz', {}); } catch (e) { err = e; }
   assert(err && /still being played/.test(err.message), 'refused');
   assertEqual(A.Room.current().meta.gameId, 'familyQuiz', 'the running game is untouched');
 
   await B.Room.markLeftGame(startAt);       // now Ben leaves it too
   await tick(20);
   assertEqual(A.Room.gameRunningWithoutMe(), false, 'nobody is playing it any more');
-  await A.Room.startGame('trueOrFalse', {});
-  assertEqual(A.Room.current().meta.gameId, 'trueOrFalse', 'a new game can start');
+  await A.Room.startGame('familyQuiz', {});
+  assertEqual(A.Room.current().meta.gameId, 'familyQuiz', 'a new game can start');
   A.Room.leave(); B.Room.leave();
 });
 

@@ -121,7 +121,7 @@ test('race screen: a new game starts with no question from the last one', async 
   const { A, B } = await twoInARoom();
   A.Race.describe(QUESTION, 0);
   A.Race.end();
-  A.Race.begin('trueOrFalse', { rounds: 3 });
+  A.Race.begin('familyQuiz', { rounds: 3 });
   await A.Race.beginRound(0);
   assertEqual(A.Race.screen(), null, 'nothing shown until the new game says what round 1 is');
   done(A, B);

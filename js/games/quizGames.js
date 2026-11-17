@@ -1,7 +1,7 @@
 /* ============================================================
    PLAYMONA — quizGames.js
-   Three quiz / visual games:
-     trueOrFalse, guessWho, pictureQuiz (Quiz Mix is in quizMix.js)
+   Quiz game:
+     guessWho (Quiz Mix is in quizMix.js)
    Classic script (no ES modules) so the app runs from file://
    ============================================================ */
 window.FF = window.FF || {};
@@ -40,30 +40,6 @@ window.FF = window.FF || {};
 
   function notEmpty(arr) { return Array.isArray(arr) && arr.length > 0; }
 
-  function maxStreak(api) {
-    const s = scorerList(api.config);
-    let best = 0;
-    for (let i = 0; i < s.length; i++) {
-      const r = api.scoring.record(s[i].id);
-      if (r && r.bestStreak > best) best = r.bestStreak;
-    }
-    return best;
-  }
-
-  // Difficulty-aware question pool: easy picks easy/normal, hard picks normal/hard.
-  function difficultyPool(questions, diff) {
-    if (!notEmpty(questions)) return [];
-    if (diff === 'easy') {
-      const f = questions.filter(function (q) { return q.difficulty !== 'hard'; });
-      return f.length ? f : questions.slice();
-    }
-    if (diff === 'hard') {
-      const f = questions.filter(function (q) { return q.difficulty !== 'easy'; });
-      return f.length ? f : questions.slice();
-    }
-    return questions.slice();
-  }
-
   /* ---------- DOM building helpers ---------- */
 
   // Screens are built from FF.GameUI (js/gameUI.js, css/games.css).
@@ -94,25 +70,8 @@ window.FF = window.FF || {};
     return FF.GameUI.feedback('good', FF.GameUI.correctText(pts) + (streak ? ' ' + FF.t('streakBonus', 'Streak bonus!') : ''));
   }
   function wrongLine() { return FF.GameUI.feedback('bad', FF.t('notQuite', 'Not quite.')); }
-  function tipLine(text) { return FF.GameUI.feedback('tip', text); }
 
   /* ---------- Scoring helpers ---------- */
-
-  // Standard quiz correct answer: 100 x bonus, +50 speed bonus under 3s,
-  // +100 streak bonus every 3 correct in a row. Records fastest (seconds).
-  function awardCorrect(api, id, elapsed) {
-    const bonus = bonusOf(api.config);
-    let pts = Math.round(100 * bonus);
-    if (elapsed != null && elapsed < 3) pts += 50;
-    api.scoring.add(id, pts, { correct: true, fastest: (elapsed != null ? elapsed : null) });
-    const rec = api.scoring.record(id);
-    let streakBonus = false;
-    if (rec && rec.streak > 0 && rec.streak % 3 === 0) {
-      api.scoring.add(id, 100);
-      streakBonus = true;
-    }
-    return { pts: pts, streak: streakBonus };
-  }
 
   /* ---------- Race support ----------
      One helper serves every quiz loop. Returns null offline, so each
@@ -204,23 +163,6 @@ window.FF = window.FF || {};
     FF.GameUI.exitCard(api, FF.t('noQuestions', 'No questions yet'), msg || FF.t('needsQuizData', 'This game needs more quiz data before it can be played.'));
   }
 
-  // Picture quiz: find a visual item whose name matches imageKey (case-insensitive).
-  function findVisual(key) {
-    const v = (FF.data && FF.data.visual) ? FF.data.visual : null;
-    if (!v || key == null) return null;
-    const k = String(key).toLowerCase();
-    const groups = [v.animals, v.food, v.landmarks, v.objects];
-    for (let g = 0; g < groups.length; g++) {
-      const arr = groups[g];
-      if (!Array.isArray(arr)) continue;
-      for (let i = 0; i < arr.length; i++) {
-        const it = arr[i];
-        if (it && it.svg && String(it.name).toLowerCase() === k) return it;
-      }
-    }
-    return null;
-  }
-
   // Guess Who: correct answer + up to 3 distractors from other cards.
   function buildOptions(answer, allItems) {
     const others = [];
@@ -230,167 +172,6 @@ window.FF = window.FF || {};
     }
     return FF.util.shuffle([answer].concat(others));
   }
-
-  /* ============================================================
-     2. TRUE OR FALSE — 8 fast turn-based rounds
-     ============================================================ */
-  FF.registerGame({
-    id: 'trueOrFalse',
-    name: 'True or False',
-    icon: '⚖️',
-    category: 'quiz',
-    players: [1, 8],
-    difficulty: 'Easy',
-    duration: 3,
-    tags: ['quick'],
-    modes: ['solo', 'turn', 'team'],
-    defaultMode: 'turn',
-    description: 'Race to decide — is it true or false? Fast-paced quiz fun.',
-    howToPlay: [
-      'Take turns answering true or false questions.',
-      'Tap TRUE or FALSE before the timer runs out.',
-      'Correct answers earn points, plus bonuses for speed and streaks.',
-      'Most points after 8 rounds wins.'
-    ],
-    start: function (api) {
-      const data = getQuiz();
-      if (!data || !notEmpty(data.trueFalse)) {
-        friendlyExit(api, 'Add true/false questions to js/data/quiz.js first.');
-        return;
-      }
-      if (!scorerList(api.config).length) {
-        friendlyExit(api, 'No players were found for this game.');
-        return;
-      }
-
-      const bag = new api.random.Bag(data.trueFalse);
-      const ROUNDS = FF.GameLength.rounds(api, 8, data.trueFalse.length);
-
-      let round = 0;
-      let correctTotal = 0;
-      let answeredTotal = 0;
-      let timer = null;
-      let currentItem = null;
-
-      const race = raceFor(api, { rounds: ROUNDS, optionSelector: '.btn' });
-      const offSettle = race ? race.onSettle(function (payload) {
-        if (payload.winnerId) correctTotal++;
-        answeredTotal++;
-        race.showResult(payload, {
-          answerText: currentItem ? (currentItem.answer ? 'TRUE' : 'FALSE') : null,
-          isLast: race.isLastRound(round, ROUNDS),
-          onNext: function () { nextRound(); }
-        });
-      }) : null;
-
-      function nextRound() {
-        round++;
-        if (round >= ROUNDS || (race && race.over(round))) {
-          if (offSettle) offSettle();
-          if (race) race.end();
-          finishGame(api, { quizCorrect: correctTotal, quizAnswered: answeredTotal });
-        } else {
-          renderRound();
-        }
-      }
-
-      function renderRound() {
-        if (race) race.beginRound(round);
-        const entity = activeScorer(api.config, round);
-        const item = bag.next();
-        currentItem = item;
-        const startTime = Date.now();
-        let answered = false;
-
-        api.shell.updateScores(entity ? entity.id : null);
-        FF.ui.clear(api.shell.root);
-
-        const wrap = cardWrap();
-        wrap.appendChild(turnChip(entity, roundLabel(round + 1, ROUNDS)));
-        wrap.appendChild(FF.GameUI.prompt(item.q));
-        // For people watching (the answer is shared after the round).
-        if (race) race.describe({ kind: 'choice', text: item.q, options: [FF.t('true', 'True'), FF.t('false', 'False')] }, item.answer === true ? 0 : 1);
-
-        const meter = FF.GameUI.meter(1);
-        if (api.config.timer > 0) wrap.appendChild(meter);
-
-        const row = FF.GameUI.duo();
-        const trueBtn = FF.GameUI.duoButton(FF.t('true', 'True'), function () { answer(true); }, 'yes', 'check');
-        const falseBtn = FF.GameUI.duoButton(FF.t('false', 'False'), function () { answer(false); }, 'no', 'close');
-        row.appendChild(trueBtn);
-        row.appendChild(falseBtn);
-        wrap.appendChild(row);
-
-        api.shell.root.appendChild(wrap);
-        if (race) race.gate();
-        FF.Nav.focusFirst(api.shell.root);
-
-        if (api.config.timer > 0) {
-          timer = api.timer.create({
-            onTick: function (rem) { meter.set(rem / api.config.timer); },
-            onFinish: function () { onTimeout(); },
-            warningAt: 5
-          });
-          timer.start(api.config.timer);
-        }
-
-        function stopTimer() { if (timer) { timer.stop(); timer = null; } }
-
-        function settle(correct, choice) {
-          if (answered) return;
-          const elapsed = (Date.now() - startTime) / 1000;
-
-          if (race) {
-            stopTimer();
-            race.submit(correct ? 1 : 0, correct, Date.now() - startTime);
-            return;
-          }
-
-          answered = true;
-          stopTimer();
-
-          trueBtn.disabled = true;
-          falseBtn.disabled = true;
-          if (item.answer === true) markOption(trueBtn, 'correct'); else markOption(trueBtn, 'dim');
-          if (item.answer === false) markOption(falseBtn, 'correct'); else markOption(falseBtn, 'dim');
-          if (!correct && choice != null) markOption(choice ? trueBtn : falseBtn, 'wrong');
-
-          answeredTotal++;
-          if (correct) {
-            const res = awardCorrect(api, entity.id, elapsed);
-            correctTotal++;
-            api.audio.play('correct');
-            if (res.streak) api.audio.play('streak');
-            wrap.appendChild(correctLine(res.pts));
-          } else {
-            awardWrong(api, entity.id);
-            api.audio.play('wrong');
-            wrap.appendChild(wrongLine());
-          }
-
-          wrap.appendChild(FF.GameUI.feedback('info', FF.t('itWas', 'It was {answer}.', { answer: item.answer ? FF.t('true', 'True') : FF.t('false', 'False') })));
-          if (item.explanation) wrap.appendChild(tipLine(item.explanation));
-          const nextBtn = FF.Advance.button(FF.t('next', 'Next'), function () { FF.Audio.play('click'); nextRound(); }, { class: 'btn-lg' });
-          wrap.appendChild(nextBtn);
-
-          api.shell.updateScores(entity.id);
-          FF.Nav.focus(nextBtn);
-        }
-
-        function answer(choice) {
-          if (answered) return;
-          settle(choice === item.answer, choice);
-        }
-
-        function onTimeout() {
-          if (answered) return;
-          settle(false);
-        }
-      }
-
-      renderRound();
-    }
-  });
 
   /* ============================================================
      4. GUESS WHO / WHAT — progressive clues, shrinking points
@@ -576,149 +357,4 @@ window.FF = window.FF || {};
     }
   });
 
-  /* ============================================================
-     5. PICTURE QUIZ — identify the illustration
-     ============================================================ */
-  FF.registerGame({
-    id: 'pictureQuiz',
-    name: 'Picture Quiz',
-    icon: '🖼️',
-    category: 'visual',
-    players: [1, 8],
-    difficulty: 'Easy',
-    duration: 5,
-    tags: ['quick'],
-    modes: ['solo', 'turn', 'team'],
-    defaultMode: 'turn',
-    description: 'Look at the picture and pick the right answer.',
-    howToPlay: [
-      'Take turns looking at a picture.',
-      'Pick the correct answer from 4 choices.',
-      'Answer fast for a speed bonus.',
-      'Most points after 8 rounds wins.'
-    ],
-    start: function (api) {
-      const data = getQuiz();
-      if (!data || !notEmpty(data.pictureQuiz)) {
-        friendlyExit(api, 'Add picture quiz items to js/data/quiz.js first.');
-        return;
-      }
-      if (!scorerList(api.config).length) {
-        friendlyExit(api, 'No players were found for this game.');
-        return;
-      }
-
-      // Keep only items whose imageKey resolves to an actual SVG illustration.
-      const valid = [];
-      data.pictureQuiz.forEach(function (p) {
-        const v = findVisual(p.imageKey);
-        if (v) valid.push({ p: p, v: v });
-      });
-      if (!valid.length) {
-        friendlyExit(api, 'Picture Quiz needs matching illustrations in FF.data.visual (animals, food, landmarks, objects).');
-        return;
-      }
-
-      const TOTAL = FF.GameLength.rounds(api, Math.min(8, valid.length), valid.length);
-      const bag = new api.random.Bag(valid);
-
-      let round = 0;
-      let correctTotal = 0;
-      let answeredTotal = 0;
-      let currentP = null;
-
-      const race = raceFor(api, { rounds: TOTAL, optionSelector: '.quiz-option' });
-      const offSettle = race ? race.onSettle(function (payload) {
-        if (payload.winnerId) correctTotal++;
-        answeredTotal++;
-        race.showResult(payload, {
-          answerText: currentP ? currentP.options[currentP.answer] : null,
-          isLast: race.isLastRound(round, TOTAL),
-          onNext: function () { nextRound(); }
-        });
-      }) : null;
-
-      function nextRound() {
-        round++;
-        if (round >= TOTAL || (race && race.over(round))) {
-          if (offSettle) offSettle();
-          if (race) race.end();
-          finishGame(api, { quizCorrect: correctTotal, quizAnswered: answeredTotal });
-        } else {
-          renderRound();
-        }
-      }
-
-      function renderRound() {
-        if (race) race.beginRound(round);
-        const entity = activeScorer(api.config, round);
-        const entry = bag.next();
-        const p = entry.p;
-        currentP = p;
-        const v = entry.v;
-        const startTime = Date.now();
-
-        api.shell.updateScores(entity ? entity.id : null);
-        FF.ui.clear(api.shell.root);
-
-        const wrap = cardWrap();
-        wrap.appendChild(turnChip(entity, roundLabel(round + 1, TOTAL)));
-        wrap.appendChild(FF.GameUI.prompt(p.q));
-        wrap.appendChild(FF.GameUI.media(api.assets.illustration(v.svg, 'picquiz-img', FF.t('pictureToGuess', 'Picture to guess'))));
-        // For people watching (the answer is shared after the round).
-        if (race) race.describe({ kind: 'choice', text: p.q, options: p.options, image: { svg: v.svg } }, p.answer);
-
-        const optEls = [];
-        const group = optionGroup(wrap);
-        p.options.forEach(function (opt, i) {
-          const b = optionBtn(opt, function () { onAnswer(i); }, i);
-          optEls.push(b);
-          group.appendChild(b);
-        });
-
-        api.shell.root.appendChild(wrap);
-        FF.Nav.focusFirst(api.shell.root);
-        if (race) race.gate();
-
-        function onAnswer(idx) {
-          const elapsed = (Date.now() - startTime) / 1000;
-          const correct = idx === p.answer;
-
-          if (race) {
-            race.submit(idx, correct, Date.now() - startTime);
-            return;
-          }
-
-          for (let i = 0; i < optEls.length; i++) {
-            optEls[i].disabled = true;
-            if (i === p.answer) markOption(optEls[i], 'correct');
-            else markOption(optEls[i], 'dim');
-          }
-          if (!correct) markOption(optEls[idx], 'wrong');
-
-          answeredTotal++;
-          if (correct) {
-            const res = awardCorrect(api, entity.id, elapsed);
-            correctTotal++;
-            api.audio.play('correct');
-            if (res.streak) api.audio.play('streak');
-            wrap.appendChild(correctLine(res.pts));
-          } else {
-            awardWrong(api, entity.id);
-            api.audio.play('wrong');
-            wrap.appendChild(wrongLine());
-          }
-
-          if (p.explanation) wrap.appendChild(tipLine(p.explanation));
-          const nextBtn = FF.Advance.button(FF.t('next', 'Next'), function () { FF.Audio.play('click'); nextRound(); }, { class: 'btn-lg' });
-          wrap.appendChild(nextBtn);
-
-          api.shell.updateScores(entity.id);
-          FF.Nav.focus(nextBtn);
-        }
-      }
-
-      renderRound();
-    }
-  });
 })();

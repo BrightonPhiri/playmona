@@ -411,11 +411,11 @@ test('match: people pair on a game crew cannot play, and crew never fill it', fu
     $w['crew']->seed(3);
     crewSettings($w, ['fallbackSeconds' => 0]);
     openRoom($w, 'AAAAAA', 'admin1');
-    $t = $w['mm']->queue(human('admin1'), true, ['gameId' => 'wouldYouRather', 'roomCode' => 'AAAAAA'], 1000);
+    $t = $w['mm']->queue(human('admin1'), true, ['gameId' => 'whoIsMostLikely', 'roomCode' => 'AAAAAA'], 1000);
     eq('waiting', $t['status']);
     eq('waiting', $w['mm']->ticket(human('admin1'), $t['ticket'], true, 50_000)['status'], 'no crew brain: keeps waiting');
     openRoom($w, 'BBBBBB', 'bob');
-    $b = $w['mm']->queue(human('bob'), false, ['gameId' => 'wouldYouRather', 'roomCode' => 'BBBBBB'], 51_000);
+    $b = $w['mm']->queue(human('bob'), false, ['gameId' => 'whoIsMostLikely', 'roomCode' => 'BBBBBB'], 51_000);
     eq('matched', $b['status']);
     eq('AAAAAA', $b['roomCode']);
 });

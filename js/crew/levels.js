@@ -28,17 +28,12 @@ window.FF = window.FF || {};
 
     // Typical time to answer, in ms, for an average player (choice games).
     answerMs: {
-      trueOrFalse: 2300,
-      colorReaction: 1150,
       numberChallenge: 4800,
       visualRiddle: 5200,
       whatsMissing: 3600,
       guessWho: 5000,
       bibleQuiz: 4200,
       familyQuiz: 4000,
-      capitalChallenge: 3600,
-      mapChallenge: 4200,
-      whereInWorld: 4200,
       _default: 3400
     },
 
