@@ -940,6 +940,7 @@ aiming
 aimless
 aims
 ain
+aint
 aiolis
 air
 airbag
@@ -2175,6 +2176,7 @@ areca
 arecas
 arena
 arenas
+arent
 areola
 areolae
 areolar
@@ -10522,7 +10524,9 @@ coughed
 coughing
 coughs
 could
+couldnt
 couldst
+couldve
 coulis
 coulisse
 couloir
@@ -13103,6 +13107,7 @@ diddles
 diddling
 diddly
 diddums
+didnt
 dido
 didoes
 didst
@@ -13710,6 +13715,7 @@ doers
 does
 doeskin
 doeskins
+doesnt
 doff
 doffed
 doffing
@@ -13857,6 +13863,7 @@ donnish
 donor
 donors
 dons
+dont
 doodad
 doodads
 doodah
@@ -21626,6 +21633,7 @@ haddock
 haddocks
 hade
 hades
+hadnt
 hadron
 hadrons
 hadst
@@ -22016,6 +22024,7 @@ hashtag
 hashtags
 haslet
 haslets
+hasnt
 hasp
 hasps
 hassium
@@ -22105,6 +22114,7 @@ have
 havelock
 haven
 havens
+havent
 haver
 havering
 haves
@@ -24690,6 +24700,7 @@ islet
 islets
 ism
 isms
+isnt
 isobar
 isobaric
 isobars
@@ -24767,6 +24778,7 @@ iterates
 iterator
 its
 itself
+ive
 ivied
 ivies
 ivories
@@ -30900,6 +30912,7 @@ musth
 mustier
 mustiest
 mustily
+mustnt
 musts
 musty
 mut
@@ -31283,6 +31296,7 @@ needler
 needles
 needless
 needling
+neednt
 needs
 needy
 negate
@@ -42742,7 +42756,9 @@ shots
 shotten
 should
 shoulder
+shouldnt
 shouldst
+shouldve
 shout
 shouted
 shouter
@@ -48096,6 +48112,7 @@ thatch
 thatched
 thatcher
 thatches
+thats
 thaw
 thawed
 thawing
@@ -48152,6 +48169,7 @@ therein
 theremin
 thereof
 thereon
+theres
 thereto
 thermae
 thermal
@@ -48180,6 +48198,10 @@ thewless
 thews
 thewy
 they
+theyd
+theyll
+theyre
+theyve
 thiamine
 thiazine
 thiazole
@@ -52524,6 +52546,7 @@ washroom
 washtub
 washtubs
 washy
+wasnt
 wasp
 waspish
 wasps
@@ -52841,6 +52864,7 @@ wens
 went
 wept
 were
+werent
 werewolf
 wergild
 wersh
@@ -52869,6 +52893,7 @@ wetter
 wetters
 wettest
 wetting
+weve
 whack
 whacked
 whacker
@@ -53132,6 +53157,7 @@ whorish
 whorl
 whorled
 whorls
+whos
 whose
 whosever
 whoso
@@ -53695,8 +53721,10 @@ worthy
 wot
 wotcha
 would
+wouldnt
 woulds
 wouldst
+wouldve
 wound
 wounded
 wounder
@@ -54053,6 +54081,8 @@ york
 yorker
 yorkers
 you
+youd
+youll
 young
 younger
 youngest
@@ -54060,6 +54090,7 @@ youngish
 younker
 younkers
 your
+youre
 yours
 yourself
 yous
@@ -54067,6 +54098,7 @@ youth
 youthen
 youthful
 youths
+youve
 yow
 yowl
 yowled

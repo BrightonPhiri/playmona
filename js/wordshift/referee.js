@@ -65,7 +65,7 @@ window.FF = window.FF || {};
     return rows;
   }
 
-  function defaultIsWord(w) { return !!(FF.Words && /^[a-z]+$/.test(w) && FF.Words.tier(w) > 0); }
+  function defaultIsWord(w) { return R.isWord(w, FF.Words); }
 
   function create(opts) {
     var run = opts.run;
@@ -79,7 +79,8 @@ window.FF = window.FF || {};
     var log = opts.log || function () {};
     var report = opts.report || function () { return Promise.resolve(); };
     var puzzles = opts.puzzles || (FF.data && FF.data.wordshift && FF.data.wordshift.puzzles) || [];
-    var isWord = opts.isWord || defaultIsWord;
+    var baseIsWord = opts.isWord || defaultIsWord;
+    function isWord(w) { return R.isExtraWord(w) || baseIsWord(w); }   // dont, didnt... count everywhere
     var mineStore = opts.mine;
     if (!mineStore) throw new Error('WordShift referee needs a mine store (wordshiftMine/<code>).');
     var inbox = opts.inbox;
@@ -290,7 +291,7 @@ window.FF = window.FF || {};
         state.finished++;
         r.place = state.finished;
       }
-      publishMine(uid, { word: word, ok: true });
+      publishMine(uid, { word: word, ok: true, repeat: !!res.repeat });
       return true;
     }
 

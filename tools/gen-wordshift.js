@@ -186,7 +186,11 @@ function build(Words) {
 
 // Every word the server accepts: tiers 1-4 (never quiet), 3-8 letters, a-z.
 function acceptedWords(Words) {
-  return Words.matching(function (w) { return w.length <= 8 && /^[a-z]+$/.test(w); }, { min: 3, maxTier: 4 }).sort();
+  // Plus the contractions players type without the apostrophe (FF.WordShiftRules.EXTRA_WORDS).
+  const extra = require('./test/harness').loadFF(['js/core.js', 'js/wordshift/rules.js']).WordShiftRules.EXTRA_WORDS;
+  const set = new Set(Words.matching(function (w) { return w.length <= 8 && /^[a-z]+$/.test(w); }, { min: 3, maxTier: 4 }));
+  extra.forEach(function (w) { set.add(w); });
+  return Array.from(set).sort();
 }
 
 function loadWords() {
@@ -215,6 +219,6 @@ function main() {
   console.log('total ' + puzzles.length + ' puzzles, ' + words.length + ' accepted words');
 }
 
-module.exports = { AVOID, ODD, plainEnd, graphWords, neighbours, distances, bfs, pathsWithin, fnv, build, acceptedWords };
+module.exports = { loadWords, AVOID, ODD, plainEnd, graphWords, neighbours, distances, bfs, pathsWithin, fnv, build, acceptedWords };
 
 if (require.main === module) main();

@@ -198,7 +198,8 @@ window.FF = window.FF || {};
         surf.setWord(mine.word);
       } else if (mine.last.ok && mine.last.word === mine.word && surf.word() !== mine.word) {
         var r = surf.accept(mine.word);
-        if (!mine.done) say(r.newGreen ? t('wsInPlaceNow', 'That letter is in place.') : t('wsNice', '{w} works.', { w: mine.word.toUpperCase() }), r.newGreen ? 'good' : '');
+        if (!mine.done && mine.last.repeat) say(t('wsRepeated', 'Word repeated'), 'warn');
+        else if (!mine.done) say(r.newGreen ? t('wsInPlaceNow', 'That letter is in place.') : t('wsNice', '{w} works.', { w: mine.word.toUpperCase() }), r.newGreen ? 'good' : '');
       } else if (!mine.last.ok && R.counts({ ok: false, reason: mine.last.reason })) {
         surf.refuse(mine.last.word, mine.last.reason);
       } else {

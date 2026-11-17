@@ -106,7 +106,8 @@ test('wordshift: made-up words and repeats are refused but counted, rare real wo
     eq(1, $miss['invalid']);
     $again = WordShift::replay(['s' => 'sing', 't' => 'bear', 'n' => 6], ['sang', 'sing']);
     eq(2, $again['moves']);
-    eq(1, $again['invalid'], 'going back to a used word is refused');
+    eq(0, $again['invalid'], 'going back to a used word is allowed (Word repeated)');
+    eq(true, isset($words['dont']) && isset($words['went']), 'contractions and went are words');
     $after = WordShift::replay($p, ['sinx', 'sang']);
     eq(true, $after['finished']);
     eq(2, $after['moves']);

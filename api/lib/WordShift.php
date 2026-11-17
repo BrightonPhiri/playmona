@@ -89,7 +89,6 @@ class WordShift
                 if ($diff === 0) $reason = 'same';
                 elseif ($diff > 1) $reason = 'many';
                 elseif (!isset($words[$next])) $reason = 'word';
-                elseif (isset($used[$next])) $reason = 'used';
             }
             if ($reason === 'word' || $reason === 'used') { $invalid++; continue; }
             if ($reason !== null) return ['reason' => $reason, 'at' => $i];

@@ -1,8 +1,8 @@
 /* ============================================================
    PLAYMONA — games/wordShift.js
    WordShift: change the start word into the target word, one
-   letter at a time. Every step must be a real word, and no word
-   twice. Each letter is checked as it is typed: a real word keeps it
+   letter at a time. Every step must be a real word (going back
+   to an earlier word is fine). Each letter is checked as it is typed: a real word keeps it
    (green in its target place), a refused one shakes back and still
    counts as a move. The keyboard has every letter. No hints while playing; one
    shortest path is shown only once the puzzle is over.
@@ -43,7 +43,7 @@ window.FF = window.FF || {};
   function stillShown(api) { return !!(api.shell.root && document.body && document.body.contains(api.shell.root)); }
   function puzzles() { return (FF.data.wordshift && FF.data.wordshift.puzzles) || []; }
   function utcDay() { var d = new Date(); return d.toISOString().slice(0, 10); }
-  function isWord(w) { return !!(FF.Words && /^[a-z]+$/.test(w) && FF.Words.tier(w) > 0); }
+  function isWord(w) { return /^[a-z]+$/.test(w) && R.isWord(w, FF.Words); }
 
   function levelName(l) {
     return l === 'easy' ? t('easy', 'Easy') : l === 'hard' ? t('hard', 'Hard') : l === 'expert' ? t('expert', 'Expert') : t('normal', 'Normal');
@@ -134,7 +134,7 @@ window.FF = window.FF || {};
     f.main.appendChild(hero);
     var how = FF.ui.el('ul', { class: 'ws-how' });
     [t('wsHow1', 'Change one letter at a time to reach the target word.'),
-      t('wsHow2', 'Every step must be a real word, and you can’t use a word twice.'),
+      t('wsHow2', 'Every step must be a real word. You may go back to a word you used before.'),
       t('wsHow3', 'Each letter is checked as you type it: a letter in its target place turns green, a wrong word shakes back and still counts as a move.')].forEach(function (x, i) {
       var li = FF.ui.el('li', {});
       li.appendChild(FF.ui.span('ws-how__n', String(i + 1)));
@@ -530,7 +530,8 @@ window.FF = window.FF || {};
           used.push(next);
           var r = s.accept(next);
           if (next === p.t) { drawMoves(); win(); return; }
-          s.say(r.newGreen ? t('wsInPlaceNow', 'That letter is in place.') : t('wsNice', '{w} works.', { w: next.toUpperCase() }), r.newGreen ? 'good' : '');
+          if (res.repeat) s.say(t('wsRepeated', 'Word repeated'), 'warn');
+          else s.say(r.newGreen ? t('wsInPlaceNow', 'That letter is in place.') : t('wsNice', '{w} works.', { w: next.toUpperCase() }), r.newGreen ? 'good' : '');
         }
         drawMoves();
         if (tries.length >= R.MAX_MOVES) lose('moves');
@@ -736,7 +737,7 @@ window.FF = window.FF || {};
       'You get a start word and a target word with the same number of letters.',
       'Tap a letter, then tap its new letter. It is checked at once: no Enter needed.',
       'A real word keeps the letter (green when it is in the target’s place). A wrong word shakes, the old letter comes back, and it still counts as a move.',
-      'Every word you make must be a real word, and you can’t use a word twice.',
+      'Every word you make must be a real word. Going back to a word you used before is allowed.',
       'Letters that match the target in the same place turn green.',
       'Reach the target in as few moves as you can. Time Challenge adds points for time left.',
       'There are no hints. If you give up, you can see one way it could have been solved.'

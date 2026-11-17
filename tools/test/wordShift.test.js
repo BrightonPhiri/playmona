@@ -25,8 +25,11 @@ test('wordShift rules: checkMove refuses a word not in the list', function () {
   assertEqual(rules().checkMove('sing', 'sinx', ['sing'], isWord).reason, 'word');
 });
 
-test('wordShift rules: checkMove refuses a used word', function () {
-  assertEqual(rules().checkMove('sang', 'sing', ['sing', 'sang'], isWord).reason, 'used');
+test('wordShift rules: checkMove allows a word used before, marked as repeated', function () {
+  const res = rules().checkMove('sang', 'sing', ['sing', 'sang'], isWord);
+  assertEqual(res.ok, true);
+  assertEqual(res.repeat, true);
+  assertEqual(rules().checkMove('sing', 'sang', ['sing'], isWord).repeat, false);
 });
 
 test('wordShift rules: checkMove refuses another length and cleans case', function () {
@@ -151,6 +154,21 @@ test('wordShift board: an accepted word keeps the selected tile; arrows move the
 });
 
 /* ---------- moves that count ---------- */
+
+test('wordShift rules: contractions without the apostrophe are words (dont, didnt, isnt…)', function () {
+  const R = rules();
+  ['dont', 'didnt', 'isnt', 'doesnt', 'wasnt', 'youre', 'theyre', 'thats'].forEach(function (w) { assert(R.isExtraWord(w), w); });
+  assertEqual(R.isExtraWord('dnot'), false);
+  assert(R.EXTRA_WORDS.every((w) => /^[a-z]{3,8}$/.test(w)), 'plain a-z, 3-8 letters');
+});
+
+test('wordShift: the phone accepts went and dont; the server list has them too', function () {
+  const FF = loadFF(['js/core.js', 'js/data/words.js', 'js/data/wordlist.js', 'js/words.js', 'js/data/lexicon.js', 'js/wordshift/rules.js']);
+  FF.Words.ready();
+  ['went', 'dont', 'want', 'wont'].forEach(function (w) { assert(FF.WordShiftRules.isWord(w, FF.Words), w + ' on the phone'); });
+  const server = new Set(require('fs').readFileSync(require('path').join(__dirname, '..', '..', 'api/data/wordshift-words.txt'), 'utf8').split(/\r?\n/));
+  ['went', 'dont', 'didnt', 'isnt'].forEach(function (w) { assert(server.has(w), w + ' on the server'); });
+});
 
 test('wordShift rules: a refused real try (not a word, or used) counts as a move', function () {
   const R = rules();

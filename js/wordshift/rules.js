@@ -7,7 +7,7 @@
    and SCORING; a test compares the numbers.
 
    A move changes exactly one letter, in place, to a real word not
-   used yet in this puzzle (the start word counts as used).
+   (a word used before in the puzzle is fine: "Word repeated").
    Classic script, ES5.
    ============================================================ */
 window.FF = window.FF || {};
@@ -35,7 +35,23 @@ window.FF = window.FF || {};
 
   function clean(w) { return String(w == null ? '' : w).toLowerCase().replace(/[^a-z]/g, ''); }
 
-  /* prev -> next: { ok: true } or { ok: false, reason: length | same | many | word | used }. */
+  /* Everyday contractions typed without the apostrophe: players expect them to be words.
+     (cant, wont, shed, wed, ill, its, lets, hell are real words already.) The server's word
+     list gets them from tools/gen-wordshift.js. */
+  var EXTRA_WORDS = ('dont didnt doesnt isnt arent wasnt werent hasnt havent hadnt shouldnt wouldnt couldnt ' +
+    'mustnt neednt aint ive youre youve youll youd theyre theyve theyll theyd thats whats wheres heres ' +
+    'theres whos weve shouldve wouldve couldve hes shes').split(' ');
+  function isExtraWord(w) { return EXTRA_WORDS.indexOf(clean(w)) !== -1; }
+
+  /* A word WordShift accepts: the word bank's tiers 1-4 (Words = FF.Words) or a contraction above. */
+  function isWord(w, Words) {
+    w = clean(w);
+    if (isExtraWord(w)) return true;
+    return !!(Words && Words.tier && Words.tier(w) > 0);
+  }
+
+  /* prev -> next: { ok: true, repeat } or { ok: false, reason: length | same | many | word }.
+     A word used before in this puzzle is allowed again (repeat: true). */
   function checkMove(prev, next, used, isWord) {
     prev = clean(prev);
     next = clean(next);
@@ -45,8 +61,7 @@ window.FF = window.FF || {};
     if (diff === 0) return { ok: false, reason: 'same' };
     if (diff > 1) return { ok: false, reason: 'many' };
     if (!isWord(next)) return { ok: false, reason: 'word' };
-    if ((used || []).indexOf(next) !== -1) return { ok: false, reason: 'used' };
-    return { ok: true };
+    return { ok: true, repeat: (used || []).indexOf(next) !== -1 };
   }
 
   /* Does a checked try use up a move? A real one-letter try does, refused or not
@@ -185,6 +200,7 @@ window.FF = window.FF || {};
     LEVELS: LEVELS, MODES: MODES, CLOCKS: CLOCKS, DEFAULT_CLOCK: DEFAULT_CLOCK,
     ROOM_ROUNDS: ROOM_ROUNDS, ROOM_CLOCKS: ROOM_CLOCKS, SCORING: SCORING, STANDARD: STANDARD,
     MIN_PLAYERS: 2, MAX_PLAYERS: 8, MAX_MOVES: 200, REVEAL_MS: 6000, raceDeal: raceDeal,
+    EXTRA_WORDS: EXTRA_WORDS, isExtraWord: isExtraWord, isWord: isWord,
     clean: clean, checkMove: checkMove, counts: counts, keyLetters: keyLetters, greens: greens, greenCount: greenCount,
     score: score, racePoints: racePoints, fnv: fnv, dailyPuzzle: dailyPuzzle,
     pick: pick, byId: byId, sanitize: sanitize, sanitizeRoom: sanitizeRoom, isStandard: isStandard
