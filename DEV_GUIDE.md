@@ -248,6 +248,9 @@ to keep a game off, or `leaderboard: true` to put a party game on. Then:
   `FF.Random` so everyone plays the same rounds that day.
 - Points must mean the same for everyone on the standard settings (normal difficulty and length,
   the usual timer). Only those results count. The score cap is 1,000,000.
+- **Server-scored games** (`serverScored: true`, e.g. WordShift) post their own results: the server
+  replays the run and writes the boards, so `FF.Leaderboards.afterGame` and the Daily submit skip
+  the phone write. The database rules refuse a phone write for those games.
 
 ### Robustness
 
@@ -299,6 +302,21 @@ A clue field may hold alternatives, `First clue ~ Second clue`: a word that come
 each level, then `node tools/gen-crossword.js --merge easy.json normal.json hard.json`.
 Online Race and Co-op: `js/crossword/referee.js` on the crew runner (`crosswordRuns/<id>`), `api/lib/Crossword.php`,
 phones read `rooms/<code>/cw` and write `cwInbox` (`js/crossword/client.js`, `online.js`).
+
+### `FF.data.wordshift` (js/data/wordshiftPuzzles.js, generated)
+WordShift puzzles: `{ v: 1, puzzles: [{ id, s, t, n, lv }] }` (start, target, shortest number of moves,
+level easy/normal/hard/expert). Never edit by hand: run `node tools/gen-wordshift.js` (a few minutes).
+It builds a graph of everyday words (tiers 1-2) per length, checks every puzzle's shortest path, and
+also writes the server's copies, `api/data/wordshift-puzzles.json` and `api/data/wordshift-words.txt`
+(the accepted words, tiers 1-4). Words in `FF.WordShiftRules.AVOID` are never in a puzzle and never
+played by crew; the generator's `ODD` list keeps archaic or stilted words from being a start or target.
+Solo and Daily runs are checked by `api/lib/WordShift.php` (`/wordshift/begin` gives a ticket kept at
+`wordshiftTickets/<id>`; `/wordshift/finish` replays the moves and writes the boards). The Daily board
+is `wordshiftDaily/<day>/<uid>`.
+Online Race: `js/wordshift/referee.js` on the crew runner (`wordshiftRuns/<id>`), phones read
+`rooms/<code>/ws` (counts only) and write `wsInbox` (`js/wordshift/client.js`, `online.js`). A player's
+own words are at `wordshiftMine/<code>/<uid>`, outside the room, because any signed-in player can
+read a room. The `wsInbox` and `wordshiftMine` rules are hand-added to `database.rules.json`.
 
 ### `FF.data.countries` (js/data/countries.js)
 ```js
