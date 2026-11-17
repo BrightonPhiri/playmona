@@ -262,7 +262,7 @@ window.FF = window.FF || {};
      opts: { parent, keys?, canPlay() -> bool, onTry(word, index) }
      -> { accept, refuse, checking, release, setWord, trailFrom, say, stop, win, word, busy, board, tiles } */
   function surface(api, p, opts) {
-    var keys = opts.keys || "abcdefghijklmnopqrstuvwxyz".split("");
+    var keys = opts.keys || 'abcdefghijklmnopqrstuvwxyz'.split('');
     var parent = opts.parent;
     parent.appendChild(goalCard(p));
 
@@ -285,15 +285,20 @@ window.FF = window.FF || {};
     parent.appendChild(boardWrap);
 
     var kb = FF.ui.div('ws-kb');
-    kb.style.setProperty('--cols', String(keys.length <= 16 ? Math.ceil(keys.length / 2) : Math.ceil(keys.length / 3)));
     kb.setAttribute('role', 'group');
-    kb.setAttribute('aria-label', t('wsKeys', 'Letters for this puzzle'));
+    kb.setAttribute('aria-label', t('wsKeys', 'Letters'));
     var keyEls = {};
-    keys.forEach(function (ch) {
-      var b = FF.ui.el('button', { type: 'button', class: 'ws-key' }, ch.toUpperCase());
-      b.addEventListener('click', function () { press(ch); });
-      kb.appendChild(b);
-      keyEls[ch] = b;
+    // The usual QWERTY rows (only the letters in `keys`).
+    ['qwertyuiop', 'asdfghjkl', 'zxcvbnm'].forEach(function (row) {
+      var line = FF.ui.div('ws-kb__row');
+      row.split('').forEach(function (ch) {
+        if (keys.indexOf(ch) === -1) return;
+        var b = FF.ui.el('button', { type: 'button', class: 'ws-key' }, ch.toUpperCase());
+        b.addEventListener('click', function () { press(ch); });
+        line.appendChild(b);
+        keyEls[ch] = b;
+      });
+      if (line.childNodes.length) kb.appendChild(line);
     });
     parent.appendChild(kb);
 

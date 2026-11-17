@@ -5234,7 +5234,9 @@ button.imp-card:focus-visible { outline: 3px solid var(--focus-ring); outline-of
 .ws-msg--warn { color: var(--ws-accent-deep); }
 
 /* Keyboard: only this puzzle's letters, a-z (no letter colouring: that would be a hint) */
-.ws-kb { --cols: 7; display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); gap: 6px; user-select: none; max-width: calc(var(--cols) * 56px); width: 100%; margin: 0 auto; }
+.ws-kb { display: flex; flex-direction: column; gap: 6px; user-select: none; width: 100%; max-width: 520px; margin: 0 auto; }
+.ws-kb__row { display: flex; justify-content: center; gap: 5px; }
+.ws-kb__row .ws-key { flex: 1 1 0; min-width: 0; max-width: 48px; }
 .ws-kb.is-off { opacity: 0.4; pointer-events: none; }
 .ws-key {
   min-height: 50px; padding: 0; border-radius: 10px; cursor: pointer;
@@ -5346,6 +5348,8 @@ button.imp-card:focus-visible { outline: 3px solid var(--focus-ring); outline-of
   .ws-stats { grid-template-columns: repeat(2, 1fr); }
   .ws-key { min-height: 46px; font-size: 1.1rem; }
   .ws-kb { gap: 5px; }
+  .ws-kb__row { gap: 4px; }
+  .ws-key { font-size: 1rem; }
   .ws-hero { flex-direction: column; gap: 4px; }
   .ws-hero__arrow { transform: rotate(90deg); line-height: 1; }
   .ws-row--hero .ws-tile { --size: 40px; }
