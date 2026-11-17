@@ -145,6 +145,10 @@
   --lgo-bright: #3d9bff; --lgo-bright-deep: #1d5fd1;
   --lgo-ink: #ffffff; --lgo-ink-soft: #d6ecff; --lgo-ink-dim: #a9cbf0;
   --lgo-tile: #ffffff; --lgo-tile-2: #e4eef9; --lgo-tile-ink: #0a2a55;
+  /* Guess It! (js/games/guessIt.js): the cover's coral, violet and gold as soft glows over the
+     page in both themes; photos sit in a dark frame with gold viewfinder corners. */
+  --gi-coral: #fb7185; --gi-violet: #7c3aed; --gi-gold: #fbbf24; --gi-gold-hi: #fde68a;
+  --gi-frame: #160c2e; --gi-scrim: rgba(17, 8, 40, 0.82);
   /* WordShift (js/games/wordShift.js): warm paper with white letter tiles, coral for the
      tile you picked, teal for the start, amber for the target, green for letters in place.
      Dark theme: warm charcoal (below). */

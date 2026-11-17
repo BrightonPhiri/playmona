@@ -171,3 +171,22 @@ test('guess it: the old game ids open the matching topic', function () {
   assertEqual(G.legacyTopic('guessVehicle'), 'vehicles');
   assertEqual(G.legacyTopic('quickTap'), null);
 });
+
+test('guess it: pictures seen on this phone come last, unseen ones first', function () {
+  const cfg = { topic: 'sports', level: 'easy', time: 8, twist: 'none' };
+  const seen = {};
+  G.itemsFor('sports').slice(0, 12).forEach(function (i) { seen[G.key(i)] = true; });
+  const d = G.deal(cfg, G.rng(5), 6, seen);
+  assert(d.every(function (r) { return !seen[G.key(r.item)]; }), 'six fresh pictures before any seen one');
+  assertEqual(G.deal(cfg, G.rng(5), 6, null).length, 6, 'no seen list is fine');
+  assertEqual(G.key(G.itemsFor('food')[0]), 'food/croissant');
+});
+
+test('guess it: shared runs fix the topic, whatever this phone last picked', function () {
+  assertEqual(G.sharedTopic({ daily: true }), 'mix', 'the daily plays Mix');
+  assertEqual(G.sharedTopic({ challenge: { opts: { topics: ['food'] } } }), 'food', 'a challenge plays its topic');
+  assertEqual(G.sharedTopic({ challenge: { opts: { topics: ['nope'] } } }), 'mix', 'an unknown topic plays Mix');
+  assertEqual(G.sharedTopic({ challenge: {} }), 'mix');
+  assertEqual(G.sharedTopic({}, { topic: 'flags' }), 'flags', 'a room plays the host’s topic');
+  assertEqual(G.sharedTopic({}), null, 'a local run lets the player pick');
+});

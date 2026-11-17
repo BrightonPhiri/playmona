@@ -24,13 +24,13 @@ window.FF = window.FF || {};
 
   FF.data.guessIt = {
     topics: [
-      { id: 'food', name: 'Food', icon: 'utensils' },
-      { id: 'landmarks', name: 'Landmarks', icon: 'landmark' },
-      { id: 'objects', name: 'Objects', icon: 'box' },
+      { id: 'food', name: 'Food', icon: 'fork-knife' },
+      { id: 'landmarks', name: 'Landmarks', icon: 'buildings' },
+      { id: 'objects', name: 'Objects', icon: 'cube' },
       { id: 'sports', name: 'Sports', icon: 'medal' },
       { id: 'vehicles', name: 'Vehicles', icon: 'car' },
-      { id: 'jobs', name: 'Jobs', icon: 'briefcase' },
-      { id: 'instruments', name: 'Instruments', icon: 'music' }
+      { id: 'jobs', name: 'Jobs', icon: 'users-three' },
+      { id: 'instruments', name: 'Instruments', icon: 'speaker' }
     ],
     items: {
       food: [
