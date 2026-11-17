@@ -10,7 +10,7 @@
                                how long each move takes.
    FF.CrewWordShift.create     plays one room's crew seats through the
                                same inbox a phone uses
-                               (rooms/<code>/wsInbox), one move at a
+                               (wordshiftInbox/<code>), one move at a
                                time, so the referee checks a crew move
                                like any other. Each seat reads only its
                                own words (opts.mineOf -> wordshiftMine).
@@ -139,7 +139,8 @@ window.FF = window.FF || {};
   function anyWord(w) { return !!(FF.Words && /^[a-z]+$/.test(w) && FF.Words.tier(w) > 0); }
 
   /* opts: { transport (room), uids (array or function), crew (run sheets), later(fn, ms),
-             mineOf(uid) -> Promise<own words>, log, random, isWord? } */
+             mineOf(uid) -> Promise<own words>, inbox { set(uid/id, cmd) } at wordshiftInbox/<code>,
+             log, random, isWord? } */
   function create(opts) {
     var T = opts.transport;
     var random = opts.random || Math.random;
@@ -162,7 +163,8 @@ window.FF = window.FF || {};
 
     function send(uid, ws, word) {
       var cmd = { matchId: ws.matchId, k: ws.k, word: word, t: T.serverTimestamp ? T.serverTimestamp() : now() };
-      return T.set('wsInbox/' + uid + '/' + cmdId(), cmd).catch(function (e) { log('wordshift move failed: ' + e.message); });
+      if (!opts.inbox) return Promise.resolve();
+      return opts.inbox.set(uid + '/' + cmdId(), cmd).catch(function (e) { log('wordshift move failed: ' + e.message); });
     }
 
     function play(uid, ws, step) {

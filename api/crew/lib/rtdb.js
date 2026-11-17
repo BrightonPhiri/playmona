@@ -211,7 +211,11 @@ function applyEvent(tree, path, data, merge) {
 
 /** One room as the transport interface js/net/transport.js defines (paths relative to the room). */
 function roomTransport(rtdb, code, serverNow, log) {
-  const root = 'rooms/' + code;
+  return pathTransport(rtdb, 'rooms/' + code, serverNow, log);
+}
+
+/* The same, for any path (WordShift's inbox lives outside the room). */
+function pathTransport(rtdb, root, serverNow, log) {
   const watchers = [];
   let tree = {};
   let ready = false;
@@ -242,4 +246,4 @@ function roomTransport(rtdb, code, serverNow, log) {
   };
 }
 
-module.exports = { Rtdb, tokenSource, roomTransport, request, applyEvent };
+module.exports = { Rtdb, tokenSource, roomTransport, pathTransport, request, applyEvent };

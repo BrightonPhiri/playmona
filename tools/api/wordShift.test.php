@@ -158,6 +158,55 @@ test('wordshift: as the platform daily game it writes the daily board too', func
     throwsHttp(409, fn () => $w['ws']->begin(new AuthUser('cy', 'password', null, null), ['puzzleId' => $p['id'], 'mode' => 'classic', 'daily' => 'platform'], WS_T0));
 });
 
+test('wordshift: a banned player cannot begin a run', function () {
+    $w = wsWorld();
+    $w['rtdb']->data['bans'] = ['ann' => ['at' => 1]];
+    throwsHttp(403, fn () => $w['ws']->begin(ann(), ['puzzleId' => 'n1', 'mode' => 'classic'], WS_T0));
+});
+
+test('wordshift: giving up the daily and starting again does not get a second ranked try', function () {
+    $w = wsWorld();
+    $day = gmdate('Y-m-d', intdiv(WS_T0, 1000));
+    $p = WordShift::dailyPuzzle($day);
+    [, $route] = wsPuzzle($p['id']);
+    // First try: begun, then given up (finish never called).
+    $w['ws']->begin(ann(), ['puzzleId' => $p['id'], 'mode' => 'classic', 'daily' => 'ws'], WS_T0);
+    $b = $w['ws']->begin(ann(), ['puzzleId' => $p['id'], 'mode' => 'classic', 'daily' => 'ws'], WS_T0 + 60_000);
+    $r = $w['ws']->finish(ann(), ['ticket' => $b['ticket'], 'moves' => $route, 'invalid' => 0], WS_T0 + 70_000);
+    eq(true, $r['finished']);
+    eq(false, $r['ranked'], 'the second try plays, unranked');
+    eq(null, $w['rtdb']->get('wordshiftDaily/' . $day . '/ann'));
+    // The platform daily keeps its own one try.
+    $w['rtdb']->data['dailyMeta'] = [$day => ['game' => 'wordShift']];
+    $w['ws']->begin(ann(), ['puzzleId' => $p['id'], 'mode' => 'classic', 'daily' => 'platform'], WS_T0);
+    $b = $w['ws']->begin(ann(), ['puzzleId' => $p['id'], 'mode' => 'classic', 'daily' => 'platform'], WS_T0 + 1000);
+    eq(false, $w['ws']->finish(ann(), ['ticket' => $b['ticket'], 'moves' => $route, 'invalid' => 0], WS_T0 + 9000)['ranked']);
+    eq(null, $w['rtdb']->get('daily/' . $day . '/ann'));
+});
+
+test('wordshift: the sweep forgets daily tries from before yesterday', function () {
+    $w = wsWorld();
+    $w['rtdb']->data['wordshiftDailyTries'] = ['2027-01-12' => ['ann' => ['ws' => 1]], '2027-01-14' => ['ann' => ['ws' => 1]], '2027-01-15' => ['ann' => ['ws' => 1]]];
+    $w['ws']->sweepTickets(WS_T0);
+    eq(['2027-01-14', '2027-01-15'], array_keys((array) $w['rtdb']->get('wordshiftDailyTries')));
+});
+
+test('wordshift: only Classic on a Normal puzzle reaches the week and all-time boards', function () {
+    $w = wsWorld();
+    $easy = null;
+    foreach (WordShift::bank() as $q) { if ($q['lv'] === 'easy') { $easy = $q['id']; break; } }
+    [, $route] = wsPuzzle($easy);
+    $b = $w['ws']->begin(ann(), ['puzzleId' => $easy, 'mode' => 'classic'], WS_T0);
+    $r = $w['ws']->finish(ann(), ['ticket' => $b['ticket'], 'moves' => $route, 'invalid' => 0], WS_T0 + 5000);
+    eq(true, $r['finished']);
+    eq(false, $r['ranked'], 'an Easy puzzle is scored but not ranked');
+    eq(true, $r['score'] > 0);
+    [, $route2] = wsPuzzle('n2');
+    $b = $w['ws']->begin(ann(), ['puzzleId' => 'n2', 'mode' => 'timed', 'seconds' => 180], WS_T0);
+    eq(false, $w['ws']->finish(ann(), ['ticket' => $b['ticket'], 'moves' => $route2, 'invalid' => 0], WS_T0 + 5000)['ranked'], 'Time Challenge is not ranked');
+    eq(null, $w['rtdb']->get('leaderboards/wordShift/all/ann'));
+});
+
 test('wordshift: the PHP scoring numbers match js/wordshift/rules.js', function () {
     $js = file_get_contents(__DIR__ . '/../../js/wordshift/rules.js');
     foreach (WordShift::SCORING as $k => $v) {
@@ -240,7 +289,7 @@ test('wordshift: a start hands the match and its seed to the runner and opens th
     $w = crewWorld();
     wsRoom($w, 'WSAF', 3, ['level' => 'hard', 'rounds' => 5, 'clock' => 180]);
     $w['rtdb']->data['rooms']['WSAF']['ws'] = ['matchId' => 'old'];
-    $w['rtdb']->data['rooms']['WSAF']['wsInbox'] = ['host1' => ['x' => 1]];
+    $w['rtdb']->data['wordshiftInbox']['WSAF'] = ['host1' => ['x' => 1]];
     $w['rtdb']->data['wordshiftMine']['WSAF'] = ['host1' => ['word' => 'cold']];
     $res = wsStart($w, 'WSAF');
     eq(200, $res->status);
@@ -256,7 +305,7 @@ test('wordshift: a start hands the match and its seed to the runner and opens th
     eq('wordShift', $room['meta']['gameId']);
     eq($id, $room['meta']['wsMatch']);
     eq(false, isset($room['ws']), 'the old view is cleared');
-    eq(false, isset($room['wsInbox']));
+    eq(null, $w['rtdb']->get('wordshiftInbox/WSAF'), 'old moves are gone');
     eq(null, $w['rtdb']->get('wordshiftMine/WSAF'), 'the last match private words are gone');
     eq(false, isset($room['meta']['pick']));
     eq(1, count($w['spawns']), 'the runner is started');

@@ -4,9 +4,10 @@
    shared view (rooms/<code>/ws: the puzzle and everyone's counts)
    and this player's own words (wordshiftMine/<code>/<uid>, readable
    by this player alone; the room itself is open to any signed-in player), and sends each move to the referee through
-   rooms/<code>/wsInbox/<uid>/<id>. The referee decides what counts.
+   wordshiftInbox/<code>/<uid>/<id> (phones may write it, never read
+   it: a room is readable by anyone signed in). The referee decides what counts.
 
-     var c = FF.WordShiftClient.create({ room: { transport, uid, code }, onChange, openMine? });
+     var c = FF.WordShiftClient.create({ room: { transport, uid, code }, onChange, openMine?, openInbox? });
      c.view()      -> { ws, mine, uid, seated, me, pending }
      c.send(word)  -> true if sent; false if not now (one move at a time)
      c.stop()
@@ -93,7 +94,13 @@ window.FF = window.FF || {};
     // Rooted at the room's private words but only ever reading this player's own key
     // (Firebase's rules refuse the rest; the dev transport keeps one document per root).
     var opener = opts.openMine || function () { return FF.Transport.open('wordshiftMine/' + room.code); };
-    var mineT = null;
+    var mineT = null, inboxT = null;
+    var openInbox = opts.openInbox || function () { return FF.Transport.open('wordshiftInbox/' + room.code); };
+    Promise.resolve(openInbox()).then(function (it) {
+      if (stopped) { if (it && it.close && !opts.openInbox) it.close(); return; }
+      inboxT = it;
+      changed();
+    }).catch(function (e) { if (window.console) console.error('[WordShift] inbox', e); });
     Promise.resolve(opener()).then(function (mt) {
       if (stopped) { if (mt && mt.close) mt.close(); return; }
       mineT = mt;
@@ -103,7 +110,7 @@ window.FF = window.FF || {};
     function stamp() { return T.serverTimestamp ? T.serverTimestamp() : T.serverNow(); }
 
     function send(raw) {
-      if (stopped || !ws || !ws.p[uid] || ws.phase !== 'open' || !ready(ws)) return false;
+      if (stopped || !inboxT || !ws || !ws.p[uid] || ws.phase !== 'open' || !ready(ws)) return false;
       if (!mine || mine.matchId !== ws.matchId || mine.k !== ws.k || mine.done) return false;
       if (pending && T.serverNow() - pending.at < PENDING_MS) return false;
       if (T.serverNow() > ws.closeAt + 500) return false;
@@ -111,7 +118,7 @@ window.FF = window.FF || {};
       if (word.length !== mine.word.length || word === mine.word) return false;
       pending = { word: word, k: ws.k, at: T.serverNow() };
       var cmd = { matchId: ws.matchId, k: ws.k, word: word, t: stamp() };
-      T.set('wsInbox/' + uid + '/' + cmdId(), cmd).catch(function () {
+      inboxT.set(uid + '/' + cmdId(), cmd).catch(function () {
         // Never reached the referee: let the player try again.
         if (pending && pending.word === word) release();
         changed();
@@ -133,6 +140,7 @@ window.FF = window.FF || {};
         offs.forEach(function (off) { try { off(); } catch (e) { /* gone */ } });
         offs = [];
         if (mineT && mineT.close && !opts.openMine) { try { mineT.close(); } catch (e) { /* gone */ } }
+        if (inboxT && inboxT.close && !opts.openInbox) { try { inboxT.close(); } catch (e) { /* gone */ } }
       }
     };
   }

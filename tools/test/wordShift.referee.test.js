@@ -80,8 +80,10 @@ async function match(opts) {
   const mineT = FF.Transport.dev({ bus, root: 'wordshiftMine/' + code });
   await mineT.connect();
   const mineStore = { set: (uid, v) => mineT.set(uid, v), clear: () => mineT.set('', null) };
+  const inbox = FF.Transport.dev({ bus, root: 'wordshiftInbox/' + code });
+  await inbox.connect();
   const ref = RF.create({
-    run, room, mine: mineStore, store: { load: () => Promise.resolve(saved.value), save: (s) => { saved.value = s; return Promise.resolve(); } },
+    run, room, mine: mineStore, inbox, store: { load: () => Promise.resolve(saved.value), save: (s) => { saved.value = s; return Promise.resolve(); } },
     randomInt: seeded(7), timers: clock, report: (e, p) => { reports.push({ e, p }); return Promise.resolve(); },
     puzzles: opts.puzzles || PUZZLES, isWord: (w) => WORDS.has(w)
   });
@@ -90,7 +92,8 @@ async function match(opts) {
   const tag = crypto.randomBytes(4).toString('hex');
   let seq = 0;
   const m = {
-    FF, R, RF, bus, clock, room, ref, mineStore, seats, saved, reports, run, views,
+    FF, R, RF, bus, clock, room, ref, mineStore, inbox,
+    inboxTree: () => bus.read('wordshiftInbox/' + code), seats, saved, reports, run, views,
     ws: () => bus.read('rooms/' + code).ws || null,
     mine: (uid) => (bus.read('wordshiftMine/' + code) || {})[uid] || null,
     roomMine: () => (bus.read('rooms/' + code) || {}).wsMine,
@@ -103,7 +106,10 @@ async function match(opts) {
     },
     async send(uid, word, over) {
       const g = m.ws();
-      await room.set('wsInbox/' + uid + '/c' + tag + (++seq), Object.assign({ matchId: g.matchId, k: g.k, word, t: clock.now }, over || {}));
+      const id = 'c' + tag + (++seq);
+      await inbox.set(uid + '/' + id, Object.assign({ matchId: g.matchId, k: g.k, word, t: clock.now }, over || {}));
+      await flush();
+      return id;
       await flush();
     },
     // Walks a player along a route (the moves, without the start word).
@@ -197,13 +203,57 @@ test('wordShift referee: moves after the target, for another round or match, or 
   assertEqual(m.ws().p.p1.moves, 0, 'sent before the round opened');
 });
 
+test('wordShift referee: moves go through an inbox outside the room, which no phone can read', async function () {
+  const m = await match();
+  await m.open();
+  const route = ROUTES[m.ws().puzzle.id];
+  await m.send('p1', route[0]);
+  assertEqual(m.ws().p.p1.moves, 1);
+  const room = m.bus.read('rooms/ROOM01');
+  assertEqual(room.wsInbox, undefined, 'nothing in the room');
+  assert(!JSON.stringify(room).includes('"' + route[0] + '"'), 'my word is nowhere in the room');
+});
+
+test('wordShift referee: a command seen again (a late echo, a restart) is never taken twice', async function () {
+  const m = await match();
+  await m.open();
+  const g = m.ws();
+  const cmd = { matchId: g.matchId, k: g.k, word: 'zzzz', t: m.clock.now };
+  await m.inbox.set('p1/cdup1', cmd);
+  await flush();
+  assertEqual(m.mine('p1').invalid, 1);
+  const first = m.mine('p1').last.reason;
+  assert(first !== 'same');
+  // The clear has not landed yet when someone else moves: the same command comes back.
+  await m.inbox.set('p1/cdup1', cmd);
+  await m.send('p2', ROUTES[g.puzzle.id][0]);
+  await flush();
+  assertEqual(m.mine('p1').invalid, 1, 'one refused word costs once');
+  assertEqual(m.mine('p1').last.reason, first, 'and no false "same word" afterwards');
+});
+
+test('wordShift referee: a player sends two moves: they are taken in the order they were sent', async function () {
+  const m = await match();
+  await m.open();
+  const g = m.ws();
+  const route = ROUTES[g.puzzle.id];
+  // Two moves land together; their ids sort the wrong way round.
+  await m.inbox.update('p1', {
+    czzz: { matchId: g.matchId, k: g.k, word: route[0], t: m.clock.now },
+    caaa: { matchId: g.matchId, k: g.k, word: route[1], t: m.clock.now + 5 }
+  });
+  await flush();
+  assertEqual(m.mine('p1').moves, 2);
+  assertEqual(m.mine('p1').invalid, 0);
+});
+
 test('wordShift referee: half-delivered commands wait until they are whole', async function () {
   const m = await match();
   await m.open();
-  await m.room.set('wsInbox/p1/half', { matchId: m.ws().matchId });
+  await m.inbox.set('p1/half', { matchId: m.ws().matchId });
   await flush();
   assertEqual(m.ws().p.p1.moves, 0);
-  assert(m.bus.read('rooms/ROOM01').wsInbox && m.bus.read('rooms/ROOM01').wsInbox.p1, 'kept for later');
+  assert(m.inboxTree() && m.inboxTree().p1, 'kept for later');
 });
 
 test('wordShift referee: three rounds summed, ranked, reported, and the room ends', async function () {
@@ -245,7 +295,7 @@ test('wordShift referee: a restarted referee carries on from the saved state', a
   m.ref.stop();
   const RF = m.FF.WordShiftReferee;
   const again = RF.create({
-    run: m.run, room: m.room, mine: m.mineStore, store: { load: () => Promise.resolve(saved.value), save: (s) => { saved.value = s; return Promise.resolve(); } },
+    run: m.run, room: m.room, mine: m.mineStore, inbox: m.inbox, store: { load: () => Promise.resolve(saved.value), save: (s) => { saved.value = s; return Promise.resolve(); } },
     randomInt: seeded(99), timers: m.clock, puzzles: PUZZLES, isWord: (w) => WORDS.has(w)
   });
   await again.start();

@@ -2,7 +2,7 @@
 /* WordShift crew players (js/crew/brains/wordShift.js): they find their own way from the word
    they are on to the target (a search over real words, never the referee's answer), slip like
    people do (a longer way round, a non-word now and then), take human time per move, and send
-   one move at a time through wsInbox like a phone. Plus the wiring that names the game online. */
+   one move at a time through wordshiftInbox like a phone. Plus the wiring that names the game online. */
 const fs = require('fs');
 const path = require('path');
 const { loadFF, test, assert, assertEqual } = require('./harness');
@@ -45,10 +45,11 @@ test('ws crew: crew never play a word the puzzles leave out for a family game', 
   const writes = [];
   let watcher = null;
   const jobs = [];
-  const T = { serverNow: () => 1000, watch: (p, fn) => { watcher = fn; return () => {}; }, set: (p, v) => { writes.push(v.word); return Promise.resolve(); } };
+  const T = { serverNow: () => 1000, watch: (p, fn) => { watcher = fn; return () => {}; }, set: () => { throw new Error('crew never write the room'); } };
+  const inbox = { set: (p, v) => { writes.push(v.word); return Promise.resolve(); } };
   let mine = { matchId: 'w_1', k: 0, word: 'coat', used: ['coat'], moves: 0, invalid: 0, done: false };
   const seats = FF.CrewWordShift.create({ transport: T, uids: ['crew1'], crew: { crew1: { skills: { wordShift: { skill: 100, level: 'hard' } }, persona: { accuracy: 100 } } },
-    later: (fn) => jobs.push(fn), random: () => 0.99, isWord, mineOf: () => Promise.resolve(mine) });
+    later: (fn) => jobs.push(fn), random: () => 0.99, isWord, inbox, mineOf: () => Promise.resolve(mine) });
   seats.start();
   for (let step = 0; step < 12 && mine.word !== 'wrap'; step++) {
     watcher({ matchId: 'w_1', phase: 'open', k: 0, closeAt: 1e9, settings: { level: 'normal' }, puzzle: { s: 'coat', t: 'wrap' }, p: { crew1: { moves: step, invalid: 0, done: false } } });
@@ -103,7 +104,7 @@ test('ws crew: move times are human and stay inside the clock; accuracy follows 
   assert(p > q && p <= 0.97 && q >= 0.04, 'accuracy ' + p + ' ' + q);
 });
 
-test('ws crew: seats move through wsInbox one step at a time, and stop at the target', async function () {
+test('ws crew: seats move through wordshiftInbox one step at a time, and stop at the target', async function () {
   const FF = loadFF(FILES);
   const writes = [];
   const watchers = {};
@@ -112,11 +113,12 @@ test('ws crew: seats move through wsInbox one step at a time, and stop at the ta
   const T = {
     serverNow: () => 1000,
     watch: (p, fn) => { watchers[p] = fn; return () => { delete watchers[p]; }; },
-    set: (p, v) => { writes.push({ p, v }); return Promise.resolve(); }
+    set: () => { throw new Error('crew never write the room'); }
   };
+  const inbox = { set: (p, v) => { writes.push({ p, v }); return Promise.resolve(); } };
   const mine = { crew1: { matchId: 'w_1', k: 0, word: 'cold', used: ['cold'], moves: 0, invalid: 0, done: false } };
   const mineOf = (uid) => { asked.push(uid); return Promise.resolve(mine[uid] ? JSON.parse(JSON.stringify(mine[uid])) : null); };
-  const seats = FF.CrewWordShift.create({ transport: T, uids: ['crew1', 'crew2'], crew: {}, later: (fn) => jobs.push(fn), random: seeded(9), isWord, mineOf });
+  const seats = FF.CrewWordShift.create({ transport: T, uids: ['crew1', 'crew2'], crew: {}, later: (fn) => jobs.push(fn), random: seeded(9), isWord, mineOf, inbox });
   seats.start();
   assert(watchers.ws, 'watches the view');
   const ws = { matchId: 'w_1', phase: 'open', k: 0, closeAt: 120000, settings: { level: 'normal' }, puzzle: { id: 'x', s: 'cold', t: 'warm', lv: 'normal' },
@@ -129,7 +131,7 @@ test('ws crew: seats move through wsInbox one step at a time, and stop at the ta
   await new Promise((r) => setImmediate(r));
   assertEqual(asked, ['crew1'], 'reads only its own words');
   assertEqual(writes.length, 1);
-  assert(/^wsInbox\/crew1\/c[0-9a-f]{24}$/.test(writes[0].p), writes[0].p);
+  assert(/^crew1\/c[0-9a-f]{24}$/.test(writes[0].p), writes[0].p);
   const cmd = writes[0].v;
   assertEqual(Object.keys(cmd).sort().join(), 'k,matchId,t,word');
   assertEqual([cmd.matchId, cmd.k], ['w_1', 0]);
@@ -158,7 +160,9 @@ test('wordShift: the rules, the online and crew game lists, the runner and the c
   assertEqual(mine['.write'], undefined, 'no phone writes them');
   assertEqual(rules.wordshiftMine['.read'], undefined);
   assertEqual(rules.wordshiftMine.$code['.read'], undefined);
-  const inbox = room.wsInbox.$uid.$id;
+  assertEqual(room.wsInbox, undefined, 'no moves inside the room: any signed-in player can read a room');
+  assertEqual(JSON.stringify(rules.wordshiftInbox).indexOf('.read'), -1, 'no phone reads the inbox');
+  const inbox = rules.wordshiftInbox.$code.$uid.$id;
   assert(/\$uid === auth\.uid/.test(inbox['.write']) && /!data\.exists\(\)/.test(inbox['.write']), 'written once, by the sender');
   assert(/child\('ws'\)\.child\('p'\)\.child\(auth\.uid\)/.test(inbox['.write']), 'only seated players');
   assert(/bans/.test(inbox['.write']), 'not banned');
@@ -168,8 +172,8 @@ test('wordShift: the rules, the online and crew game lists, the runner and the c
   assertEqual(inbox.word['.validate'], "newData.isString() && newData.val().matches(/^[a-z]{3,8}$/)");
   assertEqual(inbox.t['.validate'], 'newData.isNumber() && newData.val() === now', 'server-stamped');
   assertEqual(inbox.$other['.validate'], false);
-  const keys = Object.keys(room);
-  assertEqual(keys.indexOf('wsInbox'), keys.indexOf('swInbox') + 1, 'right after swInbox');
+  const keys = Object.keys(rules);
+  assertEqual(keys.indexOf('wordshiftInbox'), keys.indexOf('wordshiftMine') + 1, 'right after wordshiftMine');
   assert(/'wordShift'/.test(/ONLINE_GAMES = \[([\s\S]*?)\];/.exec(read('js/net/roomUI.js'))[1]), 'roomUI ONLINE_GAMES');
   const crew = read('api/lib/Crew.php');
   assert(/'wordShift'/.test(/ONLINE_GAMES = \[([\s\S]*?)\];/.exec(crew)[1]), 'Crew::ONLINE_GAMES');

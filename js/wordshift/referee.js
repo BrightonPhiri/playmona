@@ -15,7 +15,8 @@
    (readable by that player alone, outside the room, which any signed-in
    player can read); the shared view rooms/<code>/ws
    shows other players as counts: moves, green letters, done.
-   Phones move through rooms/<code>/wsInbox/<uid>/<cmdId> with
+   Phones move through wordshiftInbox/<code>/<uid>/<cmdId> (outside the
+   room, which any signed-in player can read; phones may write it, never read it) with
    { matchId, k, word, t }.
 
      var ref = FF.WordShiftReferee.create({
@@ -23,6 +24,7 @@
        room,       // transport scoped to rooms/<code>
        store,      // { load() -> Promise<state|null>, save(state) -> Promise }
        mine,       // { set(uid, v), clear() } -> Promise: wordshiftMine/<code>
+       inbox,      // transport rooted at wordshiftInbox/<code>: watch, set, update
        randomInt, timers, log, report(event, payload), onEnd,
        puzzles,    // defaults to FF.data.wordshift.puzzles
        isWord      // defaults to FF.Words (tiers 1-4)
@@ -80,6 +82,8 @@ window.FF = window.FF || {};
     var isWord = opts.isWord || defaultIsWord;
     var mineStore = opts.mine;
     if (!mineStore) throw new Error('WordShift referee needs a mine store (wordshiftMine/<code>).');
+    var inbox = opts.inbox;
+    if (!inbox) throw new Error('WordShift referee needs its inbox (wordshiftInbox/<code>).');
 
     var state = null;
     var players = {};
@@ -112,7 +116,7 @@ window.FF = window.FF || {};
         settings: settings, seed: seed, deal: R.raceDeal(puzzles, settings.level, seed, settings.rounds),
         seats: seats, players: {}, phase: 'starting', k: -1,
         readyAt: (run.startAt || 0) + BRIEF_MS, openAt: 0, closeAt: 0, nextAt: 0,
-        runs: {}, finished: 0, last: null, result: null
+        runs: {}, handled: {}, finished: 0, last: null, result: null
       };
       seats.forEach(function (uid) { state.players[uid] = newPlayer(); });
       return state;
@@ -123,6 +127,7 @@ window.FF = window.FF || {};
       s.deal = list(s.deal);
       s.players = s.players || {};
       s.runs = s.runs || {};
+      s.handled = s.handled || {};
       Object.keys(s.runs).forEach(function (uid) { s.runs[uid].used = list(s.runs[uid].used); });
       s.settings = R.sanitizeRoom(s.settings);
       s.seats.forEach(function (uid) { if (!s.players[uid]) s.players[uid] = newPlayer(); });
@@ -137,11 +142,11 @@ window.FF = window.FF || {};
           log('resuming ' + run.matchId + ' at ' + state.phase + ' ' + state.k);
         } else {
           fresh();
-          later(function () { return room.set('wsInbox', null); });
+          later(function () { return inbox.set('', null); });
           later(function () { return mineStore.clear(); });
         }
         offs.push(room.watch('players', function (v) { players = v || {}; if (state && state.phase === 'open') checkAllIn(); }));
-        offs.push(room.watch('wsInbox', onInbox));
+        offs.push(inbox.watch('', onInbox));
         save();
         publish();
         schedule();
@@ -197,6 +202,7 @@ window.FF = window.FF || {};
       state.k++;
       var p = puzzleAt(state.k);
       state.runs = {};
+      state.handled = {};   // the commands taken this round, by uid/id: an echo is never taken twice
       state.finished = 0;
       state.seats.forEach(function (uid) { state.runs[uid] = { word: p.s, used: [p.s], moves: 0, invalid: 0, done: false, ms: 0, place: 0 }; });
       state.last = null;
@@ -236,15 +242,22 @@ window.FF = window.FF || {};
       var changed = false;
       Object.keys(tree).forEach(function (uid) {
         var cmds = tree[uid] || {};
-        Object.keys(cmds).sort().forEach(function (id) {
+        // In the order they were sent (ids are random), then by id for equal times.
+        Object.keys(cmds).filter(function (id) { return complete(cmds[id]); }).sort(function (a, b) {
+          return (cmds[a].t - cmds[b].t) || (a < b ? -1 : a > b ? 1 : 0);
+        }).forEach(function (id) {
           var cmd = cmds[id];
-          // The dev transport delivers a command one field at a time: wait for all of it.
-          if (!complete(cmd)) return;
+          // (The dev transport delivers a command one field at a time: incomplete ones wait.)
           clear[uid + '/' + id] = null;
-          if (take(uid, cmd)) changed = true;
+          // A command can come back before its clear lands (another write, a restart): take it once.
+          var hk = uid + '/' + id;
+          if (state.handled[hk]) return;
+          state.handled[hk] = 1;
+          changed = true;
+          take(uid, cmd);
         });
       });
-      if (Object.keys(clear).length) later(function () { return room.update('wsInbox', clear); });
+      if (Object.keys(clear).length) later(function () { return inbox.update('', clear); });
       if (changed) {
         save();
         publishProgress();

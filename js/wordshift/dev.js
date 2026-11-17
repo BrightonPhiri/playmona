@@ -37,18 +37,19 @@ window.FF = window.FF || {};
     if (running) running.stop();
     var loaded = FF.Words && FF.Words.load ? FF.Words.load() : Promise.resolve();
     return loaded.then(function () {
-      return Promise.all([T.set('rounds', null), T.set('ws', null), T.set('wsInbox', null)]);
+      return Promise.all([T.set('rounds', null), T.set('ws', null)]);
     }).then(function () {
       return T.update('meta', {
         seed: FF.Random.newSeed(), gameId: 'wordShift', status: 'playing', startAt: startAt,
         endedAt: null, results: null, pick: null, settings: settings, wsMatch: matchId
       });
     }).then(function () {
-      return FF.Transport.open('wordshiftMine/' + room.code, true);
-    }).then(function (mineT) {
+      return Promise.all([FF.Transport.open('wordshiftMine/' + room.code, true), FF.Transport.open('wordshiftInbox/' + room.code, true)]);
+    }).then(function (both) {
+      var mineT = both[0], inbox = both[1];
       var saved = null;
       running = FF.WordShiftReferee.create({
-        run: run, room: T,
+        run: run, room: T, inbox: inbox,
         mine: { set: function (uid, v) { return mineT.set(uid, v); }, clear: function () { return mineT.set('', null); } },
         store: { load: function () { return Promise.resolve(saved); }, save: function (s) { saved = s; return Promise.resolve(); } },
         randomInt: randomInt,

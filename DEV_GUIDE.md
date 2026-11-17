@@ -314,9 +314,12 @@ Solo and Daily runs are checked by `api/lib/WordShift.php` (`/wordshift/begin` g
 `wordshiftTickets/<id>`; `/wordshift/finish` replays the moves and writes the boards). The Daily board
 is `wordshiftDaily/<day>/<uid>`.
 Online Race: `js/wordshift/referee.js` on the crew runner (`wordshiftRuns/<id>`), phones read
-`rooms/<code>/ws` (counts only) and write `wsInbox` (`js/wordshift/client.js`, `online.js`). A player's
-own words are at `wordshiftMine/<code>/<uid>`, outside the room, because any signed-in player can
-read a room. The `wsInbox` and `wordshiftMine` rules are hand-added to `database.rules.json`.
+`rooms/<code>/ws` (counts only) and write their moves to `wordshiftInbox/<code>/<uid>/<id>`
+(`js/wordshift/client.js`, `online.js`). Moves and a player's own words (`wordshiftMine/<code>/<uid>`)
+live outside the room because any signed-in player can read a room; phones can never read the inbox.
+The referee takes each command once (`state.handled`), in the order sent. Only Classic on a Normal
+puzzle reaches the week and all-time boards; a Daily counts its one try when it starts
+(`wordshiftDailyTries`). The `wordshiftInbox` and `wordshiftMine` rules are hand-added to `database.rules.json`.
 
 ### `FF.data.countries` (js/data/countries.js)
 ```js

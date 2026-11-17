@@ -21,7 +21,7 @@ const { URL } = require('url');
 const { spawn } = require('child_process');
 const loader = require('./lib/loader.js');
 const codeStamp = require('./lib/stamp.js');
-const { Rtdb, tokenSource, roomTransport, request } = require('./lib/rtdb.js');
+const { Rtdb, tokenSource, roomTransport, pathTransport, request } = require('./lib/rtdb.js');
 
 const HEARTBEAT_MS = 8000;
 const CODE_CHECK_MS = 30000;   // how often to look for a deploy
@@ -99,6 +99,7 @@ async function main() {
       secretOf: (uid) => (run.crew[uid] ? rtdb.get('imposterSecrets/' + run.roomCode + '/' + uid) : Promise.resolve(null)),
       // WordShift: each crew seat reads its own words, never anyone else's.
       mineOf: (uid) => (run.crew[uid] ? rtdb.get('wordshiftMine/' + run.roomCode + '/' + uid) : Promise.resolve(null)),
+      wsInbox: { set: (p, v) => rtdb.set('wordshiftInbox/' + run.roomCode + '/' + p, v) },
       isQuiet, isWord,
       // WordFlow: a crew seat's next word from the AI (null: it uses its word bank).
       suggestWord: (req) => api('wordflow/word', req).then((r) => (r.suggestion && r.suggestion.word) || null, () => null),
@@ -483,16 +484,19 @@ async function main() {
     if (!run || !run.roomCode || !run.seats) return;
     const code = run.roomCode;
     const transport = roomTransport(rtdb, code, serverNow, (m) => log(matchId + ': ' + m));
+    // Moves arrive outside the room, which any signed-in player can read.
+    const inbox = pathTransport(rtdb, 'wordshiftInbox/' + code, serverNow, (m) => log(matchId + ': ' + m));
     const stopIt = () => {
       const r = wordshifts.get(matchId);
       if (!r) return;
       r.ref.stop();
       transport.close();
+      inbox.close();
       wordshifts.delete(matchId);
       lastActive = Date.now();
     };
     const ref = FF.WordShiftReferee.create({
-      run, room: transport,
+      run, room: transport, inbox,
       mine: {
         set: (uid, v) => rtdb.set('wordshiftMine/' + code + '/' + uid, v),
         clear: () => rtdb.set('wordshiftMine/' + code, null)
@@ -506,7 +510,7 @@ async function main() {
       report: (event, payload) => api('report', Object.assign({}, payload, { matchId, event })),
       onEnd: () => setTimeout(stopIt, 60000)
     });
-    wordshifts.set(matchId, { ref, transport });
+    wordshifts.set(matchId, { ref, transport, inbox });
     log('refereeing WordShift ' + matchId + ' in ' + code);
     ref.start().catch((e) => { log(matchId + ': referee failed: ' + (e && e.message)); stopIt(); });
   }
@@ -559,7 +563,7 @@ async function main() {
       });
       (res.dropWordshift || []).forEach((id) => {
         const r = wordshifts.get(id);
-        if (r) { r.ref.stop(); r.transport.close(); wordshifts.delete(id); }
+        if (r) { r.ref.stop(); r.transport.close(); r.inbox.close(); wordshifts.delete(id); }
       });
       (res.dropSaywhat || []).forEach((id) => {
         const r = saywhats.get(id);

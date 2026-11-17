@@ -344,6 +344,31 @@
         }
       }
     },
+    "wordshiftInbox": {
+      "$code": {
+        "$uid": {
+          "$id": {
+            ".write": "auth != null && $uid === auth.uid && !data.exists() && newData.exists() && !root.child('bans').child(auth.uid).exists() && root.child('rooms').child($code).child('ws').child('p').child(auth.uid).exists()",
+            ".validate": "$id.matches(/^[A-Za-z0-9_-]{6,40}$/) && newData.hasChildren(['matchId', 'k', 'word', 't'])",
+            "matchId": {
+              ".validate": "newData.isString() && newData.val() === root.child('rooms').child($code).child('ws').child('matchId').val()"
+            },
+            "k": {
+              ".validate": "newData.isNumber() && newData.val() === root.child('rooms').child($code).child('ws').child('k').val()"
+            },
+            "word": {
+              ".validate": "newData.isString() && newData.val().matches(/^[a-z]{3,8}$/)"
+            },
+            "t": {
+              ".validate": "newData.isNumber() && newData.val() === now"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        }
+      }
+    },
     "entitlements": {
       "$uid": {
         ".read": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).val() === true)"
@@ -679,29 +704,6 @@
               },
               "text": {
                 ".validate": "newData.isString() && newData.val().length <= 60"
-              },
-              "t": {
-                ".validate": "newData.isNumber() && newData.val() === now"
-              },
-              "$other": {
-                ".validate": false
-              }
-            }
-          }
-        },
-        "wsInbox": {
-          "$uid": {
-            "$id": {
-              ".write": "auth != null && $uid === auth.uid && !data.exists() && newData.exists() && !root.child('bans').child(auth.uid).exists() && root.child('rooms').child($code).child('ws').child('p').child(auth.uid).exists()",
-              ".validate": "$id.matches(/^[A-Za-z0-9_-]{6,40}$/) && newData.hasChildren(['matchId', 'k', 'word', 't'])",
-              "matchId": {
-                ".validate": "newData.isString() && newData.val() === root.child('rooms').child($code).child('ws').child('matchId').val()"
-              },
-              "k": {
-                ".validate": "newData.isNumber() && newData.val() === root.child('rooms').child($code).child('ws').child('k').val()"
-              },
-              "word": {
-                ".validate": "newData.isString() && newData.val().matches(/^[a-z]{3,8}$/)"
               },
               "t": {
                 ".validate": "newData.isNumber() && newData.val() === now"

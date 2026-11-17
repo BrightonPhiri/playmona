@@ -249,13 +249,13 @@ window.FF = window.FF || {};
        move through the inbox, each reading only its own words (js/crew/brains/wordShift.js). */
     var wsSeats = null, wsKey = null;
     function onWordShift() {
-      var playing = meta && meta.status === 'playing' && meta.gameId === 'wordShift' && meta.wsMatch && FF.CrewWordShift && opts.mineOf;
+      var playing = meta && meta.status === 'playing' && meta.gameId === 'wordShift' && meta.wsMatch && FF.CrewWordShift && opts.mineOf && opts.wsInbox;
       var key = playing ? gameKey() : null;
       if (wsSeats && wsKey !== key) { wsSeats.stop(); wsSeats = null; }
       if (!playing || wsSeats) return;
       wsKey = key;
       wsSeats = FF.CrewWordShift.create({
-        transport: T, uids: function () { return uids.filter(present); }, crew: crew, later: later, log: log, mineOf: opts.mineOf
+        transport: T, uids: function () { return uids.filter(present); }, crew: crew, later: later, log: log, mineOf: opts.mineOf, inbox: opts.wsInbox
       });
       wsSeats.start();
     }

@@ -56,18 +56,23 @@ async function setup() {
     return T;
   }
   const refMine = await mineTab();
+  async function inboxTab() {
+    const T = FF.Transport.dev({ bus, root: 'wordshiftInbox/' + code });
+    await T.connect();
+    return T;
+  }
   const players = { p1: { name: 'A', online: true }, p2: { name: 'B', online: true } };
   await refT.set('', { meta: { status: 'playing', hostUid: 'p1', wsMatch: 'w_1' }, players });
   let x = 7;
   const ref = FF.WordShiftReferee.create({
     run: { matchId: 'w_1', roomCode: code, seats: ['p1', 'p2'], startAt: clock.now, settings: { level: 'normal', rounds: 1, clock: 90 } },
-    room: refT, mine: { set: (uid, v) => refMine.set(uid, v), clear: () => refMine.set('', null) }, randomInt: (n) => { x = (x * 1664525 + 1013904223) >>> 0; return x % n; }, timers: clock,
+    room: refT, inbox: await inboxTab(), mine: { set: (uid, v) => refMine.set(uid, v), clear: () => refMine.set('', null) }, randomInt: (n) => { x = (x * 1664525 + 1013904223) >>> 0; return x % n; }, timers: clock,
     puzzles: PUZZLES, isWord: (w) => WORDS.has(w)
   });
   await ref.start();
   const changes = { p1: 0, p2: 0 };
-  const c1 = FF.WordShiftClient.create({ room: { transport: await tab(), uid: 'p1', code }, openMine: mineTab, onChange: () => changes.p1++ });
-  const c2 = FF.WordShiftClient.create({ room: { transport: await tab(), uid: 'p2', code }, openMine: mineTab, onChange: () => changes.p2++ });
+  const c1 = FF.WordShiftClient.create({ room: { transport: await tab(), uid: 'p1', code }, openMine: mineTab, openInbox: inboxTab, onChange: () => changes.p1++ });
+  const c2 = FF.WordShiftClient.create({ room: { transport: await tab(), uid: 'p2', code }, openMine: mineTab, openInbox: inboxTab, onChange: () => changes.p2++ });
   await flush();
   async function open() {
     const ws = c1.view().ws;
@@ -131,7 +136,7 @@ test('wordshift client: reaching the target ends my moves; a lost command can be
   // A write that never reaches the referee lets the player try again.
   const seen = { ws: s.c2.view().ws, p2: s.c2.view().mine };
   const T = { watch: (p, fn) => { fn(seen[p]); return () => {}; }, set: () => Promise.reject(new Error('offline')), serverNow: () => s.clock.now };
-  const c3 = s.FF.WordShiftClient.create({ room: { transport: T, uid: 'p2', code: s.code }, openMine: () => T });
+  const c3 = s.FF.WordShiftClient.create({ room: { transport: T, uid: 'p2', code: s.code }, openMine: () => T, openInbox: () => T });
   await flush();
   assertEqual(c3.send('cord'), true);
   await flush();

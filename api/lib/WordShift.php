@@ -110,6 +110,8 @@ class WordShift
     public function begin(AuthUser $user, array $body, int $now): array
     {
         if ($user->isAnonymous()) throw new HttpError(403, 'Sign in to put WordShift scores on the boards.', 'guest');
+        // As the database rules do for phone writes: banned players post nothing.
+        if ($this->rtdb->get('bans/' . $user->uid) !== null) throw new HttpError(403, 'This account cannot post scores.', 'banned');
         $p = self::puzzle((string) ($body['puzzleId'] ?? ''));
         if (!$p) throw new HttpError(400, 'That puzzle is not available.', 'bad-puzzle');
         $mode = $body['mode'] ?? null;
@@ -129,10 +131,17 @@ class WordShift
                 throw new HttpError(409, 'WordShift is not today’s daily game.', 'not-daily');
             }
         }
+        // One ranked try a day, counted when it starts: giving up and starting again plays unranked.
+        $retry = false;
+        if ($daily !== null) {
+            $tried = 'wordshiftDailyTries/' . $day . '/' . $user->uid . '/' . $daily;
+            $retry = $this->rtdb->get($tried) !== null;
+            if (!$retry) $this->rtdb->set($tried, $now);
+        }
         $id = bin2hex(random_bytes(12));
         $this->rtdb->set('wordshiftTickets/' . $id, [
             'uid' => $user->uid, 'puzzle' => $p['id'], 'mode' => $mode, 'seconds' => $seconds,
-            'daily' => $daily, 'day' => $day, 't' => $now,
+            'daily' => $daily, 'day' => $day, 't' => $now, 'retry' => $retry,
         ]);
         return ['ticket' => $id, 'puzzle' => $p, 'serverNow' => $now];
     }
@@ -158,11 +167,13 @@ class WordShift
         $expired = $ms > self::TICKET_TTL_MS;
         $out = ['ok' => true, 'finished' => $r['finished'], 'score' => 0, 'ms' => $ms, 'shortest' => (int) $p['n'], 'moves' => $r['moves'], 'ranked' => false, 'places' => []];
         if (!$r['finished'] || $late || $expired) return $out;
+        $unranked = !empty($t['retry']);
 
         $left = $timed ? max(0, intdiv((int) $t['seconds'] * 1000 - $ms, 1000)) : 0;
         $out['score'] = self::score($r['moves'], (int) $p['n'], $invalid, $timed, $left);
         $who = $this->who($user);
         $daily = $t['daily'] ?? null;
+        if ($unranked) return $out;
         if ($daily === 'ws') {
             $at = 'wordshiftDaily/' . $t['day'] . '/' . $user->uid;
             if ($this->rtdb->get($at) !== null) return $out;   // one ranked try a day
@@ -177,6 +188,8 @@ class WordShift
             $out['ranked'] = true;
             return $out;
         }
+        // As every leaderboard game: only the standard settings (Classic, a Normal puzzle) count.
+        if ($timed || ($p['lv'] ?? '') !== 'normal') return $out;
         $week = gmdate('o-\WW', intdiv($now, 1000));
         foreach (['week' => 'leaderboards/' . self::GAME . '/week/' . $week . '/' . $user->uid, 'all' => 'leaderboards/' . self::GAME . '/all/' . $user->uid] as $period => $at) {
             $cur = $this->rtdb->get($at);
@@ -206,6 +219,11 @@ class WordShift
         $n = 0;
         foreach ($all as $id => $t) {
             if (!is_array($t) || $now - (int) ($t['t'] ?? 0) > self::TICKET_TTL_MS) { $this->rtdb->set('wordshiftTickets/' . $id, null); $n++; }
+        }
+        // Daily tries are only needed for today and yesterday (a run can start before midnight).
+        $yesterday = gmdate('Y-m-d', intdiv($now, 1000) - 86400);
+        foreach (array_keys((array) ($this->rtdb->get('wordshiftDailyTries') ?? [])) as $day) {
+            if (strcmp((string) $day, $yesterday) < 0) $this->rtdb->set('wordshiftDailyTries/' . $day, null);
         }
         return $n;
     }
@@ -286,9 +304,10 @@ class WordShift
             ]);
             // Each player's own words live outside the room (rooms are readable by any signed-in player).
             $this->rtdb->set('wordshiftMine/' . $room, null);
+            $this->rtdb->set('wordshiftInbox/' . $room, null);
             // As FF.Room.startGame, plus the match id phones use to know the view is this game's.
             $this->rtdb->update('rooms/' . $room, [
-                'rounds' => null, 'ws' => null, 'wsInbox' => null,
+                'rounds' => null, 'ws' => null,
                 'meta/seed' => bin2hex(random_bytes(8)), 'meta/gameId' => self::GAME, 'meta/status' => 'playing',
                 'meta/startAt' => $startAt, 'meta/endedAt' => null, 'meta/results' => null, 'meta/pick' => null,
                 'meta/expiresAt' => $now + self::ROOM_TTL_MS, 'meta/settings' => $settings, 'meta/wsMatch' => $matchId,
@@ -405,6 +424,7 @@ class WordShift
             $current = $this->rtdb->get('rooms/' . $code . '/meta/wsMatch');
             if ($current !== null && $current !== $matchId) return;
             $this->rtdb->set('wordshiftMine/' . $code, null);
+            $this->rtdb->set('wordshiftInbox/' . $code, null);
         } catch (Throwable $e) {
             error_log('PlayMona WordShift: could not clear the words of ' . $matchId . ': ' . $e->getMessage());
         }
