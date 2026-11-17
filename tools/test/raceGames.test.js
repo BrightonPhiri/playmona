@@ -66,7 +66,8 @@ function device(gameId, uid, seed) {
   const root = FF.ui.div('root');
   let ended = null;
   const api = {
-    def: defs[gameId],
+    // Flags play inside Guess It!, so its rounds are seeded under that id.
+    def: gameId === 'guessCountry' ? { id: 'guessIt' } : defs[gameId],
     config: {
       players: [{ id: 'u1', name: 'Ann' }, { id: 'u2', name: 'Ben' }],
       scorers: [{ id: 'u1', name: 'Ann' }, { id: 'u2', name: 'Ben' }],
@@ -91,7 +92,7 @@ function device(gameId, uid, seed) {
   };
   return {
     FF: FF, api: api, log: log,
-    start: function () { defs[gameId].start(api); },
+    start: function () { if (gameId === 'guessCountry') FF.GuessCountry.startFlags(api); else defs[gameId].start(api); },
     // Settle the current round and go on to the next one.
     settleRound: function () {
       settle({ winnerId: null, reason: 'exhausted' });

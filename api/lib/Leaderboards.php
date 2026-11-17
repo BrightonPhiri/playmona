@@ -25,7 +25,7 @@ class Leaderboards
         'picturePuzzle', 'spotDifference', 'hiddenObject', 'visualRiddle', 'sortRush',
         'guessWho', 'familyQuiz',
         'quickTap',
-        'guessCountry', 'geoSpin', 'logoRush', 'sketchBack', 'sayWhat', 'wordShift', 'guessLandmark', 'guessAnimal', 'guessFood', 'guessObject', 'guessSport', 'guessVehicle',
+        'guessIt', 'geoSpin', 'logoRush', 'sketchBack', 'sayWhat', 'wordShift', 'guessLandmark', 'guessAnimal', 'guessFood', 'guessObject', 'guessSport', 'guessVehicle',
         'wordScramble', 'stacoend', 'wordChain', 'miniCrossword',
     ];
     public const REPEAT_DAYS = 14;

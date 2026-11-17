@@ -149,11 +149,9 @@ test('guess the country: points', function () {
   assertEqual([G.roomPoints(1000, 'easy'), G.roomPoints(5000, 'normal'), G.roomPoints(2000, 'hard')], [150, 150, 250]);
 });
 
-test('guess the country: registered once, out of visualGames', function () {
-  assertEqual(FF.__defs.length, 1);
-  assertEqual(FF.__defs[0].id, 'guessCountry');
-  const vis = fs.readFileSync(path.join(ROOT, 'js/games/visualGames.js'), 'utf8');
-  assert(!/id: 'guessCountry'/.test(vis), 'visualGames no longer registers it');
+test('guess the country: the Flags engine of Guess It!, not a game of its own', function () {
+  assertEqual(FF.__defs.length, 0, 'registers no game');
+  ['startFlags', 'setupScreen', 'play'].forEach(function (k) { assertEqual(typeof G[k], 'function', k); });
   ['play.html', 'admin.html'].forEach(function (f) {
     const html = fs.readFileSync(path.join(ROOT, f), 'utf8');
     assert(html.indexOf('js/data/worldFlags.js') !== -1 && html.indexOf('js/games/guessCountry.js') !== -1, f + ' loads it');

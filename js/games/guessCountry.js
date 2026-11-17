@@ -1,6 +1,6 @@
 /* ============================================================
    PLAYMONA — games/guessCountry.js
-   Guess the Country: a flag waves on screen, pick its country
+   Flags for Guess It! (js/games/guessIt.js): a flag waves on screen, pick its country
    before the time runs out. Every country in the world (data in
    js/data/worldFlags.js, flags in assets/flags/<code>.svg).
 
@@ -425,7 +425,9 @@ window.FF = window.FF || {};
 
   /* ================= setup screen ================= */
 
-  function setupScreen(api, onGo) {
+  /* opts: { kicker, onBack } when Guess It! opens it as its Flags topic. */
+  function setupScreen(api, onGo, opts) {
+    opts = opts || {};
     var root = api.shell.root;
     api.shell.hideTimer();
     FF.ui.clear(root);
@@ -439,7 +441,7 @@ window.FF = window.FF || {};
     var look = lookPref();
 
     var stage = FF.GameUI.stage({ wide: true, className: 'gc gc-setup qm-pick' });
-    stage.appendChild(FF.GameUI.kicker(t('gcName', 'Guess the Country')));
+    stage.appendChild(FF.GameUI.kicker(opts.kicker || t('gcName', 'Guess the Country')));
     stage.appendChild(FF.GameUI.prompt(t('gcSetupTitle', 'Set up your flags'), 'xl'));
 
     var rows = FF.ui.el('section', { class: 'settings-section gc-setup__rows' });
@@ -498,12 +500,18 @@ window.FF = window.FF || {};
     var note = FF.ui.el('p', { class: 'qm-pick__summary', 'aria-live': 'polite' });
     foot.appendChild(note);
     var actions = FF.ui.div('nr-setup__actions');
+    if (opts.onBack) {
+      actions.appendChild(FF.UI.button(t('giChangeTopic', 'Change topic'), {
+        class: 'btn-lg btn-ghost', icon: 'arrow-left',
+        onClick: function () { api.audio.play('click'); opts.onBack(); }
+      }));
+    }
     actions.appendChild(FF.UI.button(t('nrStandard', 'Standard settings'), {
       class: 'btn-lg btn-ghost', icon: 'restart',
       onClick: function () {
         api.audio.play('click');
         try { store().set(SETUP_KEY, sanitize(STANDARD)); } catch (e) { /* storage full */ }
-        setupScreen(api, onGo);
+        setupScreen(api, onGo, opts);
       }
     }));
     var startBtn = FF.GameUI.action(t('gcStart', 'Start'), function () {
@@ -883,7 +891,7 @@ window.FF = window.FF || {};
     render();
   }
 
-  /* ================= registration ================= */
+  /* ================= Flags for Guess It! ================= */
 
   FF.GuessCountry = {
     LEVELS: LEVELS, TIMES: TIMES, OPTIONS: OPTIONS, STANDARD: STANDARD, optionCount: optionCount,
@@ -893,36 +901,21 @@ window.FF = window.FF || {};
     prepare: prepare, deal: deal, points: points, roomPoints: roomPoints, summary: summary
   };
 
-  FF.registerGame({
-    id: 'guessCountry',
-    featured: true,
-    name: 'Guess the Country',
-    description: 'Every flag in the world, waving on screen. Name the country before the time runs out.',
-    category: 'world',
-    icon: '🌍',
-    players: [1, 8],
-    difficulty: 'Normal',
-    duration: 5,
-    tags: ['visual', 'quiz', 'everyone'],
-    modes: ['solo', 'turn', 'team'],
-    defaultMode: 'turn',
-    howToPlay: [
-      'Pick the regions, a level (4, 6 or 8 answers to choose from) and how many seconds you get for each flag.',
-      'A flag waves on screen. Choose its country before the time runs out, or it counts as wrong.',
-      'The quicker you answer, the more points. Three right in a row earns a bonus.',
-      'Want it harder? Flash hides the flag after a second and a half, and Expert has you spell the name with letter tiles.'
-    ],
-    start: function (api) {
-      // One number decides the whole deal. It is drawn first, before anything
-      // else uses the random source, so a challenge or a room deals the same everywhere.
-      if (racingNow()) FF.Random.seed(FF.Random.roundSeed(FF.Room.current().meta.seed, api.def.id, 'deck'));
-      var seed = Math.floor(rand0() * 4294967296);
-      if (racingNow() || api.config.daily || api.config.challenge) { play(api, STANDARD, seed); return; }
-      setupScreen(api, function (cfg) {
-        if (!stillShown(api)) return;
-        if (!isStandard(cfg)) api.config.customRules = true;
-        play(api, cfg, seed);
-      });
-    }
-  });
+  /* Flags in Guess It!: a room or a seeded run plays the standard flags; otherwise
+     the flag setup comes first. opts: { kicker, onBack } for the setup screen. */
+  function startFlags(api, opts) {
+    // One number decides the whole deal. It is drawn first, before anything
+    // else uses the random source, so a challenge or a room deals the same everywhere.
+    if (racingNow()) FF.Random.seed(FF.Random.roundSeed(FF.Room.current().meta.seed, api.def.id, 'deck'));
+    var seed = Math.floor(rand0() * 4294967296);
+    if (racingNow() || api.config.daily || api.config.challenge) { play(api, STANDARD, seed); return; }
+    setupScreen(api, function (cfg) {
+      if (!stillShown(api)) return;
+      if (!isStandard(cfg)) api.config.customRules = true;
+      play(api, cfg, seed);
+    }, opts);
+  }
+  FF.GuessCountry.startFlags = startFlags;
+  FF.GuessCountry.setupScreen = setupScreen;
+  FF.GuessCountry.play = play;
 })();
