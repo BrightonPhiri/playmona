@@ -40,7 +40,7 @@ second checker.
 
 | Game | File | Notes |
 |---|---|---|
-| Guess the Country | `js/games/guessCountry.js` | Letter tiles, country aliases, shared checker (66bb617). Rooms play Normal choices. |
+| Guess It! | `js/games/guessIt.js` | One game for every picture topic (Animals, Flags, Food, Landmarks, Objects, Sports, Vehicles, Jobs, Instruments, Mix). Expert spells the name with letter tiles; long names spell a shorter accepted name (Tower of Pisa). Other names from each item's `aka`, checked by `FF.AnswerMatch` within the topic. +6 s, +50. Flags runs the Guess the Country engine (`js/games/guessCountry.js`) with country aliases. Rooms play Easy to Hard choices, never Expert. |
 | GeoSpin | `js/games/geoSpin.js` | Letter tiles from the start; the server referee checks answers in rooms. |
 | Who Am I? (Bible) | `js/games/bibleGames.js` | Spell the person; other names from `js/data/bibleAliases.js` (Abram, Simon Peter, Pilate). Family pool, +50. |
 | Books of the Bible | `js/games/bibleGames.js` | "What comes next?" is spelled (number tiles for 1 Kings; First/I/1st Kings count). +6 s, +50. |
@@ -64,17 +64,7 @@ real words spelled right: no forgiveness).
 
 | Game | File | What to spell | Other names to accept |
 |---|---|---|---|
-| Capital Challenge | `js/games/worldGames.js` | The capital city | Kyiv / Kiev, Washington / Washington DC, Mexico City / Ciudad de México… A city that is also a country (Singapore, Monaco) is fine. |
-| Where in the World? | `js/games/worldGames.js` | The country | `js/data/countryAliases.js` |
-| Map Challenge | `js/games/worldGames.js` | Continents, countries and capitals | Country aliases; continents: America is too vague (North / South America) |
-| Guess the Landmark | `js/games/visualGames.js` | The landmark | Statue of Liberty / Liberty, Big Ben / Elizabeth Tower, Taj Mahal… |
-| Guess the Animal | `js/games/visualGames.js` | The animal | Hippo / Hippopotamus, Rhino / Rhinoceros |
-| Guess the Food | `js/games/visualGames.js` | The food | Chips / Fries / French fries, Aubergine / Eggplant |
-| Guess the Object | `js/games/visualGames.js` | The object | Phone / Mobile phone / Cellphone |
-| Guess the Sport | `js/games/visualGames.js` | The sport | Football / Soccer (choose one meaning for the game), Ping pong / Table tennis |
-| Guess the Vehicle | `js/games/visualGames.js` | The vehicle | Lorry / Truck, Motorbike / Motorcycle |
 | Guess Who / What | `js/games/quizGames.js` | The person or thing from the clues | Per answer |
-| Picture Quiz | `js/games/quizGames.js` | Only questions whose answer is a name | Per answer |
 | Visual Riddle | `js/games/puzzleGames.js` | The riddle's answer word | Per answer, singular and plural |
 | Number Challenge | `js/games/numberGames.js` | The number, on a number pad | None: numbers must be exact (no spelling forgiveness) |
 
@@ -82,21 +72,18 @@ real words spelled right: no forgiveness).
 
 | Game | File | Question |
 |---|---|---|
-| Guess the Flag | `js/games/worldGames.js` | It is the same game as Guess the Country. Retire it, or point it at Guess the Country, rather than adding Expert twice. |
 | Quiz Mix, Brain Battle | `js/games/quizMix.js`, `js/games/quizGames.js` | General trivia with choices. Expert would only suit questions with a short name for an answer; worth it only if the question bank marks those. |
 
 ### Expert spelling does not apply
 
 These answer by tapping, timing, drawing, voting or acting:
 
-- True or False
-- Quick Tap, Color Reaction
+- Quick Tap
 - Memory Match, Picture Memory
 - Picture Puzzle, Spot the Difference, Hidden Object
-- Higher or Lower
 - Letter Rush
 - Charades, Visual Charades, Don't Say It, Drawing Challenge, Pictionary
-- Would You Rather?, This or That, Who Is Most Likely?
+- Who Is Most Likely?
 
 Word games are already about spelling, and their answers must be exact:
 

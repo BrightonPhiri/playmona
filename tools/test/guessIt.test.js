@@ -212,3 +212,40 @@ test('guess it room: no Expert or open clock in a race, topic and pictures kept'
   const sum = room.summary({ topic: 'flags', level: 'hard', time: 5, questions: 20 }, 3);
   assert(/Flags/.test(sum) && /20/.test(sum), 'summary names the topic and the count: ' + sum);
 });
+
+test('guess it: a Flags challenge deals from the same number as the run it came from', function () {
+  function run(config, pickFlags) {
+    const F = loadFF(['js/core.js', 'js/i18n.js', 'js/icons.js', 'js/ui-kit.js', 'js/gameUI.js', 'js/gameLength.js',
+      'js/data/animals.js', 'js/data/guessIt.js', 'js/answerMatch.js', 'js/spellTiles.js']);
+    F.registerGame = function () {};
+    vm.runInContext(fs.readFileSync(path.join(ROOT, 'js/games/guessIt.js'), 'utf8'), F.__sandbox, { filename: 'guessIt.js' });
+    let n = 0;
+    F._rand = function () { n++; return n / 10; };
+    let got = null;
+    F.GuessCountry = { startFlags: function (api, opts) { got = opts || {}; } };
+    F.Audio = { play: function () {} };
+    const root = F.ui.div('root');
+    F.__sandbox.document.body.appendChild(root);
+    const api = {
+      def: { id: 'guessIt' }, config: config, audio: F.Audio,
+      shell: { root: root, hideTimer: function () {}, setTimer: function () {}, updateScores: function () {} }
+    };
+    F.GuessIt.start(api);
+    if (pickFlags) {
+      const find = function (el) {
+        if (el.className && String(el.className).indexOf('gi-tile--flags') !== -1) return el;
+        for (const c of el.children || []) { const hit = find(c); if (hit) return hit; }
+        return null;
+      };
+      const tile = find(root);
+      assert(tile, 'the Flags tile is on the picker');
+      tile.dispatch('click');
+    }
+    return got;
+  }
+  const mine = run({ challengeSeed: 'k3y9x2p1' }, true);
+  const theirs = run({ challenge: { id: 'c1', seed: 'k3y9x2p1', opts: { topics: ['flags'] } } }, false);
+  assert(mine && theirs, 'both runs reach the flags');
+  assert(mine.seed != null, 'the picked run hands its number to the flags');
+  assertEqual(theirs.seed, mine.seed, 'same number, same flags');
+});

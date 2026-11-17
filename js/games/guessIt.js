@@ -900,24 +900,29 @@ window.FF = window.FF || {};
 
   /* ================= start ================= */
 
-  function flags(api, onBack) {
+  /* seed: the number this run already drew, so a picked Flags run and its challenge deal alike. */
+  function flags(api, onBack, seed) {
     if (!FF.GuessCountry || !FF.GuessCountry.startFlags) {
       FF.GameUI.exitCard(api, t('giNoFlags', 'Flags are not loaded'), t('noDataText', 'This content has not loaded. Check the data files and try again.'));
       return;
     }
     themed(api);
-    FF.GuessCountry.startFlags(api, onBack ? { kicker: t('giName', 'Guess It!') + ' · ' + topicName('flags'), onBack: onBack } : null);
+    var opts = { seed: seed };
+    if (onBack) { opts.kicker = t('giName', 'Guess It!') + ' · ' + topicName('flags'); opts.onBack = onBack; }
+    FF.GuessCountry.startFlags(api, opts);
   }
 
   function start(api) {
     themed(api);
     var racing = racingNow();
     var fixed = sharedTopic(api.config, racing ? roomSettings() : null);
-    if (fixed === 'flags') { flags(api, null); return; }
+    // In a room the Flags engine seeds the shared deal itself.
+    if (racing && fixed === 'flags') { flags(api, null); return; }
     // One number decides the whole deal. It is drawn first, before anything
     // else uses the random source, so a room or a challenge deals the same everywhere.
     if (racing) FF.Random.seed(FF.Random.roundSeed(FF.Room.current().meta.seed, api.def.id, 'deck'));
     var seed = Math.floor(rand0() * 4294967296);
+    if (fixed === 'flags') { flags(api, null, seed); return; }
     if (fixed) {
       var cfg = racing ? roomSanitize(roomSettings()) : sanitize({ topic: fixed });
       if (!racing) { cfg.level = STANDARD.level; cfg.time = STANDARD.time; cfg.twist = STANDARD.twist; }
@@ -929,7 +934,7 @@ window.FF = window.FF || {};
         save(TOPIC_KEY, topic);
         // A challenge-ready run sends its topic with the challenge.
         if (api.config.challengeSeed) api.config.dealOptions = { topics: [topic] };
-        if (topic === 'flags') { flags(api, pickAgain); return; }
+        if (topic === 'flags') { flags(api, pickAgain, seed); return; }
         settingsScreen(api, topic, pickAgain, function (cfg) {
           if (!stillShown(api)) return;
           if (!isStandard(cfg)) api.config.customRules = true;

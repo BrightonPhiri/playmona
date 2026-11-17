@@ -906,8 +906,9 @@ window.FF = window.FF || {};
   function startFlags(api, opts) {
     // One number decides the whole deal. It is drawn first, before anything
     // else uses the random source, so a challenge or a room deals the same everywhere.
+    // Guess It! may have drawn it already (opts.seed); a room always draws its own.
     if (racingNow()) FF.Random.seed(FF.Random.roundSeed(FF.Room.current().meta.seed, api.def.id, 'deck'));
-    var seed = Math.floor(rand0() * 4294967296);
+    var seed = !racingNow() && opts && opts.seed != null ? opts.seed : Math.floor(rand0() * 4294967296);
     if (racingNow() || api.config.daily || api.config.challenge) { play(api, STANDARD, seed); return; }
     setupScreen(api, function (cfg) {
       if (!stillShown(api)) return;
