@@ -121,7 +121,12 @@ const ORDER = [
   'js/data/sayings.js',
   'js/saywhat/rules.js',
   'js/saywhat/client.js',
-  'js/games/sayWhat.js'
+  'js/games/sayWhat.js',
+  'js/data/wordshiftPuzzles.js',
+  'js/wordshift/rules.js',
+  'js/wordshift/board.js',
+  'js/wordshift/api.js',
+  'js/games/wordShift.js'
 ];
 
 const sandbox = {

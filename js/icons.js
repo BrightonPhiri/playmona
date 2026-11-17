@@ -136,6 +136,7 @@ window.FF = window.FF || {};
   "geoSpin": "globe-hemisphere-west",
   "logoRush": "magnifying-glass",
   "sayWhat": "chalkboard",
+  "wordShift": "text-aa",
   "sketchBack": "pencil",
   "higherOrLower": "chart-line",
   "wouldYouRather": "arrows-left-right",

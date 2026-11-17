@@ -313,6 +313,8 @@ window.FF = window.FF || {};
     /* Called by GameFlow.end for every finished game outside rooms. */
     afterGame: function (cur, results) {
       if (!cur || !cur.config || cur.config.daily || !this.ranked(cur.config)) return Promise.resolve([]);
+      // A serverScored game (WordShift) puts its own runs on the boards through the server.
+      if (cur.def && cur.def.serverScored) return Promise.resolve([]);
       var mine = (results.results || []).filter(function (r) { return r.isMe || r.id === 'me'; })[0] || (results.results || [])[0];
       if (!mine) return Promise.resolve([]);
       var self = this;

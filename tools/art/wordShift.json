@@ -1,0 +1,21 @@
+{
+  "game": "wordShift",
+  "prompts": "docs/art/wordShift-prompts.md",
+  "source": "assets/playmona_assets/WordShift",
+  "ids": [],
+  "sets": [],
+  "focus": {},
+  "cover": {
+    "from": "cover.png",
+    "to": "assets/images/covers/wordShift.webp",
+    "size": [
+      1086,
+      1448
+    ],
+    "max_kb": 240,
+    "focus": [
+      0.5,
+      0.5
+    ]
+  }
+}

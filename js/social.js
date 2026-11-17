@@ -170,6 +170,9 @@ window.FF = window.FF || {};
       var key = this.key();
       var d = this.today();
       if (!d || !d.done || d.submitted || !FF.Cloud.available()) return Promise.resolve();
+      // A serverScored game (WordShift) had the server write this row when the run was checked.
+      var def = FF.Games && FF.Games.get && FF.Games.get(d.game);
+      if (def && def.serverScored) { d.submitted = true; this._save(key, d); return Promise.resolve(); }
       var who = me();
       var self = this;
       var row = { name: who.name, avatar: who.avatar, score: Math.min(FF.Leaderboards.MAX_SCORE, d.score), ms: Math.round(d.ms || 0), t: d.t, game: d.game || 'quiz' };

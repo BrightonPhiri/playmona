@@ -145,6 +145,16 @@
   --lgo-bright: #3d9bff; --lgo-bright-deep: #1d5fd1;
   --lgo-ink: #ffffff; --lgo-ink-soft: #d6ecff; --lgo-ink-dim: #a9cbf0;
   --lgo-tile: #ffffff; --lgo-tile-2: #e4eef9; --lgo-tile-ink: #0a2a55;
+  /* WordShift (js/games/wordShift.js): the cover's night-blue to violet sky, cream tiles with
+     indigo letters, gold for the target and the path, vivid green for letters in place.
+     The same in both themes. */
+  --ws-sky-1: #0b1f7a; --ws-sky-2: #2a2fb8; --ws-sky-3: #6d2fd6; --ws-sky-4: #8b3be8;
+  --ws-ink: #ffffff; --ws-ink-soft: #d9dcff; --ws-ink-dim: #b7bcf2;
+  --ws-tile: #fff8ec; --ws-tile-2: #ecdfff; --ws-tile-ink: #1d1b6b; --ws-tile-edge: #b9a9f0;
+  --ws-teal: #2de0c8; --ws-teal-deep: #0b8f86; --ws-teal-ink: #05302d;
+  --ws-gold: #ffc533; --ws-gold-hi: #ffe28a; --ws-gold-deep: #c98a0c; --ws-gold-ink: #3a2300;
+  --ws-green: #16a34a; --ws-green-hi: #6ee79a; --ws-green-deep: #14532d; --ws-green-ink: #ffffff;
+  --ws-bad: #e11d48; --ws-panel: rgba(255, 255, 255, 0.1); --ws-panel-edge: rgba(255, 255, 255, 0.22);
   /* Say What? (js/games/sayWhat.js): two looks, the same in both themes.
      Speech bubble, as the cover: cream to apricot sky, a deep-teal bubble, cream word pills, gold.
      Chalkboard: a green board in a wooden frame, chalk-white words, yellow chalk, wooden letter blocks. */

@@ -25,7 +25,7 @@ class Leaderboards
         'picturePuzzle', 'spotDifference', 'hiddenObject', 'visualRiddle', 'sortRush',
         'trueOrFalse', 'guessWho', 'pictureQuiz', 'familyQuiz',
         'quickTap', 'colorReaction',
-        'guessCountry', 'geoSpin', 'logoRush', 'sketchBack', 'sayWhat', 'guessLandmark', 'guessAnimal', 'guessFood', 'guessObject', 'guessSport', 'guessVehicle',
+        'guessCountry', 'geoSpin', 'logoRush', 'sketchBack', 'sayWhat', 'wordShift', 'guessLandmark', 'guessAnimal', 'guessFood', 'guessObject', 'guessSport', 'guessVehicle',
         'wordScramble', 'stacoend', 'wordChain', 'miniCrossword',
         'whereInWorld', 'mapChallenge', 'capitalChallenge',
     ];

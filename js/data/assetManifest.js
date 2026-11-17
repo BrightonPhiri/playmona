@@ -31,7 +31,8 @@ FF.AssetManifest = {
     "whatsMissing": "9657275b",
     "wordChain": "89246988",
     "wordFlow": "8352f80d",
-    "wordScramble": "4a450fcf"
+    "wordScramble": "4a450fcf",
+    "wordShift": "63dfd4ce"
   },
   "categories": {
     "cat-creative": "8d461eed",

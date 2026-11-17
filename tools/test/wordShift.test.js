@@ -102,3 +102,93 @@ test('wordShift rules: sanitize keeps only known settings', function () {
   assertEqual(JSON.stringify(R.sanitizeRoom({ level: 'expert', rounds: 5, clock: 180 })), JSON.stringify({ level: 'expert', rounds: 5, clock: 180 }));
   assertEqual(JSON.stringify(R.sanitizeRoom({ rounds: 2, clock: 1 })), JSON.stringify({ level: 'normal', rounds: 3, clock: 120 }));
 });
+
+/* ---------- typing (js/wordshift/board.js) ---------- */
+
+let boardFF = null;
+const B = () => (boardFF || (boardFF = loadFF(['js/core.js', 'js/wordshift/rules.js', 'js/wordshift/board.js']))).WordShiftBoard;
+
+test('wordShift board: key filter keeps letters and the editing keys only', function () {
+  const k = B().keyFilter;
+  assertEqual(k({ key: 'A' }), 'a');
+  assertEqual(k({ key: 'r', ctrlKey: true }), null);
+  assertEqual(k({ key: 'r', metaKey: true }), null);
+  assertEqual(k({ key: 'x', altKey: true }), null);
+  assertEqual(k({ key: 'Enter' }), 'enter');
+  assertEqual(k({ key: 'Backspace' }), 'back');
+  assertEqual(k({ key: 'ArrowLeft' }), 'left');
+  assertEqual(k({ key: 'ArrowRight' }), 'right');
+  assertEqual(k({ key: '1' }), null);
+  assertEqual(k({ key: 'é' }), null);
+});
+
+test('wordShift board: typing into the selected tile changes only that letter', function () {
+  const b = B().create('sing');
+  b.select(1);
+  b.type('a');
+  assertEqual(b.word(), 'sang');
+  assertEqual(b.edited().join(), '1');
+  b.back();
+  assertEqual(b.word(), 'sing');
+  assertEqual(b.edited().length, 0);
+});
+
+test('wordShift board: nothing is chosen for the player at the start', function () {
+  const b = B().create('sing');
+  assertEqual(b.selected(), -1, 'no tile is picked for them');
+  b.type('a');
+  assertEqual(b.word(), 'sing', 'typing with no tile selected changes nothing');
+  assertEqual(Object.keys(b).filter((k) => /hint|suggest|solve|next/i.test(k)).length, 0, 'no helpers');
+});
+
+test('wordShift board: two edited tiles are kept so the move can be refused', function () {
+  const b = B().create('sing');
+  b.select(0); b.type('b');
+  b.select(1); b.type('a');
+  assertEqual(b.word(), 'bang');
+  assertEqual(b.edited().join(), '0,1');
+  b.reset('bang');
+  assertEqual(b.word(), 'bang');
+  assertEqual(b.edited().length, 0);
+  assertEqual(b.selected(), -1);
+});
+
+test('wordShift board: typing the same letter is not an edit; arrows move the selection', function () {
+  const b = B().create('sing');
+  b.select(0); b.type('s');
+  assertEqual(b.edited().length, 0);
+  b.move(1); assertEqual(b.selected(), 1);
+  b.move(5); assertEqual(b.selected(), 3, 'stays on the word');
+  b.move(-9); assertEqual(b.selected(), 0);
+});
+
+/* ---------- registration ---------- */
+
+const fs = require('fs');
+const path = require('path');
+const ROOT = path.resolve(__dirname, '..', '..');
+const read = (f) => fs.readFileSync(path.join(ROOT, f), 'utf8');
+
+test('wordShift registered: solo, on the leaderboards, server-scored, listed in every page', function () {
+  const src = read('js/games/wordShift.js');
+  assert(/id:\s*'wordShift'/.test(src), 'registered');
+  assert(/leaderboard:\s*true/.test(src), 'on the leaderboards');
+  assert(/serverScored:\s*true/.test(src), 'scored by the server');
+  assert(/"wordShift"/.test(read('js/icons.js')), 'has an icon');
+  assert(/'wordShift'/.test(read('api/lib/Leaderboards.php')), 'server leaderboard list');
+  ['play.html', 'admin.html', 'tools/load-check.js', 'tools/test-seed.html'].forEach((f) => {
+    const s = read(f);
+    let at = -1;
+    ['js/data/wordshiftPuzzles.js', 'js/wordshift/rules.js', 'js/wordshift/board.js', 'js/wordshift/api.js', 'js/games/wordShift.js'].forEach((js) => {
+      const i = s.indexOf(js);
+      assert(i !== -1, f + ' loads ' + js);
+      assert(i > at, f + ': ' + js + ' in order');
+      at = i;
+    });
+  });
+});
+
+test('wordShift: phones never write WordShift scores themselves', function () {
+  assert(/serverScored/.test(read('js/leaderboards.js')), 'afterGame skips server-scored games');
+  assert(/serverScored/.test(read('js/social.js')), 'the daily submit skips server-scored games');
+});
