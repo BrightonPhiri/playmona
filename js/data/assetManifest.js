@@ -11,6 +11,7 @@ FF.AssetManifest = {
     "charades": "410c931d",
     "familyQuiz": "398a13de",
     "geoSpin": "8e264823",
+    "guessIt": "567daa53",
     "guessWho": "06291604",
     "imposters": "1275cfc4",
     "letterRush": "b0eb5db2",
