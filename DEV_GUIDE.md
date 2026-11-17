@@ -306,8 +306,8 @@ phones read `rooms/<code>/cw` and write `cwInbox` (`js/crossword/client.js`, `on
 ### `FF.data.wordshift` (js/data/wordshiftPuzzles.js, generated)
 WordShift puzzles: `{ v: 1, puzzles: [{ id, s, t, n, lv, p }] }` (start, target, shortest number of moves,
 level easy/normal/hard/expert, and `p`: the words in between on one shortest path, shown only once a
-puzzle is over). `FF.WordShiftRules.keyLetters(puzzle)` gives the puzzle's keys: the target's and the
-path's letters, every vowel, then letters drawn by the puzzle id up to ten more than the word length.
+puzzle is over). The keyboard shows all 26 letters. (`FF.WordShiftRules.keyLetters(puzzle)`, a smaller key set of the
+target's and path's letters plus vowels, is kept but no longer used: it limited the words players could try.)
 Each letter is checked as it is typed (no Enter); a refused one-letter try (not a word, or used) still
 counts as a move (`FF.WordShiftRules.counts`), on the phone, in the server replay and in the referee. Never edit by hand: run `node tools/gen-wordshift.js` (a few minutes).
 It builds a graph of everyday words (tiers 1-2) per length, checks every puzzle's shortest path, and

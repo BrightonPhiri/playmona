@@ -4,8 +4,7 @@
    letter at a time. Every step must be a real word, and no word
    twice. Each letter is checked as it is typed: a real word keeps it
    (green in its target place), a refused one shakes back and still
-   counts as a move. The keys hold only the puzzle's letters
-   (FF.WordShiftRules.keyLetters). No hints while playing; one
+   counts as a move. The keyboard has every letter. No hints while playing; one
    shortest path is shown only once the puzzle is over.
 
    - Rules: js/wordshift/rules.js (FF.WordShiftRules), typing model
@@ -263,7 +262,7 @@ window.FF = window.FF || {};
      opts: { parent, keys?, canPlay() -> bool, onTry(word, index) }
      -> { accept, refuse, checking, release, setWord, trailFrom, say, stop, win, word, busy, board, tiles } */
   function surface(api, p, opts) {
-    var keys = opts.keys || R.keyLetters(p);
+    var keys = opts.keys || "abcdefghijklmnopqrstuvwxyz".split("");
     var parent = opts.parent;
     parent.appendChild(goalCard(p));
 
@@ -732,7 +731,6 @@ window.FF = window.FF || {};
       'You get a start word and a target word with the same number of letters.',
       'Tap a letter, then tap its new letter. It is checked at once: no Enter needed.',
       'A real word keeps the letter (green when it is in the target’s place). A wrong word shakes, the old letter comes back, and it still counts as a move.',
-      'The keys hold only this puzzle’s letters: the target’s, every vowel and a few more.',
       'Every word you make must be a real word, and you can’t use a word twice.',
       'Letters that match the target in the same place turn green.',
       'Reach the target in as few moves as you can. Time Challenge adds points for time left.',
