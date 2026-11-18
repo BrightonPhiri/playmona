@@ -125,5 +125,11 @@ function devHandle(): void
         Response::json(['ok' => true])->send();
         return;
     }
+    if ($req->method === 'POST' && $req->path === '/dev/celebration-report') {
+        // In dev the organiser's tab referees a celebration game and reports here, as the runner would.
+        $app->celebrationGames()->recordResult($req->json(), nowMs());
+        Response::json(['ok' => true])->send();
+        return;
+    }
     (new Routes($app))->handle($req)->send();
 }

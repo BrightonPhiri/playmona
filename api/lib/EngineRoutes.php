@@ -244,8 +244,9 @@ class EngineRoutes
                 $dropSketchback = $this->app->sketchback()->stillActive((array) ($body['sketchback'] ?? []));
                 $dropSaywhat = $this->app->saywhat()->stillActive((array) ($body['saywhat'] ?? []));
                 $dropWordshift = $this->app->wordshift()->stillActive((array) ($body['wordshift'] ?? []));
+                $dropCelebration = $this->app->celebrationGames()->stillActive((array) ($body['celebration'] ?? []));
                 $s = $this->app->crew()->settings();
-                return Response::json(['drop' => $drop, 'dropImposters' => $dropImposters, 'dropWordflow' => $dropWordflow, 'dropBallswap' => $dropBallswap, 'dropSortrush' => $dropSortrush, 'dropGeospin' => $dropGeospin, 'dropWhatsmissing' => $dropWhatsmissing, 'dropCrossword' => $dropCrossword, 'dropLogorush' => $dropLogorush, 'dropSketchback' => $dropSketchback, 'dropSaywhat' => $dropSaywhat, 'dropWordshift' => $dropWordshift, 'settings' => ['mode' => $s['mode'], 'stopNew' => $s['stopNew']]]);
+                return Response::json(['drop' => $drop, 'dropImposters' => $dropImposters, 'dropWordflow' => $dropWordflow, 'dropBallswap' => $dropBallswap, 'dropSortrush' => $dropSortrush, 'dropGeospin' => $dropGeospin, 'dropWhatsmissing' => $dropWhatsmissing, 'dropCrossword' => $dropCrossword, 'dropLogorush' => $dropLogorush, 'dropSketchback' => $dropSketchback, 'dropSaywhat' => $dropSaywhat, 'dropWordshift' => $dropWordshift, 'dropCelebration' => $dropCelebration, 'settings' => ['mode' => $s['mode'], 'stopNew' => $s['stopNew']]]);
             case 'report':
                 $matchId = (string) ($body['matchId'] ?? '');
                 $event = (string) ($body['event'] ?? '');
@@ -287,6 +288,10 @@ class EngineRoutes
                 }
                 if ($event === 'wordshift') {
                     $this->app->wordshift()->recordResult($body, $now);
+                    return Response::json(['ok' => true]);
+                }
+                if ($event === 'celebration') {
+                    $this->app->celebrationGames()->recordResult($body, $now);
                     return Response::json(['ok' => true]);
                 }
                 if ($event === 'saywhat') {

@@ -37,15 +37,22 @@
   <script src="js/icons.js"></script>
   <script src="js/icons-custom.js"></script>
   <script src="js/ui-kit.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/confetti.js"></script>
   <script src="js/net/firebase-config.js"></script>
   <script src="js/net/firebaseTransport.js"></script>
   <script src="js/net/transport.js"></script>
   <script src="js/net/api.js"></script>
   <script src="js/celebrate/common.js"></script>
+  <script src="js/celebrate/pictureRush/rules.js"></script>
+  <script src="js/celebrate/pictureRush/board.js"></script>
+  <script src="js/celebrate/pictureRush/play.js"></script>
+  <script src="js/celebrate/live.js"></script>
   <script src="js/celebrate/event.js"></script>
   <script>
     (function () {
       FF.Storage.init();
+      FF.safe(function () { FF.Audio.init(); });
       FF.EventPage.start();
     })();
   </script>

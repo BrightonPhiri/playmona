@@ -3,6 +3,7 @@
      celebrations      - my celebrations + "Create a celebration"
      celebrationNew    - the create wizard: details, look, settings
      celebration       - one celebration's dashboard: { id, tab }
+     celebrationGame   - a game's editor (js/celebrate/games.js): { id, gameId }
    Everything goes through the PHP API (FF.Api); no Firebase connection is opened here,
    which keeps the free Firebase plan's connection limit for the guests' phones. */
 window.FF = window.FF || {};
@@ -445,6 +446,7 @@ window.FF = window.FF || {};
     { id: 'overview', icon: 'squares-four', label: ['celTabOverview', 'Overview'] },
     { id: 'invite', icon: 'qr-scan', label: ['celTabInvite', 'Invite'] },
     { id: 'teams', icon: 'users-three', label: ['celTabTeams', 'Teams'] },
+    { id: 'games', icon: 'puzzle-piece', label: ['celTabGames', 'Games'] },
     { id: 'settings', icon: 'gear', label: ['celTabSettings', 'Settings'] }
   ];
 
@@ -485,7 +487,8 @@ window.FF = window.FF || {};
       shell.appendChild(tabs);
       var panel = el('div', { class: 'cel-panel', role: 'tabpanel' });
       shell.appendChild(panel);
-      ({ overview: overviewTab, invite: inviteTab, teams: teamsTab, settings: settingsTab })[state.tab](panel, ev, update);
+      var tabs2 = { overview: overviewTab, invite: inviteTab, teams: teamsTab, settings: settingsTab, games: FF.CelebrateGames.tab };
+      (tabs2[state.tab] || overviewTab)(panel, ev, update);
     }
 
     /* Saves a change through the API and redraws with the server's answer. */
@@ -503,7 +506,7 @@ window.FF = window.FF || {};
       // Guests keep arriving: refresh the numbers while this screen is open (API only, no Firebase).
       refreshTimer = setInterval(function () {
         if (!shell.isConnected) { stopRefresh(); return; }
-        if (document.hidden || state.tab === 'settings') return;
+        if (document.hidden || state.tab === 'settings' || state.tab === 'games') return;
         if (shell.querySelector('.ff-dialog') || document.querySelector('.ff-dialog')) return;
         // Never redraw under the organiser's hands (an open team list, a half-typed name).
         var active = document.activeElement;
@@ -749,7 +752,8 @@ window.FF = window.FF || {};
     views: {
       celebrations: listView,
       celebrationNew: wizardView,
-      celebration: dashboardView
+      celebration: dashboardView,
+      celebrationGame: function (main, params) { return FF.CelebrateGames.views.celebrationGame(main, params); }
     }
   };
 })();

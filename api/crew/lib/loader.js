@@ -82,7 +82,11 @@ const FILES = [
   'js/data/wordshiftPuzzles.js',
   'js/wordshift/rules.js',
   'js/wordshift/referee.js',
-  'js/crew/brains/wordShift.js'
+  'js/crew/brains/wordShift.js',
+  // Celebrations: every template's referee registers in FF.CelebrateReferees, and the runner
+  // starts the one each celebrationRuns entry names.
+  'js/celebrate/pictureRush/rules.js',
+  'js/celebrate/pictureRush/referee.js'
 ];
 
 function stubElement() {

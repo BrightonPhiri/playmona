@@ -588,6 +588,7 @@ class Db
         )$engine");
         // PlayMona Celebrations keeps its own tables next to its code.
         Celebrations::migrate($this, $engine);
+        CelebrationGames::migrate($this, $engine);
         // Columns added after the first release. Each fails harmlessly once it exists.
         foreach ([
             'ALTER TABLE orders ADD COLUMN mode VARCHAR(8) NULL',
