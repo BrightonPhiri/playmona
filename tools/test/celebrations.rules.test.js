@@ -20,3 +20,20 @@ test('celebrations: a guest reads only their own membership', () => {
   assertEqual(m.$uid['.write'], undefined);
 });
 
+
+test('celebrations: phones write only game commands; the game view is for guests and organisers', () => {
+  const c = rules.celebrations.$cid;
+  const writes = [];
+  (function walk(node, at) {
+    Object.keys(node || {}).forEach((k) => {
+      if (k === '.write') writes.push(at);
+      else if (node[k] && typeof node[k] === 'object') walk(node[k], at + '/' + k);
+    });
+  })(c, '');
+  assertEqual(writes.join(','), '/inbox/$uid/$id', 'the inbox is the only place a phone writes');
+  assertEqual(c.control, undefined, 'the organiser\'s controls go through the server');
+  assertEqual(c.run['.write'], undefined);
+  assertEqual(/members'\)\.child\(auth\.uid\)\.exists\(\)/.test(c.run['.read']) && /viewers'\)\.child\(auth\.uid\)\.exists\(\)/.test(c.run['.read']), true, 'guests of the event and organisers watching');
+  assertEqual(rules.celebrationRuns, undefined, 'runs are server-only');
+  assertEqual(rules.celebrationState, undefined);
+});

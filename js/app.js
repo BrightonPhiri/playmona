@@ -82,7 +82,7 @@ window.FF = window.FF || {};
   // A friend's challenge link (the 'challenge' view) opens for guests too: playing it is free.
   var VIEW_FEATURE = { daily: 'daily', challenges: 'challenge', gamenight: 'gameNight' };
   // Which main destination a view belongs to (for nav highlighting).
-  var NAV_OF = { home: 'home', gamenight: 'home', games: 'games', online: 'online', daily: 'online', challenges: 'online', challenge: 'online', celebrations: 'online', celebrationNew: 'online', celebration: 'online', leaderboard: 'leaderboard', plus: 'profile', profile: 'profile', settings: 'profile', credits: 'profile', about: 'profile' };
+  var NAV_OF = { home: 'home', gamenight: 'home', games: 'games', online: 'online', daily: 'online', challenges: 'online', challenge: 'online', celebrations: 'online', celebrationNew: 'online', celebration: 'online', celebrationGame: 'online', leaderboard: 'leaderboard', plus: 'profile', profile: 'profile', settings: 'profile', credits: 'profile', about: 'profile' };
   // The phone's bottom bar shows this many buttons; with more sections it shows one fewer plus "More".
   var TABBAR_MAX = 5;
 

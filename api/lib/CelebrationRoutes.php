@@ -70,6 +70,25 @@ class CelebrationRoutes
         if ($m === 'POST' && preg_match('#^/links/(celebrant|mc|display)/regenerate$#', $rest, $k)) {
             return Response::json($this->c()->regenerate($cid, $this->who($req), $k[1]));
         }
+
+        // Games: the organiser builds and runs them; phones play through Firebase.
+        $now = nowMs();
+        if ($rest === '/games') {
+            if ($m === 'GET') return Response::json($this->g()->list($cid, $this->who($req)));
+            if ($m === 'POST') return Response::json($this->g()->create($cid, $this->who($req), $req->json()));
+        }
+        if (preg_match('#^/games/(g_[a-f0-9]{24})(?:/(save|publish|unpublish|deactivate|duplicate|delete|start))?$#', $rest, $gm)) {
+            $act = $gm[2] ?? '';
+            if ($m === 'GET' && $act === '') return Response::json($this->g()->get($cid, $gm[1], $this->who($req)));
+            if ($m === 'POST' && $act === 'save') return Response::json($this->g()->save($cid, $gm[1], $this->who($req), $req->json()));
+            if ($m === 'POST' && $act === 'start') return Response::json($this->g()->start($cid, $gm[1], $this->who($req), $now));
+            if ($m === 'POST' && $act !== '') return Response::json($this->g()->act($cid, $gm[1], $this->who($req), $act));
+        }
+        if ($m === 'GET' && $rest === '/play') return Response::json($this->g()->live($cid, $this->who($req)));
+        if ($m === 'POST' && $rest === '/play/control') {
+            return Response::json($this->g()->control($cid, $this->who($req), (string) ($req->json()['action'] ?? ''), $now));
+        }
+        if ($m === 'POST' && $rest === '/play/nudge') return Response::json($this->g()->nudge($cid, $this->who($req), $now));
         return null;
     }
 
@@ -83,6 +102,7 @@ class CelebrationRoutes
     }
 
     private function c(): Celebrations { return $this->app->celebrations(); }
+    private function g(): CelebrationGames { return $this->app->celebrationGames(); }
     private function who(Request $req): AuthUser { return ($this->user)($req); }
 
     private function q(Request $req, string $k): ?string

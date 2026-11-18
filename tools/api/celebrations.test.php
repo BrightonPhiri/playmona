@@ -6,6 +6,7 @@ declare(strict_types=1);
 use PlayMona\App;
 use PlayMona\CelebrationMedia;
 use PlayMona\Routes;
+use PlayMona\Runner;
 
 echo "\nCelebrations\n";
 
@@ -13,10 +14,16 @@ function celWorld(): array
 {
     $w = world();
     $dir = sys_get_temp_dir() . '/playmona-test-cel-' . bin2hex(random_bytes(4));
+    // Runner starts are counted, never run.
+    $spawns = new ArrayObject();
+    $runner = new Runner($w['db'], $w['app']->config, function (array $c) use ($spawns) { $spawns[] = $c; return true; });
     $app = new App($w['app']->config, [
         'db' => $w['db'], 'rtdb' => $w['rtdb'], 'auth' => $w['app']->auth(),
         'celebrationMedia' => new CelebrationMedia($dir, 'test-secret'),
+        'runner' => $runner,
     ]);
+    $w['spawns'] = $spawns;
+    $w['runner'] = $runner;
     $w['app'] = $app;
     $w['routes'] = new Routes($app);
     $w['celDir'] = $dir;

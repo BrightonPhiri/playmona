@@ -109,6 +109,9 @@ try {
     if ($abandonedSw) echo "Ended $abandonedSw abandoned Say What? match(es).\n";
     $abandonedWs = $app->wordshift()->sweep($now);
     if ($abandonedWs) echo "Ended $abandonedWs abandoned WordShift match(es).\n";
+    $abandonedCel = $app->celebrationGames()->sweep($now);
+    if ($abandonedCel) echo "Ended $abandonedCel abandoned celebration game(s).
+";
     $staleWs = $app->wordshift()->sweepTickets($now);
     if ($staleWs) echo "Dropped $staleWs unfinished WordShift run(s).\n";
 } catch (Throwable $e) {

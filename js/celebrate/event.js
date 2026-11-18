@@ -14,7 +14,7 @@ window.FF = window.FF || {};
   function div(cls, kids) { return FF.ui.div(cls, kids); }
   var C = function () { return FF.Celebrate; };
 
-  var main, state = { ev: null, me: null, code: null, timer: null };
+  var main, state = { ev: null, me: null, code: null, timer: null, live: null, liveFor: null, game: null, scores: {} };
 
   function store(key, value) {
     try {
@@ -123,6 +123,7 @@ window.FF = window.FF || {};
 
   function paint() {
     var ev = state.ev;
+    if (state.game) return;            // a game is on screen: it stays until it ends
     FF.ui.clear(main);
     main.appendChild(C().hero(ev, { tag: 'h1' }));
     if (state.removed) {
@@ -140,8 +141,98 @@ window.FF = window.FF || {};
       main.appendChild(meCard());
       if (needsTeamPick()) main.appendChild(teamCard());
       main.appendChild(lobbyCard());
+      var board = scoresCard();
+      if (board) main.appendChild(board);
       keepFresh();
+      goLive();
     }
+    if (!state.me) stopLive();
+  }
+
+  /* ---------- games ---------- */
+
+  /* The live connection: open while the guest is in, closed when they are not. */
+  function goLive() {
+    var key = state.ev.id + ':' + state.me.uid;
+    if (state.liveFor === key) return;
+    stopLive();
+    state.liveFor = key;
+    FF.CelebrateLive.start({ cid: state.ev.id, uid: state.me.uid, onRun: onRun, onScores: onScores }).then(function (h) {
+      if (state.liveFor !== key) { h.stop(); return; }
+      state.live = h;
+      if (state.pending) { var p = state.pending; state.pending = null; onRun(p); }
+    }, function () {
+      state.liveFor = null;
+      if (FF.UI && FF.UI.toast) FF.UI.toast(t('celLiveFailed', 'We could not connect for the games. Check your connection and reload.'));
+    });
+  }
+  function stopLive() {
+    if (state.live) state.live.stop();
+    state.live = null;
+    state.liveFor = null;
+  }
+
+  function onRun(p) {
+    if (!state.live) { state.pending = p; return; }
+    if (p && !p.template) return;     // half-written: the rest is on its way
+    if (p && (!state.game || state.game.runId !== p.runId || (state.game.unknown && PLAYERS[p.template]))) openGame(p);
+    else if (!p && state.game) {
+      // Over: keep the final results until the guest goes back; anything else returns to the lobby.
+      var v = state.game.view();
+      if (!(v && v.phase === 'ended')) closeGame();
+    }
+  }
+
+  function onScores(s) {
+    var before = JSON.stringify(state.scores);
+    state.scores = s;
+    if (!state.game && before !== JSON.stringify(s)) paint();
+  }
+
+  var PLAYERS = { pictureRush: function () { return FF.PictureRushPlay; } };
+
+  function openGame(p) {
+    if (state.game) state.game.destroy();
+    state.game = null;
+    FF.ui.clear(main);
+    var host = div('ev-game');
+    main.appendChild(host);
+    var player = PLAYERS[p.template] && PLAYERS[p.template]();
+    if (!player) {
+      host.appendChild(card(t('celGameOld', 'Please reload this page'), [el('p', {}, t('celGameOldText', 'A game started that this page does not know yet.'))]));
+      state.game = { runId: p.runId, unknown: true, view: function () { return null; }, destroy: function () { FF.ui.clear(host); } };
+      return;
+    }
+    var g = player.mount(host, { transport: state.live.transport, uid: state.live.uid, onClose: closeGame });
+    state.game = { runId: p.runId, view: g.view, destroy: g.destroy };
+    window.scrollTo(0, 0);
+    if (navigator.wakeLock && navigator.wakeLock.request) navigator.wakeLock.request('screen').then(function (w) { state.wake = w; }, function () {});
+  }
+
+  function closeGame() {
+    if (state.game) state.game.destroy();
+    state.game = null;
+    if (state.wake) { try { state.wake.release(); } catch (e) { /* fine */ } state.wake = null; }
+    paint();
+    refresh();
+  }
+
+  function scoresCard() {
+    if (!state.ev.settings.leaderboard) return null;
+    var ids = Object.keys(state.scores || {}).filter(function (id) { return team(id); });
+    if (!ids.length) return null;
+    ids.sort(function (a, b) { return state.scores[a].place - state.scores[b].place; });
+    var list = el('ol', { class: 'ev-board' });
+    ids.forEach(function (id) {
+      var tm = team(id);
+      var li = el('li', { class: id === state.me.teamId ? 'is-mine' : '' });
+      li.style.setProperty('--team', tm.color);
+      li.appendChild(el('span', { class: 'ev-board__place' }, String(state.scores[id].place)));
+      li.appendChild(el('strong', {}, tm.name));
+      li.appendChild(el('span', { class: 'ev-board__pts' }, t('celPoints', '{n} points', { n: state.scores[id].points })));
+      list.appendChild(li);
+    });
+    return card(t('celLeaderboard', 'Leaderboard'), [list]);
   }
 
   function joinCard() {
@@ -259,6 +350,7 @@ window.FF = window.FF || {};
         store('joined:' + state.ev.id, null);
         state.me = null;
         state.removed = !!r.removed;
+        if (state.game) { state.game.destroy(); state.game = null; }
         paint();
         return;
       }
