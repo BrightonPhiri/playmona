@@ -706,6 +706,13 @@ class Celebrations
         return $ev;
     }
 
+    /** The event at this address, or null. */
+    public function bySlug(string $slug): ?array
+    {
+        if (!preg_match('/^[a-z0-9-]{3,40}$/', $slug)) return null;
+        return $this->db->one('SELECT * FROM celebrations WHERE slug = ? AND deleted_at IS NULL', [$slug]);
+    }
+
     public function owned(string $cid, AuthUser $user): array
     {
         $this->needAccount($user);

@@ -447,6 +447,7 @@ window.FF = window.FF || {};
     { id: 'invite', icon: 'qr-scan', label: ['celTabInvite', 'Invite'] },
     { id: 'teams', icon: 'users-three', label: ['celTabTeams', 'Teams'] },
     { id: 'games', icon: 'puzzle-piece', label: ['celTabGames', 'Games'] },
+    { id: 'wall', icon: 'heart', label: ['celTabWall', 'Wall'] },
     { id: 'settings', icon: 'gear', label: ['celTabSettings', 'Settings'] }
   ];
 
@@ -487,7 +488,7 @@ window.FF = window.FF || {};
       shell.appendChild(tabs);
       var panel = el('div', { class: 'cel-panel', role: 'tabpanel' });
       shell.appendChild(panel);
-      var tabs2 = { overview: overviewTab, invite: inviteTab, teams: teamsTab, settings: settingsTab, games: FF.CelebrateGames.tab };
+      var tabs2 = { overview: overviewTab, invite: inviteTab, teams: teamsTab, settings: settingsTab, games: FF.CelebrateGames.tab, wall: FF.CelebrateMessages.tab };
       (tabs2[state.tab] || overviewTab)(panel, ev, update);
     }
 
@@ -506,7 +507,7 @@ window.FF = window.FF || {};
       // Guests keep arriving: refresh the numbers while this screen is open (API only, no Firebase).
       refreshTimer = setInterval(function () {
         if (!shell.isConnected) { stopRefresh(); return; }
-        if (document.hidden || state.tab === 'settings' || state.tab === 'games') return;
+        if (document.hidden || state.tab === 'settings' || state.tab === 'games' || state.tab === 'wall') return;
         if (shell.querySelector('.ff-dialog') || document.querySelector('.ff-dialog')) return;
         // Never redraw under the organiser's hands (an open team list, a half-typed name).
         var active = document.activeElement;

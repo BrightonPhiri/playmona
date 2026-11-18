@@ -455,3 +455,135 @@
 .cel-scoring summary { cursor: pointer; font-weight: 800; min-height: var(--tap); display: flex; align-items: center; }
 .cel-preview { display: grid; gap: var(--sp-3); }
 .cel-preview .hint { margin: 0; text-align: center; font-weight: 700; }
+
+/* ================= Wall of Love on the guest's page ================= */
+.ev-h1 { font-family: var(--ev-font, var(--font-display)); font-style: var(--ev-title-style, normal); margin: 0 0 var(--sp-2); font-size: var(--fs-2xl); }
+.ev-wall { display: grid; gap: var(--sp-3); }
+.ev-wall__head { display: flex; gap: var(--sp-3); align-items: flex-start; }
+.ev-wall__head h2 { margin-bottom: 2px; }
+.ev-wall__head p { margin: 0; }
+.ev-wall__icon { width: 48px; height: 48px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--ev-glow); color: var(--ev-primary); }
+.ev-wall__icon .icon-svg, .ev-wall__icon svg { width: 26px; height: 26px; }
+.ev-wall__form { gap: var(--sp-3); }
+.ev-cats { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.ev-cat {
+  display: inline-flex; align-items: center; gap: 6px; min-height: var(--tap); padding: 6px 14px; border-radius: 999px; cursor: pointer;
+  background: var(--ev-bg); color: var(--ev-text); border: 1.5px solid var(--ev-edge); font-weight: 700; font-size: var(--fs-sm);
+}
+.ev-cat[aria-checked="true"], .ev-cat[aria-pressed="true"] { background: var(--ev-primary); color: var(--ev-on-primary); border-color: var(--ev-primary); }
+.ev-cat:focus-visible { outline: 3px solid var(--ev-primary); outline-offset: 2px; }
+.ev-wall__prompt { margin: 0; font-weight: 700; color: var(--ev-text); }
+.ev-page textarea.input { width: 100%; background: var(--ev-bg); color: var(--ev-text); border-color: var(--ev-edge); font-size: 1.05rem; line-height: 1.5; resize: vertical; min-height: 130px; }
+.ev-page textarea.input:focus { border-color: var(--ev-primary); box-shadow: 0 0 0 3px var(--ev-glow); }
+.ev-wall__count { align-self: flex-end; font-size: var(--fs-sm); color: var(--ev-muted); margin-top: calc(-1 * var(--sp-2)); }
+.ev-wall__photo { display: flex; align-items: center; gap: var(--sp-3); }
+.ev-wall__photo img { width: 88px; height: 88px; object-fit: cover; border-radius: var(--r-md); }
+.ev-wall__from { display: grid; gap: 4px; }
+.ev-wall__from[hidden] { display: none; }
+.ev-wall__anon { background: var(--ev-bg); border: 1px solid var(--ev-edge); border-radius: var(--r-md); padding: 10px 12px; color: var(--ev-text); }
+.ev-wall__anon .setting__desc { color: var(--ev-muted); }
+.ev-wall__mine h3, .ev-wall__list h3 { margin: var(--sp-2) 0; font-size: var(--fs-lg); }
+.ev-wall__list { display: grid; gap: var(--sp-3); }
+.ev-msgs { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--sp-3); }
+.ev-msg { padding: var(--sp-4); border-radius: var(--r-md); background: var(--ev-bg); border: 1px solid var(--ev-edge); display: grid; gap: var(--sp-2); }
+.ev-msg__top { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; }
+.ev-msg__tag { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-sm); font-weight: 800; color: var(--ev-primary); }
+.ev-msg__status { margin-left: auto; font-size: var(--fs-xs); font-weight: 800; padding: 2px 10px; border-radius: 999px; background: var(--ev-surface); border: 1px solid var(--ev-edge); }
+.ev-msg__status.is-approved { background: var(--success); color: #ffffff; border-color: transparent; }
+.ev-msg__body { margin: 0; white-space: pre-line; overflow-wrap: anywhere; color: var(--ev-text); font-size: 1.05rem; line-height: 1.55; }
+.ev-card .ev-msg__body { color: var(--ev-text); }
+.ev-msg__photo { display: block; width: 100%; max-height: 420px; object-fit: cover; border-radius: var(--r-md); }
+.ev-msg__foot { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2); flex-wrap: wrap; }
+.ev-msg__by { font-weight: 800; color: var(--ev-text); }
+.ev-msg__report { color: var(--ev-muted); font-size: var(--fs-sm); }
+.ev-msg__report:disabled { cursor: default; text-decoration: none; }
+
+/* ================= The celebrant's page ================= */
+.ev-for__intro .ev-btn { margin-top: var(--sp-2); }
+.ev-for__tools { display: grid; gap: var(--sp-3); }
+.ev-page input[type="search"] { width: 100%; background: var(--ev-surface); color: var(--ev-text); border-color: var(--ev-edge); font-size: 1.05rem; }
+.ev-for__msg { background: var(--ev-surface); box-shadow: var(--shadow-1); }
+.ev-for__msg.is-fav { border-color: var(--ev-primary); box-shadow: 0 0 0 2px var(--ev-glow); }
+.ev-fav {
+  margin-left: auto; width: var(--tap); height: var(--tap); border-radius: 50%; display: grid; place-items: center; cursor: pointer;
+  background: transparent; border: 1.5px solid var(--ev-edge); color: var(--ev-primary);
+}
+.ev-fav[aria-pressed="true"] { background: var(--ev-glow); border-color: var(--ev-primary); }
+.ev-for__photo { padding: 0; border: 0; background: none; cursor: zoom-in; border-radius: var(--r-md); overflow: hidden; }
+.ev-for__photo img { display: block; width: 100%; max-height: 460px; object-fit: cover; }
+.ev-for__big { display: grid; gap: var(--sp-3); }
+.ev-for__big img { width: 100%; max-height: 70vh; object-fit: contain; border-radius: var(--r-md); }
+.ev-for__big .ev-btn { text-decoration: none; }
+
+/* ================= The memory book ================= */
+.book-tools { display: grid; gap: var(--sp-2); }
+.book-tools h2 { margin: var(--sp-2) 0 0; }
+.book-tools .ev-linklike { display: inline-flex; align-items: center; gap: 6px; justify-self: start; }
+.book-tools .setting { color: var(--ev-text); }
+.book { display: grid; gap: var(--sp-4); }
+.book__page, .book__part {
+  background: #fffdf8; color: #2b2320; border-radius: var(--r-lg); padding: clamp(24px, 6vw, 56px); box-shadow: var(--shadow-2);
+  font-family: var(--font-body);
+}
+.book__cover {
+  min-height: 70vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: var(--sp-2);
+  background: var(--ev-bg); color: var(--ev-text); border: 6px double var(--ev-primary);
+}
+.book__coverimg { width: min(320px, 70%); aspect-ratio: 1; object-fit: cover; border-radius: 50%; border: 6px solid var(--ev-primary); margin-bottom: var(--sp-3); }
+.book__kicker { margin: 0; text-transform: uppercase; letter-spacing: 0.18em; font-weight: 800; font-size: var(--fs-sm); color: var(--ev-muted); }
+.book__name { margin: 0; font-family: var(--ev-font, var(--font-display)); font-style: var(--ev-title-style, normal); font-size: clamp(2.6rem, 10vw, 4.5rem); line-height: 1.05; color: var(--ev-primary); }
+.book__event { margin: 0; font-size: var(--fs-xl); font-family: var(--ev-font, var(--font-display)); }
+.book__facts { margin: 0; color: var(--ev-muted); font-weight: 700; }
+.book__intro { text-align: center; }
+.book__intro h2, .book__parttitle { font-family: var(--ev-font, var(--font-display)); font-style: var(--ev-title-style, normal); font-size: var(--fs-2xl); margin: 0 0 var(--sp-3); color: #2b2320; }
+.book__intro p { font-size: var(--fs-lg); line-height: 1.6; margin: 0 0 var(--sp-2); }
+.book__quote { font-style: italic; }
+.book__parttitle { display: flex; align-items: center; gap: var(--sp-2); padding-bottom: var(--sp-2); border-bottom: 3px solid var(--ev-primary); }
+.book__parttitle .icon-svg, .book__parttitle svg { width: 28px; height: 28px; color: var(--ev-primary); }
+.book__msg { margin: var(--sp-5) 0 0; break-inside: avoid; page-break-inside: avoid; }
+.book__msg.has-photo { display: grid; gap: var(--sp-3); }
+.book__photo { width: 100%; max-height: 360px; object-fit: cover; border-radius: 12px; }
+.book__body { margin: 0; white-space: pre-line; overflow-wrap: anywhere; font-size: 1.15rem; line-height: 1.65; }
+.book__by { margin: var(--sp-2) 0 0; font-weight: 800; text-align: right; color: #6b5a52; }
+.book__end { text-align: center; display: grid; justify-items: center; gap: var(--sp-2); }
+.book__end .icon-svg, .book__end svg { width: 40px; height: 40px; color: var(--ev-primary); }
+.book__end p { margin: 0; font-size: var(--fs-lg); }
+.book__end .book__made { font-size: var(--fs-sm); color: #6b5a52; }
+@media print {
+  @page { margin: 14mm; }
+  body.is-book { background: #ffffff !important; }
+  body.is-book .ev-top, body.is-book .book-tools, body.is-book .toast-host, body.is-book .ff-toasts { display: none !important; }
+  body.is-book .ev-main { max-width: none; padding: 0; }
+  .book { display: block; }
+  .book__page, .book__part { box-shadow: none; border-radius: 0; padding: 0; background: #ffffff; }
+  .book__page { break-after: page; page-break-after: always; }
+  .book__part { break-before: page; page-break-before: always; }
+  .book__cover { min-height: 245mm; -webkit-print-color-adjust: exact; print-color-adjust: exact; border-radius: 0; padding: 20mm; }
+  .book__end { break-before: page; page-break-before: always; break-after: auto; padding-top: 80mm; }
+}
+
+/* ================= The organiser's Wall tab ================= */
+.cel-linkcard { padding: var(--sp-4); border-radius: var(--r-lg); background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-1); margin-top: var(--sp-3); }
+.cel-linkcard__head { display: flex; align-items: center; gap: var(--sp-2); }
+.cel-linkcard__head .icon-svg { width: 28px; height: 28px; color: var(--accent); flex: none; }
+.cel-linkcard__head .cel-section-title { margin: 0; }
+.cel-linkcard__acts { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.cel-wall { display: grid; gap: var(--sp-3); }
+.cel-wall__empty { color: var(--muted); font-weight: 700; padding: var(--sp-4); text-align: center; border: 1px dashed var(--border); border-radius: var(--r-lg); margin: 0; }
+.cel-msgs { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--sp-3); }
+.cel-msg { padding: var(--sp-4); border-radius: var(--r-lg); background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-1); display: grid; gap: var(--sp-2); }
+.cel-msg.is-pending { border-left: 6px solid var(--warn); }
+.cel-msg.is-rejected { opacity: 0.75; }
+.cel-msg__top { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); }
+.cel-msg__tag { display: inline-flex; align-items: center; gap: 6px; font-weight: 800; font-size: var(--fs-sm); color: var(--accent); }
+.cel-msg__reports { font-size: var(--fs-xs); font-weight: 800; padding: 2px 10px; border-radius: 999px; background: var(--danger); color: var(--on-status, #ffffff); }
+.cel-msg__fav { color: var(--danger); font-weight: 800; }
+.cel-msg__body { margin: 0; white-space: pre-line; overflow-wrap: anywhere; font-size: var(--fs-md); line-height: 1.5; }
+.cel-msg__photo img { width: 120px; height: 120px; object-fit: cover; border-radius: var(--r-md); display: block; }
+.cel-msg__by { margin: 0; color: var(--muted); font-weight: 700; font-size: var(--fs-sm); }
+.cel-msg__acts { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+
+/* Switches on the event pages take the event's colours. */
+.ev-page .switch.on { background: var(--ev-primary); border-color: var(--ev-primary); }
+.ev-page .switch.on .switch__knob { background: var(--ev-on-primary); }
+.ev-page .switch:focus-visible { outline: 3px solid var(--ev-primary); outline-offset: 2px; }
