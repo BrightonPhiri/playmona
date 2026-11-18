@@ -21,7 +21,8 @@ class Response
         public readonly ?string $location = null,
         public readonly ?string $file = null,
         public readonly string $contentType = 'application/json; charset=utf-8',
-        public readonly ?string $filename = null
+        public readonly ?string $filename = null,
+        public readonly string $cache = 'no-store'
     ) {}
 
     public static function json(array $body, int $status = 200): self { return new self($status, $body); }
@@ -33,10 +34,16 @@ class Response
         return new self(200, [], null, $bytes, $contentType, preg_replace('/[^A-Za-z0-9._-]/', '', $filename));
     }
 
+    /** A picture shown in the page (not downloaded), cached privately by the browser for $seconds. */
+    public static function image(string $bytes, string $contentType, int $seconds = 3600): self
+    {
+        return new self(200, [], null, $bytes, $contentType, null, 'private, max-age=' . max(0, $seconds));
+    }
+
     public function send(): void
     {
         http_response_code($this->status);
-        header('Cache-Control: no-store');
+        header('Cache-Control: ' . $this->cache);
         header('X-Content-Type-Options: nosniff');
         if ($this->location !== null) {
             header('Location: ' . $this->location);

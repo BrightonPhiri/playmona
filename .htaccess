@@ -9,6 +9,9 @@ RewriteRule ^uploads/.*\.(php\d?|phtml|phar|cgi|pl|py)$ - [F,L,NC]
 # Watch links: /watch/<8-character code> opens the watch page (it reads the code itself).
 RewriteRule ^watch/([A-Za-z0-9]{8})/?$ watch.html [L]
 
+# Celebrations: /c (find by code), /c/<event>, and its private pages (/for, /mc, /tv) open the event page.
+RewriteRule ^c(/[a-z0-9-]{3,40}(/(for|mc|tv))?)?/?$ event.html [L]
+
 # Clean addresses for pages nginx does not list by name: /terms -> terms.html.
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d

@@ -118,6 +118,17 @@ class App
         return $this->make('wordshift', fn () => new WordShift($this->db(), $this->rtdb(), $this->runner()));
     }
     public function wordflowJudge(): WordFlowJudge { return $this->make('wordflowJudge', fn () => new WordFlowJudge($this->ai(), $this->wordflow())); }
+    public function celebrationMedia(): CelebrationMedia
+    {
+        return $this->make('celebrationMedia', fn () => new CelebrationMedia(
+            (string) ($this->config->get('uploads.celebrations_dir') ?: CelebrationMedia::defaultDir()),
+            CelebrationMedia::secretFrom($this->config, $this->db())
+        ));
+    }
+    public function celebrations(): Celebrations
+    {
+        return $this->make('celebrations', fn () => new Celebrations($this->db(), $this->rtdb(), $this->celebrationMedia()));
+    }
     public function leaderboards(): Leaderboards { return $this->make('leaderboards', fn () => new Leaderboards($this->rtdb())); }
     public function friends(): Friends { return $this->make('friends', fn () => new Friends($this->db(), $this->rtdb(), $this->crew())); }
     public function ai(): Ai { return $this->make('ai', fn () => new Ai($this->db(), $this->config, $this->overrides['aiHttp'] ?? new HttpClient())); }
@@ -178,6 +189,9 @@ class Routes
         if ($m === 'GET' && preg_match('#^/live/([A-Za-z0-9]{1,16})$#', $p, $mm)) {
             return Response::json($this->app->live()->room($mm[1], nowMs(), ($req->query['open'] ?? '') === '1'));
         }
+
+        $celebrations = (new CelebrationRoutes($this->app, fn (Request $r) => $this->user($r), fn (Request $r) => $this->admin($r)))->route($req);
+        if ($celebrations) return $celebrations;
 
         $engine = new EngineRoutes($this->app, fn (Request $r) => $this->user($r), fn (Request $r) => $this->admin($r));
         $res = $engine->route($req);

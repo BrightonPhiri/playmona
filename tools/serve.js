@@ -71,6 +71,8 @@ http.createServer(function (req, res) {
 
   // Watch links, like the live .htaccess rule: /watch/<code> is the watch page.
   if (/^\/watch\/[A-Za-z0-9]{8}\/?$/.test(pathname)) return send(res, path.join(ROOT, 'watch.html'), req);
+  // Celebrations, like the live .htaccess rule: /c, /c/<event> and /c/<event>/(for|mc|tv) are the event page.
+  if (/^\/c(\/[a-z0-9-]{3,40}(\/(for|mc|tv))?)?\/?$/.test(pathname)) return send(res, path.join(ROOT, 'event.html'), req);
 
   var file = path.join(ROOT, pathname);
   if (file.indexOf(ROOT) !== 0) { res.writeHead(403); return res.end(); }

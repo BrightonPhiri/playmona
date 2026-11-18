@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light" data-accent="gold">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <!-- Served at /c, /c/<event> and /c/<event>/...: every file below loads from the site root. -->
+  <base href="/">
+  <meta name="theme-color" content="#120d24">
+  <meta name="robots" content="noindex">
+  <title>Celebration · PlayMona</title>
+  <meta name="description" content="Join the celebration on PlayMona: play team games and leave a message.">
+  <meta property="og:site_name" content="PlayMona">
+  <meta property="og:title" content="You are invited · PlayMona Celebrations">
+  <meta property="og:description" content="Join the celebration: play team games and leave a message.">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/brand/favicon-32.png">
+  <link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png">
+  <link rel="preload" href="assets/fonts/fredoka.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/nunito.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/fonts.css">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/celebrate.css">
+</head>
+<body class="ev-page cel-look" data-look="gala">
+  <header class="ev-top">
+    <a class="ev-brand" href="./" aria-label="PlayMona home">
+      <img src="assets/brand/mark-256.webp" alt="" width="28" height="28">
+      <span>PlayMona</span>
+    </a>
+  </header>
+
+  <main class="ev-main" id="main"></main>
+
+  <script src="js/core.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/icons-custom.js"></script>
+  <script src="js/ui-kit.js"></script>
+  <script src="js/net/firebase-config.js"></script>
+  <script src="js/net/firebaseTransport.js"></script>
+  <script src="js/net/transport.js"></script>
+  <script src="js/net/api.js"></script>
+  <script src="js/celebrate/common.js"></script>
+  <script src="js/celebrate/event.js"></script>
+  <script>
+    (function () {
+      FF.Storage.init();
+      FF.EventPage.start();
+    })();
+  </script>
+</body>
+</html>

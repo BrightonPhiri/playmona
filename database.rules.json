@@ -956,6 +956,18 @@
           ".validate": "newData.isNumber() && newData.val() <= now + 60000 && $wc.matches(/^[ABCDEFGHJKMNPQRSTUVWXYZ2-9]{8}$/) && root.child('watchRooms').child($wc).exists()"
         }
       }
+    },
+    "celebrations": {
+      "$cid": {
+        "live": {
+          ".read": "auth != null"
+        },
+        "members": {
+          "$uid": {
+            ".read": "auth != null && auth.uid === $uid"
+          }
+        }
+      }
     }
   }
 }
