@@ -1111,6 +1111,7 @@ require __DIR__ . '/leaderboards.test.php';
 require __DIR__ . '/celebrations.test.php';
 require __DIR__ . '/celebrationGames.test.php';
 require __DIR__ . '/celebrationWall.test.php';
+require __DIR__ . '/celebrationStage.test.php';
 
 echo "\n" . ($GLOBALS['count'] - $GLOBALS['failures']) . '/' . $GLOBALS['count'] . " passed\n";
 exit($GLOBALS['failures'] ? 1 : 0);
