@@ -29,6 +29,8 @@ class CelebrationRoutes
             $this->who($req);
             return Response::json(['free' => $this->c()->slugFree((string) $this->q($req, 's'), $this->q($req, 'self'))]);
         }
+        // The celebrant's private page knows only the address; the secret comes in a header.
+        if ($m === 'GET' && $p === '/c/private') return Response::json($this->privateBySlug($req));
         if ($m === 'GET' && preg_match('#^/c/media/(m_[a-f0-9]{24})/(full|play|thumb)$#', $p, $mm)) {
             return $this->c()->mediaFile($mm[1], $mm[2], (int) ($req->query['e'] ?? 0), (string) ($req->query['s'] ?? ''));
         }
@@ -43,6 +45,19 @@ class CelebrationRoutes
         if ($m === 'POST' && $rest === '/team') return Response::json($this->c()->chooseTeam($cid, $this->who($req), (string) ($req->json()['teamId'] ?? '')));
         // A private link (celebrant, MC or TV display): the secret travels in a header, never the address.
         if ($m === 'GET' && $rest === '/link') return Response::json($this->link($req, $cid));
+        // The Wall of Love: guests write, the celebrant reads.
+        if ($rest === '/wall') {
+            if ($m === 'GET') return Response::json($this->w()->forGuest($cid, $this->who($req)));
+            if ($m === 'POST') return Response::json($this->w()->post($cid, $this->who($req), $req->json()));
+        }
+        if ($m === 'POST' && $rest === '/wall/photo') return Response::json($this->w()->photo($cid, $this->who($req), $req->rawBody));
+        if ($m === 'POST' && preg_match('#^/wall/(w_[a-f0-9]{24})/(remove|report)$#', $rest, $wm)) {
+            return Response::json($wm[2] === 'remove' ? $this->w()->remove($cid, $this->who($req), $wm[1]) : $this->w()->report($cid, $this->who($req), $wm[1]));
+        }
+        if ($m === 'GET' && $rest === '/for') return Response::json($this->w()->forCelebrant($this->celebrant($req, $cid)));
+        if ($m === 'POST' && preg_match('#^/for/(w_[a-f0-9]{24})/favourite$#', $rest, $wm)) {
+            return Response::json($this->w()->favourite($this->celebrant($req, $cid), $wm[1], !empty($req->json()['on'])));
+        }
 
         // The organiser.
         if ($m === 'GET' && $rest === '/manage') return Response::json($this->c()->manage($cid, $this->who($req)));
@@ -67,6 +82,11 @@ class CelebrationRoutes
             $tid = $req->json()['teamId'] ?? null;
             return Response::json($this->c()->moveGuest($cid, $g[1], $this->who($req), $tid === null || $tid === '' ? null : (string) $tid));
         }
+        if ($m === 'GET' && $rest === '/messages') return Response::json($this->w()->manage($cid, $this->who($req)));
+        if ($m === 'POST' && preg_match('#^/messages/(w_[a-f0-9]{24})/(approve|reject|pending|delete)$#', $rest, $wm)) {
+            return Response::json($this->w()->moderate($cid, $wm[1], $this->who($req), $wm[2]));
+        }
+        if ($m === 'GET' && $rest === '/book') return Response::json($this->w()->bookForOrganiser($cid, $this->who($req)));
         if ($m === 'POST' && preg_match('#^/links/(celebrant|mc|display)/regenerate$#', $rest, $k)) {
             return Response::json($this->c()->regenerate($cid, $this->who($req), $k[1]));
         }
@@ -101,7 +121,27 @@ class CelebrationRoutes
         return ['role' => $role, 'event' => $this->c()->publicView($ev)];
     }
 
+    /** A private link opened by the event's address: { id, role, event }. */
+    private function privateBySlug(Request $req): array
+    {
+        $ev = $this->c()->bySlug((string) $this->q($req, 'slug'));
+        $role = $ev ? $this->c()->roleFor($ev, $req->header('x-celebration-key')) : null;
+        if (!$ev || !$role || $ev['status'] !== 'active') throw new HttpError(403, 'This link does not work any more. Ask the organiser for a new one.', 'bad-link');
+        return ['id' => $ev['id'], 'role' => $role, 'event' => $this->c()->publicView($ev)];
+    }
+
+    /** The celebrant's secret, or a refusal that looks the same for every wrong secret. */
+    private function celebrant(Request $req, string $cid): array
+    {
+        $ev = $this->c()->event($cid);
+        if ($ev['status'] !== 'active' || $this->c()->roleFor($ev, $req->header('x-celebration-key')) !== 'celebrant') {
+            throw new HttpError(403, 'This link does not work any more. Ask the organiser for a new one.', 'bad-link');
+        }
+        return $ev;
+    }
+
     private function c(): Celebrations { return $this->app->celebrations(); }
+    private function w(): CelebrationWall { return $this->app->celebrationWall(); }
     private function g(): CelebrationGames { return $this->app->celebrationGames(); }
     private function who(Request $req): AuthUser { return ($this->user)($req); }
 

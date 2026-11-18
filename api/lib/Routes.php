@@ -129,6 +129,10 @@ class App
     {
         return $this->make('celebrations', fn () => new Celebrations($this->db(), $this->rtdb(), $this->celebrationMedia()));
     }
+    public function celebrationWall(): CelebrationWall
+    {
+        return $this->make('celebrationWall', fn () => new CelebrationWall($this->db(), $this->celebrations(), $this->celebrationMedia()));
+    }
     public function celebrationGames(): CelebrationGames
     {
         return $this->make('celebrationGames', fn () => new CelebrationGames($this->db(), $this->rtdb(), $this->celebrations(), $this->celebrationMedia(), $this->runner()));
