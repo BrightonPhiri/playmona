@@ -493,6 +493,14 @@ window.FF = window.FF || {};
         onClick: function () { FF.Access.gate('online', function () { self.showFriends(main); }); }
       });
       card({
+        id: 'mode-celebrations', tone: 'gold', icon: 'confetti',
+        badge: t('new', 'New'),
+        title: t('celebrations', 'Celebrations'),
+        desc: t('celebrationsCardDesc', 'Birthdays, weddings, graduations: team games with your own photos, a wall of love and live scores on the TV.'),
+        // Guests see the invitation to sign up there; their own guests never need an account.
+        onClick: function () { FF.Nav.go('celebrations'); }
+      });
+      card({
         id: 'mode-watch', tone: 'teal', icon: 'eye',
         title: t('watchLive', 'Watch live'),
         desc: t('watchLiveDesc', 'Watch public games being played right now.'),

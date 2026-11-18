@@ -253,7 +253,8 @@ window.FF = window.FF || {};
         online: t('lockedOnline', 'Create a free account to play online with friends on their own phones.'),
         daily: t('lockedDaily', 'Create a free account to take the daily challenge and get on the leaderboard.'),
         challenge: t('lockedChallenge', 'Create a free account to challenge friends and see their scores.'),
-        gameNight: t('lockedGameNight', 'Create a free account to host a Game Night tournament.')
+        gameNight: t('lockedGameNight', 'Create a free account to host a Game Night tournament.'),
+        celebrations: t('lockedCelebrations', 'Create a free account to organise a celebration. Your guests never need one.')
       };
       return lines[what] || lines.game;
     },

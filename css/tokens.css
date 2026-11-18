@@ -310,3 +310,38 @@
   --ws-bad-soft: rgba(214, 51, 74, 0.22); --ws-bad-ink: #ff9aa8;
   --ws-panel: #2a231d; --ws-panel-2: #241e19; --ws-panel-edge: #3e3329; --ws-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
 }
+
+/* ============ Celebrations: event looks ============
+   An event page wears its organiser's look, whatever the app theme is.
+   --ev-primary/--ev-on-primary can be replaced by the organiser's own colour
+   (js/celebrate/common.js picks a readable text colour for it). */
+.cel-look, .cel-look[data-look="gala"] {
+  --ev-bg: #120d24; --ev-bg-2: #1d1538; --ev-surface: #231b42; --ev-edge: #3b2f63;
+  --ev-text: #fff8e7; --ev-muted: #d3c8ea; --ev-primary: #e2b23a; --ev-on-primary: #1d1400;
+  --ev-secondary: #9b6bff; --ev-glow: rgba(226, 178, 58, 0.35);
+}
+.cel-look[data-look="rose"] {
+  --ev-bg: #fff4f6; --ev-bg-2: #fde3ea; --ev-surface: #ffffff; --ev-edge: #f2c3d0;
+  --ev-text: #3b1424; --ev-muted: #74485a; --ev-primary: #b5174f; --ev-on-primary: #ffffff;
+  --ev-secondary: #e98aa5; --ev-glow: rgba(181, 23, 79, 0.18);
+}
+.cel-look[data-look="ocean"] {
+  --ev-bg: #062538; --ev-bg-2: #0a3550; --ev-surface: #0d3c5a; --ev-edge: #1f5878;
+  --ev-text: #eaf7ff; --ev-muted: #b2d3e6; --ev-primary: #34d1c1; --ev-on-primary: #032a26;
+  --ev-secondary: #5b9bff; --ev-glow: rgba(52, 209, 193, 0.3);
+}
+.cel-look[data-look="garden"] {
+  --ev-bg: #f3f8ec; --ev-bg-2: #e2eed3; --ev-surface: #ffffff; --ev-edge: #c9dcb4;
+  --ev-text: #1f3317; --ev-muted: #4d6343; --ev-primary: #2e7d32; --ev-on-primary: #ffffff;
+  --ev-secondary: #e9a21b; --ev-glow: rgba(46, 125, 50, 0.18);
+}
+.cel-look[data-look="confetti"] {
+  --ev-bg: #fff8e5; --ev-bg-2: #ffeccc; --ev-surface: #ffffff; --ev-edge: #f1d9ad;
+  --ev-text: #2a1b3d; --ev-muted: #5f4f74; --ev-primary: #6f2be8; --ev-on-primary: #ffffff;
+  --ev-secondary: #ff5e8a; --ev-glow: rgba(111, 43, 232, 0.18);
+}
+.cel-look[data-look="ivory"] {
+  --ev-bg: #faf7f0; --ev-bg-2: #f0eadc; --ev-surface: #ffffff; --ev-edge: #e0d6c2;
+  --ev-text: #2b2620; --ev-muted: #625849; --ev-primary: #7d5f33; --ev-on-primary: #ffffff;
+  --ev-secondary: #1f1f1f; --ev-glow: rgba(125, 95, 51, 0.18);
+}

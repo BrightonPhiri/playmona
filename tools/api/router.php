@@ -10,4 +10,10 @@ if (preg_match('#^/api/(lib|tests)(/|$)|^/api/(cron\.php|config.*\.php)$#', $pat
     http_response_code(403);
     exit;
 }
+// Local testing without Firebase or MariaDB (see devApp.php). Only from this computer.
+if (getenv('PLAYMONA_DEV_AUTH') === '1' && in_array($_SERVER['REMOTE_ADDR'] ?? '', ['127.0.0.1', '::1'], true)) {
+    require __DIR__ . '/devApp.php';
+    \PlayMona\devHandle();
+    exit;
+}
 require __DIR__ . '/../../api/index.php';

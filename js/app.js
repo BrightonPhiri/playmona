@@ -82,7 +82,7 @@ window.FF = window.FF || {};
   // A friend's challenge link (the 'challenge' view) opens for guests too: playing it is free.
   var VIEW_FEATURE = { daily: 'daily', challenges: 'challenge', gamenight: 'gameNight' };
   // Which main destination a view belongs to (for nav highlighting).
-  var NAV_OF = { home: 'home', gamenight: 'home', games: 'games', online: 'online', daily: 'online', challenges: 'online', challenge: 'online', leaderboard: 'leaderboard', plus: 'profile', profile: 'profile', settings: 'profile', credits: 'profile', about: 'profile' };
+  var NAV_OF = { home: 'home', gamenight: 'home', games: 'games', online: 'online', daily: 'online', challenges: 'online', challenge: 'online', celebrations: 'online', celebrationNew: 'online', celebration: 'online', leaderboard: 'leaderboard', plus: 'profile', profile: 'profile', settings: 'profile', credits: 'profile', about: 'profile' };
   // The phone's bottom bar shows this many buttons; with more sections it shows one fewer plus "More".
   var TABBAR_MAX = 5;
 
@@ -443,6 +443,7 @@ window.FF = window.FF || {};
       Object.keys(FF.Social.views).forEach(function (k) { views[k] = FF.Social.views[k]; });
       if (FF.Plus) Object.keys(FF.Plus.views).forEach(function (k) { views[k] = FF.Plus.views[k]; });
       if (FF.Leaderboards) Object.keys(FF.Leaderboards.views).forEach(function (k) { views[k] = FF.Leaderboards.views[k]; });
+      if (FF.CelebrateOrganiser) Object.keys(FF.CelebrateOrganiser.views).forEach(function (k) { views[k] = FF.CelebrateOrganiser.views[k]; });
     },
 
     /* ================= Shell ================= */

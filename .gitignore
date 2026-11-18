@@ -30,3 +30,6 @@ assets/playmona_assets/
 
 # Logo Rush contact sheet (tools/logos/sheet.js), pictures inlined: big and generated
 tools/logos/sheet.html
+
+# Local Celebrations testing data (tools/api/devApp.php)
+tools/api/.dev/
