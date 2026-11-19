@@ -628,6 +628,7 @@ body.tv-page .ev-main { max-width: none; padding: 0; margin: 0; }
 .tv.has-qr .tv-h1 { margin-bottom: 0.35em; }
 .tv.has-qr .tv-msg__photo, .tv.has-qr .tv-pr__photo { max-height: 40vh; }
 .tv-screen { width: 100%; max-width: 72em; animation: tv-in 600ms var(--ease, ease) both; }
+.tv-screen.is-update { animation: none; }
 @keyframes tv-in { from { opacity: 0; transform: translateY(0.6em); } to { opacity: 1; transform: none; } }
 @keyframes tv-pop { 0% { transform: scale(0.4); opacity: 0; } 70% { transform: scale(1.12); opacity: 1; } 100% { transform: scale(1); } }
 @media (prefers-reduced-motion: reduce) { .tv-screen, .tv-winner__trophy { animation: none; } }

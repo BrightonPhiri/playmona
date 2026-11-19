@@ -246,6 +246,10 @@ window.FF = window.FF || {};
       var screen = ({ welcome: welcome, scores: scores, wall: wall, message: one, winner: winner, game: game })[c.layout] || welcome;
       var node = screen(c);
       node.classList.add('tv-screen');
+      // Same game, same phase: only the boards moved, so no fade-in (tiles land every second with many teams).
+      var scene = c.layout === 'game' && st.v ? ['game', st.v.runId, st.v.phase, st.v.round, st.v.paused ? 1 : 0].join('|') : null;
+      if (scene && scene === st.scene) node.classList.add('is-update');
+      st.scene = scene;
       stage.appendChild(node);
       updateClock();
     }
