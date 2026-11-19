@@ -126,6 +126,7 @@ class Celebrations
             created_at BIGINT NOT NULL
         )$engine");
         foreach ([
+            'ALTER TABLE celebrations ADD COLUMN types TEXT NULL',
             'CREATE INDEX celebrations_owner ON celebrations (owner_uid, created_at)',
             'CREATE INDEX celebration_teams_cid ON celebration_teams (cid, sort)',
             'CREATE INDEX celebration_guests_team ON celebration_guests (cid, team_id)',
@@ -188,9 +189,9 @@ class Celebrations
         $slug = $this->pickSlug(isset($in['slug']) && $in['slug'] !== '' ? (string) $in['slug'] : $fields['celebrant_name'] . ' ' . $fields['type'], isset($in['slug']) && $in['slug'] !== '');
 
         $this->db->transaction(function (Db $db) use ($id, $slug, $user, $fields, $theme, $settings, $now, $in, $limits) {
-            $db->run('INSERT INTO celebrations (id, slug, join_code, owner_uid, title, celebrant_name, type, description, event_date, start_time, end_time, timezone, venue, welcome, theme, settings, status, celebrant_token, mc_token, display_token, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
-                $id, $slug, $this->newJoinCode(), $user->uid, $fields['title'], $fields['celebrant_name'], $fields['type'],
+            $db->run('INSERT INTO celebrations (id, slug, join_code, owner_uid, title, celebrant_name, type, types, description, event_date, start_time, end_time, timezone, venue, welcome, theme, settings, status, celebrant_token, mc_token, display_token, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+                $id, $slug, $this->newJoinCode(), $user->uid, $fields['title'], $fields['celebrant_name'], $fields['type'], $fields['types'],
                 $fields['description'], $fields['event_date'], $fields['start_time'], $fields['end_time'], $fields['timezone'],
                 $fields['venue'], $fields['welcome'], json_encode($theme), json_encode($settings), 'active',
                 self::newToken(), self::newToken(), self::newToken(), $now, $now,
@@ -208,7 +209,9 @@ class Celebrations
         $ev = $this->owned($cid, $user);
         $sets = [];
         $vals = [];
-        $details = $this->cleanDetails(array_merge($this->detailsOf($ev), $in), false);
+        $merged = array_merge($this->detailsOf($ev), $in);
+        if (array_key_exists('type', $in) && !array_key_exists('types', $in)) unset($merged['types']);   // "type" alone replaces the list
+        $details = $this->cleanDetails($merged, false);
         foreach ($details as $col => $v) {
             $sets[] = "$col = ?";
             $vals[] = $v;
@@ -557,6 +560,7 @@ class Celebrations
             'title' => $ev['title'],
             'celebrantName' => $ev['celebrant_name'],
             'type' => $ev['type'],
+            'types' => $this->typesOf($ev),
             'date' => $ev['event_date'],
             'startTime' => $ev['start_time'],
             'status' => $ev['status'],
@@ -608,6 +612,7 @@ class Celebrations
             'title' => $ev['title'],
             'celebrantName' => $ev['celebrant_name'],
             'type' => $ev['type'],
+            'types' => $this->typesOf($ev),
             'description' => (string) $ev['description'],
             'date' => $ev['event_date'],
             'startTime' => $ev['start_time'],
@@ -754,7 +759,7 @@ class Celebrations
     private function detailsOf(array $ev): array
     {
         return [
-            'title' => $ev['title'], 'celebrantName' => $ev['celebrant_name'], 'type' => $ev['type'],
+            'title' => $ev['title'], 'celebrantName' => $ev['celebrant_name'], 'type' => $ev['type'], 'types' => $this->typesOf($ev),
             'description' => $ev['description'], 'date' => $ev['event_date'], 'startTime' => $ev['start_time'],
             'endTime' => $ev['end_time'], 'timezone' => $ev['timezone'], 'venue' => $ev['venue'], 'welcome' => $ev['welcome'],
         ];
@@ -766,8 +771,11 @@ class Celebrations
         $celebrant = $this->cleanText($in['celebrantName'] ?? '', 60);
         if ($title === '') throw new HttpError(400, 'Give the celebration a title.', 'no-title');
         if ($celebrant === '') throw new HttpError(400, 'Who is being celebrated? Add their name.', 'no-celebrant');
-        $type = (string) ($in['type'] ?? 'birthday');
-        if (!in_array($type, self::TYPES, true)) throw new HttpError(400, 'Pick a kind of celebration.', 'bad-type');
+        $types = isset($in['types']) && is_array($in['types']) ? $in['types'] : [$in['type'] ?? 'birthday'];
+        $types = array_values(array_unique(array_map(fn ($x) => is_scalar($x) ? (string) $x : '', $types)));
+        if (!$types || count($types) > 3 || array_diff($types, self::TYPES)) {
+            throw new HttpError(400, 'Pick one to three kinds of celebration.', 'bad-type');
+        }
         $date = $this->nullable($in['date'] ?? null);
         if ($date !== null && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) throw new HttpError(400, 'The date is not valid.', 'bad-date');
         $start = $this->nullable($in['startTime'] ?? null);
@@ -780,7 +788,8 @@ class Celebrations
         return [
             'title' => $title,
             'celebrant_name' => $celebrant,
-            'type' => $type,
+            'type' => $types[0],
+            'types' => json_encode($types),
             'description' => $this->cleanText($in['description'] ?? '', 800, true),
             'event_date' => $date,
             'start_time' => $start,
@@ -789,6 +798,13 @@ class Celebrations
             'venue' => $this->cleanText($in['venue'] ?? '', 140),
             'welcome' => $this->cleanText($in['welcome'] ?? '', 500, true),
         ];
+    }
+
+    /** What the event celebrates, main kind first (old events have only "type"). */
+    private function typesOf(array $ev): array
+    {
+        $list = json_decode((string) ($ev['types'] ?? ''), true);
+        return is_array($list) && $list ? array_values($list) : [$ev['type']];
     }
 
     private function cleanTheme(mixed $in): array

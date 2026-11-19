@@ -318,3 +318,25 @@ test('celebrations: too many events per account and the admin limits page', func
     celCall($w, 'POST', '/admin/celebrations/limits', ['token' => idToken(['sub' => 'boss']), 'json' => ['enabled' => false]]);
     eq(403, celCall($w, 'POST', '/c', ['token' => organiser('third'), 'json' => vickyInput()])[0], 'paused');
 });
+
+test('celebrations: an event celebrates up to three things', function () {
+    $w = celWorld();
+    $ev = newEvent($w, ['types' => ['birthday', 'graduation']]);
+    eq(['birthday', 'graduation'], $ev['types']);
+    eq('birthday', $ev['type']);
+    $id = $ev['id'];
+    $org = ['token' => organiser()];
+    eq(['graduation'], celCall($w, 'POST', "/c/$id/update", $org + ['json' => ['types' => ['graduation', 'graduation']]])[1]['types'], 'duplicates dropped');
+    eq('graduation', celCall($w, 'GET', "/c/$id/manage", $org)[1]['type']);
+    eq(400, celCall($w, 'POST', "/c/$id/update", $org + ['json' => ['types' => ['birthday', 'wedding', 'farewell', 'reunion']]])[0], 'more than 3');
+    eq(400, celCall($w, 'POST', "/c/$id/update", $org + ['json' => ['types' => []]])[0], 'none');
+    eq(400, celCall($w, 'POST', "/c/$id/update", $org + ['json' => ['types' => ['party']]])[0], 'unknown');
+    // Sending only "type" replaces the list.
+    eq(['wedding'], celCall($w, 'POST', "/c/$id/update", $org + ['json' => ['type' => 'wedding']])[1]['types'], 'type alone');
+    // Old style: one type only still works, and an old row without a list reads as [type].
+    $old = newEvent($w, ['type' => 'wedding', 'title' => 'Old one']);
+    eq(['wedding'], $old['types']);
+    $w['db']->run('UPDATE celebrations SET types = NULL WHERE id = ?', [$old['id']]);
+    eq(['wedding'], celCall($w, 'GET', '/c/find', ['query' => ['slug' => $old['slug']]])[1]['types']);
+    eq(['wedding'], celCall($w, 'GET', '/c/mine', $org)[1]['celebrations'][0]['types']);
+});
