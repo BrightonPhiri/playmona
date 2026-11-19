@@ -459,3 +459,14 @@ test('word by word: the runner loads it; the inbox rule takes word, end and turn
   assert(/isBoolean/.test(inbox.end['.validate']));
   assert(/isNumber/.test(inbox.turn['.validate']));
 });
+
+test('word by word: the server offers the same settings', function () {
+  const R = loadFF(RULES).WordByWordRules;
+  const php = fs.readFileSync(path.join(ROOT, 'api/lib/CelebrationGames.php'), 'utf8');
+  assert(php.indexOf("'mode' => ['" + R.MODES.join("', '") + "']") !== -1, 'the same versions');
+  assert(php.indexOf("'seconds' => [" + R.SECONDS.join(', ') + ']') !== -1, 'the same turn times');
+  assert(php.indexOf("'minUnit' => ['" + R.MIN_UNITS.join("', '") + "']") !== -1, 'the same minimum units');
+  const d = R.DEFAULTS;
+  assert(php.indexOf("WBW_DEFAULTS = ['mode' => '" + d.mode + "', 'rounds' => " + d.rounds + ", 'minUnit' => '" + d.minUnit + "', 'minCount' => " + d.minCount + ", 'seconds' => " + d.seconds + ']') !== -1, 'the same standards');
+  assert(php.indexOf('WBW_ROUNDS_MAX = ' + R.ROUNDS_MAX + ';') !== -1 && php.indexOf('WBW_MAX_NAMES = ' + R.MAX_NAMES + ';') !== -1 && php.indexOf('WBW_MAX_OPENING = ' + R.MAX_OPENING + ';') !== -1, 'the same limits');
+});

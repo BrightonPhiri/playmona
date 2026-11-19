@@ -65,6 +65,7 @@ class CelebrationStage
     public function panel(array $ev, AuthUser $mc): array
     {
         $this->games->allowViewer($ev['id'], $mc->uid);
+        $this->games->allowStaff($ev['id'], $mc->uid);
         $stage = $this->games->forStage($ev['id']);
         $messages = $this->wall->forStage($ev['id'], true);
         return [
@@ -138,9 +139,9 @@ class CelebrationStage
         return $this->games->startAs($ev, $gid, 'mc:' . $mc->uid, $now) + ['viewer' => $mc->uid];
     }
 
-    public function control(array $ev, AuthUser $mc, string $action, int $now): array
+    public function control(array $ev, AuthUser $mc, string $action, int $now, mixed $index = null): array
     {
-        return $this->games->controlAs($ev, 'mc:' . $mc->uid, $action, $now);
+        return $this->games->controlAs($ev, 'mc:' . $mc->uid, $action, $now, $index);
     }
 
     /** The MC approves or holds back a message; the organiser's Wall tab can do more (delete, names). */

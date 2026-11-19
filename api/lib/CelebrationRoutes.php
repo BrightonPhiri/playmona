@@ -72,7 +72,7 @@ class CelebrationRoutes
             if ($m === 'GET' && $rest === '/mc') return Response::json($this->s()->panel($ev, $mc));
             if ($m === 'POST' && $rest === '/mc/display') return Response::json($this->s()->setDisplay($ev, $mc, $req->json()));
             if ($m === 'POST' && $rest === '/mc/start') return Response::json($this->s()->start($ev, $mc, (string) ($req->json()['gameId'] ?? ''), nowMs()));
-            if ($m === 'POST' && $rest === '/mc/control') return Response::json($this->s()->control($ev, $mc, (string) ($req->json()['action'] ?? ''), nowMs()));
+            if ($m === 'POST' && $rest === '/mc/control') return Response::json($this->s()->control($ev, $mc, (string) ($req->json()['action'] ?? ''), nowMs(), $req->json()['index'] ?? null));
             if ($m === 'POST' && preg_match('#^/mc/messages/(w_[a-f0-9]{24})/(approve|reject)$#', $rest, $wm)) {
                 return Response::json($this->s()->moderate($ev, $mc, $wm[1], $wm[2]));
             }
@@ -128,7 +128,7 @@ class CelebrationRoutes
         }
         if ($m === 'GET' && $rest === '/play') return Response::json($this->g()->live($cid, $this->who($req)));
         if ($m === 'POST' && $rest === '/play/control') {
-            return Response::json($this->g()->control($cid, $this->who($req), (string) ($req->json()['action'] ?? ''), $now));
+            return Response::json($this->g()->control($cid, $this->who($req), (string) ($req->json()['action'] ?? ''), $now, $req->json()['index'] ?? null));
         }
         if ($m === 'POST' && $rest === '/play/nudge') return Response::json($this->g()->nudge($cid, $this->who($req), $now));
         return null;

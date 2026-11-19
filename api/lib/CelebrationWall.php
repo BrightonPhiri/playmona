@@ -102,6 +102,20 @@ class CelebrationWall
     }
 
     /** The approved wall and the guest's own messages (whatever their status). */
+    /** A game's message for the Wall (Word by Word), from everyone. Only with 2 or more words added. */
+    public function fromGame(string $cid, string $runId, string $text, int $added): ?string
+    {
+        $body = $this->events->cleanText($text, self::MAX_BODY, true);
+        if ($added < 2 || mb_strlen($body) < 2) return null;
+        $ev = $this->events->event($cid);
+        $settings = $this->events->settingsOf($ev);
+        $id = newId('w');
+        $this->db->run('INSERT INTO celebration_messages (id, cid, uid, name, anonymous, category, body, media_id, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+            $id, $cid, 'game:' . $runId, 'From everyone', 0, 'wish', $body, null, $settings['approveMessages'] ? 'pending' : 'approved', nowMs(),
+        ]);
+        return $id;
+    }
+
     public function forGuest(string $cid, AuthUser $user): array
     {
         $this->member($cid, $user);

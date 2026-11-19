@@ -137,3 +137,14 @@ test('stage: the organiser can hide the TV QR code; nobody else can that way', f
     celCall($w, 'POST', "/c/$id/mc/display", ['token' => guestToken('mc1'), 'headers' => stageKey($ev, 'mc'), 'json' => ['showQr' => true]]);
     eq(['showQr' => true], celCall($w, 'GET', "/c/$id/display", ['token' => organiser()])[1]);
 });
+
+test('stage: the MC may read a blind message, the TV may not', function () {
+    $w = celWorld();
+    $ev = newEvent($w);
+    $id = $ev['id'];
+    eq(200, celCall($w, 'GET', "/c/$id/mc", ['token' => guestToken('mc1'), 'headers' => stageKey($ev, 'mc')])[0]);
+    eq(true, $w['rtdb']->get("celebrations/$id/staffers/mc1"), 'the MC panel');
+    eq(200, celCall($w, 'GET', "/c/$id/screen", ['token' => guestToken('tv1'), 'headers' => stageKey($ev, 'display')])[0]);
+    eq(null, $w['rtdb']->get("celebrations/$id/staffers/tv1"), 'not the TV');
+    eq(true, $w['rtdb']->get("celebrations/$id/viewers/tv1"), 'which still watches the game');
+});
