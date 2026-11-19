@@ -11,6 +11,7 @@ window.FF = window.FF || {};
 
   var C = function () { return FF.Celebrate; };
   var R = function () { return FF.PictureRushRules; };
+  var W = function () { return FF.WordByWordRules; };
   function t(k, f, v) { return FF.t(k, f, v); }
   function el(tag, attrs, kids) { return FF.ui.el(tag, attrs, kids); }
   function div(cls, kids) { return FF.ui.div(cls, kids); }
@@ -19,8 +20,13 @@ window.FF = window.FF || {};
 
   var TEMPLATES = [
     { id: 'pictureRush', icon: 'puzzle-piece', name: ['celPrName', 'Picture Rush'],
-      text: ['celPrText', 'Each team rebuilds a scrambled photo together, swapping tiles on their phones. The fastest team wins the round.'] }
+      text: ['celPrText', 'Each team rebuilds a scrambled photo together, swapping tiles on their phones. The fastest team wins the round.'] },
+    { id: 'wordByWord', icon: 'text-aa', name: ['celWbwName', 'Word by Word'],
+      text: ['celWbwText', 'All the groups write one message to the celebrant together, one word per turn. Every letter is a point.'] }
   ];
+  var MODES = {
+    open: ['celWbwOpen', 'Open'], blind: ['celWbwBlind', 'Blind']
+  };
   var LEVELS = {
     easy: ['celLvEasy', 'Easy · 3 × 3'], medium: ['celLvMedium', 'Medium · 4 × 4'],
     hard: ['celLvHard', 'Hard · 5 × 5'], expert: ['celLvExpert', 'Expert · 6 × 6']
@@ -86,7 +92,7 @@ window.FF = window.FF || {};
         live = FF.CelebrateLivePanel.create(ev, r.active, {
           alive: function () { return box.isConnected; },
           reload: function () { live = null; last = null; load(); },
-          control: function (action) { return post(ev, '/play/control', { action: action }); },
+          control: function (action, index) { return post(ev, '/play/control', index == null ? { action: action } : { action: action, index: index }); },
           // GET /play lets the organiser watch the game (it marks them as a viewer).
           watch: function () { return FF.Api.call('GET', '/c/' + ev.id + '/play'); }
         });
@@ -100,7 +106,7 @@ window.FF = window.FF || {};
       if (!r.games.length) {
         box.appendChild(FF.UI.emptyState({
           icon: 'puzzle-piece', title: t('celNoGames', 'No games yet'),
-          text: t('celNoGamesText', 'Make a Picture Rush from your own photos. Teams race to rebuild each picture.'),
+          text: t('celNoGamesText2', 'Make a Picture Rush from your own photos, or a Word by Word message for the celebrant.'),
           action: { label: t('celNewGame', 'New game'), icon: 'plus', onClick: newGame }
         }));
         return;
@@ -132,7 +138,7 @@ window.FF = window.FF || {};
         li.appendChild(b);
         list.appendChild(li);
       });
-      list.appendChild(el('li', { class: 'cel-template-soon' }, t('celMoreGamesSoon', 'More games are on the way: Word by Word, quizzes and more.')));
+      list.appendChild(el('li', { class: 'cel-template-soon' }, t('celMoreGamesSoon2', 'More games are on the way: quizzes and more.')));
       dlg = FF.UI.sheet({ title: t('celPickTemplate', 'Choose a game'), body: list });
     }
 
@@ -150,6 +156,11 @@ window.FF = window.FF || {};
         bits.push(t(g.photos === 1 ? 'celPhotoOne' : 'celPhotoMany', g.photos === 1 ? '1 photo' : '{n} photos', { n: g.photos }));
         if (g.level) bits.push(C().label(LEVELS[g.level]).split(' · ')[0]);
         if (g.seconds) bits.push(t('celPerPicture', '{time} a picture', { time: mins(g.seconds) }));
+      }
+      if (g.template === 'wordByWord') {
+        if (g.mode) bits.push(C().label(MODES[g.mode] || ['', g.mode]));
+        if (g.rounds) bits.push(t(g.rounds === 1 ? 'celWbwTurnOne' : 'celWbwTurnsEach', g.rounds === 1 ? '1 turn each' : '{n} turns each', { n: g.rounds }));
+        if (g.seconds) bits.push(t('celWbwPerTurn', '{time} a turn', { time: mins(g.seconds) }));
       }
       body.appendChild(el('span', { class: 'cel-game__meta' }, bits.join(' · ')));
       body.appendChild(el('span', { class: 'cel-status cel-status--' + g.status }, C().label(STATUS[g.status] || ['', g.status])));
@@ -286,6 +297,7 @@ window.FF = window.FF || {};
       shell.appendChild(field(t('celGameHow', 'Instructions for the guests'), ins, t('celGameHowHint', 'Shown on every phone during the countdown.')));
 
       if (g.template === 'pictureRush') pictureRushFields();
+      if (g.template === 'wordByWord') wordByWordFields();
 
       var bar = div('cel-savebar');
       saveBtn = FF.UI.button(t('celSaveChanges', 'Save changes'), { class: 'btn-secondary', icon: 'check', onClick: function () { save().then(function () { FF.UI.toast(t('saved', 'Saved')); }, function () {}); } });
@@ -310,7 +322,7 @@ window.FF = window.FF || {};
     function save() {
       if (!draft.name.trim()) { FF.UI.toast(t('celNeedGameName', 'Give the game a name.')); return Promise.reject(new Error('')); }
       var cfg = JSON.parse(JSON.stringify(draft.config));
-      cfg.photos = (cfg.photos || []).map(function (p) { return { id: p.id, title: p.title || '', hint: p.hint || '' }; });
+      if (g.template === 'pictureRush') cfg.photos = (cfg.photos || []).map(function (p) { return { id: p.id, title: p.title || '', hint: p.hint || '' }; });
       FF.UI.busy(saveBtn, true);
       return FF.Api.call('POST', '/c/' + params.id + '/games/' + g.id + '/save', { name: draft.name, instructions: draft.instructions, config: cfg }).then(function (r) {
         g = r;
@@ -456,6 +468,75 @@ window.FF = window.FF || {};
       } }));
 
       drawPhotos();
+    }
+
+    /* ---------- Word by Word ---------- */
+
+    function wordByWordFields() {
+      var cfg = draft.config;
+      shell.appendChild(el('h2', { class: 'cel-section-title' }, t('celWbwHow', 'How it is played')));
+      var modeHint = el('p', { class: 'field__hint' });
+      function drawModeHint() {
+        modeHint.textContent = cfg.mode === 'blind'
+          ? t('celWbwBlindHint', 'Each group sees only the last word. The whole message is revealed at the end.')
+          : t('celWbwOpenHint', 'Everyone sees the message grow, on their phones and on the TV.');
+      }
+      var mode = field(t('celWbwVersion', 'Version'), FF.UI.segmented({
+        label: t('celWbwVersion', 'Version'), value: cfg.mode, compact: true,
+        options: W().MODES.map(function (m) { return { label: C().label(MODES[m]), value: m }; }),
+        onChange: function (v) { cfg.mode = v; drawModeHint(); changed(); }
+      }));
+      mode.appendChild(modeHint);
+      drawModeHint();
+      shell.appendChild(mode);
+      var rounds = [];
+      for (var i = 1; i <= W().ROUNDS_MAX; i++) rounds.push([String(i), String(i)]);
+      shell.appendChild(field(t('celWbwRounds', 'Turns for each group'), select(rounds, String(cfg.rounds), function (v) {
+        cfg.rounds = Number(v);
+        if (cfg.minUnit === 'rounds' && cfg.minCount > cfg.rounds) { cfg.minCount = cfg.rounds; minInput.value = String(cfg.minCount); }
+        minInput.max = String(cfg.minUnit === 'rounds' ? cfg.rounds : W().WORDS_MIN_MAX);
+        changed();
+      }), t('celWbwRoundsHint', 'Every group gets the same number of turns, one word each.')));
+      shell.appendChild(field(t('celWbwSeconds', 'Time for each turn'), select(W().SECONDS.map(function (s) { return [String(s), mins(s)]; }), String(cfg.seconds), function (v) { cfg.seconds = Number(v); changed(); }),
+        t('celWbwSecondsHint', 'A group that runs out of time misses that turn.')));
+
+      // When a group may end the message: after a number of rounds or of words.
+      var minRow = div('cel-wbw-min');
+      var minInput = el('input', { type: 'number', class: 'input field__input', min: '0', step: '1', inputmode: 'numeric' });
+      minInput.value = String(cfg.minCount);
+      minInput.max = String(cfg.minUnit === 'rounds' ? cfg.rounds : W().WORDS_MIN_MAX);
+      minInput.setAttribute('aria-label', t('celWbwMinCount', 'How many'));
+      minInput.addEventListener('input', function () {
+        var n = Math.round(Number(minInput.value));
+        if (!isFinite(n)) return;
+        cfg.minCount = Math.max(0, Math.min(Number(minInput.max), n));
+        changed();
+      });
+      minRow.appendChild(minInput);
+      minRow.appendChild(FF.UI.segmented({
+        label: t('celWbwMinUnit', 'Counted in'), value: cfg.minUnit, compact: true,
+        options: [{ label: t('celWbwUnitRounds', 'Rounds'), value: 'rounds' }, { label: t('celWbwUnitWords', 'Words'), value: 'words' }],
+        onChange: function (v) {
+          cfg.minUnit = v;
+          minInput.max = String(v === 'rounds' ? cfg.rounds : W().WORDS_MIN_MAX);
+          if (cfg.minCount > Number(minInput.max)) { cfg.minCount = Number(minInput.max); minInput.value = String(cfg.minCount); }
+          changed();
+        }
+      }));
+      shell.appendChild(field(t('celWbwMin', 'Groups can end the message after'), minRow,
+        t('celWbwMinHint', 'After this, the group on its turn can make its word the last one. 0 means from the very first turn.')));
+
+      shell.appendChild(el('h2', { class: 'cel-section-title' }, t('celWbwWords', 'Words')));
+      shell.appendChild(field(t('celWbwOpening', 'Opening words (optional)'), textInput(cfg.opening, {
+        max: W().MAX_OPENING, placeholder: t('celWbwOpeningPh', 'e.g. Dear Vicky,'), onInput: function (v) { cfg.opening = v; changed(); }
+      }), t('celWbwOpeningHint', 'Shown before the first word. They are not scored.')));
+      shell.appendChild(field(t('celWbwNames', 'Names that score in full (optional)'), textInput((cfg.names || []).join(', '), {
+        max: 600, placeholder: t('celWbwNamesPh', 'e.g. Vics, Harare, Mufaro'),
+        onInput: function (v) {
+          cfg.names = v.split(/[,\s]+/).map(function (x) { return x.trim(); }).filter(Boolean).slice(0, W().MAX_NAMES);
+          changed();
+        }
+      }), t('celWbwNamesHint', 'Every letter is a point. Names are not in our word list, so other names score 1 point. The celebrant\'s name always counts in full; add nicknames and places here.')));
     }
 
     function preview(photo, size) {

@@ -30,7 +30,10 @@ window.FF = window.FF || {};
   /* Local development has no crew runner: this tab referees (js/celebrate/dev.js, loaded on demand). */
   function loadDev() {
     if (FF.CelebrateDev) return Promise.resolve(FF.CelebrateDev);
-    var files = ['js/celebrate/pictureRush/referee.js', 'js/celebrate/dev.js'];
+    var files = [];
+    if (!FF.WordFlowRules) files.push('js/wordflow/rules.js');
+    if (!FF.WordByWordRules) files.push('js/celebrate/wordByWord/rules.js');
+    files.push('js/celebrate/pictureRush/referee.js', 'js/celebrate/wordByWord/referee.js', 'js/celebrate/dev.js');
     return files.reduce(function (p, src) {
       return p.then(function () {
         return new Promise(function (resolve, reject) {
@@ -62,7 +65,8 @@ window.FF = window.FF || {};
     var acts = div('cel-live__acts');
     card.appendChild(acts);
 
-    var T = null, off = null, v = null, ticker = null, gone = false;
+    var T = null, off = null, offStaff = null, v = null, staff = null, ticker = null, gone = false;
+    var words = el('ol', { class: 'cel-wbw-live' });
     var pauseBtn = FF.UI.button(t('celPause', 'Pause'), { class: 'btn-secondary btn-sm', icon: 'pause', onClick: function () { control(v && v.paused ? 'resume' : 'pause', pauseBtn); } });
     var nextBtn = FF.UI.button(t('celNext', 'Next'), { class: 'btn-secondary btn-sm', icon: 'arrow-right', onClick: function () { control('next', nextBtn); } });
     var endBtn = FF.UI.button(t('celEndGame', 'End game'), { class: 'btn-danger-soft btn-sm', icon: 'flag', onClick: function () {
@@ -75,9 +79,9 @@ window.FF = window.FF || {};
     } });
     [pauseBtn, nextBtn, endBtn].forEach(function (b) { acts.appendChild(b); });
 
-    function control(action, btn) {
+    function control(action, btn, index) {
       FF.UI.busy(btn, true);
-      opts.control(action).then(function (r) {
+      opts.control(action, index).then(function (r) {
         // Locally the referee runs in this tab on the dev transport, so the control goes there too.
         if (devMode() && T) return T.set('control', r.control);
         return null;
@@ -88,6 +92,7 @@ window.FF = window.FF || {};
       gone = true;
       if (ticker) clearInterval(ticker);
       if (typeof off === 'function') off();
+      if (typeof offStaff === 'function') offStaff();
     }
 
     var PHASE = {
@@ -98,8 +103,74 @@ window.FF = window.FF || {};
       ended: ['celPhEnded', 'The game is over.']
     };
 
+    var WBW_PHASE = {
+      starting: ['celPhStarting', 'Counting down. Guests see the instructions.'],
+      playing: ['celWbwPhTurn', '{team}\'s turn · round {n} of {total}'],
+      reveal: ['celWbwPhReveal', 'The message is being revealed.'],
+      ended: ['celPhEnded', 'The game is over.']
+    };
+
+    /* Word by Word: whose turn it is, the teams in turn order, and the message with a Strike on each word. */
+    function drawWords() {
+      var p = WBW_PHASE[v.phase] || ['', ''];
+      var cur = v.turn && v.teams[v.turn.teamId];
+      status.textContent = (v.paused ? t('celPausedNow', 'Paused.') + ' ' : '') + t(p[0], p[1], { team: cur ? cur.name : '', n: (v.round || 0) + 1, total: v.rounds });
+      pauseBtn.hidden = v.phase !== 'playing';
+      FF.ui.clear(pauseBtn);
+      pauseBtn.appendChild(icon(v.paused ? 'play' : 'pause'));
+      pauseBtn.appendChild(FF.ui.span('', v.paused ? t('celResume', 'Resume') : t('celPause', 'Pause')));
+      nextBtn.hidden = v.phase === 'ended';
+      FF.ui.clear(nextBtn);
+      nextBtn.appendChild(icon('arrow-right'));
+      nextBtn.appendChild(FF.ui.span('', v.phase === 'playing' ? t('celWbwSkip', 'Skip turn') : v.phase === 'reveal' ? t('celFinalResults', 'Final results') : t('celNext', 'Next')));
+      endBtn.hidden = v.phase === 'ended';
+
+      FF.ui.clear(teams);
+      var totals = v.totals || {};
+      R().list(v.order).forEach(function (tid) {
+        var tm = v.teams[tid];
+        if (!tm) return;
+        var li = el('li', { class: 'cel-live__team' + (v.turn && v.turn.teamId === tid ? ' is-turn' : '') });
+        li.style.setProperty('--team', tm.color);
+        var name = div('cel-live__name');
+        name.appendChild(el('span', { class: 'cel-live__swatch', 'aria-hidden': 'true' }));
+        name.appendChild(el('strong', {}, tm.name));
+        name.appendChild(el('span', { class: 'cel-live__people' }, t('celPlayersN', '{n} playing', { n: Object.keys(tm.players || {}).length })));
+        li.appendChild(name);
+        li.appendChild(el('span', { class: 'cel-live__pts' }, t('celPts', '{n} pts', { n: (totals[tid] || {}).points || 0 })));
+        teams.appendChild(li);
+      });
+
+      // The message: the run has it in open mode; in blind mode only staff (this panel) can read it.
+      var list = v.words ? R().list(v.words) : (staff && staff.runId === v.runId ? R().list(staff.words) : null);
+      FF.ui.clear(words);
+      if (v.opening) words.appendChild(el('li', { class: 'cel-wbw-live__word is-opening' }, v.opening));
+      (list || []).forEach(function (x, i) {
+        var tm = v.teams[x.teamId] || {};
+        var li = el('li', { class: 'cel-wbw-live__word' });
+        li.style.setProperty('--team', tm.color || 'var(--border)');
+        li.appendChild(el('span', {}, x.w));
+        if (v.phase === 'playing' || v.phase === 'reveal') {
+          var b = FF.UI.iconButton('x', t('celWbwStrikeN', 'Strike "{word}"', { word: x.w }), function () {
+            FF.UI.confirm({
+              title: t('celWbwStrikeTitle', 'Strike "{word}"?', { word: x.w }),
+              body: t('celWbwStrikeText', 'It leaves the message and its points go back. The turn is not played again.'),
+              confirmLabel: t('celWbwStrike', 'Strike'), danger: true,
+              onConfirm: function () { control('strike', b, i); }
+            });
+          }, 'btn-ghost btn-sm cel-wbw-live__strike');
+          li.appendChild(b);
+        }
+        words.appendChild(li);
+      });
+      if (!list && v.count) words.appendChild(el('li', { class: 'cel-wbw-live__note' }, t('celWbwWordsSoFar', '{n} words so far', { n: v.count })));
+      else if (!(list || []).length && !v.opening) words.appendChild(el('li', { class: 'cel-wbw-live__note' }, t('celWbwNoWords', 'No words yet.')));
+      if (!words.isConnected) card.insertBefore(words, acts);
+    }
+
     function draw() {
       if (!v) return;
+      if (v.template === 'wordByWord') { drawWords(); ended(); tick(); return; }
       var p = PHASE[v.phase] || ['', ''];
       status.textContent = (v.paused ? t('celPausedNow', 'Paused.') + ' ' : '') + t(p[0], p[1], { n: v.round + 1, total: v.rounds });
       pauseBtn.hidden = v.phase === 'ended' || v.phase === 'starting';
@@ -138,6 +209,12 @@ window.FF = window.FF || {};
         li.appendChild(el('span', { class: 'cel-live__pts' }, b.solved ? t('celSolvedShort', 'Solved') + ' · ' + t('celPts', '{n} pts', { n: (totals[tid] || {}).points || 0 }) : t('celPts', '{n} pts', { n: (totals[tid] || {}).points || 0 })));
         teams.appendChild(li);
       });
+      ended();
+      tick();
+    }
+
+    /* The winners, once the game is over (every template). */
+    function ended() {
       if (v.phase === 'ended') {
         var res = v.result || {};
         var names = R().list(res.winners).map(function (id) { return (v.teams[id] || {}).name; }).filter(Boolean);
@@ -149,12 +226,16 @@ window.FF = window.FF || {};
           acts.appendChild(FF.UI.button(t('celDoneClose', 'Close'), { class: 'btn-primary btn-sm cel-live__done', icon: 'check', onClick: function () { stop(); reload(); } }));
         }
       }
-      tick();
     }
 
     function tick() {
       if (!alive()) { stop(); return; }
       if (!v) return;
+      if (v.template === 'wordByWord') {
+        var left = v.phase === 'playing' && v.turn ? (v.paused ? v.turn.leftMs : v.turn.endsAt - T.serverNow()) : v.phase === 'starting' ? v.startAt - T.serverNow() : null;
+        timer.textContent = left == null ? '' : clock(left);
+        return;
+      }
       var due = { starting: v.startAt, reveal: v.revealUntil, playing: v.deadline, roundEnd: v.nextAt }[v.phase] || 0;
       timer.textContent = v.phase === 'ended' || !due ? '' : clock(due - (v.paused ? v.pausedAt : T.serverNow()));
     }
@@ -169,6 +250,14 @@ window.FF = window.FF || {};
         if (gone) return;
         if (val && val.runId === active.runId) { v = val; draw(); }
       });
+      // A blind Word by Word message: only the MC and the organiser may read it.
+      if (active.template === 'wordByWord') {
+        offStaff = T.watch('staff', function (val) {
+          if (gone) return;
+          staff = val;
+          if (v) draw();
+        });
+      }
       ticker = setInterval(tick, 500);
     }, function (e) { status.textContent = (e && e.message) || t('celLiveFailed', 'We could not connect for the games. Check your connection and reload.'); });
     return { el: card, runId: active.runId, stop: stop, ended: function () { return !!(v && v.phase === 'ended'); } };

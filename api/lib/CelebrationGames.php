@@ -558,6 +558,7 @@ class CelebrationGames
             'id' => $g['id'], 'template' => $g['template'], 'name' => $g['name'], 'instructions' => (string) $g['instructions'],
             'status' => $g['status'], 'photos' => count($config['photos'] ?? []), 'rounds' => (int) ($config['rounds'] ?? 0),
             'level' => $config['level'] ?? null, 'seconds' => (int) ($config['seconds'] ?? 0), 'updatedAt' => (int) $g['updated_at'],
+            'mode' => $config['mode'] ?? null,
         ];
         $first = $config['photos'][0]['id'] ?? null;
         if ($first) $out['thumb'] = $this->media->url($first, 'thumb', 6 * 3600);
