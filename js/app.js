@@ -202,7 +202,7 @@ window.FF = window.FF || {};
       this.resetLibrary();
       this.buildShell();
       if (!this._navReady) { FF.Nav.init(); this._navReady = true; }
-      // Music starts as the player arrives, signed in or as a guest.
+      // Music is ready as the player arrives; it plays only if they turned it on.
       if (!this._musicHooked) {
         this._musicHooked = true;
         FF.Audio.onMusicChange(function () { FF.App._syncMusicControls(); });
@@ -586,28 +586,119 @@ window.FF = window.FF || {};
       this._syncNav();
     },
 
-    // Music on/off in the top bar. It and the Settings switch always agree.
+    // The music button in the top bar opens the Music panel. Music is off
+    // until the player turns it on there (or in Settings > Sound).
     musicButton: function () {
       var on = FF.Audio.musicEnabled;
-      var b = FF.UI.iconButton(on ? 'music' : 'music-off', on ? t('musicTurnOff', 'Turn music off') : t('musicTurnOn', 'Turn music on'),
-        function () { FF.Audio.setMusic(!FF.Audio.musicEnabled); }, 'topbar__music' + (on ? '' : ' is-off'));
+      var b = FF.UI.iconButton(on ? 'music' : 'music-off', t('music', 'Music'),
+        function () { FF.App.openMusicPanel(); }, 'topbar__music' + (on ? ' is-on' : ' is-off'));
       b.id = 'topbar-music';
+      b.setAttribute('aria-haspopup', 'dialog');
       return b;
     },
 
-    _syncMusicControls: function () {
-      var old = document.getElementById('topbar-music');
-      if (old) {
-        var focused = document.activeElement === old;
-        var b = this.musicButton();
-        old.parentNode.replaceChild(b, old);
-        if (focused) b.focus();
+    /* The Music panel: one big on/off switch, the volume, and the songs.
+       Songs come from FF.Audio.SONGS, so a new song shows up here by itself. */
+    openMusicPanel: function () {
+      if (this._musicPanel) return this._musicPanel;
+      var A = FF.Audio;
+      var ui = FF.ui;
+
+      var hero = ui.div('music-hero');
+      var disc = ui.div('music-hero__disc');
+      disc.appendChild(icon('music'));
+      var eq = ui.el('span', { class: 'music-eq', 'aria-hidden': 'true' }, [ui.span(''), ui.span(''), ui.span(''), ui.span('')]);
+      disc.appendChild(eq);
+      hero.appendChild(disc);
+      var heroText = ui.div('music-hero__text');
+      var status = ui.el('span', { class: 'music-hero__status', 'aria-live': 'polite' });
+      var songName = ui.el('strong', { class: 'music-hero__song' });
+      heroText.appendChild(status);
+      heroText.appendChild(songName);
+      hero.appendChild(heroText);
+
+      var power = FF.UI.switchRow({
+        label: t('musicPlay', 'Play music'),
+        description: t('musicPanelDesc', 'Plays while you browse and play, and goes quieter during games.'),
+        checked: A.musicEnabled,
+        onChange: function (on) { A.setMusic(on); }
+      });
+      power.classList.add('music-power');
+      power.setAttribute('data-music-switch', '');
+
+      var vol = ui.el('input', { type: 'range', min: 0, max: 100, value: Math.round(A.musicVolume * 100), 'aria-label': t('musicVolume', 'Music volume'),
+        oninput: function (e) { A.setMusicVolume(e.target.value / 100); } });
+      var volRow = ui.div('music-volume');
+      volRow.appendChild(icon('speaker'));
+      volRow.appendChild(vol);
+
+      var songsHead = ui.el('h3', { class: 'music-songs__head' }, t('musicSongs', 'Songs'));
+      var list = ui.el('ul', { class: 'music-songs' });
+      var rows = A.SONGS.map(function (song) {
+        var li = ui.el('li');
+        var b = ui.el('button', { type: 'button', class: 'music-song', onclick: function () { A.playSong(song.src); } });
+        var mark = ui.span('music-song__mark');
+        mark.appendChild(icon('play'));
+        mark.appendChild(ui.el('span', { class: 'music-eq', 'aria-hidden': 'true' }, [ui.span(''), ui.span(''), ui.span('')]));
+        b.appendChild(mark);
+        b.appendChild(ui.span('music-song__title', song.title));
+        var tag = ui.span('music-song__tag', t('musicPlaying', 'Playing'));
+        b.appendChild(tag);
+        li.appendChild(b);
+        list.appendChild(li);
+        return { song: song, btn: b };
+      });
+      var more = ui.el('p', { class: 'music-songs__more' }, t('musicMoreSoon', 'More songs are coming soon.'));
+
+      function refresh() {
+        var on = A.musicEnabled;
+        var playing = on && A.musicPlaying();
+        var current = A.currentSong();
+        var text = !on ? t('musicIsOff', 'Music is off')
+          : A.inVoiceChat() ? t('musicVoicePaused', 'Paused while voice chat is on')
+          : playing ? t('musicNowPlaying', 'Now playing')
+          : A.musicBlocked() ? t('musicTapToStart', 'Tap anywhere to start')
+          : t('musicStarting', 'Starting…');
+        if (status.textContent !== text) status.textContent = text;
+        songName.textContent = current ? current.title : '';
+        hero.classList.toggle('is-on', on);
+        hero.classList.toggle('is-playing', playing);
+        volRow.classList.toggle('is-off', !on);
+        rows.forEach(function (r) {
+          var isCurrent = !!current && r.song.src === current.src;
+          r.btn.classList.toggle('is-current', isCurrent && on);
+          r.btn.classList.toggle('is-playing', isCurrent && playing);
+          r.btn.setAttribute('aria-pressed', isCurrent && on ? 'true' : 'false');
+        });
       }
+
+      var dlg = FF.UI.dialog({
+        title: t('music', 'Music'),
+        className: 'music-dialog',
+        body: [hero, power, volRow, songsHead, list, more],
+        actions: [{ label: t('done', 'Done'), primary: true }],
+        onClose: function () { FF.App._musicPanel = null; }
+      });
+      dlg.refresh = refresh;
+      this._musicPanel = dlg;
+      refresh();
+      return dlg;
+    },
+
+    _syncMusicControls: function () {
       var on = FF.Audio.musicEnabled;
+      var b = document.getElementById('topbar-music');
+      if (b && b.classList.contains('is-on') !== on) {
+        var focused = document.activeElement === b;
+        var fresh = this.musicButton();
+        b.parentNode.replaceChild(fresh, b);
+        if (focused) fresh.focus();
+      }
       FF.ui.$$('[data-music-switch] .switch').forEach(function (sw) {
         sw.setAttribute('aria-checked', on ? 'true' : 'false');
         sw.classList.toggle('on', on);
       });
+      if (this._musicPanel) this._musicPanel.refresh();
     },
 
     /* The page this tab is on, kept for a refresh. sessionStorage is per tab and

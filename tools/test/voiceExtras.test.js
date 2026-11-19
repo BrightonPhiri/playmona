@@ -36,7 +36,10 @@ test('music: joining voice chat stops the music, leaving brings it back', async 
   const A = app.FF.Audio;
   A.startAppMusic();
   await wait(20);
-  assert(A.musicPlaying(), 'music plays on the menus');
+  assertEqual(A.musicPlaying(), false, 'music is off until the player turns it on');
+  A.setMusic(true);
+  await wait(20);
+  assert(A.musicPlaying(), 'music plays on the menus once turned on');
 
   app.setVoice(true);
   await wait(700);
