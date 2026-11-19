@@ -150,9 +150,12 @@ This needs a new control action `strike` carrying the word's index (`Celebration
 - `celebrations/<cid>/run` (guests can read it) carries: mode, turn order, current turn
   (`turn`, team, deadline or paused time left), rounds done, minimum reached, per-team points, and **in open
   mode** the words with their team; **in blind mode only the last word and the word count**.
-- The full message in blind mode lives only in `celebrationState/<runId>` (server only, as today). The MC
-  and organiser views get it through the PHP API (MC key / owner), read from there, never from a path
-  guests can read. The TV gets it only at the reveal (the end result).
+- In blind mode the referee writes the full message to a new path `celebrations/<cid>/staff`
+  (`{runId, words}`), which only "staff" can read: a new `celebrations/<cid>/staffers/<uid>` list that PHP
+  fills for the MC (`CelebrationStage::panel`) and the owner (`CelebrationGames::live`), never for the TV
+  (`screen`) or guests. Rules: `staff` readable when `staffers/<auth.uid>` exists; `staffers/$uid` readable
+  by that uid only (like `viewers`). In open mode `staff` stays empty. The TV and phones get the whole
+  blind message only at the reveal (the end result in `run`). The referee clears `staff` when the run ends.
 - Per-sender command counts (`n`) dedupe replays, as Picture Rush does.
 
 ### Phone commands (inbox)
@@ -184,7 +187,7 @@ to `MAX_INPUT` 26 characters), `end` (boolean) and `turn` (number 0–1000) on t
 
 When the result is recorded (`CelebrationGames::recordResult`, already once only per run), a Word by Word
 result with at least 2 added words saves the message to the Wall through a new `CelebrationWall` method:
-`uid = 'game:<runId>'`, name "From all the groups", category `wish`, status `pending` or `approved` by the
+`uid = 'game:<runId>'`, name "From everyone" (Brighton, 2026-11-19), category `wish`, status `pending` or `approved` by the
 event's existing `approveMessages` setting, opening words included. The memory book shows approved Wall
 messages already, so nothing more is needed there. Running the game again makes a new message.
 
