@@ -517,3 +517,19 @@ test('word by word rules: a known name in capitals is taken', function () {
   assertEqual(R.points(shout, o.known), 5);
   assertEqual(R.parse('ZORK', o).error, 'unknown', 'an unknown shout is still refused');
 });
+
+test('word by word referee: a guest removed from the event leaves the order', async function () {
+  const g = await game({ config: { rounds: 3 } });
+  await g.toPlay();
+  await g.room.set('members', { g1: { name: 'Ann', team: 't_gold' }, g2: { name: 'Ben', team: 't_gold' }, r1: { name: 'Cat', team: 't_ruby' } });
+  await flush();
+  // Removing a guest deletes their entry; Ruby's only member goes while the game is paused.
+  await g.control('pause');
+  await g.room.set('members/r1', null);
+  await flush();
+  await g.control('resume');
+  assert(!g.view().teams.t_ruby.players.r1, 'Cat is out of Ruby');
+  assertEqual(g.current(), 't_gold', 'Ruby has nobody left');
+  await g.say('we');
+  assertEqual(g.current(), 't_gold', 'Ruby is skipped at once');
+});

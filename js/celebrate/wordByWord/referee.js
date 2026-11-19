@@ -185,16 +185,20 @@ window.FF = window.FF || {};
 
     /* ---------- people ---------- */
 
-    /* A guest who joins a team, or is moved, during the game plays for their team from then on. */
+    /* A guest who joins a team, or is moved, during the game plays for their team from then on.
+       A guest removed from the event (their entry deleted) leaves their team. */
     function onMembers(tree) {
+      // No list at all says nothing (it may not be written yet); a list without a guest means they were removed.
       if (!state || stopped || !tree) return;
       var changed = false;
-      Object.keys(tree).forEach(function (uid) {
+      var uids = Object.keys(tree);
+      Object.keys(state.members).forEach(function (uid) { if (!Object.prototype.hasOwnProperty.call(tree, uid)) uids.push(uid); });
+      uids.forEach(function (uid) {
         var m = tree[uid];
         var tid = m && typeof m.team === 'string' && state.teams[m.team] ? m.team : '';
         var was = state.members[uid] || '';
         if (tid === was) return;
-        if (was) delete state.teams[was].players[uid];
+        if (was && state.teams[was]) delete state.teams[was].players[uid];
         if (tid) {
           state.members[uid] = tid;
           state.teams[tid].players[uid] = String((m && m.name) || '').slice(0, 24);
@@ -271,6 +275,8 @@ window.FF = window.FF || {};
       } else if (action === 'resume') {
         if (!state.paused) { save(); return; }
         resumeAt(t);
+        // The group on its turn may have lost everybody while the game was paused.
+        if (state.phase === 'playing' && !hasPlayers(teamOf(state.turn))) { skipTurn(t, turnMs() - Math.max(0, state.endsAt - t)); return; }
         schedule();
       } else if (action === 'next') {
         if (state.paused) resumeAt(t);
