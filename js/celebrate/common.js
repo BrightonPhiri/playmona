@@ -109,6 +109,12 @@ window.FF = window.FF || {};
     return TYPES[TYPES.length - 1];
   }
   function typeLabel(id) { var x = type(id); return t(x.label[0], x.label[1]); }
+  /* What an event celebrates, main kind first ("Birthday · Graduation"). Old events have only "type". */
+  function typesOf(ev) {
+    var list = ev && Array.isArray(ev.types) ? ev.types.filter(function (x) { return typeof x === 'string'; }) : [];
+    return list.length ? list : [ev && ev.type ? ev.type : 'custom'];
+  }
+  function typesLabel(ev) { return typesOf(ev).map(typeLabel).join(' · '); }
   function defaultTitle(typeId, name) { var x = type(typeId); return t(x.title[0], x.title[1], { name: name || '' }); }
 
   /* "Sat, 22 Nov 2026" from "2026-11-22", read as a calendar date (no time-zone shift). */
@@ -276,8 +282,8 @@ window.FF = window.FF || {};
     }
     var body = FF.ui.div('cel-hero__body');
     var kicker = FF.ui.el('p', { class: 'cel-hero__kicker' });
-    kicker.appendChild(FF.Icons.icon(type(ev.type).icon));
-    kicker.appendChild(document.createTextNode(typeLabel(ev.type)));
+    kicker.appendChild(FF.Icons.icon(type(typesOf(ev)[0]).icon));
+    kicker.appendChild(document.createTextNode(typesLabel(ev)));
     body.appendChild(kicker);
     body.appendChild(FF.ui.el(opts.tag || 'h2', { class: 'cel-hero__title' }, ev.title || defaultTitle(ev.type, ev.celebrantName)));
     var facts = FF.ui.el('ul', { class: 'cel-hero__facts' });
@@ -304,6 +310,8 @@ window.FF = window.FF || {};
     FONTS: FONTS,
     type: type,
     typeLabel: typeLabel,
+    typesOf: typesOf,
+    typesLabel: typesLabel,
     defaultTitle: defaultTitle,
     applyTheme: applyTheme,
     readableOn: readableOn,

@@ -104,6 +104,9 @@
   color: var(--text); font-weight: 700; text-align: left;
 }
 .cel-type .icon-svg { color: var(--accent); flex: none; }
+.cel-type { position: relative; }
+.cel-type__n:empty { display: none; }
+.cel-type__n { position: absolute; top: -6px; right: -6px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: var(--accent); color: var(--accent-text); font-size: 12px; font-weight: 700; line-height: 20px; text-align: center; }
 .cel-type.active, .cel-look-pick.active { border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 0 0 2px var(--accent-soft); }
 .cel-looks { display: grid; gap: var(--sp-2); grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
 .cel-look-pick { flex-direction: column; align-items: stretch; padding: 6px; }

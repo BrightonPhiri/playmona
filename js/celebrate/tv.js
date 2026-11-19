@@ -266,7 +266,7 @@ window.FF = window.FF || {};
       var box = div('tv-welcome' + (st.display.showQr ? ' has-qr' : ''));
       var info = div('tv-welcome__info');
       if (ev.cover && ev.cover.play) info.appendChild(el('img', { class: 'tv-welcome__cover', src: ev.cover.play, alt: '' }));
-      info.appendChild(el('p', { class: 'tv-kicker' }, C().typeLabel(ev.type)));
+      info.appendChild(el('p', { class: 'tv-kicker' }, C().typesLabel(ev)));
       info.appendChild(el('h1', { class: 'tv-welcome__name' }, ev.celebrantName));
       info.appendChild(el('p', { class: 'tv-welcome__title' }, ev.title));
       var facts = [C().formatDate(ev.date), C().timeRange(ev), ev.venue].filter(Boolean).join('  ·  ');

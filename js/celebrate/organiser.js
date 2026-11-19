@@ -122,12 +122,12 @@ window.FF = window.FF || {};
         C().applyTheme(b, ev.theme);
         var art = div('cel-card__art');
         if (ev.cover) art.appendChild(el('img', { src: ev.cover.thumb, alt: '', loading: 'lazy' }));
-        else art.appendChild(icon(C().type(ev.type).icon));
+        else art.appendChild(icon(C().type(C().typesOf(ev)[0]).icon));
         b.appendChild(art);
         var body = div('cel-card__body');
         body.appendChild(el('strong', { class: 'cel-card__title' }, ev.title));
-        body.appendChild(el('span', { class: 'cel-card__meta' }, [C().formatDate(ev.date) || C().typeLabel(ev.type), ' · ',
-          t(ev.guests === 1 ? 'celGuestOne' : 'celGuestMany', ev.guests === 1 ? '1 guest' : '{n} guests', { n: ev.guests })].join('')));
+        body.appendChild(el('span', { class: 'cel-card__meta' }, [C().typesLabel(ev), C().formatDate(ev.date)].filter(Boolean).concat([
+          t(ev.guests === 1 ? 'celGuestOne' : 'celGuestMany', ev.guests === 1 ? '1 guest' : '{n} guests', { n: ev.guests })]).join(' · ')));
         b.appendChild(body);
         b.appendChild(icon('chevron-right'));
         li.appendChild(b);
@@ -158,20 +158,41 @@ window.FF = window.FF || {};
 
   function detailsSection(draft, onChange) {
     var box = div('cel-form');
-    var types = el('div', { class: 'cel-types', role: 'radiogroup', 'aria-label': t('celKind', 'Kind of celebration') });
+    // Up to 3 kinds; the order tapped is the order shown, and the first is the main one.
+    var types = el('div', { class: 'cel-types', role: 'group', 'aria-label': t('celKinds', 'What are you celebrating?') });
+    var typeButtons = {};
+    function paintTypes() {
+      C().TYPES.forEach(function (ty) {
+        var b = typeButtons[ty.id], at = draft.types.indexOf(ty.id);
+        b.classList.toggle('active', at !== -1);
+        b.setAttribute('aria-pressed', at !== -1 ? 'true' : 'false');
+        b.querySelector('.cel-type__n').textContent = at !== -1 && draft.types.length > 1 ? String(at + 1) : '';
+      });
+    }
     C().TYPES.forEach(function (ty) {
-      var b = el('button', { type: 'button', class: 'cel-type' + (draft.type === ty.id ? ' active' : ''), role: 'radio', 'aria-checked': draft.type === ty.id ? 'true' : 'false' });
+      var b = el('button', { type: 'button', class: 'cel-type', 'aria-pressed': 'false' });
       b.appendChild(icon(ty.icon));
       b.appendChild(FF.ui.span('', C().label(ty.label)));
+      b.appendChild(el('span', { class: 'cel-type__n', 'aria-hidden': 'true' }));
       b.addEventListener('click', function () {
-        draft.type = ty.id;
-        Array.prototype.forEach.call(types.children, function (x) { x.classList.toggle('active', x === b); x.setAttribute('aria-checked', x === b ? 'true' : 'false'); });
+        var at = draft.types.indexOf(ty.id);
+        if (at !== -1) {
+          if (draft.types.length === 1) return;       // at least one
+          draft.types.splice(at, 1);
+        } else if (draft.types.length >= 3) {
+          FF.UI.toast(t('celKindsMax', 'Pick up to 3. Tap one again to take it off.'));
+          return;
+        } else draft.types.push(ty.id);
+        draft.type = draft.types[0];
+        paintTypes();
         autoTitle();
         onChange();
       });
+      typeButtons[ty.id] = b;
       types.appendChild(b);
     });
-    box.appendChild(field(t('celKind', 'Kind of celebration'), types));
+    paintTypes();
+    box.appendChild(field(t('celKinds', 'What are you celebrating?'), types, t('celKindsHint', 'Pick up to 3. The first one you pick is the main one.')));
 
     var name = textInput(draft.celebrantName, { max: 60, placeholder: t('celNamePh', 'e.g. Vicky'), onInput: function (v) { draft.celebrantName = v; autoTitle(); onChange(); } });
     box.appendChild(field(t('celCelebrant', 'Who are we celebrating?'), name, t('celCelebrantHint', 'One name, or two for a couple.')));
@@ -320,7 +341,7 @@ window.FF = window.FF || {};
 
   function draftFrom(ev) {
     return {
-      type: ev.type, celebrantName: ev.celebrantName, title: ev.title, titleTouched: true,
+      type: C().typesOf(ev)[0], types: C().typesOf(ev).slice(), celebrantName: ev.celebrantName, title: ev.title, titleTouched: true,
       date: ev.date || '', startTime: ev.startTime || '', endTime: ev.endTime || '', venue: ev.venue || '',
       description: ev.description || '', welcome: ev.welcome || '',
       theme: Object.assign({}, ev.theme || { look: 'gala', font: 'classic' }),
@@ -329,13 +350,13 @@ window.FF = window.FF || {};
     };
   }
   function draftAsEvent(d) {
-    return { type: d.type, title: d.title, celebrantName: d.celebrantName, date: d.date, startTime: d.startTime, endTime: d.endTime, venue: d.venue, theme: d.theme, cover: d.coverPreview || d.cover };
+    return { type: d.type, types: d.types, title: d.title, celebrantName: d.celebrantName, date: d.date, startTime: d.startTime, endTime: d.endTime, venue: d.venue, theme: d.theme, cover: d.coverPreview || d.cover };
   }
   function payload(d) {
     var tz = '';
     try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) {}
     return {
-      type: d.type, celebrantName: d.celebrantName.trim(), title: d.title.trim(), date: d.date, startTime: d.startTime, endTime: d.endTime,
+      type: d.types[0], types: d.types, celebrantName: d.celebrantName.trim(), title: d.title.trim(), date: d.date, startTime: d.startTime, endTime: d.endTime,
       timezone: tz, venue: d.venue, description: d.description, welcome: d.welcome, theme: d.theme, settings: d.settings
     };
   }
@@ -346,7 +367,7 @@ window.FF = window.FF || {};
     stopRefresh();
     if (blocked(main)) return;
     var draft = {
-      type: 'birthday', celebrantName: '', title: '', titleTouched: false, date: '', startTime: '', endTime: '', venue: '',
+      type: 'birthday', types: ['birthday'], celebrantName: '', title: '', titleTouched: false, date: '', startTime: '', endTime: '', venue: '',
       description: '', welcome: '', theme: { look: 'gala', font: 'classic' }, settings: Object.assign({}, DEFAULT_SETTINGS),
       teamCount: 4, slug: '', coverFile: null, coverPreview: null
     };
