@@ -734,7 +734,7 @@ body.tv-page .ev-main { max-width: none; padding: 0; margin: 0; }
 .tv-grid { width: 22vh; width: min(100cqw, 100cqh); aspect-ratio: 1; display: grid; gap: 0.2em; grid-template-columns: repeat(var(--size, 3), minmax(0, 1fr)); }
 .tv-cell { border-radius: 0.25em; background: rgba(255, 255, 255, 0.1); background: color-mix(in srgb, var(--ev-text) 12%, transparent); transition: background-color 300ms var(--ease, ease); }
 .tv-cell.is-ok { background: var(--team); }
-.tv-panel__photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 0.6em; }
+.tv-panel__done { position: absolute; inset: 0; display: grid; place-items: center; font-size: 4em; font-weight: 900; color: #fff; text-shadow: 0 0.05em 0.3em rgba(0, 0, 0, 0.45); pointer-events: none; }
 .tv-pr__round { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 2em; align-items: center; }
 .tv-pr__fig { margin: 0; text-align: center; }
 .tv-pr__fig figcaption { margin-top: 0.4em; font-family: var(--ev-font, var(--font-display)); font-size: 1.6em; font-weight: 800; }

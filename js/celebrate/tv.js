@@ -467,7 +467,7 @@ window.FF = window.FF || {};
     function placed(b) { return list(b.tiles).map(function (piece, pos) { return Number(piece) === pos ? 1 : 0; }); }
 
     /* One panel per team: their board as a grid with the tiles already in place lit in the team's colour.
-       The picture itself only shows once that team has finished, so nobody can copy from the TV. */
+       The picture itself never shows here (it comes with the round's results), so nobody can copy from the TV. */
     function panels(v) {
       var teams = teamsOf(v);
       var n = teams.length;
@@ -489,14 +489,15 @@ window.FF = window.FF || {};
           : ok + ' / ' + total));
         li.appendChild(head);
         var body = div('tv-panel__body');
-        if (b.solved && v.photo && v.photo.url) {
-          body.appendChild(el('img', { class: 'tv-panel__photo', src: v.photo.url, alt: t('celTvSolvedPic', '{team} finished the picture', { team: tm.name }) }));
-        } else {
-          var grid = el('div', { class: 'tv-grid', role: 'img', 'aria-label': t('celTilesOf', '{n} of {total} tiles in place', { n: ok, total: total }) });
-          grid.style.setProperty('--size', size);
-          for (var i = 0; i < total; i++) grid.appendChild(el('span', { class: 'tv-cell' + (marks[i] ? ' is-ok' : '') }));
-          body.appendChild(grid);
-        }
+        // A finished board stays a fully lit grid: the picture waits for the end of the round,
+        // so teams still solving cannot copy it from the TV.
+        var grid = el('div', { class: 'tv-grid', role: 'img', 'aria-label': b.solved
+          ? t('celTvSolvedPic', '{team} finished the picture', { team: tm.name })
+          : t('celTilesOf', '{n} of {total} tiles in place', { n: ok, total: total }) });
+        grid.style.setProperty('--size', size);
+        for (var i = 0; i < total; i++) grid.appendChild(el('span', { class: 'tv-cell' + (b.solved || marks[i] ? ' is-ok' : '') }));
+        body.appendChild(grid);
+        if (b.solved) body.appendChild(el('span', { class: 'tv-panel__done', 'aria-hidden': 'true' }, '✓'));
         li.appendChild(body);
         wrap.appendChild(li);
       });

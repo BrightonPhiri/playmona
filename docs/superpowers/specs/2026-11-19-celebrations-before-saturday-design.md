@@ -65,8 +65,8 @@ straight after the event.
   2 → side by side, 3–4 → 2×2, 5–6 → 3×2, 7–8 → 4×2. More than 8 → today's progress bars.
 - Each panel: team name and colour, a grid of `size × size` squares where squares holding their correct
   tile are lit in the team colour and the rest are plain, "n / total in place", and once the team has
-  solved it their finished photo fills the panel with "Done in 36 s". The picture is never drawn for an
-  unsolved board.
+  solved it the grid is fully lit with a check mark and "Done in 36 s". The picture never shows on a
+  panel (Brighton, 2026-11-19: teams still solving could copy it); it comes with the round's results.
 - Data: the run view the TV already watches (`run/boards/<tid>.tiles`, `.solved`, `.usedMs`, `size`,
   `photo.url`). No new server data.
 
