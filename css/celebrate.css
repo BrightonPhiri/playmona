@@ -249,6 +249,17 @@
 .ev-team.is-mine { border-color: var(--team); box-shadow: 0 0 0 3px var(--ev-glow); }
 .ev-team:disabled { opacity: 0.55; cursor: not-allowed; }
 .ev-maketeam { margin-top: var(--sp-3); }
+.ev-countdown { display: inline-block; margin: var(--sp-3) 0 0; padding: 6px 14px; border-radius: 999px; background: var(--ev-primary); color: var(--ev-on-primary); font-weight: 800; font-variant-numeric: tabular-nums; }
+.ev-games { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--sp-2); }
+.ev-game { padding: var(--sp-3); border-radius: 14px; border: 1.5px solid var(--ev-edge); }
+.ev-game.is-live { border-color: var(--ev-primary); box-shadow: 0 0 0 3px var(--ev-glow); }
+.ev-game__top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-2); }
+.ev-game__name { font-size: 1.05rem; }
+.ev-game__chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; background: color-mix(in srgb, var(--ev-text) 10%, transparent); color: var(--ev-muted); font-size: var(--fs-sm); font-weight: 700; }
+.ev-game.is-live .ev-game__chip { background: var(--ev-primary); color: var(--ev-on-primary); }
+.ev-game__chip .icon-svg { width: auto; height: auto; font-size: 1em; }
+.ev-game__facts { margin: 6px 0 0; color: var(--ev-muted); font-size: var(--fs-sm); font-weight: 700; }
+.ev-game__how { margin: 6px 0 0; white-space: pre-line; }
 .ev-maketeam > .ev-btn--ghost, .ev-maketeam > button { width: 100%; }
 .ev-maketeam__acts { display: flex; gap: var(--sp-2); flex-wrap: wrap; }
 .ev-maketeam__acts > * { flex: 1 1 auto; }

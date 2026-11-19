@@ -786,6 +786,12 @@ class Celebrations
         return $t;
     }
 
+    /** This person's guest row; 404 "not-guest" when they have not joined (or were removed). */
+    public function guestOf(string $cid, string $uid): array
+    {
+        return $this->guestRow($cid, $uid);
+    }
+
     private function guestRow(string $cid, string $uid): array
     {
         $g = $this->db->one('SELECT * FROM celebration_guests WHERE cid = ? AND uid = ? AND removed_at IS NULL', [$cid, $uid]);

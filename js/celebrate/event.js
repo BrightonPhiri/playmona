@@ -125,7 +125,7 @@ window.FF = window.FF || {};
     var ev = state.ev;
     if (state.game) return;            // a game is on screen: it stays until it ends
     FF.ui.clear(main);
-    main.appendChild(C().hero(ev, { tag: 'h1' }));
+    main.appendChild(C().hero(ev, { tag: 'h1', extra: countdown(ev) }));
     if (state.removed) {
       main.appendChild(card(t('celRemovedTitle', 'You are not in this celebration'), [el('p', {}, t('celRemovedText', 'The organiser removed you from this celebration.'))]));
       return;
@@ -141,6 +141,10 @@ window.FF = window.FF || {};
       main.appendChild(meCard());
       if (needsTeamPick()) main.appendChild(teamCard());
       main.appendChild(lobbyCard());
+      state.gamesSlot = div('ev-games-slot');
+      main.appendChild(state.gamesSlot);
+      drawLineup();
+      loadLineup();
       var board = scoresCard();
       if (board) main.appendChild(board);
       if (FF.CelebrateWall) FF.CelebrateWall.mount(main, { ev: state.ev, me: state.me });
@@ -378,6 +382,68 @@ window.FF = window.FF || {};
     return box;
   }
 
+  /* "Starts in 2 days 4 h", ticking every second until the start; nothing without a date and time. */
+  function countdown(ev) {
+    var at = C().startsAt(ev);
+    if (!at || at <= Date.now()) return null;
+    var line = el('p', { class: 'ev-countdown', role: 'timer', 'aria-live': 'off' });
+    function tick() {
+      var left = at - Date.now();
+      if (left <= 0 || !line.isConnected) {
+        clearInterval(timer);
+        if (line.parentNode) line.parentNode.removeChild(line);
+        return;
+      }
+      line.textContent = C().countdownText(left);
+    }
+    var timer = setInterval(tick, 1000);
+    line.textContent = C().countdownText(at - Date.now());
+    return line;
+  }
+
+  /* The games planned: names and rules only (the server never sends their photos before play). */
+  function loadLineup() {
+    if (!state.ev || !state.me) return;
+    FF.Api.call('GET', '/c/' + state.ev.id + '/lineup', null, { guest: true }).then(function (r) {
+      var key = JSON.stringify(r.games);
+      if (key === state.lineupKey) return;
+      state.lineupKey = key;
+      state.lineup = r.games;
+      drawLineup();
+    }, function () {});
+  }
+
+  function drawLineup() {
+    var slot = state.gamesSlot;
+    if (!slot) return;
+    FF.ui.clear(slot);
+    var games = state.lineup || [];
+    if (!games.length) return;
+    var ul = el('ul', { class: 'ev-games' });
+    games.forEach(function (g) {
+      var li = el('li', { class: 'ev-game' + (g.live ? ' is-live' : '') });
+      var top = div('ev-game__top');
+      top.appendChild(el('strong', { class: 'ev-game__name' }, g.name));
+      var chip = el('span', { class: 'ev-game__chip' });
+      chip.appendChild(FF.Icons.icon(g.live ? 'play' : 'eye-slash'));
+      chip.appendChild(FF.ui.span('', g.live ? t('celGameOnNow', 'On now') : t('celGameLocked', 'Locked: opens when the MC starts it')));
+      top.appendChild(chip);
+      li.appendChild(top);
+      var facts = [g.template === 'pictureRush' ? t('celTplPictureRush', 'Picture Rush') : g.template];
+      if (g.rounds) facts.push(t(g.rounds === 1 ? 'celPicturesOne' : 'celPicturesMany', g.rounds === 1 ? '1 picture' : '{n} pictures', { n: g.rounds }));
+      if (g.level) facts.push(levelLabel(g.level));
+      li.appendChild(el('p', { class: 'ev-game__facts' }, facts.join(' · ')));
+      if (g.instructions) li.appendChild(el('p', { class: 'ev-game__how' }, g.instructions));
+      ul.appendChild(li);
+    });
+    slot.appendChild(card(t('celGamesPlanned', 'Games planned'), [ul]));
+  }
+
+  function levelLabel(level) {
+    var L = { easy: ['celLevelEasy', 'Easy'], medium: ['celLevelMedium', 'Medium'], hard: ['celLevelHard', 'Hard'], expert: ['celLevelExpert', 'Expert'] }[level];
+    return L ? t(L[0], L[1]) : level;
+  }
+
   function lobbyCard() {
     var n = state.ev.guestCount || 0;
     return card(t('celAllSet', 'You are all set'), [
@@ -402,6 +468,7 @@ window.FF = window.FF || {};
       state.me = r.me;
       state.ev = r.event;
       if (changed && !document.activeElement.closest('form')) paint();
+      else loadLineup();
     }, function () {});
   }
   function keepFresh() {
