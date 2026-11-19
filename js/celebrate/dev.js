@@ -21,8 +21,10 @@ window.FF = window.FF || {};
     return Math.floor(Math.random() * n);
   }
 
-  /* start: what POST /c/<cid>/games/<gid>/start returned ({ runId, startAt, run }). */
-  function host(start) {
+  /* start: what POST .../start returned ({ runId, startAt, run }).
+     opts.scores(): -> Promise of the event's scores list after a game (the MC asks with its link). */
+  function host(start, opts) {
+    opts = opts || {};
     var run = start.run;
     var make = FF.CelebrateReferees && FF.CelebrateReferees[run.template];
     if (!make) return Promise.reject(new Error('No referee for ' + run.template));
@@ -44,7 +46,7 @@ window.FF = window.FF || {};
           log: function (m) { if (window.console) console.log('[Celebrations dev referee] ' + m); },
           report: function (event, payload) {
             return FF.Api.call('POST', '/dev/celebration-report', payload).then(function () {
-              return FF.Api.call('GET', '/c/' + run.cid + '/play');
+              return opts.scores ? opts.scores().then(function (list) { return { scores: list }; }) : FF.Api.call('GET', '/c/' + run.cid + '/play');
             }).then(function (r) {
               var scores = {};
               (r.scores || []).forEach(function (s) { scores[s.teamId] = { points: s.points, place: s.place, games: s.games }; });

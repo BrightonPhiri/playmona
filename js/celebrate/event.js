@@ -372,12 +372,10 @@ window.FF = window.FF || {};
       main = document.getElementById('main');
       var r = route();
       if (!r.slug && !r.code) { paintPlain([codeCard()]); return; }
-      // The private pages: the celebrant's messages and memory book. The MC and TV pages come next.
+      // The private pages: the celebrant's messages and memory book, the TV display, the MC panel.
       if (r.page === 'for' && FF.CelebrantPage) { FF.CelebrantPage.start(main, r.slug); return; }
-      if (r.page === 'mc' || r.page === 'tv') {
-        paintPlain([card(t('celPageSoon', 'This page is not ready yet'), [el('p', {}, t('celPageSoonText', 'The MC panel and the TV display are still being built. Run the games from the organiser\'s dashboard for now.'))])]);
-        return;
-      }
+      if (r.page === 'tv' && FF.CelebrateTV) { FF.CelebrateTV.start(main, r.slug); return; }
+      if (r.page === 'mc' && FF.CelebrateMC) { FF.CelebrateMC.start(main, r.slug); return; }
       main.appendChild(div('ev-loading', t('loading', 'Loading…')));
       find(r.slug, r.code).catch(function (e) {
         paintPlain([card(e.status === 404 ? t('celNotFound', 'We could not find that celebration') : t('celLoadFailed', 'That did not load'), [el('p', {}, e.message)]), codeCard()]);

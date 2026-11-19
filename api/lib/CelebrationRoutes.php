@@ -59,6 +59,24 @@ class CelebrationRoutes
             return Response::json($this->w()->favourite($this->celebrant($req, $cid), $wm[1], !empty($req->json()['on'])));
         }
 
+        // The TV display and the MC panel: a private link plus an anonymous sign-in.
+        if ($m === 'GET' && $rest === '/screen') {
+            $ev = $this->s()->open($cid, $req->header('x-celebration-key'), ['display', 'mc']);
+            return Response::json($this->s()->screen($ev, $this->who($req)));
+        }
+        if ($rest === '/mc' || str_starts_with($rest, '/mc/')) {
+            $ev = $this->s()->open($cid, $req->header('x-celebration-key'), ['mc']);
+            $mc = $this->who($req);
+            if ($m === 'GET' && $rest === '/mc') return Response::json($this->s()->panel($ev, $mc));
+            if ($m === 'POST' && $rest === '/mc/display') return Response::json($this->s()->setDisplay($ev, $mc, $req->json()));
+            if ($m === 'POST' && $rest === '/mc/start') return Response::json($this->s()->start($ev, $mc, (string) ($req->json()['gameId'] ?? ''), nowMs()));
+            if ($m === 'POST' && $rest === '/mc/control') return Response::json($this->s()->control($ev, $mc, (string) ($req->json()['action'] ?? ''), nowMs()));
+            if ($m === 'POST' && preg_match('#^/mc/messages/(w_[a-f0-9]{24})/(approve|reject)$#', $rest, $wm)) {
+                return Response::json($this->s()->moderate($ev, $mc, $wm[1], $wm[2]));
+            }
+            return null;
+        }
+
         // The organiser.
         if ($m === 'GET' && $rest === '/manage') return Response::json($this->c()->manage($cid, $this->who($req)));
         if ($m === 'POST' && $rest === '/update') return Response::json($this->c()->update($cid, $this->who($req), $req->json()));
@@ -143,6 +161,7 @@ class CelebrationRoutes
     private function c(): Celebrations { return $this->app->celebrations(); }
     private function w(): CelebrationWall { return $this->app->celebrationWall(); }
     private function g(): CelebrationGames { return $this->app->celebrationGames(); }
+    private function s(): CelebrationStage { return $this->app->celebrationStage(); }
     private function who(Request $req): AuthUser { return ($this->user)($req); }
 
     private function q(Request $req, string $k): ?string

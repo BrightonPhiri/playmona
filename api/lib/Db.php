@@ -590,6 +590,7 @@ class Db
         Celebrations::migrate($this, $engine);
         CelebrationGames::migrate($this, $engine);
         CelebrationWall::migrate($this, $engine);
+        CelebrationStage::migrate($this, $engine);
         // Columns added after the first release. Each fails harmlessly once it exists.
         foreach ([
             'ALTER TABLE orders ADD COLUMN mode VARCHAR(8) NULL',

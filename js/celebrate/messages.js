@@ -22,7 +22,7 @@ window.FF = window.FF || {};
   var filter = 'pending';
 
   function tab(panel, ev, update) {
-    panel.appendChild(linkCard(ev, update));
+    panel.appendChild(linkCard(ev, update, 'celebrant'));
     var box = div('cel-wall');
     panel.appendChild(box);
     box.appendChild(FF.UI.loading(t('loading', 'Loading…')));
@@ -121,26 +121,40 @@ window.FF = window.FF || {};
     }, 15000);
   }
 
-  /* The celebrant's private link and the memory book. */
-  function linkCard(ev, update) {
+  /* A private link: the celebrant's (with the memory book), the TV display's or the MC's. */
+  var LINKS = {
+    celebrant: { icon: 'gift', title: ['celForLinkTitle', '{name}\'s private link'],
+      text: ['celForLinkText', 'This opens every message on the wall, with the photos, and makes the memory book. Give it to {name} only: anyone with the link can read the messages.'] },
+    display: { icon: 'monitor', title: ['celTvLinkTitle', 'TV display'],
+      text: ['celTvLinkText', 'Open this on the laptop or smart TV that drives the big screen. It shows how to join, the games, the scores and approved messages. It cannot change anything.'] },
+    mc: { icon: 'megaphone', title: ['celMcLinkTitle', 'MC panel'],
+      text: ['celMcLinkText', 'For whoever runs the evening: start games, choose what the TV shows and approve messages, from a phone. Give it only to your MC.'] }
+  };
+
+  function linkCard(ev, update, kind) {
+    kind = kind || 'celebrant';
+    var L = LINKS[kind];
+    var vars = { name: ev.celebrantName };
     var card = el('section', { class: 'cel-linkcard' });
     var head = div('cel-linkcard__head');
-    head.appendChild(icon('gift'));
-    head.appendChild(el('h2', { class: 'cel-section-title' }, t('celForLinkTitle', '{name}\'s private link', { name: ev.celebrantName })));
+    head.appendChild(icon(L.icon));
+    head.appendChild(el('h2', { class: 'cel-section-title' }, t(L.title[0], L.title[1], vars)));
     card.appendChild(head);
-    card.appendChild(el('p', { class: 'hint' }, t('celForLinkText', 'This opens every message on the wall, with the photos, and makes the memory book. Give it to {name} only: anyone with the link can read the messages.', { name: ev.celebrantName })));
-    var url = C().privateUrl(ev.slug, 'celebrant', ev.tokens.celebrant);
+    card.appendChild(el('p', { class: 'hint' }, t(L.text[0], L.text[1], vars)));
+    var url = C().privateUrl(ev.slug, kind, ev.tokens[kind]);
     var acts = div('cel-linkcard__acts');
     acts.appendChild(FF.UI.button(t('celCopyLink', 'Copy link'), { class: 'btn-secondary btn-sm', icon: 'copy', onClick: function () { C().copy(url, t('celLinkCopied', 'Link copied')); } }));
     acts.appendChild(FF.UI.button(t('celForOpen', 'Open'), { class: 'btn-ghost btn-sm', icon: 'arrows-out', onClick: function () { window.open(url, '_blank', 'noopener'); } }));
-    acts.appendChild(FF.UI.button(t('celForBookOpen', 'Memory book'), { class: 'btn-ghost btn-sm', icon: 'book-open', onClick: function () { window.open(url + '&view=book', '_blank', 'noopener'); } }));
+    if (kind === 'celebrant') {
+      acts.appendChild(FF.UI.button(t('celForBookOpen', 'Memory book'), { class: 'btn-ghost btn-sm', icon: 'book-open', onClick: function () { window.open(url + '&view=book', '_blank', 'noopener'); } }));
+    }
     acts.appendChild(FF.UI.button(t('celNewLink', 'Make a new link'), { class: 'btn-ghost btn-sm', icon: 'restart', onClick: function () {
       FF.UI.confirm({
         title: t('celNewLinkTitle', 'Make a new private link?'),
         body: t('celNewLinkText', 'The old link stops working at once. Use this if the link reached the wrong person.'),
         confirmLabel: t('celNewLink', 'Make a new link'),
         onConfirm: function () {
-          update(FF.Api.call('POST', '/c/' + ev.id + '/links/celebrant/regenerate', {})).then(function () {
+          update(FF.Api.call('POST', '/c/' + ev.id + '/links/' + kind + '/regenerate', {})).then(function () {
             FF.UI.toast(t('celNewLinkDone', 'New link made. The old one no longer works.'));
           }, function () {});
         }
@@ -150,5 +164,5 @@ window.FF = window.FF || {};
     return card;
   }
 
-  FF.CelebrateMessages = { tab: tab };
+  FF.CelebrateMessages = { tab: tab, linkCard: linkCard };
 })();

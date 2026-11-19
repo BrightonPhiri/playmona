@@ -133,6 +133,10 @@ class App
     {
         return $this->make('celebrationWall', fn () => new CelebrationWall($this->db(), $this->celebrations(), $this->celebrationMedia()));
     }
+    public function celebrationStage(): CelebrationStage
+    {
+        return $this->make('celebrationStage', fn () => new CelebrationStage($this->db(), $this->rtdb(), $this->celebrations(), $this->celebrationGames(), $this->celebrationWall()));
+    }
     public function celebrationGames(): CelebrationGames
     {
         return $this->make('celebrationGames', fn () => new CelebrationGames($this->db(), $this->rtdb(), $this->celebrations(), $this->celebrationMedia(), $this->runner()));

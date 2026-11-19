@@ -183,7 +183,13 @@ class CelebrationGames
     /** The organiser starts a published game. Returns the run (the organiser's dev tab referees it). */
     public function start(string $cid, string $gid, AuthUser $user, int $now): array
     {
-        $ev = $this->events->owned($cid, $user);
+        return $this->startAs($this->events->owned($cid, $user), $gid, $user->uid, $now);
+    }
+
+    /** Starts a game for someone already let in (the organiser, or the MC's private link). */
+    public function startAs(array $ev, string $gid, string $actor, int $now): array
+    {
+        $cid = $ev['id'];
         if ($ev['status'] !== 'active') throw new HttpError(403, 'This celebration is not active.', 'not-active');
         $g = $this->game($cid, $gid);
         if ($g['status'] !== 'published') throw new HttpError(409, 'Publish the game before you start it.', 'not-published');
@@ -203,11 +209,11 @@ class CelebrationGames
 
         $runId = newId('r');
         $startAt = $now + self::COUNTDOWN_MS;
-        $this->db->transaction(function (Db $db) use ($cid, $runId, $g, $user, $startAt, $now) {
+        $this->db->transaction(function (Db $db) use ($cid, $runId, $g, $actor, $startAt, $now) {
             $busy = $db->one("SELECT id FROM celebration_runs WHERE cid = ? AND status = 'active'" . $db->forUpdate(), [$cid]);
             if ($busy) throw new HttpError(409, 'Another game is being played. End it first.', 'game-live');
             $db->run('INSERT INTO celebration_runs (id, cid, game_id, template, name, status, started_by, start_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [
-                $runId, $cid, $g['id'], $g['template'], $g['name'], 'active', $user->uid, $startAt, $now,
+                $runId, $cid, $g['id'], $g['template'], $g['name'], 'active', $actor, $startAt, $now,
             ]);
         });
         $run = [
@@ -218,7 +224,7 @@ class CelebrationGames
             $this->rtdb->set('celebrationRuns/' . $runId, $run);
             $this->rtdb->update('celebrations/' . $cid, [
                 'run' => null, 'inbox' => null, 'control' => null,
-                'viewers/' . $user->uid => true,
+                'viewers/' . $actor => true,
                 'live/run' => $this->pointer($runId, $g, $startAt),
             ]);
         } catch (\Throwable $e) {
@@ -226,7 +232,7 @@ class CelebrationGames
             $this->end($runId, 'failed', $now);
             throw new HttpError(503, 'The game could not be started. Please try again.', 'start-failed');
         }
-        $this->events->audit($cid, $user->uid, 'game.start', ['runId' => $runId, 'gameId' => $g['id']]);
+        $this->events->audit($cid, $actor, 'game.start', ['runId' => $runId, 'gameId' => $g['id']]);
         $this->runner->ensure($now);
         return ['runId' => $runId, 'startAt' => $startAt, 'run' => $run];
     }
@@ -243,7 +249,12 @@ class CelebrationGames
     /** next, pause, resume or end, for the referee. */
     public function control(string $cid, AuthUser $user, string $action, int $now): array
     {
-        $this->events->owned($cid, $user);
+        return $this->controlAs($this->events->owned($cid, $user), $user->uid, $action, $now);
+    }
+
+    public function controlAs(array $ev, string $actor, string $action, int $now): array
+    {
+        $cid = $ev['id'];
         if (!in_array($action, self::ACTIONS, true)) throw new HttpError(400, 'Unknown action.', 'bad-action');
         $run = $this->db->one("SELECT * FROM celebration_runs WHERE cid = ? AND status = 'active'", [$cid]);
         if (!$run) throw new HttpError(409, 'No game is being played.', 'no-game');
@@ -253,7 +264,7 @@ class CelebrationGames
         } catch (\Throwable $e) {
             throw new HttpError(503, 'That did not reach the game. Please try again.', 'control-failed');
         }
-        $this->events->audit($cid, $user->uid, 'game.' . $action, ['runId' => $run['id']]);
+        $this->events->audit($cid, $actor, 'game.' . $action, ['runId' => $run['id']]);
         if (!$this->runner->ensure($now) && $action === 'end' && !$this->runner->alive($now) && !$this->devHosted($run)) {
             // Nobody is refereeing: end it here so the event is not stuck.
             $this->end($run['id'], 'abandoned', $now);
@@ -268,6 +279,28 @@ class CelebrationGames
         if (!$run) return ['ok' => true, 'started' => false];
         $late = $now > (int) $run['start_at'] + self::NUDGE_AFTER_MS;
         return ['ok' => true, 'started' => $late && $this->runner->ensure($now)];
+    }
+
+    /** The games the MC may start (published ones), and what is on now. */
+    public function forStage(string $cid): array
+    {
+        $rows = $this->db->all("SELECT * FROM celebration_games WHERE cid = ? AND status = 'published' AND deleted_at IS NULL ORDER BY sort, created_at", [$cid]);
+        return ['games' => array_map(fn ($g) => $this->view($g, false), $rows), 'active' => $this->activeView($cid), 'last' => $this->lastResult($cid)];
+    }
+
+    /** The last game that finished: its name and the teams' places, for the winner screen. */
+    public function lastResult(string $cid): ?array
+    {
+        $run = $this->db->one("SELECT id, name, result, ended_at FROM celebration_runs WHERE cid = ? AND status = 'ended' ORDER BY ended_at DESC", [$cid]);
+        if (!$run) return null;
+        $result = json_decode((string) $run['result'], true) ?: [];
+        return ['runId' => $run['id'], 'name' => $run['name'], 'ranked' => $result['ranked'] ?? [], 'endedAt' => (int) $run['ended_at']];
+    }
+
+    /** Lets this signed-in phone read the game being played (celebrations/<cid>/run). */
+    public function allowViewer(string $cid, string $uid): void
+    {
+        $this->quiet(fn () => $this->rtdb->set('celebrations/' . $cid . '/viewers/' . $uid, true));
     }
 
     /* ---------------------------------------------------------------- reports from the referee */

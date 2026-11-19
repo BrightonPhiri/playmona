@@ -158,7 +158,14 @@ class CelebrationWall
     /** approve, reject, pending (back to waiting) or delete. */
     public function moderate(string $cid, string $mid, AuthUser $user, string $action): array
     {
-        $this->events->owned($cid, $user);
+        $this->moderateAs($this->events->owned($cid, $user), $mid, $user->uid, $action);
+        return $this->manage($cid, $user);
+    }
+
+    /** Moderates for someone already let in (the organiser, or the MC's private link). */
+    public function moderateAs(array $ev, string $mid, string $actor, string $action): void
+    {
+        $cid = $ev['id'];
         if (!in_array($action, self::ACTIONS, true)) throw new HttpError(404, 'Not found.', 'not-found');
         $m = $this->row($cid, $mid);
         $now = nowMs();
@@ -171,8 +178,36 @@ class CelebrationWall
             $this->db->run('UPDATE celebration_messages SET status = ?, moderated_at = ?' . ($action === 'approve' ? ', reports = 0' : '') . ' WHERE id = ?', [$status, $now, $mid]);
             if ($action === 'approve') $this->db->run('DELETE FROM celebration_reports WHERE message_id = ?', [$mid]);
         }
-        $this->events->audit($cid, $user->uid, 'message.' . $action, ['id' => $mid]);
-        return $this->manage($cid, $user);
+        $this->events->audit($cid, $actor, 'message.' . $action, ['id' => $mid]);
+    }
+
+    /**
+     * Messages for the TV and the MC, as everyone at the event may see them (no name behind an
+     * anonymous message). The TV only ever gets approved ones; the MC also gets the waiting ones.
+     */
+    public function forStage(string $cid, bool $withWaiting): array
+    {
+        $rows = $this->db->all("SELECT * FROM celebration_messages WHERE cid = ? AND status = 'approved' AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 60", [$cid]);
+        $out = ['approved' => array_map(fn ($m) => $this->stageView($m), $rows)];
+        if ($withWaiting) {
+            $rows = $this->db->all("SELECT * FROM celebration_messages WHERE cid = ? AND status = 'pending' AND deleted_at IS NULL ORDER BY created_at ASC LIMIT 60", [$cid]);
+            $out['waiting'] = array_map(fn ($m) => $this->stageView($m) + ['reports' => (int) $m['reports']], $rows);
+        }
+        return $out;
+    }
+
+    /** One approved message, or null (for "show this on the TV"). */
+    public function approvedOne(string $cid, string $mid): ?array
+    {
+        $m = $this->db->one("SELECT * FROM celebration_messages WHERE id = ? AND cid = ? AND status = 'approved' AND deleted_at IS NULL", [$mid, $cid]);
+        return $m ? $this->stageView($m) : null;
+    }
+
+    private function stageView(array $m): array
+    {
+        $v = $this->view($m, 'public');
+        unset($v['mine']);
+        return $v;
     }
 
     /** The memory book for the organiser: what the celebrant sees. */
