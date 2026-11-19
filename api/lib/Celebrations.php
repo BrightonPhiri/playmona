@@ -24,6 +24,7 @@ class Celebrations
         'private' => false,          // the event page needs the join code before it shows anything
         'requireAccount' => false,   // guests must have a PlayMona account to join
         'guestTeams' => true,        // guests pick their own team
+        'guestMakeTeams' => true,    // a group on one phone may make its own team (needs guestTeams)
         'anonymousMessages' => true,
         'photoUploads' => true,
         'leaderboard' => true,       // the live leaderboard shows on guests' phones
@@ -44,6 +45,9 @@ class Celebrations
     public const TEAM_COLOURS = ['#D4A017', '#7C8A9E', '#C0392B', '#1E8449', '#2E86C1', '#8E44AD', '#E67E22', '#17A589', '#34495E', '#D35400', '#C2185B', '#5D6D7E'];
     public const TEAM_NAMES = ['Gold', 'Silver', 'Ruby', 'Emerald', 'Sapphire', 'Amethyst', 'Amber', 'Jade', 'Onyx', 'Copper', 'Rose', 'Pearl'];
     private const CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+    /** Words a guest-made team name may not use (whole words, any case). The organiser can rename or remove the rest. */
+    private const BLOCKED = ['fuck', 'fucking', 'fucker', 'motherfucker', 'shit', 'shitty', 'bullshit', 'cunt', 'bitch', 'bitches', 'bastard',
+        'asshole', 'arsehole', 'dick', 'dickhead', 'cock', 'pussy', 'whore', 'slut', 'nigger', 'nigga', 'faggot', 'fag', 'retard', 'rape', 'porn', 'sex', 'nazi', 'hitler'];
     private const RESERVED = ['play', 'join', 'new', 'admin', 'api', 'tv', 'mc', 'for', 'watch', 'c', 'www', 'help'];
 
     public function __construct(private Db $db, private RealtimeDb $rtdb, private CelebrationMedia $media) {}
@@ -126,6 +130,8 @@ class Celebrations
             created_at BIGINT NOT NULL
         )$engine");
         foreach ([
+            'ALTER TABLE celebrations ADD COLUMN types TEXT NULL',
+            'ALTER TABLE celebration_teams ADD COLUMN made_by VARCHAR(128) NULL',
             'CREATE INDEX celebrations_owner ON celebrations (owner_uid, created_at)',
             'CREATE INDEX celebration_teams_cid ON celebration_teams (cid, sort)',
             'CREATE INDEX celebration_guests_team ON celebration_guests (cid, team_id)',
@@ -188,9 +194,9 @@ class Celebrations
         $slug = $this->pickSlug(isset($in['slug']) && $in['slug'] !== '' ? (string) $in['slug'] : $fields['celebrant_name'] . ' ' . $fields['type'], isset($in['slug']) && $in['slug'] !== '');
 
         $this->db->transaction(function (Db $db) use ($id, $slug, $user, $fields, $theme, $settings, $now, $in, $limits) {
-            $db->run('INSERT INTO celebrations (id, slug, join_code, owner_uid, title, celebrant_name, type, description, event_date, start_time, end_time, timezone, venue, welcome, theme, settings, status, celebrant_token, mc_token, display_token, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
-                $id, $slug, $this->newJoinCode(), $user->uid, $fields['title'], $fields['celebrant_name'], $fields['type'],
+            $db->run('INSERT INTO celebrations (id, slug, join_code, owner_uid, title, celebrant_name, type, types, description, event_date, start_time, end_time, timezone, venue, welcome, theme, settings, status, celebrant_token, mc_token, display_token, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+                $id, $slug, $this->newJoinCode(), $user->uid, $fields['title'], $fields['celebrant_name'], $fields['type'], $fields['types'],
                 $fields['description'], $fields['event_date'], $fields['start_time'], $fields['end_time'], $fields['timezone'],
                 $fields['venue'], $fields['welcome'], json_encode($theme), json_encode($settings), 'active',
                 self::newToken(), self::newToken(), self::newToken(), $now, $now,
@@ -208,7 +214,9 @@ class Celebrations
         $ev = $this->owned($cid, $user);
         $sets = [];
         $vals = [];
-        $details = $this->cleanDetails(array_merge($this->detailsOf($ev), $in), false);
+        $merged = array_merge($this->detailsOf($ev), $in);
+        if (array_key_exists('type', $in) && !array_key_exists('types', $in)) unset($merged['types']);   // "type" alone replaces the list
+        $details = $this->cleanDetails($merged, false);
         foreach ($details as $col => $v) {
             $sets[] = "$col = ?";
             $vals[] = $v;
@@ -465,6 +473,59 @@ class Celebrations
         return $this->guestView($ev, $user->uid);
     }
 
+    /** A group makes its own team (often 5 people on one phone) and moves into it. Same rules as picking a team. */
+    public function guestMakeTeam(string $cid, AuthUser $user, array $in): array
+    {
+        $ev = $this->event($cid);
+        if ($ev['status'] !== 'active') throw new HttpError(403, 'This celebration is not available.', 'suspended');
+        $this->guestRow($cid, $user->uid);
+        $settings = $this->settingsOf($ev);
+        if (!$settings['guestTeams']) throw new HttpError(403, 'The organiser puts guests into teams.', 'teams-by-organiser');
+        if (!$settings['guestMakeTeams']) throw new HttpError(403, 'The organiser makes the teams for this celebration.', 'no-guest-teams');
+        if ($settings['teamsLocked']) throw new HttpError(403, 'Teams are locked now.', 'teams-locked');
+        $name = $this->cleanText($in['name'] ?? '', 30);
+        if ($name === '') throw new HttpError(400, 'Type a name for your team.', 'no-name');
+        if ($this->blocked($name)) throw new HttpError(400, 'Please pick a different team name.', 'bad-name');
+        $limit = $this->limits()['teamsPerEvent'];
+        $tid = $this->db->transaction(function (Db $db) use ($cid, $name, $limit, $user) {
+            // The event row is the lock, so two groups making teams at once take turns (no doubled name or colour).
+            // Keep it the first statement: MariaDB takes the read snapshot at the first plain read.
+            $db->one('SELECT id FROM celebrations WHERE id = ?' . $db->forUpdate(), [$cid]);
+            // A team this guest made and is alone in goes when they make another, so one phone cannot use up the limit.
+            $leaving = $this->ownEmptyAfterLeaving($db, $cid, $user->uid);
+            $live = array_values(array_filter(
+                $db->all('SELECT id, name, color, sort FROM celebration_teams WHERE cid = ? AND deleted_at IS NULL', [$cid]),
+                fn ($t) => $t['id'] !== $leaving
+            ));
+            if (count($live) >= $limit) throw new HttpError(403, 'This celebration has the most teams it can have. Pick one of the teams.', 'limit');
+            foreach ($live as $t) {
+                if (mb_strtolower($t['name']) === mb_strtolower($name)) throw new HttpError(409, 'There is already a team with that name. Pick it, or try another name.', 'team-taken');
+            }
+            $used = array_map('strtoupper', array_column($live, 'color'));
+            $free = array_values(array_diff(self::TEAM_COLOURS, $used));
+            $color = $free[0] ?? self::TEAM_COLOURS[count($live) % 12];
+            $sort = $live ? max(array_map('intval', array_column($live, 'sort'))) + 1 : 0;
+            $tid = $this->insertTeam($db, $cid, $name, $color, 0, $sort, $user->uid);
+            $db->run('UPDATE celebration_guests SET team_id = ? WHERE cid = ? AND uid = ?', [$tid, $cid, $user->uid]);
+            if ($leaving) $db->run('UPDATE celebration_teams SET deleted_at = ? WHERE id = ?', [nowMs(), $leaving]);
+            return $tid;
+        });
+        $this->audit($cid, $user->uid, 'team.guest-made', ['team' => $tid, 'name' => $name]);
+        $this->publishMember($cid, $user->uid);
+        $this->publish($cid);
+        return $this->guestView($ev, $user->uid);
+    }
+
+    /** True when a team name uses a blocked word (also spelled with numbers or symbols, like "sh1t"). */
+    private function blocked(string $name): bool
+    {
+        $plain = strtr(mb_strtolower($name), ['0' => 'o', '1' => 'i', '3' => 'e', '4' => 'a', '5' => 's', '@' => 'a', '$' => 's', '!' => 'i']);
+        foreach (preg_split('/[^\p{L}]+/u', $plain, -1, PREG_SPLIT_NO_EMPTY) as $word) {
+            if (in_array($word, self::BLOCKED, true)) return true;
+        }
+        return false;
+    }
+
     private function assignOwnTeam(array $ev, array $settings, string $uid, string $tid): void
     {
         if (!$settings['guestTeams']) throw new HttpError(403, 'The organiser puts guests into teams.', 'teams-by-organiser');
@@ -476,8 +537,20 @@ class Celebrations
                 $n = (int) $db->one('SELECT COUNT(*) AS n FROM celebration_guests WHERE cid = ? AND team_id = ? AND uid <> ? AND removed_at IS NULL', [$ev['id'], $tid, $uid])['n'];
                 if ($n >= (int) $team['capacity']) throw new HttpError(409, 'That team is full. Pick another one.', 'team-full');
             }
+            $leaving = $this->ownEmptyAfterLeaving($db, $ev['id'], $uid);
             $db->run('UPDATE celebration_guests SET team_id = ? WHERE cid = ? AND uid = ?', [$tid, $ev['id'], $uid]);
+            if ($leaving && $leaving !== $tid) $db->run('UPDATE celebration_teams SET deleted_at = ? WHERE id = ?', [nowMs(), $leaving]);
         });
+    }
+
+    /** The team this guest is in, when they made it and nobody else is in it (so it would be left empty), else null. */
+    private function ownEmptyAfterLeaving(Db $db, string $cid, string $uid): ?string
+    {
+        $row = $db->one('SELECT g.team_id FROM celebration_guests g JOIN celebration_teams t ON t.id = g.team_id
+            WHERE g.cid = ? AND g.uid = ? AND t.made_by = ? AND t.deleted_at IS NULL', [$cid, $uid, $uid]);
+        if (!$row) return null;
+        $others = (int) $db->one('SELECT COUNT(*) AS n FROM celebration_guests WHERE cid = ? AND team_id = ? AND uid <> ? AND removed_at IS NULL', [$cid, $row['team_id'], $uid])['n'];
+        return $others === 0 ? (string) $row['team_id'] : null;
     }
 
     /* ---------------------------------------------------------------- private links */
@@ -557,6 +630,7 @@ class Celebrations
             'title' => $ev['title'],
             'celebrantName' => $ev['celebrant_name'],
             'type' => $ev['type'],
+            'types' => $this->typesOf($ev),
             'date' => $ev['event_date'],
             'startTime' => $ev['start_time'],
             'status' => $ev['status'],
@@ -608,6 +682,7 @@ class Celebrations
             'title' => $ev['title'],
             'celebrantName' => $ev['celebrant_name'],
             'type' => $ev['type'],
+            'types' => $this->typesOf($ev),
             'description' => (string) $ev['description'],
             'date' => $ev['event_date'],
             'startTime' => $ev['start_time'],
@@ -640,12 +715,13 @@ class Celebrations
 
     public function teams(string $cid): array
     {
-        $rows = $this->db->all('SELECT t.id, t.name, t.color, t.capacity, t.sort,
+        $rows = $this->db->all('SELECT t.id, t.name, t.color, t.capacity, t.sort, t.made_by,
                 (SELECT COUNT(*) FROM celebration_guests g WHERE g.cid = t.cid AND g.team_id = t.id AND g.removed_at IS NULL) AS members
             FROM celebration_teams t WHERE t.cid = ? AND t.deleted_at IS NULL ORDER BY t.sort, t.created_at', [$cid]);
         return array_map(fn ($t) => [
             'id' => $t['id'], 'name' => $t['name'], 'color' => $t['color'],
             'capacity' => (int) $t['capacity'], 'members' => (int) $t['members'],
+            'madeByGuest' => $t['made_by'] !== null,
         ], $rows);
     }
 
@@ -667,6 +743,7 @@ class Celebrations
                 'status' => $ev['status'],
                 'teamsLocked' => !empty($settings['teamsLocked']),
                 'guestTeams' => $settings['guestTeams'],
+                'guestMakeTeams' => $settings['guestMakeTeams'],
                 'guests' => (int) $this->db->one('SELECT COUNT(*) AS n FROM celebration_guests WHERE cid = ? AND removed_at IS NULL', [$cid])['n'],
                 'updatedAt' => nowMs(),
             ],
@@ -728,6 +805,12 @@ class Celebrations
         return $t;
     }
 
+    /** This person's guest row; 404 "not-guest" when they have not joined (or were removed). */
+    public function guestOf(string $cid, string $uid): array
+    {
+        return $this->guestRow($cid, $uid);
+    }
+
     private function guestRow(string $cid, string $uid): array
     {
         $g = $this->db->one('SELECT * FROM celebration_guests WHERE cid = ? AND uid = ? AND removed_at IS NULL', [$cid, $uid]);
@@ -754,7 +837,7 @@ class Celebrations
     private function detailsOf(array $ev): array
     {
         return [
-            'title' => $ev['title'], 'celebrantName' => $ev['celebrant_name'], 'type' => $ev['type'],
+            'title' => $ev['title'], 'celebrantName' => $ev['celebrant_name'], 'type' => $ev['type'], 'types' => $this->typesOf($ev),
             'description' => $ev['description'], 'date' => $ev['event_date'], 'startTime' => $ev['start_time'],
             'endTime' => $ev['end_time'], 'timezone' => $ev['timezone'], 'venue' => $ev['venue'], 'welcome' => $ev['welcome'],
         ];
@@ -766,8 +849,11 @@ class Celebrations
         $celebrant = $this->cleanText($in['celebrantName'] ?? '', 60);
         if ($title === '') throw new HttpError(400, 'Give the celebration a title.', 'no-title');
         if ($celebrant === '') throw new HttpError(400, 'Who is being celebrated? Add their name.', 'no-celebrant');
-        $type = (string) ($in['type'] ?? 'birthday');
-        if (!in_array($type, self::TYPES, true)) throw new HttpError(400, 'Pick a kind of celebration.', 'bad-type');
+        $types = isset($in['types']) && is_array($in['types']) ? $in['types'] : [$in['type'] ?? 'birthday'];
+        $types = array_values(array_unique(array_map(fn ($x) => is_scalar($x) ? (string) $x : '', $types)));
+        if (!$types || count($types) > 3 || array_diff($types, self::TYPES)) {
+            throw new HttpError(400, 'Pick one to three kinds of celebration.', 'bad-type');
+        }
         $date = $this->nullable($in['date'] ?? null);
         if ($date !== null && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) throw new HttpError(400, 'The date is not valid.', 'bad-date');
         $start = $this->nullable($in['startTime'] ?? null);
@@ -780,7 +866,8 @@ class Celebrations
         return [
             'title' => $title,
             'celebrant_name' => $celebrant,
-            'type' => $type,
+            'type' => $types[0],
+            'types' => json_encode($types),
             'description' => $this->cleanText($in['description'] ?? '', 800, true),
             'event_date' => $date,
             'start_time' => $start,
@@ -789,6 +876,13 @@ class Celebrations
             'venue' => $this->cleanText($in['venue'] ?? '', 140),
             'welcome' => $this->cleanText($in['welcome'] ?? '', 500, true),
         ];
+    }
+
+    /** What the event celebrates, main kind first (old events have only "type"). */
+    private function typesOf(array $ev): array
+    {
+        $list = json_decode((string) ($ev['types'] ?? ''), true);
+        return is_array($list) && $list ? array_values($list) : [$ev['type']];
     }
 
     private function cleanTheme(mixed $in): array
@@ -839,11 +933,13 @@ class Celebrations
         return max(0, min(200, (int) $v));
     }
 
-    private function insertTeam(Db $db, string $cid, string $name, string $color, int $capacity, int $sort): void
+    private function insertTeam(Db $db, string $cid, string $name, string $color, int $capacity, int $sort, ?string $madeBy = null): string
     {
-        $db->run('INSERT INTO celebration_teams (id, cid, name, color, capacity, sort, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)', [
-            newId('t'), $cid, $name, $color, $capacity, $sort, nowMs(),
+        $id = newId('t');
+        $db->run('INSERT INTO celebration_teams (id, cid, name, color, capacity, sort, made_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [
+            $id, $cid, $name, $color, $capacity, $sort, $madeBy, nowMs(),
         ]);
+        return $id;
     }
 
     /** A free web address. $strict: the organiser typed it, so refuse a taken one instead of changing it. */

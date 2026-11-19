@@ -118,3 +118,22 @@ test('stage: the MC starts, steers and ends a game; the TV may watch it', functi
     eq(1400, $tv['scores'][0]['points']);
     eq($r['gold'], $tv['scores'][0]['teamId']);
 });
+
+test('stage: the organiser can hide the TV QR code; nobody else can that way', function () {
+    $w = celWorld();
+    $ev = newEvent($w);
+    $id = $ev['id'];
+    eq(['showQr' => true], celCall($w, 'GET', "/c/$id/display", ['token' => organiser()])[1]);
+    [$s, $b] = celCall($w, 'POST', "/c/$id/display", ['token' => organiser(), 'json' => ['showQr' => false, 'layout' => 'wall']]);
+    eq(200, $s, json_encode($b));
+    eq(['showQr' => false], $b);
+    $tv = celCall($w, 'GET', "/c/$id/screen", ['token' => guestToken('tv1'), 'headers' => stageKey($ev, 'display')])[1]['display'];
+    eq(false, $tv['showQr']);
+    eq('auto', $tv['layout'], 'the organiser route only changes the QR');
+    eq(false, $w['rtdb']->get("celebrations/$id/live/display/showQr"));
+    eq(403, celCall($w, 'POST', "/c/$id/display", ['token' => guestToken('g1'), 'json' => ['showQr' => true]])[0], 'a guest');
+    eq(403, celCall($w, 'POST', "/c/$id/display", ['token' => organiser('someone'), 'json' => ['showQr' => true]])[0], 'another account');
+    // The MC still turns it back on.
+    celCall($w, 'POST', "/c/$id/mc/display", ['token' => guestToken('mc1'), 'headers' => stageKey($ev, 'mc'), 'json' => ['showQr' => true]]);
+    eq(['showQr' => true], celCall($w, 'GET', "/c/$id/display", ['token' => organiser()])[1]);
+});

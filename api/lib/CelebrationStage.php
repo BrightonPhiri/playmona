@@ -83,6 +83,24 @@ class CelebrationStage
     /** The MC changes what the TV shows. Only the fields sent change. */
     public function setDisplay(array $ev, AuthUser $mc, array $in): array
     {
+        return $this->saveDisplay($ev, 'mc:' . $mc->uid, $in);
+    }
+
+    /** The organiser's own switch for the TV's "Scan to join" QR code (the MC has the full controls). */
+    public function ownerQr(string $cid, AuthUser $user): array
+    {
+        return ['showQr' => $this->display($this->events->owned($cid, $user))['showQr']];
+    }
+
+    public function setOwnerQr(string $cid, AuthUser $user, array $in): array
+    {
+        $ev = $this->events->owned($cid, $user);
+        $d = $this->saveDisplay($ev, $user->uid, ['showQr' => !empty($in['showQr'])])['display'];
+        return ['showQr' => $d['showQr']];
+    }
+
+    private function saveDisplay(array $ev, string $actor, array $in): array
+    {
         $d = $this->display($ev);
         if (array_key_exists('layout', $in)) {
             if (!in_array($in['layout'], self::LAYOUTS, true)) throw new HttpError(400, 'Unknown screen.', 'bad-layout');
@@ -111,7 +129,7 @@ class CelebrationStage
         } catch (\Throwable $e) {
             error_log('PlayMona Celebrations stage: ' . $e->getMessage());
         }
-        $this->events->audit($ev['id'], 'mc:' . $mc->uid, 'mc.display', ['layout' => $d['layout'], 'showQr' => $d['showQr'], 'messageId' => $d['messageId']]);
+        $this->events->audit($ev['id'], $actor, 'mc.display', ['layout' => $d['layout'], 'showQr' => $d['showQr'], 'messageId' => $d['messageId']]);
         return ['display' => $d];
     }
 

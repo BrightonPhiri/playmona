@@ -318,3 +318,103 @@ test('celebrations: too many events per account and the admin limits page', func
     celCall($w, 'POST', '/admin/celebrations/limits', ['token' => idToken(['sub' => 'boss']), 'json' => ['enabled' => false]]);
     eq(403, celCall($w, 'POST', '/c', ['token' => organiser('third'), 'json' => vickyInput()])[0], 'paused');
 });
+
+test('celebrations: an event celebrates up to three things', function () {
+    $w = celWorld();
+    $ev = newEvent($w, ['types' => ['birthday', 'graduation']]);
+    eq(['birthday', 'graduation'], $ev['types']);
+    eq('birthday', $ev['type']);
+    $id = $ev['id'];
+    $org = ['token' => organiser()];
+    eq(['graduation'], celCall($w, 'POST', "/c/$id/update", $org + ['json' => ['types' => ['graduation', 'graduation']]])[1]['types'], 'duplicates dropped');
+    eq('graduation', celCall($w, 'GET', "/c/$id/manage", $org)[1]['type']);
+    eq(400, celCall($w, 'POST', "/c/$id/update", $org + ['json' => ['types' => ['birthday', 'wedding', 'farewell', 'reunion']]])[0], 'more than 3');
+    eq(400, celCall($w, 'POST', "/c/$id/update", $org + ['json' => ['types' => []]])[0], 'none');
+    eq(400, celCall($w, 'POST', "/c/$id/update", $org + ['json' => ['types' => ['party']]])[0], 'unknown');
+    // Sending only "type" replaces the list.
+    eq(['wedding'], celCall($w, 'POST', "/c/$id/update", $org + ['json' => ['type' => 'wedding']])[1]['types'], 'type alone');
+    // Old style: one type only still works, and an old row without a list reads as [type].
+    $old = newEvent($w, ['type' => 'wedding', 'title' => 'Old one']);
+    eq(['wedding'], $old['types']);
+    $w['db']->run('UPDATE celebrations SET types = NULL WHERE id = ?', [$old['id']]);
+    eq(['wedding'], celCall($w, 'GET', '/c/find', ['query' => ['slug' => $old['slug']]])[1]['types']);
+    eq(['wedding'], celCall($w, 'GET', '/c/mine', $org)[1]['celebrations'][0]['types']);
+});
+
+function teamOf(array $view): array
+{
+    return array_values(array_filter($view['event']['teams'], fn ($t) => $t['id'] === $view['me']['teamId']))[0];
+}
+
+test('celebrations: a group makes its own team', function () {
+    $w = celWorld();
+    $ev = newEvent($w, ['teamCount' => 2]);
+    $id = $ev['id'];
+    eq(true, $ev['settings']['guestMakeTeams']);
+    eq(false, $ev['teams'][0]['madeByGuest']);
+    celCall($w, 'POST', "/c/$id/join", ['token' => guestToken('g1'), 'json' => ['name' => 'Table 4']]);
+    [$s, $b] = celCall($w, 'POST', "/c/$id/team/new", ['token' => guestToken('g1'), 'json' => ['name' => '  The Aunties ']]);
+    eq(200, $s, json_encode($b));
+    $mine = teamOf($b);
+    eq('The Aunties', $mine['name']);
+    eq('#C0392B', $mine['color'], 'first unused colour (Gold and Silver are taken)');
+    eq(true, $mine['madeByGuest']);
+    eq(1, $mine['members']);
+    eq(['name' => 'Table 4', 'team' => $mine['id']], $w['rtdb']->get("celebrations/$id/members/g1"));
+    eq('The Aunties', $w['rtdb']->get("celebrations/$id/live/teams/{$mine['id']}/name"));
+    eq(404, celCall($w, 'POST', "/c/$id/team/new", ['token' => guestToken('stranger'), 'json' => ['name' => 'X']])[0], 'not joined');
+    celCall($w, 'POST', "/c/$id/join", ['token' => guestToken('g2'), 'json' => ['name' => 'B']]);
+    eq(409, celCall($w, 'POST', "/c/$id/team/new", ['token' => guestToken('g2'), 'json' => ['name' => 'the AUNTIES']])[0], 'name taken, any case');
+    eq(400, celCall($w, 'POST', "/c/$id/team/new", ['token' => guestToken('g2'), 'json' => ['name' => '   ']])[0], 'no name');
+    eq(400, celCall($w, 'POST', "/c/$id/team/new", ['token' => guestToken('g2'), 'json' => ['name' => 'Team Fuck']])[0], 'blocked word');
+    eq(400, celCall($w, 'POST', "/c/$id/team/new", ['token' => guestToken('g2'), 'json' => ['name' => 'Sh1t Squad']])[0], 'blocked with a number');
+    eq(200, celCall($w, 'POST', "/c/$id/team/new", ['token' => guestToken('g2'), 'json' => ['name' => 'Scunthorpe Stars']])[0], 'whole words only');
+    // The organiser removes the aunties' team: its colour is free again and g1 has no team.
+    celCall($w, 'POST', "/c/$id/teams/{$mine['id']}/delete", ['token' => organiser()]);
+    eq(null, celCall($w, 'GET', "/c/$id/me", ['token' => guestToken('g1')])[1]['me']['teamId']);
+    $again = celCall($w, 'POST', "/c/$id/team/new", ['token' => guestToken('g1'), 'json' => ['name' => 'Cousins']])[1];
+    eq('#C0392B', teamOf($again)['color']);
+});
+
+test('celebrations: guest-made teams follow the team rules', function () {
+    $w = celWorld();
+    $ev = newEvent($w, ['teamCount' => 11]);
+    $id = $ev['id'];
+    $org = ['token' => organiser()];
+    $g = ['token' => guestToken('g1')];
+    celCall($w, 'POST', "/c/$id/join", $g + ['json' => ['name' => 'A']]);
+    celCall($w, 'POST', "/c/$id/update", $org + ['json' => ['settings' => ['guestMakeTeams' => false]]]);
+    eq(403, celCall($w, 'POST', "/c/$id/team/new", $g + ['json' => ['name' => 'Us']])[0], 'setting off');
+    celCall($w, 'POST', "/c/$id/update", $org + ['json' => ['settings' => ['guestMakeTeams' => true, 'guestTeams' => false]]]);
+    eq(403, celCall($w, 'POST', "/c/$id/team/new", $g + ['json' => ['name' => 'Us']])[0], 'organiser picks teams');
+    celCall($w, 'POST', "/c/$id/update", $org + ['json' => ['settings' => ['guestTeams' => true]]]);
+    celCall($w, 'POST', "/c/$id/teams/lock", $org + ['json' => ['locked' => true]]);
+    eq(403, celCall($w, 'POST', "/c/$id/team/new", $g + ['json' => ['name' => 'Us']])[0], 'locked');
+    celCall($w, 'POST', "/c/$id/teams/lock", $org + ['json' => ['locked' => false]]);
+    eq(200, celCall($w, 'POST', "/c/$id/team/new", $g + ['json' => ['name' => 'Us']])[0], 'the 12th team');
+    celCall($w, 'POST', "/c/$id/join", ['token' => guestToken('g2'), 'json' => ['name' => 'B']]);
+    [$s, $b] = celCall($w, 'POST', "/c/$id/team/new", ['token' => guestToken('g2'), 'json' => ['name' => 'Them']]);
+    eq(403, $s, 'over the limit');
+    eq('limit', $b['error'], json_encode($b));
+});
+
+test('celebrations: a guest who keeps making teams does not use up the team limit', function () {
+    $w = celWorld();
+    $ev = newEvent($w, ['teamCount' => 2]);
+    $id = $ev['id'];
+    $g = ['token' => guestToken('kid')];
+    celCall($w, 'POST', "/c/$id/join", $g + ['json' => ['name' => 'Kid']]);
+    for ($i = 1; $i <= 15; $i++) {
+        eq(200, celCall($w, 'POST', "/c/$id/team/new", $g + ['json' => ['name' => "Team $i"]])[0], "team $i");
+    }
+    $teams = celCall($w, 'GET', "/c/$id/me", $g)[1]['event']['teams'];
+    eq(3, count($teams), 'only the latest guest team is left');
+    eq('Team 15', $teams[2]['name']);
+    // Moving to an organiser team also clears the empty team the guest made; teams with people stay.
+    celCall($w, 'POST', "/c/$id/join", ['token' => guestToken('friend'), 'json' => ['name' => 'Friend', 'teamId' => $teams[2]['id']]]);
+    celCall($w, 'POST', "/c/$id/team", $g + ['json' => ['teamId' => $teams[0]['id']]]);
+    eq(3, count(celCall($w, 'GET', "/c/$id/me", $g)[1]['event']['teams']), 'Team 15 still has the friend');
+    celCall($w, 'POST', "/c/$id/team/new", $g + ['json' => ['name' => 'Solo']]);
+    celCall($w, 'POST', "/c/$id/team", $g + ['json' => ['teamId' => $teams[0]['id']]]);
+    eq(['Gold', 'Silver', 'Team 15'], array_column(celCall($w, 'GET', "/c/$id/me", $g)[1]['event']['teams'], 'name'), 'Solo removed when left empty');
+});

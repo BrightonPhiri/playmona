@@ -288,6 +288,23 @@ class CelebrationGames
         return ['games' => array_map(fn ($g) => $this->view($g, false), $rows), 'active' => $this->activeView($cid), 'last' => $this->lastResult($cid)];
     }
 
+    /** The games planned, for guests who joined early: names and rules only, never a photo, a title or a link. */
+    public function lineup(string $cid, AuthUser $user): array
+    {
+        $ev = $this->events->event($cid);
+        if (!hash_equals((string) $ev['owner_uid'], $user->uid)) $this->events->guestOf($cid, $user->uid);
+        $active = $this->db->one("SELECT game_id FROM celebration_runs WHERE cid = ? AND status = 'active'", [$cid]);
+        $rows = $this->db->all("SELECT * FROM celebration_games WHERE cid = ? AND status = 'published' AND deleted_at IS NULL ORDER BY sort, created_at", [$cid]);
+        return ['games' => array_map(function ($g) use ($active) {
+            $config = json_decode($g['config'], true) ?: [];
+            return [
+                'id' => $g['id'], 'template' => $g['template'], 'name' => $g['name'], 'instructions' => (string) $g['instructions'],
+                'rounds' => (int) ($config['rounds'] ?? 0), 'level' => $config['level'] ?? null, 'seconds' => (int) ($config['seconds'] ?? 0),
+                'live' => $active !== null && $active['game_id'] === $g['id'],
+            ];
+        }, $rows)];
+    }
+
     /** The last game that finished: its name and the teams' places, for the winner screen. */
     public function lastResult(string $cid): ?array
     {

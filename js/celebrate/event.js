@@ -125,7 +125,7 @@ window.FF = window.FF || {};
     var ev = state.ev;
     if (state.game) return;            // a game is on screen: it stays until it ends
     FF.ui.clear(main);
-    main.appendChild(C().hero(ev, { tag: 'h1' }));
+    main.appendChild(C().hero(ev, { tag: 'h1', extra: countdown(ev) }));
     if (state.removed) {
       main.appendChild(card(t('celRemovedTitle', 'You are not in this celebration'), [el('p', {}, t('celRemovedText', 'The organiser removed you from this celebration.'))]));
       return;
@@ -141,6 +141,10 @@ window.FF = window.FF || {};
       main.appendChild(meCard());
       if (needsTeamPick()) main.appendChild(teamCard());
       main.appendChild(lobbyCard());
+      state.gamesSlot = div('ev-games-slot');
+      main.appendChild(state.gamesSlot);
+      drawLineup();
+      loadLineup();
       var board = scoresCard();
       if (board) main.appendChild(board);
       if (FF.CelebrateWall) FF.CelebrateWall.mount(main, { ev: state.ev, me: state.me });
@@ -238,7 +242,7 @@ window.FF = window.FF || {};
 
   function joinCard() {
     var ev = state.ev;
-    var input = el('input', { type: 'text', class: 'input', maxlength: '24', autocomplete: 'given-name', placeholder: t('celYourNamePh', 'Your name'), 'aria-label': t('celYourName', 'Your name') });
+    var input = el('input', { type: 'text', class: 'input', maxlength: '24', autocomplete: 'given-name', placeholder: t('celYourNameGroupPh', 'e.g. Tracey, or Table 4') });
     input.value = store('name') || '';
     var err = el('p', { class: 'field__error', 'aria-live': 'assertive' });
     var go = button(t('celJoin', 'Join the celebration'), { type: 'submit', icon: 'confetti' });
@@ -260,7 +264,7 @@ window.FF = window.FF || {};
         err.textContent = e2.message;
       });
     } });
-    form.appendChild(el('label', { class: 'field__label', for: 'ev-name' }, t('celWhatName', 'What is your name?')));
+    form.appendChild(el('label', { class: 'field__label', for: 'ev-name' }, t('celWhatNameGroup', "Your name, or your group's name")));
     input.id = 'ev-name';
     form.appendChild(input);
     form.appendChild(go);
@@ -279,7 +283,7 @@ window.FF = window.FF || {};
 
   function needsTeamPick() {
     var ev = state.ev;
-    return ev.teams && ev.teams.length && ev.settings.guestTeams && !ev.settings.teamsLocked;
+    return !!(ev.settings.guestTeams && !ev.settings.teamsLocked && ((ev.teams && ev.teams.length) || ev.settings.guestMakeTeams));
   }
 
   function meCard() {
@@ -294,6 +298,7 @@ window.FF = window.FF || {};
     text.appendChild(el('strong', {}, t('celHi', 'Hi {name}!', { name: state.me.name })));
     var line;
     if (mine) line = t('celYourTeam', 'You are in {team}', { team: mine.name });
+    else if (!state.ev.teams.length && needsTeamPick()) line = t('celMakeTeamBelow', 'Make your team below.');
     else if (!state.ev.teams.length) line = t('celTeamsSoon', 'Teams are not set up yet. Keep this page open.');
     else if (!state.ev.settings.guestTeams || state.ev.settings.teamsLocked) line = t('celTeamByOrganiser', 'The organiser will put you in a team.');
     else line = t('celPickTeamBelow', 'Pick your team below.');
@@ -332,7 +337,111 @@ window.FF = window.FF || {};
       li.appendChild(b);
       list.appendChild(li);
     });
-    return card(state.me.teamId ? t('celChangeTeam', 'Change team') : t('celPickTeam', 'Pick your team'), [list]);
+    var kids = state.ev.teams.length ? [list] : [];
+    if (state.ev.settings.guestMakeTeams) kids.push(makeTeam());
+    return card(state.me.teamId ? t('celChangeTeam', 'Change team') : state.ev.teams.length ? t('celPickTeam', 'Pick your team') : t('celMakeTeamTitle', 'Make your team'), kids);
+  }
+
+  /* A group (often several people on one phone) makes its own team and moves into it. */
+  function makeTeam() {
+    var box = div('ev-maketeam');
+    var open = button(t('celMakeOwnTeam', 'Make our own team'), { icon: 'users', ghost: true });
+    var input = el('input', { type: 'text', class: 'input', id: 'ev-team-name', maxlength: '30', autocomplete: 'off', placeholder: t('celTeamNamePh', 'e.g. The Aunties') });
+    var err = el('p', { class: 'field__error', 'aria-live': 'assertive' });
+    var go = button(t('celMakeTeamGo', 'Make the team'), { type: 'submit', icon: 'check' });
+    var cancel = button(t('cancel', 'Cancel'), { ghost: true });
+    var form = el('form', { class: 'ev-form', hidden: 'hidden', onsubmit: function (e) {
+      e.preventDefault();
+      var name = input.value.trim();
+      if (!name) { err.textContent = t('celNeedTeamName', 'Type a name for your team.'); input.focus(); return; }
+      go.disabled = true;
+      err.textContent = '';
+      FF.Api.call('POST', '/c/' + state.ev.id + '/team/new', { name: name }, { guest: true }).then(function (r) {
+        state.me = r.me;
+        state.ev = r.event;
+        paint();
+        if (FF.UI && FF.UI.toast) FF.UI.toast(t('celJoinedTeam', 'Welcome to {team}!', { team: name }));
+      }, function (e2) {
+        go.disabled = false;
+        err.textContent = e2.message;
+        if (e2.code === 'teams-locked' || e2.code === 'no-guest-teams' || e2.code === 'teams-by-organiser') refresh();
+      });
+    } });
+    form.appendChild(el('label', { class: 'field__label', for: 'ev-team-name' }, t('celTeamName', 'Team name')));
+    form.appendChild(input);
+    var acts = div('ev-maketeam__acts');
+    acts.appendChild(go);
+    acts.appendChild(cancel);
+    form.appendChild(acts);
+    form.appendChild(err);
+    open.addEventListener('click', function () { open.hidden = true; form.hidden = false; input.focus(); });
+    cancel.addEventListener('click', function () { form.hidden = true; open.hidden = false; err.textContent = ''; });
+    if (!state.ev.teams.length) { open.hidden = true; form.hidden = false; cancel.hidden = true; }
+    box.appendChild(open);
+    box.appendChild(form);
+    return box;
+  }
+
+  /* "Starts in 2 days 4 h", ticking every second until the start; nothing without a date and time. */
+  function countdown(ev) {
+    var at = C().startsAt(ev);
+    if (!at || at <= Date.now()) return null;
+    var line = el('p', { class: 'ev-countdown', role: 'timer', 'aria-live': 'off' });
+    function tick() {
+      var left = at - Date.now();
+      if (left <= 0 || !line.isConnected) {
+        clearInterval(timer);
+        if (line.parentNode) line.parentNode.removeChild(line);
+        return;
+      }
+      line.textContent = C().countdownText(left);
+    }
+    var timer = setInterval(tick, 1000);
+    line.textContent = C().countdownText(at - Date.now());
+    return line;
+  }
+
+  /* The games planned: names and rules only (the server never sends their photos before play). */
+  function loadLineup() {
+    if (!state.ev || !state.me) return;
+    FF.Api.call('GET', '/c/' + state.ev.id + '/lineup', null, { guest: true }).then(function (r) {
+      var key = JSON.stringify(r.games);
+      if (key === state.lineupKey) return;
+      state.lineupKey = key;
+      state.lineup = r.games;
+      drawLineup();
+    }, function () {});
+  }
+
+  function drawLineup() {
+    var slot = state.gamesSlot;
+    if (!slot) return;
+    FF.ui.clear(slot);
+    var games = state.lineup || [];
+    if (!games.length) return;
+    var ul = el('ul', { class: 'ev-games' });
+    games.forEach(function (g) {
+      var li = el('li', { class: 'ev-game' + (g.live ? ' is-live' : '') });
+      var top = div('ev-game__top');
+      top.appendChild(el('strong', { class: 'ev-game__name' }, g.name));
+      var chip = el('span', { class: 'ev-game__chip' });
+      chip.appendChild(FF.Icons.icon(g.live ? 'play' : 'eye-slash'));
+      chip.appendChild(FF.ui.span('', g.live ? t('celGameOnNow', 'On now') : t('celGameLocked', 'Locked: opens when the MC starts it')));
+      top.appendChild(chip);
+      li.appendChild(top);
+      var facts = [g.template === 'pictureRush' ? t('celTplPictureRush', 'Picture Rush') : g.template];
+      if (g.rounds) facts.push(t(g.rounds === 1 ? 'celPicturesOne' : 'celPicturesMany', g.rounds === 1 ? '1 picture' : '{n} pictures', { n: g.rounds }));
+      if (g.level) facts.push(levelLabel(g.level));
+      li.appendChild(el('p', { class: 'ev-game__facts' }, facts.join(' · ')));
+      if (g.instructions) li.appendChild(el('p', { class: 'ev-game__how' }, g.instructions));
+      ul.appendChild(li);
+    });
+    slot.appendChild(card(t('celGamesPlanned', 'Games planned'), [ul]));
+  }
+
+  function levelLabel(level) {
+    var L = { easy: ['celLevelEasy', 'Easy'], medium: ['celLevelMedium', 'Medium'], hard: ['celLevelHard', 'Hard'], expert: ['celLevelExpert', 'Expert'] }[level];
+    return L ? t(L[0], L[1]) : level;
   }
 
   function lobbyCard() {
@@ -359,6 +468,7 @@ window.FF = window.FF || {};
       state.me = r.me;
       state.ev = r.event;
       if (changed && !document.activeElement.closest('form')) paint();
+      else loadLineup();
     }, function () {});
   }
   function keepFresh() {

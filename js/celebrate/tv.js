@@ -35,6 +35,8 @@ window.FF = window.FF || {};
     wall: ['celTvWall', 'Wall of Love'], winner: ['celTvWinner', 'Winners'], auto: ['celTvAuto', 'Automatic']
   };
 
+  var PANELS_MAX = 8;   // more teams than this: progress bars instead of panels
+
   function start(main, slug) {
     var st = {
       id: null, ev: null, join: null, display: { layout: 'auto', showQr: true, messageId: null },
@@ -234,7 +236,8 @@ window.FF = window.FF || {};
       if (!stage) return;
       var c = current();
       root.setAttribute('data-layout', c.layout);
-      qr.hidden = !st.display.showQr || c.layout === 'welcome' || c.layout === 'winner';
+      // The team panels need the whole screen, so the corner QR steps aside while they are up.
+      qr.hidden = !st.display.showQr || c.layout === 'welcome' || c.layout === 'winner' || (c.layout === 'game' && usesPanels(st.v));
       root.classList.toggle('has-qr', !qr.hidden);
       var key = c.layout + '|' + (st.display.showQr ? 1 : 0) + '|' + JSON.stringify(dataKey(c));
       if (key === st.drawn) { updateClock(); return; }
@@ -243,6 +246,10 @@ window.FF = window.FF || {};
       var screen = ({ welcome: welcome, scores: scores, wall: wall, message: one, winner: winner, game: game })[c.layout] || welcome;
       var node = screen(c);
       node.classList.add('tv-screen');
+      // Same game, same phase: only the boards moved, so no fade-in (tiles land every second with many teams).
+      var scene = c.layout === 'game' && st.v ? ['game', st.v.runId, st.v.phase, st.v.round, st.v.paused ? 1 : 0].join('|') : null;
+      if (scene && scene === st.scene) node.classList.add('is-update');
+      st.scene = scene;
       stage.appendChild(node);
       updateClock();
     }
@@ -255,7 +262,7 @@ window.FF = window.FF || {};
       var v = st.v;
       if (!v) return [st.pointer && st.pointer.runId];
       return [st.pointer && st.pointer.runId, v.runId, v.phase, v.round, v.paused, v.photo && v.photo.url,
-        Object.keys(v.boards || {}).map(function (k) { var b = v.boards[k]; return [k, b.correct, b.solved]; }),
+        Object.keys(v.boards || {}).map(function (k) { var b = v.boards[k]; return [k, b.correct, b.solved, placed(b).join('')]; }),
         list(v.results).length, v.result ? 1 : 0];
     }
 
@@ -266,7 +273,7 @@ window.FF = window.FF || {};
       var box = div('tv-welcome' + (st.display.showQr ? ' has-qr' : ''));
       var info = div('tv-welcome__info');
       if (ev.cover && ev.cover.play) info.appendChild(el('img', { class: 'tv-welcome__cover', src: ev.cover.play, alt: '' }));
-      info.appendChild(el('p', { class: 'tv-kicker' }, C().typeLabel(ev.type)));
+      info.appendChild(el('p', { class: 'tv-kicker' }, C().typesLabel(ev)));
       info.appendChild(el('h1', { class: 'tv-welcome__name' }, ev.celebrantName));
       info.appendChild(el('p', { class: 'tv-welcome__title' }, ev.title));
       var facts = [C().formatDate(ev.date), C().timeRange(ev), ev.venue].filter(Boolean).join('  ·  ');
@@ -439,7 +446,7 @@ window.FF = window.FF || {};
         if (v.photo && v.photo.url) r.appendChild(el('img', { class: 'tv-pr__photo', src: v.photo.url, alt: '' }));
         box.appendChild(r);
       } else if (v.phase === 'playing') {
-        box.appendChild(progress(v));
+        box.appendChild(usesPanels(v) ? panels(v) : progress(v));
       } else if (v.phase === 'roundEnd') {
         box.appendChild(roundTable(v));
       } else if (v.phase === 'ended') {
@@ -447,6 +454,54 @@ window.FF = window.FF || {};
       }
       if (v.paused) box.appendChild(el('p', { class: 'tv-paused' }, t('celPausedNow', 'Paused.')));
       return box;
+    }
+
+    function usesPanels(v) {
+      if (!v || v.template !== 'pictureRush' || v.phase !== 'playing') return false;
+      if (st.pointer && v.runId !== st.pointer.runId) return false;
+      var n = teamsOf(v).length;
+      return n >= 1 && n <= PANELS_MAX;
+    }
+
+    /* Which squares hold their own tile (1) and which do not (0). */
+    function placed(b) { return list(b.tiles).map(function (piece, pos) { return Number(piece) === pos ? 1 : 0; }); }
+
+    /* One panel per team: their board as a grid with the tiles already in place lit in the team's colour.
+       The picture itself never shows here (it comes with the round's results), so nobody can copy from the TV. */
+    function panels(v) {
+      var teams = teamsOf(v);
+      var n = teams.length;
+      var cols = n <= 2 ? n : n <= 4 ? 2 : n <= 6 ? 3 : 4;
+      var wrap = el('ul', { class: 'tv-panels' + (n > 4 ? ' is-many' : '') });
+      wrap.style.setProperty('--cols', cols);
+      teams.forEach(function (tm) {
+        var b = tm.board;
+        var marks = placed(b);
+        var size = v.size || Math.round(Math.sqrt(marks.length)) || 1;
+        var total = marks.length || size * size;
+        var ok = marks.filter(Boolean).length;
+        var li = el('li', { class: 'tv-panel' + (b.solved ? ' is-done' : '') });
+        li.style.setProperty('--team', tm.color);
+        var head = div('tv-panel__head');
+        head.appendChild(el('strong', { class: 'tv-panel__name' }, tm.name));
+        head.appendChild(el('span', { class: 'tv-panel__note' }, b.solved
+          ? t('celTvSolvedIn', 'Done in {time}!', { time: secs(b.usedMs) })
+          : ok + ' / ' + total));
+        li.appendChild(head);
+        var body = div('tv-panel__body');
+        // A finished board stays a fully lit grid: the picture waits for the end of the round,
+        // so teams still solving cannot copy it from the TV.
+        var grid = el('div', { class: 'tv-grid', role: 'img', 'aria-label': b.solved
+          ? t('celTvSolvedPic', '{team} finished the picture', { team: tm.name })
+          : t('celTilesOf', '{n} of {total} tiles in place', { n: ok, total: total }) });
+        grid.style.setProperty('--size', size);
+        for (var i = 0; i < total; i++) grid.appendChild(el('span', { class: 'tv-cell' + (b.solved || marks[i] ? ' is-ok' : '') }));
+        body.appendChild(grid);
+        if (b.solved) body.appendChild(el('span', { class: 'tv-panel__done', 'aria-hidden': 'true' }, '✓'));
+        li.appendChild(body);
+        wrap.appendChild(li);
+      });
+      return wrap;
     }
 
     function progress(v) {

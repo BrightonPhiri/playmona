@@ -201,3 +201,28 @@ test('celebration games: equal totals rank by time; abandoned runs are swept; en
     celCall($w, 'POST', "/c/$cid/play/control", ['token' => organiser(), 'json' => ['action' => 'end']]);
     eq(200, celCall($w, 'POST', "/c/$cid/games/{$r['game']['id']}/start", ['token' => organiser()])[0], 'not stuck');
 });
+
+test('celebration games: guests see the games planned, without any pictures', function () {
+    $w = celWorld();
+    $r = readyGame($w);
+    $cid = $r['cid'];
+    celCall($w, 'POST', "/c/$cid/games", ['token' => organiser(), 'json' => ['template' => 'pictureRush', 'name' => 'Draft one']]);
+    [$s, $b] = celCall($w, 'GET', "/c/$cid/lineup", ['token' => guestToken('g1')]);
+    eq(200, $s, json_encode($b));
+    eq(1, count($b['games']), 'drafts hidden');
+    $g = $b['games'][0];
+    eq('Baby photos', $g['name']);
+    eq('pictureRush', $g['template']);
+    eq(2, $g['rounds']);
+    eq('easy', $g['level']);
+    eq(false, $g['live']);
+    eq(false, array_key_exists('thumb', $g));
+    eq(false, array_key_exists('photos', $g));
+    eq(false, str_contains(json_encode($b), '/api/c/media'), 'no picture links');
+    eq(false, str_contains(json_encode($b), 'Vicky at 1'), 'no photo titles');
+    eq(404, celCall($w, 'GET', "/c/$cid/lineup", ['token' => guestToken('stranger')])[0], 'not joined');
+    eq(200, celCall($w, 'GET', "/c/$cid/lineup", ['token' => organiser()])[0], 'the organiser');
+    // While it is being played it says so.
+    eq(200, celCall($w, 'POST', "/c/$cid/games/{$r['game']['id']}/start", ['token' => organiser()])[0]);
+    eq(true, celCall($w, 'GET', "/c/$cid/lineup", ['token' => guestToken('g1')])[1]['games'][0]['live']);
+});

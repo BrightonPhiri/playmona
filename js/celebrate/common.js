@@ -109,6 +109,12 @@ window.FF = window.FF || {};
     return TYPES[TYPES.length - 1];
   }
   function typeLabel(id) { var x = type(id); return t(x.label[0], x.label[1]); }
+  /* What an event celebrates, main kind first ("Birthday · Graduation"). Old events have only "type". */
+  function typesOf(ev) {
+    var list = ev && Array.isArray(ev.types) ? ev.types.filter(function (x) { return typeof x === 'string'; }) : [];
+    return list.length ? list : [ev && ev.type ? ev.type : 'custom'];
+  }
+  function typesLabel(ev) { return typesOf(ev).map(typeLabel).join(' · '); }
   function defaultTitle(typeId, name) { var x = type(typeId); return t(x.title[0], x.title[1], { name: name || '' }); }
 
   /* "Sat, 22 Nov 2026" from "2026-11-22", read as a calendar date (no time-zone shift). */
@@ -129,6 +135,36 @@ window.FF = window.FF || {};
   function timeRange(ev) {
     var a = formatTime(ev.startTime), b = formatTime(ev.endTime);
     return a && b ? a + ' – ' + b : (a || '');
+  }
+
+  /* When the event starts (ms since 1970), from its date, start time and time zone; null without both.
+     A missing or unknown time zone reads the time on this device's clock. */
+  function startsAt(ev) {
+    var d = /^(\d{4})-(\d{2})-(\d{2})$/.exec((ev && ev.date) || '');
+    var h = /^(\d{2}):(\d{2})$/.exec((ev && ev.startTime) || '');
+    if (!d || !h) return null;
+    var y = +d[1], mo = +d[2] - 1, da = +d[3], hr = +h[1], mi = +h[2];
+    var guess = Date.UTC(y, mo, da, hr, mi);
+    try {
+      if (!ev.timezone) throw new Error('no zone');
+      var parts = {};
+      new Intl.DateTimeFormat('en-US', { timeZone: ev.timezone, hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' })
+        .formatToParts(new Date(guess)).forEach(function (p) { parts[p.type] = +p.value; });
+      // What the zone's clock shows at "guess", read as if it were UTC: the difference is the zone's offset.
+      var shown = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour % 24, parts.minute, parts.second);
+      return guess - (shown - guess);
+    } catch (e) {
+      return new Date(y, mo, da, hr, mi).getTime();
+    }
+  }
+
+  /* "Starts in 2 days 4 h", "Starts in 3 h 5 min", "Starts in 12 min 30 s". */
+  function countdownText(ms) {
+    var s = Math.max(0, Math.floor(ms / 1000));
+    var days = Math.floor(s / 86400), hours = Math.floor(s % 86400 / 3600), mins = Math.floor(s % 3600 / 60), secs = s % 60;
+    if (days) return t(days === 1 ? 'celStartsInDay' : 'celStartsInDays', days === 1 ? 'Starts in 1 day {h} h' : 'Starts in {d} days {h} h', { d: days, h: hours });
+    if (hours) return t('celStartsInHours', 'Starts in {h} h {m} min', { h: hours, m: mins });
+    return t('celStartsInMins', 'Starts in {m} min {s} s', { m: mins, s: secs });
   }
 
   /* ---------- links ---------- */
@@ -276,8 +312,8 @@ window.FF = window.FF || {};
     }
     var body = FF.ui.div('cel-hero__body');
     var kicker = FF.ui.el('p', { class: 'cel-hero__kicker' });
-    kicker.appendChild(FF.Icons.icon(type(ev.type).icon));
-    kicker.appendChild(document.createTextNode(typeLabel(ev.type)));
+    kicker.appendChild(FF.Icons.icon(type(typesOf(ev)[0]).icon));
+    kicker.appendChild(document.createTextNode(typesLabel(ev)));
     body.appendChild(kicker);
     body.appendChild(FF.ui.el(opts.tag || 'h2', { class: 'cel-hero__title' }, ev.title || defaultTitle(ev.type, ev.celebrantName)));
     var facts = FF.ui.el('ul', { class: 'cel-hero__facts' });
@@ -304,6 +340,10 @@ window.FF = window.FF || {};
     FONTS: FONTS,
     type: type,
     typeLabel: typeLabel,
+    typesOf: typesOf,
+    startsAt: startsAt,
+    countdownText: countdownText,
+    typesLabel: typesLabel,
     defaultTitle: defaultTitle,
     applyTheme: applyTheme,
     readableOn: readableOn,

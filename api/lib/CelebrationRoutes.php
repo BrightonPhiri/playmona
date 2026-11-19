@@ -41,7 +41,9 @@ class CelebrationRoutes
 
         // Guests (any signed-in user, a Firebase anonymous sign-in is enough).
         if ($m === 'POST' && $rest === '/join') return Response::json($this->c()->join($cid, $this->who($req), $req->json(), $req->clientIp()));
+        if ($m === 'GET' && $rest === '/lineup') return Response::json($this->g()->lineup($cid, $this->who($req)));
         if ($m === 'GET' && $rest === '/me') return Response::json($this->c()->me($cid, $this->who($req)));
+        if ($m === 'POST' && $rest === '/team/new') return Response::json($this->c()->guestMakeTeam($cid, $this->who($req), $req->json()));
         if ($m === 'POST' && $rest === '/team') return Response::json($this->c()->chooseTeam($cid, $this->who($req), (string) ($req->json()['teamId'] ?? '')));
         // A private link (celebrant, MC or TV display): the secret travels in a header, never the address.
         if ($m === 'GET' && $rest === '/link') return Response::json($this->link($req, $cid));
@@ -87,6 +89,8 @@ class CelebrationRoutes
         if ($m === 'POST' && $rest === '/media') {
             return Response::json($this->c()->upload($cid, $this->who($req), (string) ($req->query['purpose'] ?? ''), $req->rawBody));
         }
+        if ($m === 'GET' && $rest === '/display') return Response::json($this->s()->ownerQr($cid, $this->who($req)));
+        if ($m === 'POST' && $rest === '/display') return Response::json($this->s()->setOwnerQr($cid, $this->who($req), $req->json()));
         if ($m === 'POST' && $rest === '/teams') return Response::json($this->c()->addTeam($cid, $this->who($req), $req->json()));
         if ($m === 'POST' && $rest === '/teams/auto') return Response::json($this->c()->autoTeams($cid, $this->who($req)));
         if ($m === 'POST' && $rest === '/teams/lock') return Response::json($this->c()->lockTeams($cid, $this->who($req), !empty($req->json()['locked'])));
