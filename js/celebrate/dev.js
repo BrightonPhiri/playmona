@@ -34,6 +34,8 @@ window.FF = window.FF || {};
         (run.teams[tid].members || []).forEach(function (m) { members[m.uid] = { name: m.name, team: tid }; });
       });
       if (running[run.cid]) running[run.cid].stop();
+      // Word by Word checks words against the bank; load it during the countdown.
+      if (run.template === 'wordByWord' && FF.Words && FF.Words.load) { try { FF.Words.load(); } catch (e) { /* words are taken until it loads */ } }
       return Promise.all([
         T.set('run', null), T.set('inbox', null), T.set('control', null), T.set('members', members),
         T.set('live/run', { runId: run.runId, gameId: run.gameId, template: run.template, name: run.name, startAt: run.startAt })

@@ -105,7 +105,7 @@ window.FF = window.FF || {};
 
     var WBW_PHASE = {
       starting: ['celPhStarting', 'Counting down. Guests see the instructions.'],
-      playing: ['celWbwPhTurn', '{team}\'s turn · round {n} of {total}'],
+      playing: ['celWbwPhTurn', 'Turn: {team} · round {n} of {total}'],
       reveal: ['celWbwPhReveal', 'The message is being revealed.'],
       ended: ['celPhEnded', 'The game is over.']
     };
