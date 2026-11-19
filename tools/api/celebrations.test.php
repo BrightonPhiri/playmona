@@ -340,3 +340,59 @@ test('celebrations: an event celebrates up to three things', function () {
     eq(['wedding'], celCall($w, 'GET', '/c/find', ['query' => ['slug' => $old['slug']]])[1]['types']);
     eq(['wedding'], celCall($w, 'GET', '/c/mine', $org)[1]['celebrations'][0]['types']);
 });
+
+function teamOf(array $view): array
+{
+    return array_values(array_filter($view['event']['teams'], fn ($t) => $t['id'] === $view['me']['teamId']))[0];
+}
+
+test('celebrations: a group makes its own team', function () {
+    $w = celWorld();
+    $ev = newEvent($w, ['teamCount' => 2]);
+    $id = $ev['id'];
+    eq(true, $ev['settings']['guestMakeTeams']);
+    eq(false, $ev['teams'][0]['madeByGuest']);
+    celCall($w, 'POST', "/c/$id/join", ['token' => guestToken('g1'), 'json' => ['name' => 'Table 4']]);
+    [$s, $b] = celCall($w, 'POST', "/c/$id/team/new", ['token' => guestToken('g1'), 'json' => ['name' => '  The Aunties ']]);
+    eq(200, $s, json_encode($b));
+    $mine = teamOf($b);
+    eq('The Aunties', $mine['name']);
+    eq('#C0392B', $mine['color'], 'first unused colour (Gold and Silver are taken)');
+    eq(true, $mine['madeByGuest']);
+    eq(1, $mine['members']);
+    eq(['name' => 'Table 4', 'team' => $mine['id']], $w['rtdb']->get("celebrations/$id/members/g1"));
+    eq('The Aunties', $w['rtdb']->get("celebrations/$id/live/teams/{$mine['id']}/name"));
+    eq(404, celCall($w, 'POST', "/c/$id/team/new", ['token' => guestToken('stranger'), 'json' => ['name' => 'X']])[0], 'not joined');
+    celCall($w, 'POST', "/c/$id/join", ['token' => guestToken('g2'), 'json' => ['name' => 'B']]);
+    eq(409, celCall($w, 'POST', "/c/$id/team/new", ['token' => guestToken('g2'), 'json' => ['name' => 'the AUNTIES']])[0], 'name taken, any case');
+    eq(400, celCall($w, 'POST', "/c/$id/team/new", ['token' => guestToken('g2'), 'json' => ['name' => '   ']])[0], 'no name');
+    eq(400, celCall($w, 'POST', "/c/$id/team/new", ['token' => guestToken('g2'), 'json' => ['name' => 'Team Fuck']])[0], 'blocked word');
+    eq(400, celCall($w, 'POST', "/c/$id/team/new", ['token' => guestToken('g2'), 'json' => ['name' => 'Sh1t Squad']])[0], 'blocked with a number');
+    eq(200, celCall($w, 'POST', "/c/$id/team/new", ['token' => guestToken('g2'), 'json' => ['name' => 'Scunthorpe Stars']])[0], 'whole words only');
+    // The organiser removes the aunties' team: its colour is free again and g1 has no team.
+    celCall($w, 'POST', "/c/$id/teams/{$mine['id']}/delete", ['token' => organiser()]);
+    eq(null, celCall($w, 'GET', "/c/$id/me", ['token' => guestToken('g1')])[1]['me']['teamId']);
+    $again = celCall($w, 'POST', "/c/$id/team/new", ['token' => guestToken('g1'), 'json' => ['name' => 'Cousins']])[1];
+    eq('#C0392B', teamOf($again)['color']);
+});
+
+test('celebrations: guest-made teams follow the team rules', function () {
+    $w = celWorld();
+    $ev = newEvent($w, ['teamCount' => 11]);
+    $id = $ev['id'];
+    $org = ['token' => organiser()];
+    $g = ['token' => guestToken('g1')];
+    celCall($w, 'POST', "/c/$id/join", $g + ['json' => ['name' => 'A']]);
+    celCall($w, 'POST', "/c/$id/update", $org + ['json' => ['settings' => ['guestMakeTeams' => false]]]);
+    eq(403, celCall($w, 'POST', "/c/$id/team/new", $g + ['json' => ['name' => 'Us']])[0], 'setting off');
+    celCall($w, 'POST', "/c/$id/update", $org + ['json' => ['settings' => ['guestMakeTeams' => true, 'guestTeams' => false]]]);
+    eq(403, celCall($w, 'POST', "/c/$id/team/new", $g + ['json' => ['name' => 'Us']])[0], 'organiser picks teams');
+    celCall($w, 'POST', "/c/$id/update", $org + ['json' => ['settings' => ['guestTeams' => true]]]);
+    celCall($w, 'POST', "/c/$id/teams/lock", $org + ['json' => ['locked' => true]]);
+    eq(403, celCall($w, 'POST', "/c/$id/team/new", $g + ['json' => ['name' => 'Us']])[0], 'locked');
+    celCall($w, 'POST', "/c/$id/teams/lock", $org + ['json' => ['locked' => false]]);
+    eq(200, celCall($w, 'POST', "/c/$id/team/new", $g + ['json' => ['name' => 'Us']])[0], 'the 12th team');
+    [$s, $b] = celCall($w, 'POST', "/c/$id/team/new", $g + ['json' => ['name' => 'Them']]);
+    eq(403, $s, 'over the limit');
+    eq('limit', $b['error'], json_encode($b));
+});
