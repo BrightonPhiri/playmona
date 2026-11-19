@@ -89,6 +89,8 @@ class CelebrationRoutes
         if ($m === 'POST' && $rest === '/media') {
             return Response::json($this->c()->upload($cid, $this->who($req), (string) ($req->query['purpose'] ?? ''), $req->rawBody));
         }
+        if ($m === 'GET' && $rest === '/display') return Response::json($this->s()->ownerQr($cid, $this->who($req)));
+        if ($m === 'POST' && $rest === '/display') return Response::json($this->s()->setOwnerQr($cid, $this->who($req), $req->json()));
         if ($m === 'POST' && $rest === '/teams') return Response::json($this->c()->addTeam($cid, $this->who($req), $req->json()));
         if ($m === 'POST' && $rest === '/teams/auto') return Response::json($this->c()->autoTeams($cid, $this->who($req)));
         if ($m === 'POST' && $rest === '/teams/lock') return Response::json($this->c()->lockTeams($cid, $this->who($req), !empty($req->json()['locked'])));

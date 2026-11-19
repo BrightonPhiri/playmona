@@ -47,6 +47,21 @@ window.FF = window.FF || {};
       day.appendChild(el('h2', { class: 'cel-section-title' }, t('celOnTheDay', 'On the day')));
       day.appendChild(FF.CelebrateMessages.linkCard(ev, update, 'display'));
       day.appendChild(FF.CelebrateMessages.linkCard(ev, update, 'mc'));
+      // The TV's "Scan to join" QR code: the organiser can hide it (the MC panel has the same switch).
+      var qrSlot = div('cel-day__qr');
+      day.appendChild(qrSlot);
+      FF.Api.call('GET', '/c/' + ev.id + '/display').then(function (d) {
+        qrSlot.appendChild(FF.UI.switchRow({
+          label: t('celTvQrSwitch', 'Show "Scan to join" on the TV'),
+          description: t('celTvQrSwitchDesc', 'The QR code and join code in a corner of the TV, so late guests can join. It always steps aside while teams play.'),
+          checked: !!d.showQr,
+          onChange: function (on) {
+            FF.Api.call('POST', '/c/' + ev.id + '/display', { showQr: on }).then(function (r) {
+              FF.UI.toast(r.showQr ? t('celTvQrOn', 'The TV shows how to join') : t('celTvQrOff', 'The QR code is hidden on the TV'));
+            }, function (e) { FF.UI.toast(e.message); });
+          }
+        }));
+      }, function () {});
       panel.appendChild(day);
     }
     box.appendChild(FF.UI.loading(t('loading', 'Loading…')));
