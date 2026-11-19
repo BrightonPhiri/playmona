@@ -17,7 +17,7 @@ window.FF = window.FF || {};
   function icon(k) { return FF.Icons.icon(k); }
 
   var DEFAULT_SETTINGS = {
-    private: false, requireAccount: false, guestTeams: true, anonymousMessages: true,
+    private: false, requireAccount: false, guestTeams: true, guestMakeTeams: true, anonymousMessages: true,
     photoUploads: true, leaderboard: true, approveMessages: true, hasMc: false
   };
   var refreshTimer = null;
@@ -300,6 +300,7 @@ window.FF = window.FF || {};
       box.appendChild(FF.UI.switchRow({ label: label, description: desc, checked: !!s[key], onChange: function (on) { s[key] = on; onChange(); } }));
     }
     sw('guestTeams', t('celSetGuestTeams', 'Guests pick their own team'), t('celSetGuestTeamsDesc', 'Off: you put guests into teams yourself.'));
+    sw('guestMakeTeams', t('celSetGuestMakeTeams', 'Guests can make their own team'), t('celSetGuestMakeTeamsDesc', 'A group on one phone types its own team name. You can rename or remove any team. Needs the switch above.'));
     sw('leaderboard', t('celSetLeaderboard', 'Show the live leaderboard to guests'), t('celSetLeaderboardDesc', 'Team scores on everyone\'s phone during the games.'));
     sw('approveMessages', t('celSetApprove', 'Approve messages before others see them'), t('celSetApproveDesc', 'Messages wait for you before they show on the wall or the TV.'));
     sw('anonymousMessages', t('celSetAnonymous', 'Allow messages without a name'), null);
@@ -665,6 +666,7 @@ window.FF = window.FF || {};
         body.appendChild(el('span', { class: 'cel-team__meta' }, tm.capacity
           ? t('celTeamOf', '{n} of {max}', { n: tm.members, max: tm.capacity })
           : t(tm.members === 1 ? 'celGuestOne' : 'celGuestMany', tm.members === 1 ? '1 guest' : '{n} guests', { n: tm.members })));
+        if (tm.madeByGuest) body.appendChild(el('span', { class: 'cel-team__by' }, t('celTeamByGuest', 'Made by a guest')));
         li.appendChild(body);
         li.appendChild(FF.UI.iconButton('pencil', t('celEditTeamNamed', 'Edit {name}', { name: tm.name }), function () { teamDialog(ev, tm, update); }));
         li.appendChild(FF.UI.iconButton('trash', t('celDeleteTeamNamed', 'Remove {name}', { name: tm.name }), function () {

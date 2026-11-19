@@ -248,6 +248,11 @@
 .ev-team span { color: var(--ev-muted); font-size: var(--fs-sm); font-weight: 700; }
 .ev-team.is-mine { border-color: var(--team); box-shadow: 0 0 0 3px var(--ev-glow); }
 .ev-team:disabled { opacity: 0.55; cursor: not-allowed; }
+.ev-maketeam { margin-top: var(--sp-3); }
+.ev-maketeam > .ev-btn--ghost, .ev-maketeam > button { width: 100%; }
+.ev-maketeam__acts { display: flex; gap: var(--sp-2); flex-wrap: wrap; }
+.ev-maketeam__acts > * { flex: 1 1 auto; }
+.cel-team__by { display: block; color: var(--muted); font-size: var(--fs-xs, 12px); }
 .ev-me { display: flex; align-items: center; gap: var(--sp-3); }
 .ev-me__badge { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; flex: none; background: var(--team, var(--ev-primary)); color: #ffffff; font-family: var(--font-display); font-size: 1.5rem; box-shadow: 0 0 0 4px var(--ev-glow); }
 .ev-me__text { min-width: 0; }
