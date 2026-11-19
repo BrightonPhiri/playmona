@@ -82,7 +82,9 @@ window.FF = window.FF || {};
   }
 
   /* One word, as typed. Allows one trailing full stop (it ends the sentence) or comma.
-     error: empty | spaces | long | punct | letters | rude | unknown */
+     opts.marks: the endings allowed (standard '.,'); opts.maxWords: words in a sentence (0 = no limit).
+     error: empty | spaces | long | punct | letters | rude | unknown | tooLong
+     name: typed with a capital (so the word bank was not asked). */
   function parseWord(rawText, opts) {
     opts = opts || {};
     var raw = String(rawText == null ? '' : rawText).replace(/^\s+|\s+$/g, '');
@@ -91,7 +93,8 @@ window.FF = window.FF || {};
     if (raw.length > MAX_INPUT) return { ok: false, error: 'long' };
     var mark = '';
     var last = raw.charAt(raw.length - 1);
-    if (last === '.' || last === ',') { mark = last; raw = raw.slice(0, -1); }
+    var marks = typeof opts.marks === 'string' ? opts.marks : '.,';
+    if (last && marks.indexOf(last) !== -1) { mark = last; raw = raw.slice(0, -1); }
     if (!raw) return { ok: false, error: 'empty' };
     if (raw.length > MAX_WORD) return { ok: false, error: 'long' };
     var chars = raw.split('');
@@ -125,8 +128,9 @@ window.FF = window.FF || {};
     var isName = capital;
     if (letters && !isName && !known(low, opts.isWord)) return { ok: false, error: 'unknown' };
     if ((opts.position || 0) === 0) word = word.charAt(0).toUpperCase() + word.slice(1);
-    if ((opts.position || 0) >= MAX_WORDS - 1 && mark !== '.') return { ok: false, error: 'tooLong' };
-    return { ok: true, text: word + mark, ends: mark === '.' };
+    var maxWords = opts.maxWords == null ? MAX_WORDS : opts.maxWords;
+    if (maxWords && (opts.position || 0) >= maxWords - 1 && mark !== '.') return { ok: false, error: 'tooLong' };
+    return { ok: true, text: word + mark, ends: mark === '.' || mark === '!', name: !!isName };
   }
 
   function bare(text) { return String(text || '').replace(/[.,]$/, '').toLowerCase(); }

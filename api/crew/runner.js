@@ -544,6 +544,7 @@ async function main() {
         save: (s) => rtdb.set('celebrationState/' + runId, s)
       },
       randomInt: (n) => crypto.randomInt(n),
+      isWord, isQuiet,     // Word by Word checks each word against the word bank
       log: (m) => log(runId + ': ' + m),
       report: (event, payload) => api('report', Object.assign({}, payload, { matchId: runId, event })),
       onEnd: () => setTimeout(stopIt, 60000)

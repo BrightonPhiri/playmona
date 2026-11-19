@@ -263,7 +263,9 @@ window.FF = window.FF || {};
       if (!v) return [st.pointer && st.pointer.runId];
       return [st.pointer && st.pointer.runId, v.runId, v.phase, v.round, v.paused, v.photo && v.photo.url,
         Object.keys(v.boards || {}).map(function (k) { var b = v.boards[k]; return [k, b.correct, b.solved, placed(b).join('')]; }),
-        list(v.results).length, v.result ? 1 : 0];
+        list(v.results).length, v.result ? 1 : 0,
+        // Word by Word: a new word, a struck word or the next turn.
+        v.count, v.turn ? v.turn.id + '/' + v.turn.teamId : ''];
     }
 
     /* ---------- the screens ---------- */
@@ -411,6 +413,7 @@ window.FF = window.FF || {};
         return wait;
       }
       if (v.template === 'pictureRush') return pictureRush(v);
+      if (v.template === 'wordByWord') return wordByWord(v);
       var other = div('tv-game');
       other.appendChild(el('h1', { class: 'tv-h1' }, v.name || ''));
       return other;
@@ -578,12 +581,134 @@ window.FF = window.FF || {};
       return wrap;
     }
 
+    /* ---------- Word by Word ---------- */
+
+    var WBW_REVEAL_MS = 600;      // one word every 600 ms, as the referee times the reveal
+    var WBW_REVEAL_MIN = 3000;
+
+    function wordByWord(v) {
+      var box = div('tv-game tv-wbw is-' + v.phase + (v.paused ? ' is-paused' : ''));
+      var head = div('tv-game__head');
+      head.appendChild(el('h1', { class: 'tv-game__name' }, v.name));
+      if (v.phase === 'playing') head.appendChild(el('span', { class: 'tv-chip' }, t('celTvRoundOf', 'Round {n} of {total}', { n: (v.round || 0) + 1, total: v.rounds })));
+      if (v.mode === 'blind' && v.phase === 'playing') head.appendChild(el('span', { class: 'tv-chip' }, t('celWbwBlind', 'Blind')));
+      head.appendChild(el('span', { class: 'tv-timer', role: 'timer' }));
+      box.appendChild(head);
+
+      if (v.phase === 'starting') {
+        var s = div('tv-pr__start');
+        s.appendChild(el('p', { class: 'tv-kicker' }, t('celTvGetReady', 'Get ready!')));
+        s.appendChild(el('p', { class: 'tv-pr__big tv-timer', role: 'timer' }));
+        if (v.instructions) s.appendChild(el('p', { class: 'tv-lead' }, v.instructions));
+        box.appendChild(s);
+      } else if (v.phase === 'playing') {
+        box.appendChild(v.mode === 'open' ? wbwMessage(v, list(v.words), false) : wbwLast(v));
+        box.appendChild(wbwStrip(v));
+      } else if (v.phase === 'reveal') {
+        box.appendChild(el('p', { class: 'tv-kicker' }, t('celTvWbwMessage', 'Your message')));
+        box.appendChild(wbwMessage(v, list(v.words), true));
+      } else if (v.phase === 'ended') {
+        var res = v.result || {};
+        if (res.text) box.appendChild(wbwMessage(v, kept(res), false, true));
+        box.appendChild(finalTable(v));
+      }
+      if (v.paused) box.appendChild(el('p', { class: 'tv-paused' }, t('celPausedNow', 'Paused.')));
+      return box;
+    }
+
+    /* The finished words as the keepsake reads: a trailing comma dropped and the closing full stop added. */
+    function kept(res) {
+      var words = list(res.words).map(function (x) { return { w: String(x.w), teamId: x.teamId }; });
+      var last = words[words.length - 1];
+      if (last) {
+        last.w = last.w.replace(/,$/, '');
+        var mark = String(res.text || '').slice(-1);
+        if ((mark === '.' || mark === '!') && !/[.!]$/.test(last.w)) last.w += mark;
+      }
+      return words;
+    }
+
+    /* The message so far in big type, each word underlined in its team's colour. Longer messages step the type down. */
+    function wbwMessage(v, words, reveal, done) {
+      var chars = (v.opening || '').length + words.reduce(function (n, x) { return n + String(x.w).length + 1; }, 0);
+      var size = chars > 420 ? ' is-huge' : chars > 260 ? ' is-longest' : chars > 170 ? ' is-longer' : chars > 90 ? ' is-long' : '';
+      var p = el('p', { class: 'tv-wbw__msg' + size + (done ? ' is-done' : '') });
+      var bits = [];
+      if (v.opening) bits.push({ w: v.opening, opening: true });
+      words.forEach(function (x) { bits.push(x); });
+      if (!bits.length) {
+        p.appendChild(el('span', { class: 'tv-wbw__empty' }, t('celTvWbwFirst', 'Who will write the first word?')));
+        return p;
+      }
+      // Only a word that has just arrived animates in; a redraw for the turn or the clock leaves the rest still.
+      var seen = st.wbwSeen && st.wbwSeen.runId === v.runId ? st.wbwSeen.count : -1;
+      if (!reveal) st.wbwSeen = { runId: v.runId, count: words.length };
+      var start = 0;
+      if (reveal) {
+        var total = Math.max(WBW_REVEAL_MIN, words.length * WBW_REVEAL_MS);
+        start = Math.max(0, (st.T ? st.T.serverNow() : Date.now()) - ((v.revealUntil || 0) - total));
+      }
+      bits.forEach(function (x, i) {
+        var w = el('span', { class: 'tv-wbw__w' + (x.opening ? ' is-opening' : '') }, x.w);
+        if (!x.opening) w.style.setProperty('--team', (v.teams[x.teamId] || {}).color || '#888888');
+        var wordNo = x.opening ? -1 : i - (v.opening ? 1 : 0);
+        if (!reveal && !done && seen >= 0 && wordNo >= seen) w.classList.add('is-new');
+        if (reveal) {
+          var at = Math.max(0, i * WBW_REVEAL_MS - start);
+          if (at > 0) {
+            w.classList.add('is-hidden');
+            setTimeout(function () { w.classList.remove('is-hidden'); }, at);
+          }
+        }
+        p.appendChild(w);
+        p.appendChild(document.createTextNode(' '));
+      });
+      return p;
+    }
+
+    /* Blind: only the newest word, and how long the message has grown. */
+    function wbwLast(v) {
+      var wrap = div('tv-wbw__blind');
+      var last = v.last ? v.last.w : v.opening;
+      wrap.appendChild(el('p', { class: 'tv-kicker' }, last ? t('celTvWbwLast', 'The last word') : t('celTvWbwFirst', 'Who will write the first word?')));
+      if (last) {
+        var w = el('p', { class: 'tv-wbw__last' + (v.last && st.wbwSeen && st.wbwSeen.runId === v.runId && st.wbwSeen.count < v.count ? ' is-new' : '') }, last);
+        if (v.last) w.style.setProperty('--team', (v.teams[v.last.teamId] || {}).color || '#888888');
+        wrap.appendChild(w);
+      }
+      st.wbwSeen = { runId: v.runId, count: v.count || 0 };
+      var n = v.count || 0;
+      wrap.appendChild(el('p', { class: 'tv-lead' }, n === 1 ? t('celTvWbwOne', '1 word so far') : t('celTvWbwMany', '{n} words so far', { n: n })));
+      return wrap;
+    }
+
+    /* The turn order along the bottom: whose turn it is now, and every group's points. */
+    function wbwStrip(v) {
+      var ol = el('ol', { class: 'tv-wbw__strip' });
+      var totals = v.totals || {};
+      list(v.order).forEach(function (tid) {
+        var tm = v.teams[tid] || {};
+        var now = v.turn && v.turn.teamId === tid;
+        var li = el('li', { class: 'tv-wbw__team' + (now ? ' is-turn' : '') });
+        li.style.setProperty('--team', tm.color || '#888888');
+        li.appendChild(el('span', { class: 'tv-row__swatch', 'aria-hidden': 'true' }));
+        li.appendChild(el('strong', { class: 'tv-wbw__name' }, tm.name || ''));
+        li.appendChild(el('span', { class: 'tv-wbw__pts' }, now ? t('celTvWbwNow', 'your turn!') : t('celPoints', '{n} points', { n: (totals[tid] || {}).points || 0 })));
+        ol.appendChild(li);
+      });
+      return ol;
+    }
+
     function updateClock() {
       var v = st.v;
       var timers = stage ? stage.querySelectorAll('.tv-timer') : [];
       if (!timers.length) return;
       var text = '';
-      if (v && st.T && v.phase !== 'ended') {
+      if (v && st.T && v.template === 'wordByWord') {
+        // Word by Word counts down each turn; the reveal has no clock.
+        if (v.phase === 'starting') text = clock(v.startAt - st.T.serverNow());
+        else if (v.phase === 'playing' && v.turn) text = clock(v.paused ? (v.turn.leftMs || 0) : v.turn.endsAt - st.T.serverNow());
+      } else if (v && st.T && v.phase !== 'ended') {
         var due = { starting: v.startAt, reveal: v.revealUntil, playing: v.deadline, roundEnd: v.nextAt }[v.phase] || 0;
         if (due) text = clock(due - (v.paused ? v.pausedAt : st.T.serverNow()));
       }

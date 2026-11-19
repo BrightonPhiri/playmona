@@ -399,3 +399,15 @@ test('picture rush: the runner loads it and hosts celebrationRuns; the inbox rul
   assert(php.indexOf("'seconds' => [" + R.SECONDS.join(', ') + ']') !== -1, 'the server offers the same seconds');
   assert(php.indexOf("'level' => ['" + R.LEVELS.join("', '") + "']") !== -1, 'and the same levels');
 });
+
+test('picture rush referee: once ended it leaves the next game\'s moves in the inbox', async function () {
+  // The crew keeps an ended referee for a minute; the MC may start the next game straight away.
+  const g = await game();
+  await g.toPlay();
+  await g.control('end');
+  assertEqual(g.view().phase, 'ended');
+  await g.room.set('inbox/g1/cnext', { type: 'swap', runId: 'r_2', n: 0, t: g.clock.now, a: 0, b: 1, pa: 1, pb: 0 });
+  await g.clock.advance(100);
+  const box = (g.bus.read('celebrations/' + CID) || {}).inbox || {};
+  assert(box.g1 && box.g1.cnext, 'the next game\'s move waits for its own referee');
+});

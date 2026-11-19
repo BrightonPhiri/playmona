@@ -139,7 +139,7 @@ class App
     }
     public function celebrationGames(): CelebrationGames
     {
-        return $this->make('celebrationGames', fn () => new CelebrationGames($this->db(), $this->rtdb(), $this->celebrations(), $this->celebrationMedia(), $this->runner()));
+        return $this->make('celebrationGames', fn () => new CelebrationGames($this->db(), $this->rtdb(), $this->celebrations(), $this->celebrationMedia(), $this->runner(), $this->celebrationWall()));
     }
     public function leaderboards(): Leaderboards { return $this->make('leaderboards', fn () => new Leaderboards($this->rtdb())); }
     public function friends(): Friends { return $this->make('friends', fn () => new Friends($this->db(), $this->rtdb(), $this->crew())); }

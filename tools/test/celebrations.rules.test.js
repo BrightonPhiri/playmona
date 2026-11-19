@@ -37,3 +37,13 @@ test('celebrations: phones write only game commands; the game view is for guests
   assertEqual(rules.celebrationRuns, undefined, 'runs are server-only');
   assertEqual(rules.celebrationState, undefined);
 });
+
+test('celebrations: the blind Word by Word message is only for staff (the MC and the organiser)', () => {
+  const c = rules.celebrations.$cid;
+  assertEqual(c.staff['.read'], "auth != null && root.child('celebrations').child($cid).child('staffers').child(auth.uid).exists()");
+  assertEqual(/members|viewers/.test(c.staff['.read']), false, 'not guests, not the TV');
+  assertEqual(c.staff['.write'], undefined, 'written only by the server');
+  assertEqual(c.staffers['.read'], undefined, 'nobody lists the staff');
+  assertEqual(c.staffers.$uid['.read'], 'auth != null && auth.uid === $uid');
+  assertEqual(c.staffers.$uid['.write'], undefined);
+});

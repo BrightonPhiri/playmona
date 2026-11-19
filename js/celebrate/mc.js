@@ -186,7 +186,7 @@ window.FF = window.FF || {};
         st.live = FF.CelebrateLivePanel.create(st.ev, r.active, {
           alive: function () { return gameBox.isConnected; },
           reload: function () { st.live = null; load().then(drawGame); },
-          control: function (action) { return api('POST', '/c/' + st.id + '/mc/control', { action: action }); },
+          control: function (action, index, word) { return api('POST', '/c/' + st.id + '/mc/control', index == null ? { action: action } : { action: action, index: index, word: word }); },
           watch: function () { return Promise.resolve(); }   // GET /mc already lets this sign-in watch
         });
         gameBox.appendChild(st.live.el);

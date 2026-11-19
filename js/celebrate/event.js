@@ -194,7 +194,10 @@ window.FF = window.FF || {};
     if (!state.game && before !== JSON.stringify(s)) paint();
   }
 
-  var PLAYERS = { pictureRush: function () { return FF.PictureRushPlay; } };
+  var PLAYERS = {
+    pictureRush: function () { return FF.PictureRushPlay; },
+    wordByWord: function () { return FF.WordByWordPlay; }
+  };
 
   function openGame(p) {
     if (state.game) state.game.destroy();
@@ -429,8 +432,10 @@ window.FF = window.FF || {};
       chip.appendChild(FF.ui.span('', g.live ? t('celGameOnNow', 'On now') : t('celGameLocked', 'Locked: opens when the MC starts it')));
       top.appendChild(chip);
       li.appendChild(top);
-      var facts = [g.template === 'pictureRush' ? t('celTplPictureRush', 'Picture Rush') : g.template];
-      if (g.rounds) facts.push(t(g.rounds === 1 ? 'celPicturesOne' : 'celPicturesMany', g.rounds === 1 ? '1 picture' : '{n} pictures', { n: g.rounds }));
+      var wbw = g.template === 'wordByWord';
+      var facts = [g.template === 'pictureRush' ? t('celTplPictureRush', 'Picture Rush') : wbw ? t('celTplWordByWord', 'Word by Word') : g.template];
+      if (g.rounds && wbw) facts.push(t(g.rounds === 1 ? 'celWbwTurnOne' : 'celWbwTurnsEach', g.rounds === 1 ? '1 turn each' : '{n} turns each', { n: g.rounds }));
+      else if (g.rounds) facts.push(t(g.rounds === 1 ? 'celPicturesOne' : 'celPicturesMany', g.rounds === 1 ? '1 picture' : '{n} pictures', { n: g.rounds }));
       if (g.level) facts.push(levelLabel(g.level));
       li.appendChild(el('p', { class: 'ev-game__facts' }, facts.join(' · ')));
       if (g.instructions) li.appendChild(el('p', { class: 'ev-game__how' }, g.instructions));

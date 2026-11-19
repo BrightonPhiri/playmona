@@ -18,9 +18,9 @@ namespace PlayMona;
  */
 class CelebrationGames
 {
-    public const TEMPLATES = ['pictureRush'];
+    public const TEMPLATES = ['pictureRush', 'wordByWord'];
     public const STATUSES = ['draft', 'published', 'inactive'];
-    public const ACTIONS = ['next', 'pause', 'resume', 'end'];
+    public const ACTIONS = ['next', 'pause', 'resume', 'end', 'strike'];
     public const COUNTDOWN_MS = 10_000;
     private const MAX_GAMES = 30;
     private const PHOTO_TTL = 12 * 3600;
@@ -38,12 +38,27 @@ class CelebrationGames
     private const PR_SCORING_MAX = ['base' => 5000, 'speed' => 5000, 'hintCost' => 1000, 'partial' => 5000];
     private const PR_MAX_PHOTOS = 20;
 
+    /** Word by Word, as FF.WordByWordRules. */
+    public const WORD_BY_WORD = [
+        'mode' => ['open', 'blind'],
+        'seconds' => [10, 15, 20, 30, 45, 60],
+        'minUnit' => ['rounds', 'words'],
+    ];
+    private const WBW_DEFAULTS = ['mode' => 'open', 'rounds' => 3, 'minUnit' => 'rounds', 'minCount' => 2, 'seconds' => 20];
+    private const WBW_ROUNDS_MAX = 10;
+    private const WBW_WORDS_MIN_MAX = 100;
+    private const WBW_MAX_NAMES = 20;
+    private const WBW_MAX_NAME = 24;
+    private const WBW_MAX_OPENING = 60;
+    private const NAMES = ['pictureRush' => 'Picture Rush', 'wordByWord' => 'Word by Word'];
+
     public function __construct(
         private Db $db,
         private RealtimeDb $rtdb,
         private Celebrations $events,
         private CelebrationMedia $media,
         private Runner $runner,
+        private ?CelebrationWall $wall = null,
     ) {}
 
     public static function migrate(Db $db, string $engine): void
@@ -114,16 +129,16 @@ class CelebrationGames
 
     public function create(string $cid, AuthUser $user, array $in): array
     {
-        $this->events->owned($cid, $user);
+        $ev = $this->events->owned($cid, $user);
         $template = (string) ($in['template'] ?? '');
         if (!in_array($template, self::TEMPLATES, true)) throw new HttpError(400, 'That game is not available yet.', 'bad-template');
         $n = (int) $this->db->one('SELECT COUNT(*) AS n FROM celebration_games WHERE cid = ? AND deleted_at IS NULL', [$cid])['n'];
         if ($n >= self::MAX_GAMES) throw new HttpError(429, 'That is a lot of games. Delete one you will not play first.', 'too-many-games');
-        $name = $this->events->cleanText($in['name'] ?? '', 80) ?: 'Picture Rush';
+        $name = $this->events->cleanText($in['name'] ?? '', 80) ?: self::NAMES[$template];
         $id = newId('g');
         $now = nowMs();
         $this->db->run('INSERT INTO celebration_games (id, cid, template, name, instructions, config, status, sort, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
-            $id, $cid, $template, $name, 'Rebuild the photo with your team: swap two tiles at a time until the picture is whole.',
+            $id, $cid, $template, $name, $this->instructionsFor($template, $ev),
             json_encode($this->sanitize($template, [], $cid)), 'draft', $n, $now, $now,
         ]);
         return $this->view($this->game($cid, $id), true);
@@ -205,7 +220,9 @@ class CelebrationGames
         if (!$teams) throw new HttpError(409, 'Nobody is in a team yet. Put guests into teams first.', 'no-players');
 
         // The picture links the phones will load; the referee shows each one only in its round.
-        foreach ($config['photos'] as $i => $p) $config['photos'][$i]['url'] = $this->media->url($p['id'], 'play', self::PHOTO_TTL);
+        if ($g['template'] === 'pictureRush') {
+            foreach ($config['photos'] as $i => $p) $config['photos'][$i]['url'] = $this->media->url($p['id'], 'play', self::PHOTO_TTL);
+        }
 
         $runId = newId('r');
         $startAt = $now + self::COUNTDOWN_MS;
@@ -219,12 +236,14 @@ class CelebrationGames
         $run = [
             'runId' => $runId, 'cid' => $cid, 'gameId' => $g['id'], 'template' => $g['template'], 'name' => $g['name'],
             'instructions' => (string) $g['instructions'], 'config' => $config, 'teams' => $teams, 'startAt' => $startAt, 'createdAt' => $now,
+            'celebrant' => (string) $ev['celebrant_name'],
         ];
         try {
             $this->rtdb->set('celebrationRuns/' . $runId, $run);
             $this->rtdb->update('celebrations/' . $cid, [
                 'run' => null, 'inbox' => null, 'control' => null,
                 'viewers/' . $actor => true,
+                'staffers/' . $actor => true,
                 'live/run' => $this->pointer($runId, $g, $startAt),
             ]);
         } catch (\Throwable $e) {
@@ -242,29 +261,43 @@ class CelebrationGames
     {
         $this->events->owned($cid, $user);
         $active = $this->activeView($cid);
-        if ($active) $this->quiet(fn () => $this->rtdb->set('celebrations/' . $cid . '/viewers/' . $user->uid, true));
+        if ($active) $this->quiet(fn () => $this->rtdb->update('celebrations/' . $cid, ['viewers/' . $user->uid => true, 'staffers/' . $user->uid => true]));
         return ['active' => $active, 'scores' => $this->scores($cid)];
     }
 
-    /** next, pause, resume or end, for the referee. */
-    public function control(string $cid, AuthUser $user, string $action, int $now): array
+    /** next, pause, resume, end or (Word by Word) strike a word, for the referee. */
+    public function control(string $cid, AuthUser $user, string $action, int $now, mixed $index = null, mixed $word = null): array
     {
-        return $this->controlAs($this->events->owned($cid, $user), $user->uid, $action, $now);
+        return $this->controlAs($this->events->owned($cid, $user), $user->uid, $action, $now, $index, $word);
     }
 
-    public function controlAs(array $ev, string $actor, string $action, int $now): array
+    /** A strike names the word as well as its place, so a second strike of the same word cannot take the next one. */
+    public function controlAs(array $ev, string $actor, string $action, int $now, mixed $index = null, mixed $word = null): array
     {
         $cid = $ev['id'];
         if (!in_array($action, self::ACTIONS, true)) throw new HttpError(400, 'Unknown action.', 'bad-action');
         $run = $this->db->one("SELECT * FROM celebration_runs WHERE cid = ? AND status = 'active'", [$cid]);
         if (!$run) throw new HttpError(409, 'No game is being played.', 'no-game');
         $control = ['runId' => $run['id'], 'id' => newId('k'), 'action' => $action, 'at' => $now];
+        $detail = ['runId' => $run['id']];
+        if ($action === 'strike') {
+            // Only Word by Word has words to take out.
+            if ($run['template'] !== 'wordByWord') throw new HttpError(400, 'Unknown action.', 'bad-action');
+            if (!is_int($index) && !(is_string($index) && ctype_digit($index))) throw new HttpError(400, 'Pick the word to strike.', 'bad-index');
+            $index = (int) $index;
+            if ($index < 0 || $index > 1000) throw new HttpError(400, 'Pick the word to strike.', 'bad-index');
+            if (!is_string($word) || trim($word) === '' || mb_strlen($word) > 26) throw new HttpError(400, 'Pick the word to strike.', 'bad-word');
+            $control['index'] = $index;
+            $control['word'] = $word;
+            $detail['index'] = $index;
+            $detail['word'] = $word;
+        }
         try {
             $this->rtdb->set('celebrations/' . $cid . '/control', $control);
         } catch (\Throwable $e) {
             throw new HttpError(503, 'That did not reach the game. Please try again.', 'control-failed');
         }
-        $this->events->audit($cid, $actor, 'game.' . $action, ['runId' => $run['id']]);
+        $this->events->audit($cid, $actor, 'game.' . $action, $detail);
         if (!$this->runner->ensure($now) && $action === 'end' && !$this->runner->alive($now) && !$this->devHosted($run)) {
             // Nobody is refereeing: end it here so the event is not stuck.
             $this->end($run['id'], 'abandoned', $now);
@@ -320,6 +353,12 @@ class CelebrationGames
         $this->quiet(fn () => $this->rtdb->set('celebrations/' . $cid . '/viewers/' . $uid, true));
     }
 
+    /** The MC and the organiser may read what guests may not (a blind Word by Word message). Never the TV. */
+    public function allowStaff(string $cid, string $uid): void
+    {
+        $this->quiet(fn () => $this->rtdb->set('celebrations/' . $cid . '/staffers/' . $uid, true));
+    }
+
     /* ---------------------------------------------------------------- reports from the referee */
 
     /** A run finished: keep every team's points per round, then the leaderboard. Repeats change nothing. */
@@ -348,9 +387,14 @@ class CelebrationGames
             $db->run("UPDATE celebration_runs SET status = 'ended', result = ?, ended_at = ? WHERE id = ?", [
                 json_encode(['why' => (string) ($r['why'] ?? ''), 'ranked' => $ranked]), $now, $runId,
             ]);
-            return true;
+            return $run['template'];
         });
         if (!$done) return;
+        if ($done === 'wordByWord' && $this->wall && is_array($r['message'] ?? null)) {
+            // The message everyone wrote goes to the Wall of Love (and from there into the memory book).
+            $msg = $r['message'];
+            $this->wall->fromGame($cid, $runId, (string) ($msg['text'] ?? ''), count(array_filter((array) ($msg['words'] ?? []), 'is_array')));
+        }
         $this->clearRun($runId);
         $this->publishScores($cid);
         $this->quiet(fn () => $this->rtdb->set('celebrations/' . $cid . '/live/run', null));
@@ -422,6 +466,7 @@ class CelebrationGames
     public function sanitize(string $template, mixed $raw, string $cid): array
     {
         $raw = is_array($raw) ? $raw : [];
+        if ($template === 'wordByWord') return $this->sanitizeWords($raw);
         if ($template !== 'pictureRush') throw new HttpError(400, 'That game is not available yet.', 'bad-template');
         $pick = function (string $k) use ($raw) {
             $v = $raw[$k] ?? null;
@@ -457,6 +502,49 @@ class CelebrationGames
         ];
     }
 
+    /** Word by Word's settings, as FF.WordByWordRules.sanitize. */
+    private function sanitizeWords(array $raw): array
+    {
+        $int = function ($v, int $lo, int $hi, int $fallback): int {
+            if ($v === null || $v === '' || !is_numeric($v)) return $fallback;
+            return max($lo, min($hi, (int) round((float) $v)));
+        };
+        $pick = function (string $k) use ($raw) {
+            $v = $raw[$k] ?? null;
+            $allowed = self::WORD_BY_WORD[$k];
+            if (is_int($allowed[0]) && is_numeric($v)) $v = (int) $v;
+            return in_array($v, $allowed, true) ? $v : self::WBW_DEFAULTS[$k];
+        };
+        $rounds = $int($raw['rounds'] ?? null, 1, self::WBW_ROUNDS_MAX, self::WBW_DEFAULTS['rounds']);
+        $minUnit = $pick('minUnit');
+        $minCount = $int($raw['minCount'] ?? null, 0, $minUnit === 'rounds' ? $rounds : self::WBW_WORDS_MIN_MAX, min(self::WBW_DEFAULTS['minCount'], $rounds));
+        $names = [];
+        $seen = [];
+        foreach ((array) ($raw['names'] ?? []) as $n) {
+            if (!is_string($n) || count($names) >= self::WBW_MAX_NAMES) continue;
+            $n = $this->events->cleanText($n, 100);
+            if ($n === '' || preg_match('/\s/u', $n) || mb_strlen($n) > self::WBW_MAX_NAME) continue;
+            $key = mb_strtolower($n);
+            if (isset($seen[$key])) continue;
+            $seen[$key] = true;
+            $names[] = $n;
+        }
+        return [
+            'mode' => $pick('mode'), 'rounds' => $rounds, 'minUnit' => $minUnit, 'minCount' => $minCount,
+            'seconds' => $pick('seconds'), 'opening' => $this->events->cleanText($raw['opening'] ?? '', self::WBW_MAX_OPENING), 'names' => $names,
+        ];
+    }
+
+    /** What the guests read first, by template. */
+    private function instructionsFor(string $template, array $ev): string
+    {
+        if ($template === 'wordByWord') {
+            $who = trim((string) ($ev['celebrant_name'] ?? '')) ?: 'the celebrant';
+            return 'Write a message to ' . $who . ' together, one word per turn. Every letter is a point.';
+        }
+        return 'Rebuild the photo with your team: swap two tiles at a time until the picture is whole.';
+    }
+
     /** Can this be played? */
     private function ready(string $template, mixed $config): void
     {
@@ -474,6 +562,7 @@ class CelebrationGames
             'id' => $g['id'], 'template' => $g['template'], 'name' => $g['name'], 'instructions' => (string) $g['instructions'],
             'status' => $g['status'], 'photos' => count($config['photos'] ?? []), 'rounds' => (int) ($config['rounds'] ?? 0),
             'level' => $config['level'] ?? null, 'seconds' => (int) ($config['seconds'] ?? 0), 'updatedAt' => (int) $g['updated_at'],
+            'mode' => $config['mode'] ?? null,
         ];
         $first = $config['photos'][0]['id'] ?? null;
         if ($first) $out['thumb'] = $this->media->url($first, 'thumb', 6 * 3600);

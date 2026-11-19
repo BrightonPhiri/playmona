@@ -86,7 +86,9 @@ const FILES = [
   // Celebrations: every template's referee registers in FF.CelebrateReferees, and the runner
   // starts the one each celebrationRuns entry names.
   'js/celebrate/pictureRush/rules.js',
-  'js/celebrate/pictureRush/referee.js'
+  'js/celebrate/pictureRush/referee.js',
+  'js/celebrate/wordByWord/rules.js',
+  'js/celebrate/wordByWord/referee.js'
 ];
 
 function stubElement() {
