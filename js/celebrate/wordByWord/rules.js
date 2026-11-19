@@ -110,12 +110,28 @@ window.FF = window.FF || {};
     return n;
   }
 
+  /* "40th", "21st", "2nd," and "3rd!" (birthdays and anniversaries), with the right ending for the
+     number. Anything else is null and goes to the word check. */
+  function ordinal(typed) {
+    var mark = '';
+    if (typed && MARKS.indexOf(typed.charAt(typed.length - 1)) !== -1) { mark = typed.slice(-1); typed = typed.slice(0, -1); }
+    var m = /^(\d{1,4})(st|nd|rd|th)$/i.exec(typed);
+    if (!m) return null;
+    var n = Number(m[1]);
+    var tens = n % 100;
+    var due = tens >= 11 && tens <= 13 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' })[n % 10] || 'th';
+    if (m[2].toLowerCase() !== due) return null;
+    return { ok: true, text: m[1] + due + mark, name: false, ends: mark === '.' || mark === '!' };
+  }
+
   /* One word as typed. capital: this word starts a sentence, so it gets a capital (and that capital
      doesn't make it a name). A capital makes a name only when the word bank doesn't know the word
      ("Happy" is a word, "Harare" a name). known: names typed in capitals ("VICKY!") are still names. */
   function parse(raw, opts) {
     opts = opts || {};
     var typed = String(raw == null ? '' : raw).trim();
+    var ord = ordinal(typed);
+    if (ord) return ord;
     var k = key(typed);
     if (k.length > 1 && opts.known && opts.known[k] && typed === typed.toUpperCase()) {
       typed = typed.charAt(0) + typed.slice(1).toLowerCase();

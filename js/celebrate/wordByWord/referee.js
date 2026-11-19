@@ -62,6 +62,7 @@ window.FF = window.FF || {};
     var state = null;
     var offs = [];
     var timer = null;
+    var gapTimer = null;       // wakes a word held for a missing command number
     var stopped = false;
     var writes = Promise.resolve();
 
@@ -111,7 +112,15 @@ window.FF = window.FF || {};
       s.members = s.members || {};
       s.n = s.n || {};
       s.said = s.said || {};
-      s.waiting = s.waiting || {};
+      // The database keeps an object with number keys as a list, with nulls in the gaps: back to an object.
+      var waiting = {};
+      Object.keys(s.waiting || {}).forEach(function (uid) {
+        var q = s.waiting[uid] || {};
+        var out = {};
+        Object.keys(q).forEach(function (k) { if (q[k] && typeof q[k] === 'object') out[k] = q[k]; });
+        if (Object.keys(out).length) waiting[uid] = out;
+      });
+      s.waiting = waiting;
       s.totals = s.totals || {};
       Object.keys(s.teams || {}).forEach(function (tid) { s.teams[tid].players = s.teams[tid].players || {}; });
       return s;
@@ -133,6 +142,8 @@ window.FF = window.FF || {};
         save();
         publish();
         schedule();
+        // A word held before a restart still goes ahead after its wait.
+        if (state.phase === 'playing') drainWaiting(false);
       });
     }
 
@@ -140,6 +151,8 @@ window.FF = window.FF || {};
       stopped = true;
       if (timer != null) timers.clearTimeout(timer);
       timer = null;
+      if (gapTimer != null) timers.clearTimeout(gapTimer);
+      gapTimer = null;
       offs.forEach(function (off) { try { off(); } catch (e) { /* gone */ } });
       offs = [];
     }
@@ -332,36 +345,61 @@ window.FF = window.FF || {};
           clear[uid + '/' + id] = null;
           if (cmd.runId !== state.runId) return;
           var q = state.waiting[uid] = state.waiting[uid] || {};
-          if (!q[cmd.n]) q[cmd.n] = { type: cmd.type, word: cmd.word, end: cmd.end, turn: cmd.turn, got: now() };
+          if (!q[cmd.n]) q[cmd.n] = { type: cmd.type, word: cmd.word, end: cmd.end, turn: cmd.turn, t: typeof cmd.t === 'number' ? cmd.t : null, got: now() };
         });
       });
       if (Object.keys(clear).length) later(function () { return room.update('inbox', clear); });
-      drainWaiting(false);
+      // A held word is saved too, so a restart still has it.
+      drainWaiting(false, Object.keys(clear).length > 0);
     }
 
-    /* Each sender's commands in the order they sent them. */
-    function drainWaiting(lateOk) {
+    /* Each sender's commands in the order they sent them, and across senders in the order they were
+       sent (two teammates at once: the first one sent wins the turn). A command after a missing number
+       waits LOST_MS for it, then goes ahead. */
+    function drainWaiting(lateOk, dirty) {
       var t = now();
       var changed = false;
-      Object.keys(state.waiting).forEach(function (uid) {
-        var q = state.waiting[uid];
-        var expect = state.n[uid] || 0;
-        for (;;) {
+      var wake = 0;
+      for (;;) {
+        var best = null;
+        wake = 0;
+        Object.keys(state.waiting).sort().forEach(function (uid) {
+          var q = state.waiting[uid];
+          var expect = state.n[uid] || 0;
           var keys = Object.keys(q).map(Number).sort(function (x, y) { return x - y; });
-          if (!keys.length) break;
+          // A replay or a double tap, or a hole left by a restart.
+          while (keys.length && (keys[0] < expect || !q[keys[0]])) { delete q[keys[0]]; keys.shift(); }
+          if (!keys.length) { delete state.waiting[uid]; return; }
           var k = keys[0];
-          if (k < expect) { delete q[k]; continue; }                         // a replay or a double tap
-          if (k > expect && !(lateOk || t - q[k].got >= LOST_MS)) break;     // wait a moment for a missing one
           var cmd = q[k];
-          delete q[k];
-          expect = k + 1;
-          state.n[uid] = expect;
-          changed = true;
-          handle(uid, k, cmd, t);
-        }
-        if (!Object.keys(q).length) delete state.waiting[uid];
-      });
+          if (k > expect && !(lateOk || t - cmd.got >= LOST_MS)) {   // wait a moment for a missing one
+            if (!wake || cmd.got + LOST_MS < wake) wake = cmd.got + LOST_MS;
+            return;
+          }
+          if (!best || sentAt(cmd) < sentAt(best.cmd)) best = { uid: uid, k: k, cmd: cmd };
+        });
+        if (!best) break;
+        delete state.waiting[best.uid][best.k];
+        state.n[best.uid] = best.k + 1;
+        changed = true;
+        handle(best.uid, best.k, best.cmd, t);
+      }
+      wakeFor(wake);
       if (changed && state.phase !== 'ended') { save(); publish(); }
+      else if (dirty) save();
+    }
+
+    function sentAt(cmd) { return typeof cmd.t === 'number' ? cmd.t : cmd.got; }
+
+    /* A held word goes ahead when its wait is over, not only when the next command or the turn's end comes. */
+    function wakeFor(due) {
+      if (gapTimer != null) timers.clearTimeout(gapTimer);
+      gapTimer = null;
+      if (!due || stopped || state.phase === 'ended') return;
+      gapTimer = timers.setTimeout(function () {
+        gapTimer = null;
+        if (!stopped && state && state.phase !== 'ended') drainWaiting(false);
+      }, Math.max(0, due - now()));
     }
 
     function said(uid, n, error) { state.said[uid] = { n: n, error: error || '' }; }

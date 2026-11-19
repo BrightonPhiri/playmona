@@ -101,7 +101,6 @@ class CelebrationWall
         return ['message' => $this->view($this->row($cid, $id), 'own', $user->uid)];
     }
 
-    /** The approved wall and the guest's own messages (whatever their status). */
     /** A game's message for the Wall (Word by Word), from everyone. Only with 2 or more words added. */
     public function fromGame(string $cid, string $runId, string $text, int $added): ?string
     {
@@ -116,6 +115,7 @@ class CelebrationWall
         return $id;
     }
 
+    /** The approved wall and the guest's own messages (whatever their status). */
     public function forGuest(string $cid, AuthUser $user): array
     {
         $this->member($cid, $user);

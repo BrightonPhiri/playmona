@@ -392,8 +392,9 @@ class CelebrationGames
         if (!$done) return;
         if ($done === 'wordByWord' && $this->wall && is_array($r['message'] ?? null)) {
             // The message everyone wrote goes to the Wall of Love (and from there into the memory book).
+            // If that fails, the game still ends: phones, the TV and the runner must hear of it.
             $msg = $r['message'];
-            $this->wall->fromGame($cid, $runId, (string) ($msg['text'] ?? ''), count(array_filter((array) ($msg['words'] ?? []), 'is_array')));
+            $this->quiet(fn () => $this->wall->fromGame($cid, $runId, (string) ($msg['text'] ?? ''), count(array_filter((array) ($msg['words'] ?? []), 'is_array'))));
         }
         $this->clearRun($runId);
         $this->publishScores($cid);

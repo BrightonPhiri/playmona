@@ -122,6 +122,8 @@ window.FF = window.FF || {};
       var cmd = { type: 'word', runId: v.runId, n: nextN++, t: stamp(), word: word, end: !!end, turn: v.turn.id };
       T.set('inbox/' + uid + '/' + cmdId(), cmd).catch(function () {
         sentN = -1;
+        // It never arrived: the next word reuses its number, so the referee isn't left waiting for it.
+        if (nextN === cmd.n + 1) nextN = cmd.n;
         if (parts.error) parts.error.textContent = t('wbwNotSent', 'That did not send. Check your connection and try again.');
         refreshForm();
       });
