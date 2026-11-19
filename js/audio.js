@@ -30,13 +30,13 @@ window.FF = window.FF || {};
   FF.Audio = {
     ctx: null,
     effectsEnabled: true,
-    musicEnabled: true,
+    musicEnabled: false,   // off until the player turns it on
     volume: 0.7,        // sound effects
     musicVolume: 1,     // music: the song's own level unless the player lowers it
 
     init: function () {
       this.effectsEnabled = FF.Storage.get('sound', true);
-      this.musicEnabled = FF.Storage.get('music', true);
+      this.musicEnabled = FF.Storage.get('music', false);
       this.volume = FF.Storage.get('volume', 0.7);
       this.musicVolume = FF.Storage.get('musicVolume', 1);
       FF.Storage.remove('musicMode');   // the old built-in tunes are gone
@@ -82,9 +82,14 @@ window.FF = window.FF || {};
     setMusic: function (on) {
       this.musicEnabled = !!on; FF.Storage.set('music', !!on);
       if (on) this._playMusic(); else this._pauseMusic();
-      this._musicListeners.slice().forEach(function (fn) { try { fn(!!on); } catch (e) {} });
+      this._musicChanged();
     },
-    // Called with true/false whenever music is switched on or off.
+    _musicChanged: function () {
+      var on = this.musicEnabled;
+      this._musicListeners.slice().forEach(function (fn) { try { fn(on); } catch (e) {} });
+    },
+    // Called with true/false whenever music is switched on or off, a song
+    // changes, or the song starts or stops playing.
     onMusicChange: function (fn) { this._musicListeners.push(fn); },
     _musicListeners: [],
     setVolume: function (v) {
@@ -152,9 +157,14 @@ window.FF = window.FF || {};
        guest (FF.App calls startAppMusic / stopAppMusic). Browsers only allow
        sound after a tap: if the first try is refused, the next tap starts it.
        It drops lower during a game, stops while a voice chat is on (so
-       players hear each other), and pauses while the tab is hidden. To add a song, put the file in assets/music/ and its path in
-       PLAYLIST; songs play in order and the list repeats. */
-    PLAYLIST: ['assets/music/One_World_One_Game.mp3'],
+       players hear each other), and pauses while the tab is hidden. Music is off
+       until the player turns it on (the music button in the top bar).
+       To add a song, put the file in assets/music/ and add it to SONGS; songs
+       play in order and the list repeats. */
+    SONGS: [
+      { src: 'assets/music/One_World_One_Game.mp3', title: 'One World, One Game' }
+    ],
+    get PLAYLIST() { return this.SONGS.map(function (s) { return s.src; }); },
     DUCK_SHARE: 0.4,    // during a game, this share of the music volume
     _music: null,       // { el, gain, target }
     _musicOn: false,    // the app is open
@@ -162,6 +172,11 @@ window.FF = window.FF || {};
     _musicHidden: false,
 
     startAppMusic: function () {
+      // The music choice is saved per account, and init() runs before anyone
+      // is signed in, so read it again now that the account is known.
+      this.musicEnabled = FF.Storage.get('music', false);
+      this.musicVolume = FF.Storage.get('musicVolume', 1);
+      this._musicChanged();   // the top bar was drawn before this
       this._musicOn = true;
       this._watchMusic();
       this._playMusic();
@@ -173,6 +188,32 @@ window.FF = window.FF || {};
     },
 
     musicPlaying: function () { return !!(this._music && !this._music.el.paused); },
+    musicBlocked: function () { return !!this._musicBlocked; },
+    inVoiceChat: function () { return this._inVoice(); },
+
+    // The song playing now, or the one that will play when music is turned on.
+    currentSong: function () {
+      var src = this._music ? this._music.el.getAttribute('src') : null;
+      if (!src) {
+        try { var spot = JSON.parse(sessionStorage.getItem('playmona:music') || 'null'); src = spot && spot.src; } catch (e) {}
+      }
+      var songs = this.SONGS;
+      return songs.filter(function (s) { return s.src === src; })[0] || songs[0] || null;
+    },
+
+    // Pick a song: it plays from the start and music turns on.
+    playSong: function (src) {
+      if (this.PLAYLIST.indexOf(src) === -1) return;
+      var m = this._musicPlayer();
+      if (m && m.el.getAttribute('src') !== src) {
+        m.el.pause();
+        m.el.src = src;
+        try { sessionStorage.removeItem('playmona:music'); } catch (e) {}
+      }
+      if (!this.musicEnabled) { this.setMusic(true); return; }
+      this._playMusic();
+      this._musicChanged();
+    },
 
     _inVoice: function () { return !!(FF.Voice && FF.Voice.isActive && FF.Voice.isActive()); },
 
@@ -263,6 +304,8 @@ window.FF = window.FF || {};
           m.gain.connect(ctx.destination);
         } catch (e) { m.gain = null; }
       }
+      el.addEventListener('playing', function () { self._musicChanged(); });
+      el.addEventListener('pause', function () { self._musicChanged(); });
       el.addEventListener('ended', function () {   // only with 2+ songs (one song loops)
         var i = (self.PLAYLIST.indexOf(el.getAttribute('src')) + 1) % self.PLAYLIST.length;
         el.src = self.PLAYLIST[i];
