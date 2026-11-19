@@ -139,9 +139,9 @@ class CelebrationStage
         return $this->games->startAs($ev, $gid, 'mc:' . $mc->uid, $now) + ['viewer' => $mc->uid];
     }
 
-    public function control(array $ev, AuthUser $mc, string $action, int $now, mixed $index = null): array
+    public function control(array $ev, AuthUser $mc, string $action, int $now, mixed $index = null, mixed $word = null): array
     {
-        return $this->games->controlAs($ev, 'mc:' . $mc->uid, $action, $now, $index);
+        return $this->games->controlAs($ev, 'mc:' . $mc->uid, $action, $now, $index, $word);
     }
 
     /** The MC approves or holds back a message; the organiser's Wall tab can do more (delete, names). */

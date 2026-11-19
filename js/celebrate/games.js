@@ -92,7 +92,7 @@ window.FF = window.FF || {};
         live = FF.CelebrateLivePanel.create(ev, r.active, {
           alive: function () { return box.isConnected; },
           reload: function () { live = null; last = null; load(); },
-          control: function (action, index) { return post(ev, '/play/control', index == null ? { action: action } : { action: action, index: index }); },
+          control: function (action, index, word) { return post(ev, '/play/control', index == null ? { action: action } : { action: action, index: index, word: word }); },
           // GET /play lets the organiser watch the game (it marks them as a viewer).
           watch: function () { return FF.Api.call('GET', '/c/' + ev.id + '/play'); }
         });

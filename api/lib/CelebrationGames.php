@@ -266,12 +266,13 @@ class CelebrationGames
     }
 
     /** next, pause, resume, end or (Word by Word) strike a word, for the referee. */
-    public function control(string $cid, AuthUser $user, string $action, int $now, mixed $index = null): array
+    public function control(string $cid, AuthUser $user, string $action, int $now, mixed $index = null, mixed $word = null): array
     {
-        return $this->controlAs($this->events->owned($cid, $user), $user->uid, $action, $now, $index);
+        return $this->controlAs($this->events->owned($cid, $user), $user->uid, $action, $now, $index, $word);
     }
 
-    public function controlAs(array $ev, string $actor, string $action, int $now, mixed $index = null): array
+    /** A strike names the word as well as its place, so a second strike of the same word cannot take the next one. */
+    public function controlAs(array $ev, string $actor, string $action, int $now, mixed $index = null, mixed $word = null): array
     {
         $cid = $ev['id'];
         if (!in_array($action, self::ACTIONS, true)) throw new HttpError(400, 'Unknown action.', 'bad-action');
@@ -285,8 +286,11 @@ class CelebrationGames
             if (!is_int($index) && !(is_string($index) && ctype_digit($index))) throw new HttpError(400, 'Pick the word to strike.', 'bad-index');
             $index = (int) $index;
             if ($index < 0 || $index > 1000) throw new HttpError(400, 'Pick the word to strike.', 'bad-index');
+            if (!is_string($word) || trim($word) === '' || mb_strlen($word) > 26) throw new HttpError(400, 'Pick the word to strike.', 'bad-word');
             $control['index'] = $index;
+            $control['word'] = $word;
             $detail['index'] = $index;
+            $detail['word'] = $word;
         }
         try {
             $this->rtdb->set('celebrations/' . $cid . '/control', $control);

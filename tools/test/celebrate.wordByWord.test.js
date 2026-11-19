@@ -344,16 +344,22 @@ test('word by word referee: the MC strikes a word and its points go back', async
   await g.say('love');
   await g.say('rubbish');
   assertEqual(g.view().last.w, 'rubbish');
-  await g.control('strike', { index: 2 });
+  await g.control('strike', { index: 2, word: 'rubbish' });
   assertEqual(g.tree().staff.words.map((x) => x.w).join(' '), 'We love');
   assertEqual(g.view().last.w, 'love', 'the last word falls back');
   assertEqual(g.view().count, 2);
   assertEqual(g.points(a), 2);
-  await g.control('strike', { index: 0 });
+  await g.control('strike', { index: 0, word: 'We' });
   assertEqual(g.points(a), 0);
   assertEqual(g.points(b), 4);
-  await g.control('strike', { index: 7 });
+  await g.control('strike', { index: 7, word: 'love' });
   assertEqual(g.view().count, 1, 'a word that is not there changes nothing');
+  // Two panels strike the same word: the second finds a different word at that place and leaves it.
+  await g.control('strike', { index: 0, word: 'rubbish' });
+  assertEqual(g.view().count, 1, 'a strike for a word that has moved changes nothing');
+  assertEqual(g.points(b), 4, 'the other group keeps its points');
+  await g.control('strike', { index: 0 });
+  assertEqual(g.view().count, 1, 'a strike must name the word');
 });
 
 test('word by word referee: blind mode never shows earlier words', async function () {

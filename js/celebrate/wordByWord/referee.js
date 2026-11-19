@@ -32,7 +32,7 @@
 
    The organiser or MC (through the server) writes
    celebrations/<cid>/control: { runId, id, action, index? },
-   action: next (skip this turn) | pause | resume | end | strike (remove word `index`).
+   action: next (skip this turn) | pause | resume | end | strike (remove word `index`, only while it is still `word`).
    Classic script, ES2017 or older, no DOM.
    ============================================================ */
 window.FF = window.FF || {};
@@ -278,7 +278,7 @@ window.FF = window.FF || {};
         if (state.phase === 'playing') { skipTurn(t, turnMs() - Math.max(0, state.endsAt - t)); return; }
         if (state.phase === 'reveal') { finish(state.why || 'done', t); return; }
       } else if (action === 'strike') {
-        strike(c.index);
+        strike(c.index, c.word);
       }
       save();
       publish();
@@ -294,9 +294,11 @@ window.FF = window.FF || {};
     }
 
     /* The MC takes a word out of the message, and its points with it. The turn is not played again. */
-    function strike(index) {
+    function strike(index, word) {
       if (state.phase !== 'playing' && state.phase !== 'reveal') return;
       if (typeof index !== 'number' || index < 0 || index >= state.words.length || Math.floor(index) !== index) return;
+      // Two panels may strike the same word: once it is gone, another word sits at that place.
+      if (typeof word !== 'string' || state.words[index].w !== word) { log('strike ' + index + ' skipped: the word has changed'); return; }
       var gone = state.words.splice(index, 1)[0];
       var tot = state.totals[gone.teamId];
       if (tot) tot.points = Math.max(0, tot.points - (gone.points || 0));

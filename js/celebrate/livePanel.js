@@ -79,9 +79,9 @@ window.FF = window.FF || {};
     } });
     [pauseBtn, nextBtn, endBtn].forEach(function (b) { acts.appendChild(b); });
 
-    function control(action, btn, index) {
+    function control(action, btn, index, word) {
       FF.UI.busy(btn, true);
-      opts.control(action, index).then(function (r) {
+      opts.control(action, index, word).then(function (r) {
         // Locally the referee runs in this tab on the dev transport, so the control goes there too.
         if (devMode() && T) return T.set('control', r.control);
         return null;
@@ -156,7 +156,7 @@ window.FF = window.FF || {};
               title: t('celWbwStrikeTitle', 'Strike "{word}"?', { word: x.w }),
               body: t('celWbwStrikeText', 'It leaves the message and its points go back. The turn is not played again.'),
               confirmLabel: t('celWbwStrike', 'Strike'), danger: true,
-              onConfirm: function () { control('strike', b, i); }
+              onConfirm: function () { control('strike', b, i, x.w); }
             });
           }, 'btn-ghost btn-sm cel-wbw-live__strike');
           li.appendChild(b);
