@@ -372,7 +372,7 @@ window.FF = window.FF || {};
         return;
       }
       var word = R.parse(cmd.word, {
-        isWord: opts.isWord, isQuiet: opts.isQuiet, capital: R.startsSentence(state.config.opening, state.words)
+        isWord: opts.isWord, isQuiet: opts.isQuiet, known: state.known, capital: R.startsSentence(state.config.opening, state.words)
       });
       if (!word.ok) { said(uid, n, word.error); return; }
       if (cmd.end && !R.minReached(state.config, state.words.length, state.order.length)) { said(uid, n, 'tooSoon'); return; }

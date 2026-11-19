@@ -50,7 +50,8 @@ test('word by word rules: letters and points', function () {
 
 test('word by word rules: parse allows ! and has no sentence limit', function () {
   const R = loadFF(RULES).WordByWordRules;
-  const o = { isWord: (w) => w !== 'zzz', isQuiet: (w) => w === 'rudeword' };
+  // Harare is not in the bank, so its capital makes it a name.
+  const o = { isWord: (w) => w !== 'zzz' && w !== 'harare', isQuiet: (w) => w === 'rudeword' };
   assertEqual(R.parse('amazing!', o).text, 'amazing!');
   assertEqual(R.parse('LOVE', o).text, 'love');
   const forced = R.parse('love', Object.assign({ capital: true }, o));
@@ -156,7 +157,8 @@ async function game(opts) {
   const ref = Ref.create({
     run, room, store: { load: () => Promise.resolve(saved.value), save: (s) => { saved.value = s; return Promise.resolve(); } },
     randomInt: opts.randomInt || seeded(42),
-    isWord: (w) => w !== 'zzz', isQuiet: (w) => w === 'rudeword',
+    // Names are not in the bank: their capital makes them names.
+    isWord: (w) => w !== 'zzz' && w !== 'zork' && w !== 'vicky' && w !== 'harare', isQuiet: (w) => w === 'rudeword',
     timers: clock, report: (e, p) => { reports.push({ e, p }); return Promise.resolve(); }
   });
   await ref.start();
@@ -482,4 +484,30 @@ test('word by word referee: once ended it leaves the next game\'s words in the i
   await g.clock.advance(100);
   const box = g.tree().inbox || {};
   assert(box.g1 && box.g1.cnext, 'the next game\'s word waits for its own referee');
+});
+
+test('word by word rules: a real word typed with a capital is a word, not a name', function () {
+  const R = loadFF(RULES).WordByWordRules;
+  const bank = { happy: 1, birthday: 1, love: 1 };
+  const o = { isWord: (w) => !!bank[w], isQuiet: () => false };
+  const known = R.known(['Vics'], 'Vicky Banda');
+  const start = R.parse('Happy', Object.assign({ capital: true }, o));
+  assertEqual(start.name, false, 'Happy at the start is a word');
+  assertEqual(R.points(start, known), 5);
+  const mid = R.parse('Birthday', o);
+  assertEqual(mid.text, 'Birthday', 'the capital is kept');
+  assertEqual(mid.name, false, 'Birthday mid-sentence is a word');
+  assertEqual(R.points(mid, known), 8);
+  assertEqual(R.parse('Harare', o).name, true, 'not in the bank: a name');
+  assertEqual(R.points(R.parse('Harare', o), known), 1);
+});
+
+test('word by word rules: a known name in capitals is taken', function () {
+  const R = loadFF(RULES).WordByWordRules;
+  const o = { isWord: () => false, isQuiet: () => false, known: R.known(['Vics'], 'Vicky Banda') };
+  const shout = R.parse('VICKY!', o);
+  assert(shout.ok, 'VICKY! is the celebrant');
+  assertEqual(shout.text, 'Vicky!');
+  assertEqual(R.points(shout, o.known), 5);
+  assertEqual(R.parse('ZORK', o).error, 'unknown', 'an unknown shout is still refused');
 });

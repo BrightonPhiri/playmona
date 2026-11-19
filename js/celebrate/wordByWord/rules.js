@@ -111,14 +111,21 @@ window.FF = window.FF || {};
   }
 
   /* One word as typed. capital: this word starts a sentence, so it gets a capital (and that capital
-     doesn't make it a name). */
+     doesn't make it a name). A capital makes a name only when the word bank doesn't know the word
+     ("Happy" is a word, "Harare" a name). known: names typed in capitals ("VICKY!") are still names. */
   function parse(raw, opts) {
     opts = opts || {};
-    var res = FF.WordFlowRules.parseWord(raw, {
+    var typed = String(raw == null ? '' : raw).trim();
+    var k = key(typed);
+    if (k.length > 1 && opts.known && opts.known[k] && typed === typed.toUpperCase()) {
+      typed = typed.charAt(0) + typed.slice(1).toLowerCase();
+    }
+    var res = FF.WordFlowRules.parseWord(typed, {
       isWord: opts.isWord, isQuiet: opts.isQuiet, position: opts.capital ? 0 : 1, marks: MARKS, maxWords: 0
     });
     if (!res.ok) return res;
-    return { ok: true, text: res.text, name: !!res.name, ends: !!res.ends };
+    var name = !!res.name && !(typeof opts.isWord === 'function' && k && opts.isWord(k));
+    return { ok: true, text: res.text, name: name, ends: !!res.ends };
   }
 
   /* Can a group end the message now? added: words added so far (not the opening); teams: in the order. */
