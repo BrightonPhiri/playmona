@@ -470,3 +470,16 @@ test('word by word: the server offers the same settings', function () {
   assert(php.indexOf("WBW_DEFAULTS = ['mode' => '" + d.mode + "', 'rounds' => " + d.rounds + ", 'minUnit' => '" + d.minUnit + "', 'minCount' => " + d.minCount + ", 'seconds' => " + d.seconds + ']') !== -1, 'the same standards');
   assert(php.indexOf('WBW_ROUNDS_MAX = ' + R.ROUNDS_MAX + ';') !== -1 && php.indexOf('WBW_MAX_NAMES = ' + R.MAX_NAMES + ';') !== -1 && php.indexOf('WBW_MAX_OPENING = ' + R.MAX_OPENING + ';') !== -1, 'the same limits');
 });
+
+test('word by word referee: once ended it leaves the next game\'s words in the inbox', async function () {
+  // The crew keeps an ended referee for a minute; the MC may start the next game straight away.
+  const g = await game();
+  await g.toPlay();
+  await g.control('end');
+  await g.clock.advance(5000);
+  assertEqual(g.view().phase, 'ended');
+  await g.room.set('inbox/g1/cnext', { type: 'word', runId: 'r_2', n: 0, t: g.clock.now, word: 'hello', end: false, turn: 0 });
+  await g.clock.advance(100);
+  const box = g.tree().inbox || {};
+  assert(box.g1 && box.g1.cnext, 'the next game\'s word waits for its own referee');
+});

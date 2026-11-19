@@ -312,7 +312,8 @@ window.FF = window.FF || {};
     }
 
     function onInbox(tree) {
-      if (!state || stopped || !tree) return;
+      // Once ended, the inbox belongs to the next game: the crew keeps this referee a minute longer.
+      if (!state || stopped || !tree || state.phase === 'ended') return;
       var clear = {};
       Object.keys(tree).forEach(function (uid) {
         var cmds = tree[uid] || {};
