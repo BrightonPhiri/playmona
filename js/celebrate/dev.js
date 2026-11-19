@@ -43,6 +43,9 @@ window.FF = window.FF || {};
           run: run, room: T,
           store: { load: function () { return Promise.resolve(saved); }, save: function (s) { saved = s; return Promise.resolve(); } },
           randomInt: randomInt,
+          // The word bank, when this page has it (Word by Word); without it every word is taken.
+          isWord: FF.Words && FF.Words.isWord ? function (w) { return !FF.Words.ready() || FF.Words.isWord(w); } : null,
+          isQuiet: FF.Words && FF.Words.isQuiet ? function (w) { return FF.Words.isQuiet(w); } : null,
           log: function (m) { if (window.console) console.log('[Celebrations dev referee] ' + m); },
           report: function (event, payload) {
             return FF.Api.call('POST', '/dev/celebration-report', payload).then(function () {

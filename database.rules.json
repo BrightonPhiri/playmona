@@ -1004,10 +1004,27 @@
               "t": {
                 ".validate": "newData.isNumber() && newData.val() === now"
               },
+              "word": {
+                ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 26"
+              },
+              "end": {
+                ".validate": "newData.isBoolean()"
+              },
+              "turn": {
+                ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000"
+              },
               "$other": {
                 ".validate": false
               }
             }
+          }
+        },
+        "staff": {
+          ".read": "auth != null && root.child('celebrations').child($cid).child('staffers').child(auth.uid).exists()"
+        },
+        "staffers": {
+          "$uid": {
+            ".read": "auth != null && auth.uid === $uid"
           }
         }
       }
