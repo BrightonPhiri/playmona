@@ -357,3 +357,14 @@ test('word by word: a one-word message is not kept', function () {
     eq(0, (int) $w['db']->one('SELECT COUNT(*) AS n FROM celebration_messages WHERE cid = ?', [$r['cid']])['n']);
     eq(13, $w['app']->celebrationGames()->scores($r['cid'])[0]['points'], 'the points still count');
 });
+
+test('word by word: a Wall that fails does not stop the game ending', function () {
+    $w = celWorld();
+    $r = wordGame($w);
+    [, $out] = celCall($w, 'POST', "/c/{$r['cid']}/games/{$r['game']['id']}/start", ['token' => organiser()]);
+    $w['db']->run('DROP TABLE celebration_messages');
+    $w['app']->celebrationGames()->recordResult(wordReport($out['runId'], $r, 'Dear Vicky, we love you.', 3), nowMs());
+    eq(null, $w['rtdb']->get("celebrations/{$r['cid']}/live/run"), 'phones still learn the game is over');
+    eq(13, $w['rtdb']->get("celebrations/{$r['cid']}/live/scores/{$r['ruby']}/points"), 'the TV leaderboard still moves');
+    eq(null, $w['rtdb']->get("celebrationRuns/{$out['runId']}"), 'the runner lets go');
+});

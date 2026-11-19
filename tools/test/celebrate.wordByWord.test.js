@@ -533,3 +533,64 @@ test('word by word referee: a guest removed from the event leaves the order', as
   await g.say('we');
   assertEqual(g.current(), 't_gold', 'Ruby is skipped at once');
 });
+
+test('word by word referee: a gap in a phone\'s numbers is skipped after a moment, not at the end of the turn', async function () {
+  const g = await game({ config: { rounds: 3 } });
+  await g.toPlay();
+  const team = g.current();
+  // Command 0 never arrived (its send failed); command 1 is the word.
+  await g.say('we', { n: 1 });
+  assertEqual(g.words().length, 0, 'held a moment for the missing one');
+  await g.clock.advance(g.Ref.LOST_MS);
+  assertEqual(g.words().join(' '), 'We', 'taken once the moment has passed');
+  assertEqual(g.ref.state().totals[team].usedMs, g.Ref.LOST_MS, 'well before the turn ran out');
+  assert(g.current() !== team, 'the next turn');
+});
+
+test('word by word referee: a restart with a held word (saved as a list with holes) carries on', async function () {
+  const bus = makeBus();
+  const clock = makeClock(5000000);
+  const saved = { value: null };
+  const g = await game({ bus, clock, saved, config: { rounds: 3 } });
+  await g.toPlay();
+  const uid = FIRST[g.current()];
+  await g.say('we', { n: 2 });
+  g.ref.stop();
+  await flush();
+  // The database keeps an object with number keys as a list, with nulls for the missing ones.
+  const q = saved.value.waiting[uid];
+  saved.value.waiting[uid] = [null, null, q[2]];
+  const g2 = await game({ bus, clock, saved, config: { rounds: 3 } });
+  await clock.advance(g.Ref.LOST_MS);
+  assertEqual(g2.words().join(' '), 'We', 'the held word lands');
+  assertEqual(g2.view().n[uid], 3);
+});
+
+test('word by word referee: teammates\' words that arrive together are taken in the order they were sent', async function () {
+  const g = await game({ config: { rounds: 3 } });
+  await g.toPlay();
+  if (g.current() !== 't_gold') await g.say('we');
+  const turn = g.view().turn.id;
+  const at = g.clock.now;
+  const cmd = (word, t) => ({ type: 'word', runId: g.run.runId, n: 0, t, word, end: false, turn });
+  // g1 comes first in the list, but Ben (g2) sent his word first.
+  await g.room.set('inbox', { g1: { a: cmd('love', at) }, g2: { b: cmd('adore', at - 500) } });
+  await flush();
+  const words = g.words();
+  assertEqual(words[words.length - 1].toLowerCase(), 'adore', 'the first one sent wins the turn');
+  assertEqual(g.said('g1').error, 'late');
+});
+
+test('word by word rules: numbers like 40th and 21st are words', function () {
+  const R = loadFF(RULES).WordByWordRules;
+  const o = { isWord: (w) => w !== 'zzz', isQuiet: () => false };
+  ['40th', '21st', '2nd,', '3rd!', '11th', '12th.', '113th', '1ST'].forEach(function (w) {
+    const p = R.parse(w, o);
+    assert(p.ok, w + ' is taken');
+    assertEqual(p.name, false, w + ' is not a name');
+  });
+  assertEqual(R.parse('1ST', o).text, '1st');
+  assertEqual(R.parse('40th!', o).ends, true);
+  assertEqual(R.points(R.parse('40th', o), {}), 2, 'the letters score');
+  ['40st', '11st', '2th', '3nd', 'th40', '4x'].forEach(function (w) { assert(!R.parse(w, o).ok, w + ' is refused'); });
+});
