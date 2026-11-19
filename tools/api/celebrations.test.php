@@ -392,7 +392,29 @@ test('celebrations: guest-made teams follow the team rules', function () {
     eq(403, celCall($w, 'POST', "/c/$id/team/new", $g + ['json' => ['name' => 'Us']])[0], 'locked');
     celCall($w, 'POST', "/c/$id/teams/lock", $org + ['json' => ['locked' => false]]);
     eq(200, celCall($w, 'POST', "/c/$id/team/new", $g + ['json' => ['name' => 'Us']])[0], 'the 12th team');
-    [$s, $b] = celCall($w, 'POST', "/c/$id/team/new", $g + ['json' => ['name' => 'Them']]);
+    celCall($w, 'POST', "/c/$id/join", ['token' => guestToken('g2'), 'json' => ['name' => 'B']]);
+    [$s, $b] = celCall($w, 'POST', "/c/$id/team/new", ['token' => guestToken('g2'), 'json' => ['name' => 'Them']]);
     eq(403, $s, 'over the limit');
     eq('limit', $b['error'], json_encode($b));
+});
+
+test('celebrations: a guest who keeps making teams does not use up the team limit', function () {
+    $w = celWorld();
+    $ev = newEvent($w, ['teamCount' => 2]);
+    $id = $ev['id'];
+    $g = ['token' => guestToken('kid')];
+    celCall($w, 'POST', "/c/$id/join", $g + ['json' => ['name' => 'Kid']]);
+    for ($i = 1; $i <= 15; $i++) {
+        eq(200, celCall($w, 'POST', "/c/$id/team/new", $g + ['json' => ['name' => "Team $i"]])[0], "team $i");
+    }
+    $teams = celCall($w, 'GET', "/c/$id/me", $g)[1]['event']['teams'];
+    eq(3, count($teams), 'only the latest guest team is left');
+    eq('Team 15', $teams[2]['name']);
+    // Moving to an organiser team also clears the empty team the guest made; teams with people stay.
+    celCall($w, 'POST', "/c/$id/join", ['token' => guestToken('friend'), 'json' => ['name' => 'Friend', 'teamId' => $teams[2]['id']]]);
+    celCall($w, 'POST', "/c/$id/team", $g + ['json' => ['teamId' => $teams[0]['id']]]);
+    eq(3, count(celCall($w, 'GET', "/c/$id/me", $g)[1]['event']['teams']), 'Team 15 still has the friend');
+    celCall($w, 'POST', "/c/$id/team/new", $g + ['json' => ['name' => 'Solo']]);
+    celCall($w, 'POST', "/c/$id/team", $g + ['json' => ['teamId' => $teams[0]['id']]]);
+    eq(['Gold', 'Silver', 'Team 15'], array_column(celCall($w, 'GET', "/c/$id/me", $g)[1]['event']['teams'], 'name'), 'Solo removed when left empty');
 });

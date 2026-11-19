@@ -489,8 +489,14 @@ class Celebrations
         $limit = $this->limits()['teamsPerEvent'];
         $tid = $this->db->transaction(function (Db $db) use ($cid, $name, $limit, $user) {
             // The event row is the lock, so two groups making teams at once take turns (no doubled name or colour).
+            // Keep it the first statement: MariaDB takes the read snapshot at the first plain read.
             $db->one('SELECT id FROM celebrations WHERE id = ?' . $db->forUpdate(), [$cid]);
-            $live = $db->all('SELECT name, color, sort FROM celebration_teams WHERE cid = ? AND deleted_at IS NULL', [$cid]);
+            // A team this guest made and is alone in goes when they make another, so one phone cannot use up the limit.
+            $leaving = $this->ownEmptyAfterLeaving($db, $cid, $user->uid);
+            $live = array_values(array_filter(
+                $db->all('SELECT id, name, color, sort FROM celebration_teams WHERE cid = ? AND deleted_at IS NULL', [$cid]),
+                fn ($t) => $t['id'] !== $leaving
+            ));
             if (count($live) >= $limit) throw new HttpError(403, 'This celebration has the most teams it can have. Pick one of the teams.', 'limit');
             foreach ($live as $t) {
                 if (mb_strtolower($t['name']) === mb_strtolower($name)) throw new HttpError(409, 'There is already a team with that name. Pick it, or try another name.', 'team-taken');
@@ -501,6 +507,7 @@ class Celebrations
             $sort = $live ? max(array_map('intval', array_column($live, 'sort'))) + 1 : 0;
             $tid = $this->insertTeam($db, $cid, $name, $color, 0, $sort, $user->uid);
             $db->run('UPDATE celebration_guests SET team_id = ? WHERE cid = ? AND uid = ?', [$tid, $cid, $user->uid]);
+            if ($leaving) $db->run('UPDATE celebration_teams SET deleted_at = ? WHERE id = ?', [nowMs(), $leaving]);
             return $tid;
         });
         $this->audit($cid, $user->uid, 'team.guest-made', ['team' => $tid, 'name' => $name]);
@@ -530,8 +537,20 @@ class Celebrations
                 $n = (int) $db->one('SELECT COUNT(*) AS n FROM celebration_guests WHERE cid = ? AND team_id = ? AND uid <> ? AND removed_at IS NULL', [$ev['id'], $tid, $uid])['n'];
                 if ($n >= (int) $team['capacity']) throw new HttpError(409, 'That team is full. Pick another one.', 'team-full');
             }
+            $leaving = $this->ownEmptyAfterLeaving($db, $ev['id'], $uid);
             $db->run('UPDATE celebration_guests SET team_id = ? WHERE cid = ? AND uid = ?', [$tid, $ev['id'], $uid]);
+            if ($leaving && $leaving !== $tid) $db->run('UPDATE celebration_teams SET deleted_at = ? WHERE id = ?', [nowMs(), $leaving]);
         });
+    }
+
+    /** The team this guest is in, when they made it and nobody else is in it (so it would be left empty), else null. */
+    private function ownEmptyAfterLeaving(Db $db, string $cid, string $uid): ?string
+    {
+        $row = $db->one('SELECT g.team_id FROM celebration_guests g JOIN celebration_teams t ON t.id = g.team_id
+            WHERE g.cid = ? AND g.uid = ? AND t.made_by = ? AND t.deleted_at IS NULL', [$cid, $uid, $uid]);
+        if (!$row) return null;
+        $others = (int) $db->one('SELECT COUNT(*) AS n FROM celebration_guests WHERE cid = ? AND team_id = ? AND uid <> ? AND removed_at IS NULL', [$cid, $row['team_id'], $uid])['n'];
+        return $others === 0 ? (string) $row['team_id'] : null;
     }
 
     /* ---------------------------------------------------------------- private links */
