@@ -170,7 +170,7 @@ window.FF = window.FF || {};
       var box = parts.msg;
       if (!box) return;
       while (box.firstChild) box.removeChild(box.firstChild);
-      if (v.words) {
+      if (v.mode === 'open') {
         var p = el('p', 'wbw-msg__text');
         if (v.opening) p.appendChild(el('span', 'wbw-w is-opening', v.opening));
         list(v.words).forEach(function (x) {
@@ -290,7 +290,7 @@ window.FF = window.FF || {};
       say.appendChild(el('span', '', t('wbwWaitingFor', 'Waiting for')));
       if (cur) say.appendChild(teamChip(cur));
       card.appendChild(say);
-      if (v.words) card.appendChild(messageBox());
+      if (v.mode === 'open') card.appendChild(messageBox());
       else card.appendChild(el('p', 'wbw-msg__count', soFar(v.count)));
       if (!myTeam()) card.appendChild(el('p', 'pr-note', t('prNoTeam', 'You are not in a team for this game, so you can watch along.')));
       root.appendChild(card);

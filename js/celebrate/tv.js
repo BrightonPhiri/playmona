@@ -602,7 +602,7 @@ window.FF = window.FF || {};
         if (v.instructions) s.appendChild(el('p', { class: 'tv-lead' }, v.instructions));
         box.appendChild(s);
       } else if (v.phase === 'playing') {
-        box.appendChild(v.words ? wbwMessage(v, list(v.words), false) : wbwLast(v));
+        box.appendChild(v.mode === 'open' ? wbwMessage(v, list(v.words), false) : wbwLast(v));
         box.appendChild(wbwStrip(v));
       } else if (v.phase === 'reveal') {
         box.appendChild(el('p', { class: 'tv-kicker' }, t('celTvWbwMessage', 'Your message')));
