@@ -488,7 +488,9 @@ class Celebrations
         if ($this->blocked($name)) throw new HttpError(400, 'Please pick a different team name.', 'bad-name');
         $limit = $this->limits()['teamsPerEvent'];
         $tid = $this->db->transaction(function (Db $db) use ($cid, $name, $limit, $user) {
-            $live = $db->all('SELECT name, color, sort FROM celebration_teams WHERE cid = ? AND deleted_at IS NULL' . $db->forUpdate(), [$cid]);
+            // The event row is the lock, so two groups making teams at once take turns (no doubled name or colour).
+            $db->one('SELECT id FROM celebrations WHERE id = ?' . $db->forUpdate(), [$cid]);
+            $live = $db->all('SELECT name, color, sort FROM celebration_teams WHERE cid = ? AND deleted_at IS NULL', [$cid]);
             if (count($live) >= $limit) throw new HttpError(403, 'This celebration has the most teams it can have. Pick one of the teams.', 'limit');
             foreach ($live as $t) {
                 if (mb_strtolower($t['name']) === mb_strtolower($name)) throw new HttpError(409, 'There is already a team with that name. Pick it, or try another name.', 'team-taken');
