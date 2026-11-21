@@ -728,6 +728,56 @@ window.FF = window.FF || {};
   }
 
   /* ---------- Settings ---------- */
+  /* ---------- Clear test data (after trying it out with friends) ---------- */
+  function clearSection(ev, update) {
+    var box = el('section', { class: 'cel-danger' });
+    box.appendChild(el('h2', { class: 'cel-section-title' }, t('celClearTitle', 'Clear test data')));
+    box.appendChild(el('p', { class: 'hint' }, t('celClearText', 'Tried it out before the day? Clear the results, the Wall and the guests so the real celebration starts fresh. Your games, the teams you made, the links and the join code stay.')));
+    box.appendChild(FF.UI.button(t('celClear', 'Clear test data'), { class: 'btn-danger-soft', icon: 'restart', onClick: function () { clearDialog(ev, update); } }));
+    return box;
+  }
+
+  function clearDialog(ev, update) {
+    var pick = { results: true, wall: true, guests: true };
+    var go;
+    function paint() { if (go) go.disabled = !(pick.results || pick.wall || pick.guests); }
+    var rows = [
+      ['results', t('celClearResults', 'Game results and points'), t('celClearResultsDesc', 'Every game played so far. The leaderboard goes back to 0 and the TV forgets the last result.')],
+      ['wall', t('celClearWall', 'Wall of Love messages'), t('celClearWallDesc', 'Every message and its photo, waiting or approved. They leave the memory book too.')],
+      ['guests', t('celClearGuests', 'Guests'), t('celClearGuestsDesc', 'Everyone who joined leaves and joins again on the day, even guests you removed. Teams that guests made go too.')]
+    ].map(function (r) {
+      return FF.UI.switchRow({ label: r[1], description: r[2], checked: true, onChange: function (on) { pick[r[0]] = on; paint(); } });
+    });
+    rows.push(el('p', { class: 'hint' }, t('celClearKeep', 'This cannot be undone. Games being played must end first.')));
+    var dlg = FF.UI.dialog({
+      title: t('celClearConfirm', 'Clear test data from {title}?', { title: ev.title }),
+      body: rows,
+      role: 'alertdialog',
+      actions: [
+        { label: t('cancel', 'Cancel') },
+        { label: t('celClear', 'Clear test data'), danger: true, icon: 'restart', keepOpen: true, onClick: function (api) {
+          FF.UI.busy(go, true);
+          FF.Api.call('POST', '/c/' + ev.id + '/clear', pick).then(function (b) {
+            api.close();
+            var c = b.cleared || {};
+            function n(k, one, many) { var v = c[k] || 0; return v === 1 ? t(one[0], one[1]) : t(many[0], many[1], { n: v }); }
+            var parts = [];
+            if (pick.results) parts.push(n('games', ['celClearedGame', '1 game played'], ['celClearedGames', '{n} games played']));
+            if (pick.wall) parts.push(n('messages', ['celClearedMessage', '1 message'], ['celClearedMessages', '{n} messages']));
+            if (pick.guests) parts.push(n('guests', ['celClearedGuest', '1 guest'], ['celClearedGuests', '{n} guests']));
+            FF.UI.toast(t('celCleared', 'Cleared {what}. Ready for the real celebration.', { what: parts.join(', ') }), { duration: 4000 });
+            update(Promise.resolve(b.event));
+          }, function (e) {
+            FF.UI.busy(go, false);
+            FF.UI.toast(e.message);
+          });
+        } }
+      ]
+    });
+    go = dlg.box.querySelector('.ff-dialog__actions .btn-danger');
+    paint();
+  }
+
   function settingsTab(panel, ev, update) {
     var draft = draftFrom(ev);
     var dirty = false;
@@ -759,6 +809,8 @@ window.FF = window.FF || {};
     save.disabled = !dirty;
     bar.appendChild(save);
     panel.appendChild(bar);
+
+    panel.appendChild(clearSection(ev, update));
 
     var danger = el('section', { class: 'cel-danger' });
     danger.appendChild(el('h2', { class: 'cel-section-title' }, t('celDeleteTitle', 'Delete this celebration')));

@@ -394,6 +394,27 @@ class Celebrations
         return $this->manageView($this->event($cid));
     }
 
+    /**
+     * Clearing test data: everyone who joined leaves, removed guests too, so every phone may join
+     * again. The teams guests made go with them; the organiser's own teams stay (now empty).
+     */
+    public function clearGuests(string $cid): array
+    {
+        $uids = array_column($this->db->all('SELECT uid FROM celebration_guests WHERE cid = ?', [$cid]), 'uid');
+        $now = nowMs();
+        $teams = 0;
+        $this->db->transaction(function (Db $db) use ($cid, $now, &$teams) {
+            $teams = (int) $db->one('SELECT COUNT(*) AS n FROM celebration_teams WHERE cid = ? AND made_by IS NOT NULL AND deleted_at IS NULL', [$cid])['n'];
+            $db->run('UPDATE celebration_teams SET deleted_at = ? WHERE cid = ? AND made_by IS NOT NULL AND deleted_at IS NULL', [$now, $cid]);
+            $db->run('DELETE FROM celebration_guests WHERE cid = ?', [$cid]);
+        });
+        $this->live(function () use ($cid, $uids) {
+            $this->rtdb->set('celebrations/' . $cid . '/members', null);
+            foreach ($uids as $uid) $this->rtdb->set('celebrations/' . $cid . '/viewers/' . $uid, null);
+        });
+        return ['guests' => count($uids), 'teams' => $teams];
+    }
+
     /* ---------------------------------------------------------------- guests */
 
     /** The event page: by its address (slug) or the short join code. Private events need the code. */

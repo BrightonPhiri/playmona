@@ -195,6 +195,21 @@ class CelebrationWall
         $this->events->audit($cid, $actor, 'message.' . $action, ['id' => $mid]);
     }
 
+    /** Clearing test data: every message goes, with its reports, and every message photo (sent or not). Returns how many messages. */
+    public function clearAll(string $cid): int
+    {
+        $now = nowMs();
+        $n = (int) $this->db->one('SELECT COUNT(*) AS n FROM celebration_messages WHERE cid = ? AND deleted_at IS NULL', [$cid])['n'];
+        $photos = $this->db->all("SELECT id, ext FROM celebration_media WHERE cid = ? AND purpose = 'message' AND deleted_at IS NULL", [$cid]);
+        $this->db->transaction(function (Db $db) use ($cid, $now) {
+            $db->run('DELETE FROM celebration_reports WHERE message_id IN (SELECT id FROM celebration_messages WHERE cid = ?)', [$cid]);
+            $db->run('UPDATE celebration_messages SET deleted_at = ? WHERE cid = ? AND deleted_at IS NULL', [$now, $cid]);
+            $db->run("UPDATE celebration_media SET deleted_at = ? WHERE cid = ? AND purpose = 'message' AND deleted_at IS NULL", [$now, $cid]);
+        });
+        foreach ($photos as $p) $this->media->delete($cid, $p['id'], $p['ext']);
+        return $n;
+    }
+
     /**
      * Messages for the TV and the MC, as everyone at the event may see them (no name behind an
      * anonymous message). The TV only ever gets approved ones; the MC also gets the waiting ones.
