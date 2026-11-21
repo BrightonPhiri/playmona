@@ -256,12 +256,14 @@ class CelebrationGames
             'instructions' => (string) $g['instructions'], 'config' => $config, 'teams' => $teams, 'startAt' => $startAt, 'createdAt' => $now,
             'celebrant' => (string) $ev['celebrant_name'],
         ];
+        $who = str_starts_with($actor, 'mc:') ? substr($actor, 3) : $actor;
         try {
             $this->rtdb->set('celebrationRuns/' . $runId, $run);
             $this->rtdb->update('celebrations/' . $cid, [
                 'run' => null, 'inbox' => null, 'control' => null,
-                'viewers/' . $actor => true,
-                'staffers/' . $actor => true,
+                // The MC acts as "mc:<uid>" in the audit, but database keys cannot hold a colon.
+                'viewers/' . $who => true,
+                'staffers/' . $who => true,
                 'live/run' => $this->pointer($runId, $g, $startAt),
             ]);
         } catch (\Throwable $e) {

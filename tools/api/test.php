@@ -95,7 +95,11 @@ class MemoryRtdb implements RealtimeDb
     public function update(string $path, array $values): void
     {
         if ($this->down) throw new RuntimeException('offline');
-        foreach ($values as $key => $value) $this->set(trim($path . '/' . $key, '/'), $value);
+        foreach ($values as $key => $value) {
+            // Like FirebaseDb::update: a key with any other character is refused.
+            if (!preg_match('#^[A-Za-z0-9_/-]+$#', (string) $key)) throw new InvalidArgumentException('Bad database path.');
+            $this->set(trim($path . '/' . $key, '/'), $value);
+        }
     }
 
     /** Firebase REST queries: orderBy a child, startAt / endAt, limitToFirst, shallow. */
