@@ -159,8 +159,7 @@ window.FF = window.FF || {};
     }
 
     function guests() {
-      var n = st.ev.guestCount || 0;
-      return t(n === 1 ? 'celHereOne' : 'celHereMany', n === 1 ? '1 guest has joined' : '{n} guests have joined', { n: n });
+      return FF.Celebrate.joinedText(st.ev);
     }
 
     function keepAwake() {
