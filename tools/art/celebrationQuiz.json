@@ -1,0 +1,21 @@
+{
+  "game": "celebrationQuiz",
+  "prompts": "docs/art/celebrationQuiz-prompts.md",
+  "source": "assets/playmona_assets/celebration-quiz",
+  "ids": [],
+  "sets": [],
+  "focus": {},
+  "cover": {
+    "from": "cover.png",
+    "to": "assets/images/covers/celebrationQuiz.webp",
+    "size": [
+      1086,
+      1448
+    ],
+    "max_kb": 240,
+    "focus": [
+      0.5,
+      0.5
+    ]
+  }
+}

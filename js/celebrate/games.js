@@ -22,9 +22,9 @@ window.FF = window.FF || {};
   var TEMPLATES = [
     { id: 'pictureRush', icon: 'puzzle-piece', name: ['celPrName', 'Picture Rush'],
       text: ['celPrText', 'Each team rebuilds a scrambled photo together, swapping tiles on their phones. The fastest team wins the round.'] },
-    { id: 'wordByWord', icon: 'text-aa', name: ['celWbwName', 'Word by Word'],
+    { id: 'wordByWord', icon: 'text-aa', cover: 'wordByWord', name: ['celWbwName', 'Word by Word'],
       text: ['celWbwText', 'All the groups write one message to the celebrant together, one word per turn. Every letter is a point.'] },
-    { id: 'quiz', icon: 'question', name: ['celQuizName', 'Quiz'],
+    { id: 'quiz', icon: 'question', cover: 'celebrationQuiz', name: ['celQuizName', 'Quiz'],
       text: ['celQuizText', 'Teams answer questions about the celebrant together. Every right answer scores.'] }
   ];
   var MODES = {
@@ -146,12 +146,20 @@ window.FF = window.FF || {};
       if (!ev.stats.teams) box.appendChild(el('p', { class: 'hint' }, t('celGamesNeedTeams', 'Games are played in teams. Set up the teams before you start one.')));
     }
 
+    /* A template's cover picture (assets/images/covers), with the manifest's version so a new picture shows at once. */
+    function coverImg(tp, cls) {
+      if (!tp.cover) return null;
+      var m = FF.AssetManifest && FF.AssetManifest.covers;
+      var v = m && m[tp.cover] ? '?v=' + m[tp.cover] : '';
+      return el('img', { class: cls || null, src: 'assets/images/covers/' + tp.cover + '.webp' + v, alt: '', loading: 'lazy' });
+    }
+
     function newGame() {
       var list = el('ul', { class: 'cel-templates' });
       var dlg = null;
       TEMPLATES.forEach(function (tp) {
         var b = el('button', { type: 'button', class: 'cel-template' });
-        b.appendChild(icon(tp.icon));
+        b.appendChild(coverImg(tp, 'cel-template__cover') || icon(tp.icon));
         var txt = div('cel-template__text');
         txt.appendChild(el('strong', {}, C().label(tp.name)));
         txt.appendChild(el('span', {}, C().label(tp.text)));
@@ -168,7 +176,7 @@ window.FF = window.FF || {};
         li.appendChild(b);
         list.appendChild(li);
       });
-      list.appendChild(el('li', { class: 'cel-template-soon' }, t('celMoreGamesSoon2', 'More games are on the way: quizzes and more.')));
+      list.appendChild(el('li', { class: 'cel-template-soon' }, t('celMoreGamesSoon2', 'More games are on the way.')));
       dlg = FF.UI.sheet({ title: t('celPickTemplate', 'Choose a game'), body: list });
     }
 
@@ -177,7 +185,7 @@ window.FF = window.FF || {};
       var li = el('li', { class: 'cel-game is-' + g.status });
       var pic = div('cel-game__pic');
       if (g.thumb) pic.appendChild(el('img', { src: g.thumb, alt: '', loading: 'lazy' }));
-      else pic.appendChild(icon(tp.icon));
+      else pic.appendChild(coverImg(tp) || icon(tp.icon));
       li.appendChild(pic);
       var body = div('cel-game__body');
       body.appendChild(el('strong', { class: 'cel-game__name' }, g.name));

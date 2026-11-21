@@ -440,6 +440,7 @@
 }
 .cel-template:hover, .cel-template:focus-visible { border-color: var(--accent); }
 .cel-template .icon-svg { width: 36px; height: 36px; flex: none; }
+.cel-template__cover { width: 56px; height: 56px; flex: none; border-radius: var(--r-md); object-fit: cover; }
 .cel-template__text { display: flex; flex-direction: column; gap: 2px; }
 .cel-template__text span { color: var(--muted); }
 .cel-template-soon { color: var(--muted); font-size: var(--fs-sm); padding: var(--sp-2); }

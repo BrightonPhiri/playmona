@@ -27,6 +27,12 @@ jobs:
         # Every deploy gets a new cache name, so returning players get the new files.
         run: sed -i "s/^var CACHE = '[^']*';/var CACHE = 'playmona-${GITHUB_SHA::7}';/" sw.js && grep -m1 "^var CACHE" sw.js
 
+      - name: Stamp the pages' scripts and styles with this commit
+        # Cloudflare lets browsers keep js/css for hours; a new ?v= per deploy makes them fetch the new files.
+        run: |
+          sed -i -E "s#((src|href)=\"(js|css)/[^\"?]+\.(js|css))\"#\1?v=${GITHUB_SHA::7}\"#g" *.html
+          grep -c "?v=${GITHUB_SHA::7}" play.html event.html
+
       - name: Set up SSH
         env:
           SSH_KEY: ${{ secrets.SSH_KEY }}
