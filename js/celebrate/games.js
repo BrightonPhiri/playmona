@@ -12,6 +12,7 @@ window.FF = window.FF || {};
   var C = function () { return FF.Celebrate; };
   var R = function () { return FF.PictureRushRules; };
   var W = function () { return FF.WordByWordRules; };
+  var Q = function () { return FF.QuizRules; };
   function t(k, f, v) { return FF.t(k, f, v); }
   function el(tag, attrs, kids) { return FF.ui.el(tag, attrs, kids); }
   function div(cls, kids) { return FF.ui.div(cls, kids); }
@@ -22,7 +23,9 @@ window.FF = window.FF || {};
     { id: 'pictureRush', icon: 'puzzle-piece', name: ['celPrName', 'Picture Rush'],
       text: ['celPrText', 'Each team rebuilds a scrambled photo together, swapping tiles on their phones. The fastest team wins the round.'] },
     { id: 'wordByWord', icon: 'text-aa', name: ['celWbwName', 'Word by Word'],
-      text: ['celWbwText', 'All the groups write one message to the celebrant together, one word per turn. Every letter is a point.'] }
+      text: ['celWbwText', 'All the groups write one message to the celebrant together, one word per turn. Every letter is a point.'] },
+    { id: 'quiz', icon: 'question', name: ['celQuizName', 'Quiz'],
+      text: ['celQuizText', 'Teams answer questions about the celebrant together. Every right answer scores.'] }
   ];
   var MODES = {
     open: ['celWbwOpen', 'Open'], blind: ['celWbwBlind', 'Blind']
@@ -155,7 +158,8 @@ window.FF = window.FF || {};
         b.appendChild(txt);
         b.addEventListener('click', function () {
           b.disabled = true;
-          post(ev, '/games', { template: tp.id, name: C().label(tp.name) }).then(function (g) {
+          // A quiz gets its name from the server: "Who Knows {celebrant} Best?".
+          post(ev, '/games', tp.id === 'quiz' ? { template: tp.id } : { template: tp.id, name: C().label(tp.name) }).then(function (g) {
             if (dlg) dlg.close();
             FF.Nav.go('celebrationGame', { id: ev.id, gameId: g.id });
           }, function (e) { b.disabled = false; FF.UI.toast(e.message); });
@@ -187,6 +191,10 @@ window.FF = window.FF || {};
         if (g.mode) bits.push(C().label(MODES[g.mode] || ['', g.mode]));
         if (g.rounds) bits.push(t(g.rounds === 1 ? 'celWbwTurnOne' : 'celWbwTurnsEach', g.rounds === 1 ? '1 turn each' : '{n} turns each', { n: g.rounds }));
         if (g.seconds) bits.push(t('celWbwPerTurn', '{time} a turn', { time: mins(g.seconds) }));
+      }
+      if (g.template === 'quiz') {
+        bits.push(t(g.questions === 1 ? 'celQuizOne' : 'celQuizMany', g.questions === 1 ? '1 question' : '{n} questions', { n: g.questions || 0 }));
+        if (g.seconds) bits.push(t('celQuizPerQuestion', '{time} a question', { time: mins(g.seconds) }));
       }
       body.appendChild(el('span', { class: 'cel-game__meta' }, bits.join(' · ')));
       body.appendChild(el('span', { class: 'cel-status cel-status--' + g.status }, C().label(STATUS[g.status] || ['', g.status])));
@@ -243,7 +251,7 @@ window.FF = window.FF || {};
     function startGame(g, btn, active) {
       if (active) { FF.UI.toast(t('celOneAtATime', 'Another game is being played. End it first.')); return; }
       FF.UI.confirm({
-        title: t('celStartTitle', 'Start {name}?', { name: g.name }),
+        title: t('celStartTitle', 'Start {name}?', { name: String(g.name).replace(/[?]+$/, '') }), // "Who Knows Vicky Best?" keeps one question mark
         body: t('celStartText', 'The game opens on every guest\'s phone and starts after a 10 second countdown. Guests need the event page open.'),
         confirmLabel: t('celStart', 'Start'), icon: 'play',
         onConfirm: function () {
@@ -324,6 +332,7 @@ window.FF = window.FF || {};
 
       if (g.template === 'pictureRush') pictureRushFields();
       if (g.template === 'wordByWord') wordByWordFields();
+      if (g.template === 'quiz') quizFields();
 
       var bar = div('cel-savebar');
       saveBtn = FF.UI.button(t('celSaveChanges', 'Save changes'), { class: 'btn-secondary', icon: 'check', onClick: function () { save().then(function () { FF.UI.toast(t('saved', 'Saved')); }, function () {}); } });
@@ -349,6 +358,7 @@ window.FF = window.FF || {};
       if (!draft.name.trim()) { FF.UI.toast(t('celNeedGameName', 'Give the game a name.')); return Promise.reject(new Error('')); }
       var cfg = JSON.parse(JSON.stringify(draft.config));
       if (g.template === 'pictureRush') cfg.photos = (cfg.photos || []).map(function (p) { return { id: p.id, title: p.title || '', hint: p.hint || '' }; });
+      if (g.template === 'quiz') cfg.questions = (cfg.questions || []).map(function (q) { return { id: q.id, text: q.text || '', right: q.right || '', wrong: (q.wrong || []).slice() }; });
       FF.UI.busy(saveBtn, true);
       return FF.Api.call('POST', '/c/' + params.id + '/games/' + g.id + '/save', { name: draft.name, instructions: draft.instructions, config: cfg }).then(function (r) {
         g = r;
@@ -563,6 +573,149 @@ window.FF = window.FF || {};
           changed();
         }
       }), t('celWbwNamesHint', 'Every letter is a point. Names are not in our word list, so other names score 1 point. The celebrant\'s name always counts in full; add nicknames and places here.')));
+    }
+
+    /* ---------- Quiz ---------- */
+
+    function quizFields() {
+      var cfg = draft.config;
+      cfg.questions = Q().list(cfg.questions).map(function (q) { q.wrong = Q().list(q.wrong); if (!q.wrong.length) q.wrong = ['']; return q; });
+      shell.appendChild(el('h2', { class: 'cel-section-title' }, t('celWbwHow', 'How it is played')));
+      shell.appendChild(field(t('celQuizSeconds', 'Time for each question'), select(Q().SECONDS.map(function (s) { return [String(s), mins(s)]; }), String(cfg.seconds), function (v) { cfg.seconds = Number(v); changed(); }),
+        t('celQuizSecondsHint', 'Teams can change their answer until the time runs out, or press "We\'re sure".')));
+      var pts = el('input', { type: 'number', class: 'input field__input', min: String(Q().POINTS_MIN), max: String(Q().POINTS_MAX), step: String(Q().POINTS_STEP), inputmode: 'numeric' });
+      pts.value = String(cfg.points);
+      pts.addEventListener('input', function () {
+        var n = Number(pts.value);
+        if (!isFinite(n) || !pts.value) return;
+        cfg.points = Math.max(Q().POINTS_MIN, Math.min(Q().POINTS_MAX, Math.round(n / Q().POINTS_STEP) * Q().POINTS_STEP));
+        changed();
+      });
+      shell.appendChild(field(t('celQuizPoints', 'Points for a right answer'), pts, t('celQuizPointsHint', 'Every right answer scores the same. A wrong answer scores nothing.')));
+
+      shell.appendChild(el('h2', { class: 'cel-section-title' }, t('celQuizQuestions', 'Questions')));
+      var listBox = el('ol', { class: 'cel-quiz-list' });
+      shell.appendChild(listBox);
+      var acts = div('cel-quiz-add');
+      var ideasBtn = FF.UI.button(t('celQuizIdeas', 'Add from ideas'), { class: 'btn-primary', icon: 'sparkle', onClick: ideas });
+      var ownBtn = FF.UI.button(t('celQuizOwn', 'Write my own'), { class: 'btn-secondary', icon: 'plus', onClick: function () { add([{ text: '' }]); } });
+      var full = el('p', { class: 'hint' }, t('celQuizFull', 'That\'s the most a quiz can have.'));
+      acts.appendChild(ideasBtn);
+      acts.appendChild(ownBtn);
+      acts.appendChild(full);
+      shell.appendChild(acts);
+
+      function newId() { return 'q' + Date.now().toString(36) + Math.floor(Math.random() * 1296).toString(36); }
+      function add(items) {
+        var first = cfg.questions.length;
+        items.forEach(function (it) {
+          if (cfg.questions.length < Q().MAX_QUESTIONS) cfg.questions.push({ id: newId(), text: it.text || '', right: '', wrong: [''] });
+        });
+        changed();
+        draw();
+        // The first new card: its question when written from scratch, else its right answer.
+        var card = listBox.querySelectorAll('.cel-quiz-q')[first];
+        if (card) { var f = card.querySelector(items.length === 1 && !items[0].text ? 'textarea' : '.cel-quiz-q__right'); if (f) f.focus(); }
+      }
+
+      var PROBLEM = {
+        noText: ['celQuizNoText', 'Add the question.'], noRight: ['celQuizNoRight', 'Add the right answer.'],
+        noWrong: ['celQuizNoWrong', 'Add a wrong answer.'], same: ['celQuizSame', 'Two answers are the same.']
+      };
+
+      function draw() {
+        FF.ui.clear(listBox);
+        if (!cfg.questions.length) listBox.appendChild(el('li', { class: 'hint cel-quiz-empty' }, t('celQuizEmpty', 'No questions yet. Start with some ideas, then type the answers.')));
+        cfg.questions.forEach(function (q, i) {
+          var li = el('li', { class: 'cel-quiz-q' });
+          var head = div('cel-quiz-q__head');
+          head.appendChild(el('strong', {}, t('celQuizQn', 'Question {n}', { n: i + 1 })));
+          var tools = div('cel-quiz-q__tools');
+          var up = FF.UI.iconButton('arrow-up', t('celMoveUp', 'Move up'), function () { move(i, -1); }, 'btn-ghost btn-sm');
+          up.disabled = i === 0;
+          var down = FF.UI.iconButton('arrow-down', t('celMoveDown', 'Move down'), function () { move(i, 1); }, 'btn-ghost btn-sm');
+          down.disabled = i === cfg.questions.length - 1;
+          tools.appendChild(up);
+          tools.appendChild(down);
+          tools.appendChild(FF.UI.iconButton('trash', t('celQuizRemoveN', 'Remove question {n}', { n: i + 1 }), function () { cfg.questions.splice(i, 1); changed(); draw(); }, 'btn-ghost btn-sm'));
+          head.appendChild(tools);
+          li.appendChild(head);
+          var note = el('p', { class: 'cel-quiz-q__problem', 'aria-live': 'polite' });
+          function check() {
+            var why = Q().problem(q);
+            note.textContent = why ? C().label(PROBLEM[why]) : '';
+            li.classList.toggle('is-incomplete', !!why);
+          }
+          li.appendChild(field(t('celQuizText', 'Question'), textInput(q.text, { multiline: true, max: Q().MAX_TEXT, onInput: function (v) { q.text = v; changed(); check(); } })));
+          var right = textInput(q.right, { max: Q().MAX_ANSWER, onInput: function (v) { q.right = v; changed(); check(); } });
+          right.classList.add('cel-quiz-q__right');
+          li.appendChild(field(t('celQuizRight', 'Right answer'), right));
+          q.wrong.forEach(function (w, k) {
+            var row = div('cel-quiz-q__wrong');
+            var inp = textInput(w, { max: Q().MAX_ANSWER, placeholder: t('celQuizWrongPh', 'A wrong answer'), onInput: function (v) { q.wrong[k] = v; changed(); check(); } });
+            inp.setAttribute('aria-label', t('celQuizWrongN', 'Wrong answer {n}', { n: k + 1 }));
+            row.appendChild(inp);
+            if (q.wrong.length > 1) row.appendChild(FF.UI.iconButton('x', t('celQuizRemoveWrongN', 'Remove wrong answer {n}', { n: k + 1 }), function () { q.wrong.splice(k, 1); changed(); draw(); }, 'btn-ghost btn-sm'));
+            if (k === 0) li.appendChild(el('p', { class: 'field__label' }, t('celQuizWrong', 'Wrong answers')));
+            li.appendChild(row);
+          });
+          if (q.wrong.length < Q().MAX_WRONG) {
+            li.appendChild(FF.UI.button(t('celQuizAddWrong', 'Add a wrong answer'), { class: 'btn-ghost btn-sm', icon: 'plus', onClick: function () { q.wrong.push(''); changed(); draw(); } }));
+          }
+          li.appendChild(note);
+          check();
+          listBox.appendChild(li);
+        });
+        var atMax = cfg.questions.length >= Q().MAX_QUESTIONS;
+        ideasBtn.disabled = atMax;
+        ownBtn.disabled = atMax;
+        full.hidden = !atMax;
+      }
+
+      function move(i, by) {
+        var j = i + by;
+        if (j < 0 || j >= cfg.questions.length) return;
+        var x = cfg.questions[i]; cfg.questions[i] = cfg.questions[j]; cfg.questions[j] = x;
+        changed();
+        draw();
+      }
+
+      function ideas() {
+        var have = {};
+        cfg.questions.forEach(function (q) { have[String(q.text).trim().toLowerCase()] = true; });
+        var body = el('ul', { class: 'cel-quiz-ideas' });
+        var picked = [];
+        FF.QuizQuestions.forKind(cfg.kind, g.celebrantName || '').forEach(function (idea) {
+          var li = el('li', {});
+          var lab = el('label', { class: 'cel-quiz-idea' });
+          var box = el('input', { type: 'checkbox' });
+          var added = !!have[idea.text.trim().toLowerCase()];
+          box.disabled = added;
+          box.checked = added;
+          box.addEventListener('change', function () {
+            var at = picked.indexOf(idea);
+            if (box.checked && at === -1) picked.push(idea);
+            if (!box.checked && at !== -1) picked.splice(at, 1);
+          });
+          lab.appendChild(box);
+          lab.appendChild(el('span', {}, idea.text));
+          if (added) lab.appendChild(el('span', { class: 'cel-quiz-idea__added' }, t('celQuizAdded', 'Added')));
+          li.appendChild(lab);
+          body.appendChild(li);
+        });
+        FF.UI.sheet({
+          title: t('celQuizIdeasTitle', 'Question ideas'), body: body,
+          actions: [
+            { label: t('cancel', 'Cancel') },
+            { label: t('celQuizAddPicked', 'Add the ticked ones'), primary: true, icon: 'plus', onClick: function () {
+              // After the sheet has closed and handed focus back, so the first new answer box can take it.
+              if (picked.length) setTimeout(function () { add(picked); }, 0);
+            } }
+          ]
+        });
+      }
+
+      draw();
     }
 
     function preview(photo, size) {

@@ -1013,6 +1013,12 @@
               "turn": {
                 ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000"
               },
+              "q": {
+                ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+              },
+              "choice": {
+                ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 3"
+              },
               "$other": {
                 ".validate": false
               }

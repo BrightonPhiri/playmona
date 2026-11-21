@@ -33,7 +33,8 @@ window.FF = window.FF || {};
     var files = [];
     if (!FF.WordFlowRules) files.push('js/wordflow/rules.js');
     if (!FF.WordByWordRules) files.push('js/celebrate/wordByWord/rules.js');
-    files.push('js/celebrate/pictureRush/referee.js', 'js/celebrate/wordByWord/referee.js', 'js/celebrate/dev.js');
+    if (!FF.QuizRules) files.push('js/celebrate/quiz/rules.js');
+    files.push('js/celebrate/pictureRush/referee.js', 'js/celebrate/wordByWord/referee.js', 'js/celebrate/quiz/referee.js', 'js/celebrate/dev.js');
     return files.reduce(function (p, src) {
       return p.then(function () {
         return new Promise(function (resolve, reject) {
@@ -67,12 +68,14 @@ window.FF = window.FF || {};
 
     var T = null, off = null, offStaff = null, v = null, staff = null, ticker = null, gone = false;
     var words = el('ol', { class: 'cel-wbw-live' });
+    var quizBox = div('cel-quiz-live');
     var pauseBtn = FF.UI.button(t('celPause', 'Pause'), { class: 'btn-secondary btn-sm', icon: 'pause', onClick: function () { control(v && v.paused ? 'resume' : 'pause', pauseBtn); } });
     var nextBtn = FF.UI.button(t('celNext', 'Next'), { class: 'btn-secondary btn-sm', icon: 'arrow-right', onClick: function () { control('next', nextBtn); } });
     var endBtn = FF.UI.button(t('celEndGame', 'End game'), { class: 'btn-danger-soft btn-sm', icon: 'flag', onClick: function () {
       FF.UI.confirm({
         title: t('celEndTitle', 'End {name} now?', { name: active.name }),
-        body: t('celEndText', 'The game stops for everyone. Points won so far count, and unfinished pictures score their tiles in place.'),
+        body: active.template === 'quiz' ? t('celQuizEndText', 'The game stops for everyone. Points won so far count; the question on screen does not.')
+          : t('celEndText', 'The game stops for everyone. Points won so far count, and unfinished pictures score their tiles in place.'),
         confirmLabel: t('celEndGame', 'End game'), danger: true,
         onConfirm: function () { control('end', endBtn); }
       });
@@ -168,8 +171,71 @@ window.FF = window.FF || {};
       if (!words.isConnected) card.insertBefore(words, acts);
     }
 
+    var QZ_PHASE = {
+      starting: ['celPhStarting', 'Counting down. Guests see the instructions.'],
+      question: ['celQuizPhQuestion', 'Question {n} of {total}: teams are choosing.'],
+      reveal: ['celQuizPhReveal', 'Question {n} of {total}: the answer is up.'],
+      ended: ['celPhEnded', 'The game is over.']
+    };
+    var QZ_LETTERS = ['A', 'B', 'C', 'D'];
+
+    /* Quiz: the question with its right answer (only staff can read it before the reveal) and every team's pick. */
+    function drawQuiz() {
+      var p = QZ_PHASE[v.phase] || ['', ''];
+      status.textContent = (v.paused ? t('celPausedNow', 'Paused.') + ' ' : '') + t(p[0], p[1], { n: (v.q || 0) + 1, total: v.total });
+      pauseBtn.hidden = v.phase !== 'question' && v.phase !== 'reveal';
+      FF.ui.clear(pauseBtn);
+      pauseBtn.appendChild(icon(v.paused ? 'play' : 'pause'));
+      pauseBtn.appendChild(FF.ui.span('', v.paused ? t('celResume', 'Resume') : t('celPause', 'Pause')));
+      nextBtn.hidden = v.phase === 'ended';
+      FF.ui.clear(nextBtn);
+      nextBtn.appendChild(icon('arrow-right'));
+      nextBtn.appendChild(FF.ui.span('', v.phase === 'starting' ? t('celQuizStartNow', 'Start now')
+        : v.phase === 'question' ? t('celQuizShowAnswer', 'Show the answer')
+        : (v.q || 0) + 1 >= v.total ? t('celFinalResults', 'Final results') : t('celQuizNextQ', 'Next question')));
+      endBtn.hidden = v.phase === 'ended';
+
+      var right = v.phase === 'reveal' ? v.right : (staff && staff.runId === v.runId && staff.q === v.q ? staff.right : -1);
+      var choices = v.question ? R().list(v.question.choices) : [];
+      FF.ui.clear(quizBox);
+      if (v.question) {
+        quizBox.appendChild(el('p', { class: 'cel-quiz-live__q' }, v.question.text));
+        if (right >= 0 && choices[right] != null) {
+          var a = el('p', { class: 'cel-quiz-live__right' });
+          a.appendChild(icon('check'));
+          a.appendChild(FF.ui.span('', t('celQuizAnswerIs', 'Answer: {letter}. {answer}', { letter: QZ_LETTERS[right], answer: choices[right] })));
+          quizBox.appendChild(a);
+        }
+      }
+      if (!quizBox.isConnected) card.insertBefore(quizBox, teams);
+
+      FF.ui.clear(teams);
+      var totals = v.totals || {};
+      var picks = v.picks || {};
+      R().list(v.order).forEach(function (tid) {
+        var tm = v.teams[tid];
+        if (!tm) return;
+        var pk = picks[tid];
+        var li = el('li', { class: 'cel-live__team' + (pk && pk.sure ? ' is-done' : '') });
+        li.style.setProperty('--team', tm.color);
+        var name = div('cel-live__name');
+        name.appendChild(el('span', { class: 'cel-live__swatch', 'aria-hidden': 'true' }));
+        name.appendChild(el('strong', {}, tm.name));
+        name.appendChild(el('span', { class: 'cel-live__people' }, t('celPlayersN', '{n} playing', { n: Object.keys(tm.players || {}).length })));
+        li.appendChild(name);
+        if (v.phase === 'question' || v.phase === 'reveal') {
+          var note = !pk ? t('celQuizNoPick', 'No pick yet') : QZ_LETTERS[pk.choice] + (pk.sure ? ' · ' + t('celQuizSureShort', 'sure') : '');
+          if (v.phase === 'reveal') note += ' · ' + (v.got && v.got[tid] ? t('celQuizRightShort', 'right') : t('celQuizWrongShort', 'wrong'));
+          li.appendChild(el('span', { class: 'cel-quiz-live__pick' }, note));
+        }
+        li.appendChild(el('span', { class: 'cel-live__pts' }, t('celPts', '{n} pts', { n: (totals[tid] || {}).points || 0 })));
+        teams.appendChild(li);
+      });
+    }
+
     function draw() {
       if (!v) return;
+      if (v.template === 'quiz') { drawQuiz(); ended(); tick(); return; }
       if (v.template === 'wordByWord') { drawWords(); ended(); tick(); return; }
       var p = PHASE[v.phase] || ['', ''];
       status.textContent = (v.paused ? t('celPausedNow', 'Paused.') + ' ' : '') + t(p[0], p[1], { n: v.round + 1, total: v.rounds });
@@ -236,6 +302,11 @@ window.FF = window.FF || {};
         timer.textContent = left == null ? '' : clock(left);
         return;
       }
+      if (v.template === 'quiz') {
+        var qLeft = v.phase === 'question' ? (v.paused ? v.leftMs : v.deadline - T.serverNow()) : v.phase === 'starting' ? v.startAt - T.serverNow() : null;
+        timer.textContent = qLeft == null ? '' : clock(qLeft);
+        return;
+      }
       var due = { starting: v.startAt, reveal: v.revealUntil, playing: v.deadline, roundEnd: v.nextAt }[v.phase] || 0;
       timer.textContent = v.phase === 'ended' || !due ? '' : clock(due - (v.paused ? v.pausedAt : T.serverNow()));
     }
@@ -251,7 +322,8 @@ window.FF = window.FF || {};
         if (val && val.runId === active.runId) { v = val; draw(); }
       });
       // A blind Word by Word message: only the MC and the organiser may read it.
-      if (active.template === 'wordByWord') {
+      // The quiz answer before the reveal, likewise.
+      if (active.template === 'wordByWord' || active.template === 'quiz') {
         offStaff = T.watch('staff', function (val) {
           if (gone) return;
           staff = val;

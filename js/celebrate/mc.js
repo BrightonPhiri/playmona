@@ -250,7 +250,7 @@ window.FF = window.FF || {};
 
     function startGame(g, btn) {
       FF.UI.confirm({
-        title: t('celStartTitle', 'Start {name}?', { name: g.name }),
+        title: t('celStartTitle', 'Start {name}?', { name: String(g.name).replace(/[?]+$/, '') }), // "Who Knows Vicky Best?" keeps one question mark
         body: t('celStartText', 'The game opens on every guest\'s phone and starts after a 10 second countdown. Guests need the event page open.'),
         confirmLabel: t('celStart', 'Start'), icon: 'play',
         onConfirm: function () {

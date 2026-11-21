@@ -18,7 +18,7 @@ namespace PlayMona;
  */
 class CelebrationGames
 {
-    public const TEMPLATES = ['pictureRush', 'wordByWord'];
+    public const TEMPLATES = ['pictureRush', 'wordByWord', 'quiz'];
     public const STATUSES = ['draft', 'published', 'inactive'];
     public const ACTIONS = ['next', 'pause', 'resume', 'end', 'strike'];
     public const COUNTDOWN_MS = 10_000;
@@ -50,7 +50,17 @@ class CelebrationGames
     private const WBW_MAX_NAMES = 20;
     private const WBW_MAX_NAME = 24;
     private const WBW_MAX_OPENING = 60;
-    private const NAMES = ['pictureRush' => 'Picture Rush', 'wordByWord' => 'Word by Word'];
+
+    /** Quiz, as FF.QuizRules. */
+    public const QUIZ = ['kind' => ['whoKnows'], 'seconds' => [10, 15, 20, 30, 45, 60]];
+    private const QUIZ_DEFAULTS = ['kind' => 'whoKnows', 'seconds' => 20, 'points' => 500];
+    private const QUIZ_MAX_QUESTIONS = 30;
+    private const QUIZ_MAX_TEXT = 140;
+    private const QUIZ_MAX_ANSWER = 60;
+    private const QUIZ_MAX_WRONG = 3;
+    private const QUIZ_POINTS_MIN = 100;
+    private const QUIZ_POINTS_MAX = 5000;
+    private const NAMES = ['pictureRush' => 'Picture Rush', 'wordByWord' => 'Word by Word', 'quiz' => 'Quiz'];
 
     public function __construct(
         private Db $db,
@@ -123,8 +133,9 @@ class CelebrationGames
 
     public function get(string $cid, string $gid, AuthUser $user): array
     {
-        $this->events->owned($cid, $user);
-        return $this->view($this->game($cid, $gid), true);
+        $ev = $this->events->owned($cid, $user);
+        // The editor fills the celebrant's name into the quiz's ready-made questions.
+        return $this->view($this->game($cid, $gid), true) + ['celebrantName' => (string) ($ev['celebrant_name'] ?? '')];
     }
 
     public function create(string $cid, AuthUser $user, array $in): array
@@ -134,7 +145,7 @@ class CelebrationGames
         if (!in_array($template, self::TEMPLATES, true)) throw new HttpError(400, 'That game is not available yet.', 'bad-template');
         $n = (int) $this->db->one('SELECT COUNT(*) AS n FROM celebration_games WHERE cid = ? AND deleted_at IS NULL', [$cid])['n'];
         if ($n >= self::MAX_GAMES) throw new HttpError(429, 'That is a lot of games. Delete one you will not play first.', 'too-many-games');
-        $name = $this->events->cleanText($in['name'] ?? '', 80) ?: self::NAMES[$template];
+        $name = $this->events->cleanText($in['name'] ?? '', 80) ?: $this->defaultName($template, $ev);
         $id = newId('g');
         $now = nowMs();
         $this->db->run('INSERT INTO celebration_games (id, cid, template, name, instructions, config, status, sort, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
@@ -152,6 +163,11 @@ class CelebrationGames
         if ($name === '') throw new HttpError(400, 'Give the game a name.', 'no-name');
         $instructions = $this->events->cleanText($in['instructions'] ?? $g['instructions'], 400, true);
         $config = $this->sanitize($g['template'], is_array($in['config'] ?? null) ? $in['config'] : json_decode($g['config'], true), $cid);
+        if ($g['template'] === 'quiz') {
+            foreach ($config['questions'] as $q) {
+                if ($this->quizProblem($q) === 'same') throw new HttpError(400, 'Two answers are the same.', 'same-answers');
+            }
+        }
         if ($g['status'] === 'published') $this->ready($g['template'], $config);
         $this->db->run('UPDATE celebration_games SET name = ?, instructions = ?, config = ?, updated_at = ? WHERE id = ?', [
             $name, $instructions, json_encode($config), nowMs(), $gid,
@@ -223,6 +239,8 @@ class CelebrationGames
         if ($g['template'] === 'pictureRush') {
             foreach ($config['photos'] as $i => $p) $config['photos'][$i]['url'] = $this->media->url($p['id'], 'play', self::PHOTO_TTL);
         }
+        // A draft may hold questions still being written: only the finished ones are played.
+        if ($g['template'] === 'quiz') $config['questions'] = $this->quizPlayable($config);
 
         $runId = newId('r');
         $startAt = $now + self::COUNTDOWN_MS;
@@ -333,6 +351,7 @@ class CelebrationGames
             return [
                 'id' => $g['id'], 'template' => $g['template'], 'name' => $g['name'], 'instructions' => (string) $g['instructions'],
                 'rounds' => (int) ($config['rounds'] ?? 0), 'level' => $config['level'] ?? null, 'seconds' => (int) ($config['seconds'] ?? 0),
+                'questions' => count($this->quizPlayable($config)), 'kind' => $config['kind'] ?? null,
                 'live' => $active !== null && $active['game_id'] === $g['id'],
             ];
         }, $rows)];
@@ -468,6 +487,7 @@ class CelebrationGames
     {
         $raw = is_array($raw) ? $raw : [];
         if ($template === 'wordByWord') return $this->sanitizeWords($raw);
+        if ($template === 'quiz') return $this->sanitizeQuiz($raw);
         if ($template !== 'pictureRush') throw new HttpError(400, 'That game is not available yet.', 'bad-template');
         $pick = function (string $k) use ($raw) {
             $v = $raw[$k] ?? null;
@@ -536,9 +556,76 @@ class CelebrationGames
         ];
     }
 
+    /** The quiz's settings, as FF.QuizRules.sanitize. Incomplete questions are kept: a draft may hold them. */
+    private function sanitizeQuiz(array $raw): array
+    {
+        $pick = function (string $k) use ($raw) {
+            $v = $raw[$k] ?? null;
+            $allowed = self::QUIZ[$k];
+            if (is_int($allowed[0]) && is_numeric($v)) $v = (int) $v;
+            return in_array($v, $allowed, true) ? $v : self::QUIZ_DEFAULTS[$k];
+        };
+        $p = $raw['points'] ?? null;
+        $points = $p === null || $p === '' || !is_numeric($p) ? self::QUIZ_DEFAULTS['points']
+            : max(self::QUIZ_POINTS_MIN, min(self::QUIZ_POINTS_MAX, (int) (round((float) $p / 100) * 100)));
+        $questions = [];
+        $rows = array_values(array_filter((array) ($raw['questions'] ?? []), 'is_array'));
+        foreach (array_slice($rows, 0, self::QUIZ_MAX_QUESTIONS) as $i => $q) {
+            $id = is_string($q['id'] ?? null) && preg_match('/^[A-Za-z0-9_-]{1,24}$/', $q['id']) ? $q['id'] : 'q' . $i;
+            $wrong = [];
+            foreach ((array) ($q['wrong'] ?? []) as $w) {
+                $w = $this->events->cleanText($w, self::QUIZ_MAX_ANSWER);
+                if ($w !== '' && count($wrong) < self::QUIZ_MAX_WRONG) $wrong[] = $w;
+            }
+            $questions[] = [
+                'id' => $id, 'text' => $this->events->cleanText($q['text'] ?? '', self::QUIZ_MAX_TEXT),
+                'right' => $this->events->cleanText($q['right'] ?? '', self::QUIZ_MAX_ANSWER), 'wrong' => $wrong,
+            ];
+        }
+        return ['kind' => $pick('kind'), 'seconds' => $pick('seconds'), 'points' => $points, 'questions' => $questions];
+    }
+
+    /** Why a quiz question can't be played yet, or '' when it can (as FF.QuizRules.problem). */
+    private function quizProblem(array $q): string
+    {
+        if (($q['text'] ?? '') === '') return 'noText';
+        if (($q['right'] ?? '') === '') return 'noRight';
+        if (!($q['wrong'] ?? [])) return 'noWrong';
+        $seen = [];
+        foreach (array_merge([$q['right']], $q['wrong']) as $a) {
+            $k = mb_strtolower((string) preg_replace('/\s+/u', '', (string) $a));
+            if (isset($seen[$k])) return 'same';
+            $seen[$k] = true;
+        }
+        return '';
+    }
+
+    /** The quiz questions that can be played, in order (none for other templates). */
+    private function quizPlayable(array $config): array
+    {
+        if (!isset($config['questions']) || !is_array($config['questions'])) return [];
+        return array_values(array_filter($config['questions'], fn ($q) => is_array($q) && $this->quizProblem($q) === ''));
+    }
+
+    /** A new game's name when the organiser gives none. */
+    private function defaultName(string $template, array $ev): string
+    {
+        if ($template === 'quiz') {
+            $first = preg_split('/\s+/u', trim((string) ($ev['celebrant_name'] ?? '')))[0] ?? '';
+            return 'Who Knows ' . ($first !== '' ? $first : 'the celebrant') . ' Best?';
+        }
+        return self::NAMES[$template];
+    }
+
     /** What the guests read first, by template. */
     private function instructionsFor(string $template, array $ev): string
     {
+        if ($template === 'quiz') {
+            $who = trim((string) ($ev['celebrant_name'] ?? ''));
+            $first = $who !== '' ? (preg_split('/\s+/u', $who)[0] ?? '') : '';
+            return "Pick your team's answer together. Anyone in the team can change it until the time runs out."
+                . ($first !== '' ? ' ' . $first . ', sit this one out: you know them all!' : '');
+        }
         if ($template === 'wordByWord') {
             $who = trim((string) ($ev['celebrant_name'] ?? '')) ?: 'the celebrant';
             return 'Write a message to ' . $who . ' together, one word per turn. Every letter is a point.';
@@ -552,6 +639,9 @@ class CelebrationGames
         if ($template === 'pictureRush' && empty($config['photos'])) {
             throw new HttpError(409, 'Add at least one photo first.', 'no-photos');
         }
+        if ($template === 'quiz' && !$this->quizPlayable(is_array($config) ? $config : [])) {
+            throw new HttpError(409, 'Add at least one question with its answers.', 'no-questions');
+        }
     }
 
     /* ---------------------------------------------------------------- helpers */
@@ -564,6 +654,7 @@ class CelebrationGames
             'status' => $g['status'], 'photos' => count($config['photos'] ?? []), 'rounds' => (int) ($config['rounds'] ?? 0),
             'level' => $config['level'] ?? null, 'seconds' => (int) ($config['seconds'] ?? 0), 'updatedAt' => (int) $g['updated_at'],
             'mode' => $config['mode'] ?? null,
+            'questions' => count($this->quizPlayable($config)), 'kind' => $config['kind'] ?? null,
         ];
         $first = $config['photos'][0]['id'] ?? null;
         if ($first) $out['thumb'] = $this->media->url($first, 'thumb', 6 * 3600);
