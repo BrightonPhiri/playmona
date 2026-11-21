@@ -85,3 +85,14 @@ test('quiz ideas: about 30 questions about a person, with the name filled in', f
   assertEqual(new Set(ideas.map((i) => i.key)).size, ideas.length, 'keys are unique');
   assertEqual(Q.forKind('nope', 'Vicky').length, 0);
 });
+
+test('quiz: the server offers the same settings', function () {
+  const R = loadFF(RULES).QuizRules;
+  const php = fs.readFileSync(path.join(ROOT, 'api/lib/CelebrationGames.php'), 'utf8');
+  assert(php.indexOf("QUIZ = ['kind' => ['" + R.KINDS.join("', '") + "'], 'seconds' => [" + R.SECONDS.join(', ') + ']]') !== -1, 'kinds and seconds');
+  const d = R.DEFAULTS;
+  assert(php.indexOf("QUIZ_DEFAULTS = ['kind' => '" + d.kind + "', 'seconds' => " + d.seconds + ", 'points' => " + d.points + ']') !== -1, 'standards');
+  ['QUIZ_MAX_QUESTIONS = ' + R.MAX_QUESTIONS, 'QUIZ_MAX_TEXT = ' + R.MAX_TEXT, 'QUIZ_MAX_ANSWER = ' + R.MAX_ANSWER, 'QUIZ_MAX_WRONG = ' + R.MAX_WRONG,
+    'QUIZ_POINTS_MIN = ' + R.POINTS_MIN, 'QUIZ_POINTS_MAX = ' + R.POINTS_MAX]
+    .forEach((s) => assert(php.indexOf(s + ';') !== -1, s));
+});

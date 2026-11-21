@@ -368,3 +368,78 @@ test('word by word: a Wall that fails does not stop the game ending', function (
     eq(13, $w['rtdb']->get("celebrations/{$r['cid']}/live/scores/{$r['ruby']}/points"), 'the TV leaderboard still moves');
     eq(null, $w['rtdb']->get("celebrationRuns/{$out['runId']}"), 'the runner lets go');
 });
+
+/* ---------------------------------------------------------------- Quiz */
+
+/** One complete question and one with no text, for the quiz tests. */
+function quizQuestions(): array
+{
+    return [
+        ['id' => 'q1', 'text' => 'What was her first job?', 'right' => 'Waitress', 'wrong' => ['Nurse', 'Teacher']],
+        ['id' => 'q2', 'text' => '', 'right' => 'Blue', 'wrong' => ['Red']],
+    ];
+}
+
+test('quiz: the organiser adds one with the standard settings and a Who Knows name', function () {
+    $w = celWorld();
+    $cid = newEvent($w)['id'];
+    [$s, $g] = celCall($w, 'POST', "/c/$cid/games", ['token' => organiser(), 'json' => ['template' => 'quiz']]);
+    eq(200, $s, json_encode($g));
+    eq('quiz', $g['template']);
+    eq(['kind' => 'whoKnows', 'seconds' => 20, 'points' => 500, 'questions' => []], $g['config']);
+    eq('Who Knows Vicky Best?', $g['name']);
+    eq(true, str_contains($g['instructions'], 'Vicky, sit this one out'), $g['instructions']);
+    [$s, $g] = celCall($w, 'POST', "/c/$cid/games/{$g['id']}/save", ['token' => organiser(), 'json' => ['config' => [
+        'kind' => 'x', 'seconds' => 7, 'points' => '450', 'questions' => [['id' => 'bad id!', 'text' => '  First   job? ', 'right' => str_repeat('y', 90), 'wrong' => ['a', '', 'b', 'c', 'd']]],
+    ]]]);
+    eq(200, $s, json_encode($g));
+    eq('whoKnows', $g['config']['kind']);
+    eq(20, $g['config']['seconds']);
+    eq(500, $g['config']['points']);
+    eq(['id' => 'q0', 'text' => 'First job?', 'right' => str_repeat('y', 60), 'wrong' => ['a', 'b', 'c']], $g['config']['questions'][0]);
+});
+
+test('quiz: publishing needs one complete question', function () {
+    $w = celWorld();
+    $cid = newEvent($w)['id'];
+    [, $g] = celCall($w, 'POST', "/c/$cid/games", ['token' => organiser(), 'json' => ['template' => 'quiz']]);
+    [$s, $p] = celCall($w, 'POST', "/c/$cid/games/{$g['id']}/publish", ['token' => organiser()]);
+    eq(409, $s);
+    eq('no-questions', $p['error'] ?? null, json_encode($p));
+    celCall($w, 'POST', "/c/$cid/games/{$g['id']}/save", ['token' => organiser(), 'json' => ['config' => ['questions' => [['text' => 'First job?', 'right' => 'Waitress', 'wrong' => ['']]]]]]);
+    eq(409, celCall($w, 'POST', "/c/$cid/games/{$g['id']}/publish", ['token' => organiser()])[0], 'no wrong answer yet');
+    celCall($w, 'POST', "/c/$cid/games/{$g['id']}/save", ['token' => organiser(), 'json' => ['config' => ['questions' => [['text' => 'First job?', 'right' => 'Waitress', 'wrong' => ['Nurse']]]]]]);
+    eq(200, celCall($w, 'POST', "/c/$cid/games/{$g['id']}/publish", ['token' => organiser()])[0]);
+});
+
+test('quiz: two answers that are the same are refused', function () {
+    $w = celWorld();
+    $cid = newEvent($w)['id'];
+    [, $g] = celCall($w, 'POST', "/c/$cid/games", ['token' => organiser(), 'json' => ['template' => 'quiz']]);
+    [$s, $r] = celCall($w, 'POST', "/c/$cid/games/{$g['id']}/save", ['token' => organiser(), 'json' => ['config' => ['questions' => [['text' => 'Q', 'right' => 'Paris', 'wrong' => [' paris ']]]]]]);
+    eq(400, $s);
+    eq('same-answers', $r['error'] ?? null, json_encode($r));
+});
+
+test('quiz: start sends only complete questions; guests never see answers', function () {
+    $w = celWorld();
+    $ev = newEvent($w);
+    $cid = $ev['id'];
+    [, $g] = celCall($w, 'POST', "/c/$cid/games", ['token' => organiser(), 'json' => ['template' => 'quiz']]);
+    celCall($w, 'POST', "/c/$cid/games/{$g['id']}/save", ['token' => organiser(), 'json' => ['config' => ['questions' => quizQuestions()]]]);
+    eq(200, celCall($w, 'POST', "/c/$cid/games/{$g['id']}/publish", ['token' => organiser()])[0]);
+    eq(200, celCall($w, 'POST', "/c/$cid/join", ['token' => guestToken('g1'), 'json' => ['name' => 'G1', 'teamId' => $ev['teams'][0]['id']]])[0]);
+    [$s, $lineup] = celCall($w, 'GET', "/c/$cid/lineup", ['token' => guestToken('g1')]);
+    eq(200, $s);
+    eq(1, $lineup['games'][0]['questions']);
+    eq(false, str_contains(json_encode($lineup), 'Waitress'), 'the lineup has no answers');
+    [, $listed] = celCall($w, 'GET', "/c/$cid/games", ['token' => organiser()]);
+    eq(1, $listed['games'][0]['questions']);
+    eq(false, str_contains(json_encode($listed), 'Waitress'), 'the list has no answers');
+    [$s, $out] = celCall($w, 'POST', "/c/$cid/games/{$g['id']}/start", ['token' => organiser()]);
+    eq(200, $s, json_encode($out));
+    $run = $w['rtdb']->get('celebrationRuns/' . $out['runId']);
+    eq('quiz', $run['template']);
+    eq(1, count($run['config']['questions']));
+    eq('Waitress', $run['config']['questions'][0]['right']);
+});
