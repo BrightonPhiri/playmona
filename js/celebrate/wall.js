@@ -310,8 +310,11 @@ window.FF = window.FF || {};
     function wallList() {
       var others = s.data.wall;
       var box = div('ev-wall__list');
+      var waiting = s.data.mine.some(function (m) { return m.status === 'pending'; });
       if (!others.length) {
-        box.appendChild(el('p', { class: 'ev-note' }, t('celWallEmptyYet', 'No messages on the wall yet. Yours could be the first!')));
+        box.appendChild(el('p', { class: 'ev-note' }, waiting
+          ? t('celWallMineWaiting', 'Your message is safe. It shows on the wall for everyone once the organiser has read it.')
+          : t('celWallEmptyYet', 'No messages on the wall yet. Yours could be the first!')));
         return box;
       }
       var toggle = el('button', { type: 'button', class: 'ev-btn ev-btn--ghost', 'aria-expanded': s.showWall ? 'true' : 'false' });

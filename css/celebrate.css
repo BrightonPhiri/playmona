@@ -249,6 +249,20 @@
 .ev-team.is-mine { border-color: var(--team); box-shadow: 0 0 0 3px var(--ev-glow); }
 .ev-team:disabled { opacity: 0.55; cursor: not-allowed; }
 .ev-maketeam { margin-top: var(--sp-3); }
+.ev-lead { margin: 0 0 var(--sp-3); font-weight: 700; }
+.ev-choose { display: grid; gap: var(--sp-2); margin-bottom: var(--sp-2); }
+.ev-choice {
+  width: 100%; min-height: 76px; display: flex; align-items: center; gap: var(--sp-3);
+  padding: 12px 14px; border-radius: var(--r-md); text-align: left; cursor: pointer;
+  background: var(--ev-bg); color: var(--ev-text); border: 2px solid var(--ev-edge);
+}
+.ev-choice:hover { border-color: var(--ev-primary); }
+.ev-choice:focus-visible { outline: 3px solid var(--ev-primary); outline-offset: 3px; }
+.ev-choice__icon { flex: none; width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; background: var(--ev-primary); color: var(--ev-on-primary); }
+.ev-choice__icon .icon-svg { width: auto; height: auto; font-size: 24px; }
+.ev-choice__text { display: grid; gap: 2px; }
+.ev-choice__text strong { font-size: 1.1rem; }
+.ev-choice__text span { color: var(--ev-muted); font-size: var(--fs-sm); font-weight: 600; }
 .ev-countdown { display: inline-block; margin: var(--sp-3) 0 0; padding: 6px 14px; border-radius: 999px; background: var(--ev-primary); color: var(--ev-on-primary); font-weight: 800; font-variant-numeric: tabular-nums; }
 .ev-games { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--sp-2); }
 .ev-game { padding: var(--sp-3); border-radius: 14px; border: 1.5px solid var(--ev-edge); }

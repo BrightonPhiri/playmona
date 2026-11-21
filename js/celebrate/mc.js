@@ -115,8 +115,7 @@ window.FF = window.FF || {};
     }
 
     function draw() {
-      var n = st.ev.guestCount || 0;
-      countEl.textContent = t(n === 1 ? 'celHereOne' : 'celHereMany', n === 1 ? '1 guest has joined' : '{n} guests have joined', { n: n });
+      countEl.textContent = FF.Celebrate.joinedText(st.ev);
       drawTv();
       drawGame();
       drawScores();
