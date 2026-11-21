@@ -845,6 +845,27 @@ body.mc-page .ev-brand { color: var(--text); }
 .wbw-final__text { margin: var(--sp-3) 0; padding: var(--sp-3) var(--sp-4); border-left: 4px solid var(--ev-primary); font-size: var(--fs-lg); font-style: italic; overflow-wrap: anywhere; }
 @media (prefers-reduced-motion: reduce) { .wbw-w { transition: none; } }
 
+/* ---------- Quiz on the phone ---------- */
+.qz-card { display: grid; gap: var(--sp-3); }
+.qz-question { margin: 0; font-family: var(--ev-font, var(--font-display)); font-size: var(--fs-xl); line-height: 1.25; overflow-wrap: anywhere; }
+.qz-choices { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--sp-2); }
+.qz-choice { width: 100%; min-height: var(--tap); display: grid; grid-template-columns: 2.2em minmax(0, 1fr); align-items: center; column-gap: var(--sp-3); padding: 12px 14px; text-align: left; font: inherit; font-weight: 800; color: var(--ev-text); background: var(--ev-bg); border: 2px solid var(--ev-edge); border-radius: var(--r-md); cursor: pointer; }
+.qz-choice:disabled { cursor: default; }
+.qz-choice__letter { display: grid; place-items: center; width: 2em; height: 2em; border-radius: 50%; background: var(--ev-edge); color: var(--ev-text); font-weight: 900; }
+.qz-choice__text { overflow-wrap: anywhere; }
+.qz-choice__by { grid-column: 2; font-size: var(--fs-sm); font-weight: 700; color: var(--ev-muted); }
+.qz-choice__by:empty { display: none; }
+.qz-choice.is-picked { border-color: var(--team, var(--ev-primary)); box-shadow: 0 0 0 3px var(--ev-glow); }
+.qz-choice.is-picked .qz-choice__letter { background: var(--team, var(--ev-primary)); color: #ffffff; }
+.qz-choice.is-right { border-color: var(--success); background: color-mix(in srgb, var(--success) 16%, var(--ev-bg)); }
+.qz-choice.is-right .qz-choice__letter { background: var(--success); color: #ffffff; }
+.qz-choice.is-wrong { border-color: var(--danger, #c0392b); opacity: 0.85; }
+.qz-sure { justify-self: stretch; }
+.qz-sure[hidden], .qz-locked[hidden] { display: none; }
+.qz-result { margin: 0; font-weight: 900; font-size: var(--fs-lg); text-align: center; }
+.qz-result.is-right { color: var(--success); }
+.qz-result.is-wrong { color: var(--ev-muted); }
+
 /* ---------- Word by Word on the TV ---------- */
 .tv-wbw.is-starting .tv-game__head .tv-timer, .tv-wbw.is-reveal .tv-game__head .tv-timer, .tv-wbw.is-ended .tv-game__head .tv-timer { display: none; }
 .tv-wbw__msg { margin: 0 auto; max-width: 30em; text-align: center; font-family: var(--ev-font, var(--font-display)); font-size: 3.4em; line-height: 1.35; color: var(--ev-text); overflow-wrap: anywhere; }

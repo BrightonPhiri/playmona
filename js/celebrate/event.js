@@ -196,7 +196,8 @@ window.FF = window.FF || {};
 
   var PLAYERS = {
     pictureRush: function () { return FF.PictureRushPlay; },
-    wordByWord: function () { return FF.WordByWordPlay; }
+    wordByWord: function () { return FF.WordByWordPlay; },
+    quiz: function () { return FF.QuizPlay; }
   };
 
   function openGame(p) {
@@ -433,8 +434,10 @@ window.FF = window.FF || {};
       top.appendChild(chip);
       li.appendChild(top);
       var wbw = g.template === 'wordByWord';
-      var facts = [g.template === 'pictureRush' ? t('celTplPictureRush', 'Picture Rush') : wbw ? t('celTplWordByWord', 'Word by Word') : g.template];
-      if (g.rounds && wbw) facts.push(t(g.rounds === 1 ? 'celWbwTurnOne' : 'celWbwTurnsEach', g.rounds === 1 ? '1 turn each' : '{n} turns each', { n: g.rounds }));
+      var quiz = g.template === 'quiz';
+      var facts = [g.template === 'pictureRush' ? t('celTplPictureRush', 'Picture Rush') : wbw ? t('celTplWordByWord', 'Word by Word') : quiz ? t('celTplQuiz', 'Quiz') : g.template];
+      if (quiz) facts.push(t(g.questions === 1 ? 'celQuizOne' : 'celQuizMany', g.questions === 1 ? '1 question' : '{n} questions', { n: g.questions || 0 }));
+      else if (g.rounds && wbw) facts.push(t(g.rounds === 1 ? 'celWbwTurnOne' : 'celWbwTurnsEach', g.rounds === 1 ? '1 turn each' : '{n} turns each', { n: g.rounds }));
       else if (g.rounds) facts.push(t(g.rounds === 1 ? 'celPicturesOne' : 'celPicturesMany', g.rounds === 1 ? '1 picture' : '{n} pictures', { n: g.rounds }));
       if (g.level) facts.push(levelLabel(g.level));
       li.appendChild(el('p', { class: 'ev-game__facts' }, facts.join(' · ')));
