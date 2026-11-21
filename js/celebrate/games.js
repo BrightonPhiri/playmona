@@ -68,6 +68,32 @@ window.FF = window.FF || {};
           }
         }));
       }, function () {});
+      // The programme's opening slide for the TV: a picture, a slideshow or a built slide, with an effect.
+      var slide = el('details', { class: 'cel-day__slide' });
+      var sum = el('summary', {});
+      sum.appendChild(FF.Icons.icon('images'));
+      sum.appendChild(el('strong', {}, t('celSlideCard', 'Programme slide for the TV')));
+      sum.appendChild(el('span', {}, t('celSlideCardText', 'What the TV shows as the programme opens. The MC switches to "Welcome" (how to join) when the games begin.')));
+      slide.appendChild(sum);
+      var made = false;
+      slide.addEventListener('toggle', function () {
+        if (!slide.open || made) return;
+        made = true;
+        slide.appendChild(FF.CelebrateSlide.editor({
+          ev: ev,
+          load: function () { return FF.Api.call('GET', '/c/' + ev.id + '/slide'); },
+          save: function (part) { return FF.Api.call('POST', '/c/' + ev.id + '/slide', { slide: part }); },
+          upload: function (file) {
+            return C().shrinkPicture(file, 2048).then(function (blob) { return FF.Api.upload('/c/' + ev.id + '/media?purpose=slide', blob); });
+          },
+          onShow: function () {
+            return FF.Api.call('POST', '/c/' + ev.id + '/slide', { layout: 'programme' }).then(function () {
+              FF.UI.toast(t('celMcSlideOn', 'The programme slide is on the TV.'));
+            }, function (e) { FF.UI.toast(e.message); });
+          }
+        }));
+      });
+      day.appendChild(slide);
       panel.appendChild(day);
     }
     box.appendChild(FF.UI.loading(t('loading', 'Loading…')));

@@ -34,7 +34,7 @@ window.FF = window.FF || {};
     function api(method, path, body) { return FF.Api.call(method, path, body, { guest: true, headers: headers }); }
     return api('GET', '/c/private?slug=' + encodeURIComponent(slug)).then(function (r) {
       if (roles.indexOf(r.role) === -1) throw fail(t('celStageWrongLink', 'This link opens another page. Ask the organiser for the right one.'), 'wrong-role');
-      return { id: r.id, role: r.role, event: r.event, api: api };
+      return { id: r.id, role: r.role, event: r.event, api: api, upload: function (path, blob) { return FF.Api.upload(path, blob, { guest: true, headers: headers }); } };
     });
   }
 

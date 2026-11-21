@@ -19,6 +19,7 @@ window.FF = window.FF || {};
 
   var LAYOUTS = [
     ['auto', 'sparkle', ['celTvAuto', 'Automatic'], ['celTvAutoText', 'Follows the evening']],
+    ['programme', 'images', ['celTvProgramme', 'Programme'], ['celTvProgrammeText', 'The opening slide']],
     ['welcome', 'qr-scan', ['celTvWelcome', 'Welcome'], ['celTvWelcomeText', 'How to join']],
     ['game', 'puzzle-piece', ['celTvGame', 'Game'], ['celTvGameText', 'The game being played']],
     ['scores', 'medal', ['celTvScores', 'Scores'], ['celTvScoresText', 'The leaderboard']],
@@ -32,15 +33,16 @@ window.FF = window.FF || {};
 
   function start(main, slug) {
     var st = { id: null, ev: null, data: null, T: null, live: null, busy: false, showAll: false };
-    var api = null;
+    var api = null, upload = null;
     document.body.classList.remove('ev-page');
     document.body.classList.add('mc-page');
     var root = div('mc');
-    var tvBox, gameBox, scoreBox, msgBox, countEl;
+    var tvBox, slideBox, gameBox, scoreBox, msgBox, countEl;
 
     main.appendChild(div('ev-loading', t('loading', 'Loading…')));
     S().open(slug, ['mc']).then(function (h) {
       api = h.api;
+      upload = h.upload;
       st.id = h.id;
       st.ev = h.event;
       return api('GET', '/c/' + h.id + '/mc');
@@ -109,7 +111,8 @@ window.FF = window.FF || {};
       gameBox = el('section', { class: 'mc-card', 'aria-labelledby': 'mc-game-title' });
       scoreBox = el('section', { class: 'mc-card', 'aria-labelledby': 'mc-score-title' });
       msgBox = el('section', { class: 'mc-card', 'aria-labelledby': 'mc-msg-title' });
-      [tvBox, gameBox, scoreBox, msgBox].forEach(function (b) { root.appendChild(b); });
+      slideBox = slideCard();
+      [tvBox, slideBox, gameBox, scoreBox, msgBox].forEach(function (b) { root.appendChild(b); });
       main.appendChild(root);
       draw();
     }
@@ -165,6 +168,40 @@ window.FF = window.FF || {};
         checked: !!d.showQr,
         onChange: function (on) { setDisplay({ showQr: on }); }
       }));
+    }
+
+    /* The opening slide's settings: built once, so redrawing the TV card leaves the preview alone. */
+    function slideCard() {
+      var box = el('details', { class: 'mc-card mc-slide' });
+      var sum = el('summary', { class: 'mc-card__title' });
+      sum.appendChild(icon('images'));
+      sum.appendChild(FF.ui.span('', t('celMcSlide', 'Programme slide')));
+      box.appendChild(sum);
+      box.appendChild(el('p', { class: 'mc-slide__hint' }, t('celMcSlideHint', 'A picture, a slideshow or a built slide for the opening of the programme, with a moving effect. Press Programme above to show it.')));
+      var ed = null;
+      box.addEventListener('toggle', function () {
+        if (!box.open || ed) return;
+        ed = FF.CelebrateSlide.editor({
+          ev: st.ev,
+          load: function () { return Promise.resolve({ display: st.data.display, slideImages: st.data.slideImages }); },
+          save: function (part) {
+            return api('POST', '/c/' + st.id + '/mc/display', { slide: part }).then(function (r) {
+              st.data.display = r.display;
+              return mirror('live/display', r.display);
+            }).then(function () {
+              // New pictures: their signed addresses come with the panel.
+              if (!part.mediaIds) return { display: st.data.display, slideImages: st.data.slideImages };
+              return api('GET', '/c/' + st.id + '/mc').then(function (r) { st.data.slideImages = r.slideImages; return { display: st.data.display, slideImages: r.slideImages }; });
+            });
+          },
+          upload: function (file) {
+            return C().shrinkPicture(file, 2048).then(function (blob) { return upload('/c/' + st.id + '/mc/upload', blob); });
+          },
+          onShow: function () { setDisplay({ layout: 'programme' }, t('celMcSlideOn', 'The programme slide is on the TV.')); }
+        });
+        box.appendChild(ed);
+      });
+      return box;
     }
 
     function layoutOf(id) {
