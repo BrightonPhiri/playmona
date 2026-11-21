@@ -71,6 +71,7 @@ class CelebrationRoutes
             $mc = $this->who($req);
             if ($m === 'GET' && $rest === '/mc') return Response::json($this->s()->panel($ev, $mc));
             if ($m === 'POST' && $rest === '/mc/display') return Response::json($this->s()->setDisplay($ev, $mc, $req->json()));
+            if ($m === 'POST' && $rest === '/mc/upload') return Response::json($this->s()->upload($ev, $mc, $req->rawBody));
             if ($m === 'POST' && $rest === '/mc/start') return Response::json($this->s()->start($ev, $mc, (string) ($req->json()['gameId'] ?? ''), nowMs()));
             if ($m === 'POST' && $rest === '/mc/control') return Response::json($this->s()->control($ev, $mc, (string) ($req->json()['action'] ?? ''), nowMs(), $req->json()['index'] ?? null, $req->json()['word'] ?? null));
             if ($m === 'POST' && preg_match('#^/mc/messages/(w_[a-f0-9]{24})/(approve|reject)$#', $rest, $wm)) {
@@ -91,6 +92,8 @@ class CelebrationRoutes
         }
         if ($m === 'GET' && $rest === '/display') return Response::json($this->s()->ownerQr($cid, $this->who($req)));
         if ($m === 'POST' && $rest === '/display') return Response::json($this->s()->setOwnerQr($cid, $this->who($req), $req->json()));
+        if ($m === 'GET' && $rest === '/slide') return Response::json($this->s()->ownerSlide($cid, $this->who($req)));
+        if ($m === 'POST' && $rest === '/slide') return Response::json($this->s()->setOwnerSlide($cid, $this->who($req), $req->json()));
         if ($m === 'POST' && $rest === '/teams') return Response::json($this->c()->addTeam($cid, $this->who($req), $req->json()));
         if ($m === 'POST' && $rest === '/teams/auto') return Response::json($this->c()->autoTeams($cid, $this->who($req)));
         if ($m === 'POST' && $rest === '/teams/lock') return Response::json($this->c()->lockTeams($cid, $this->who($req), !empty($req->json()['locked'])));
