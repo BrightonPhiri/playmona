@@ -347,7 +347,9 @@ window.FF = window.FF || {};
       if (!v || stopped) return;
       // The dev transport writes one field at a time: wait for the question.
       if ((v.phase === 'question' || v.phase === 'reveal') && !(v.question && list(v.question.choices).length)) return;
-      var key = v.runId + ':' + v.phase + ':' + v.q + ':' + (myTeam() || '-');
+      // The question text too: fields can land one at a time, so q may move before the new question arrives.
+      var key = v.runId + ':' + v.phase + ':' + v.q + ':' + (myTeam() || '-') + ':' + (v.question ? v.question.text + list(v.question.choices).join('|') : '');
+      if (v.phase === 'reveal') key += ':' + v.right + ':' + JSON.stringify(v.got || null);
       if (v.phase === 'ended') key += ':' + JSON.stringify(v.result || null);
       if (key !== screenKey) {
         screenKey = key;

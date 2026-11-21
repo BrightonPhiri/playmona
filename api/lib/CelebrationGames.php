@@ -133,8 +133,9 @@ class CelebrationGames
 
     public function get(string $cid, string $gid, AuthUser $user): array
     {
-        $this->events->owned($cid, $user);
-        return $this->view($this->game($cid, $gid), true);
+        $ev = $this->events->owned($cid, $user);
+        // The editor fills the celebrant's name into the quiz's ready-made questions.
+        return $this->view($this->game($cid, $gid), true) + ['celebrantName' => (string) ($ev['celebrant_name'] ?? '')];
     }
 
     public function create(string $cid, AuthUser $user, array $in): array
