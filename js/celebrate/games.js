@@ -260,14 +260,14 @@ window.FF = window.FF || {};
       if (active) { FF.UI.toast(t('celOneAtATime', 'Another game is being played. End it first.')); return; }
       FF.UI.confirm({
         title: t('celStartTitle', 'Start {name}?', { name: String(g.name).replace(/[?]+$/, '') }), // "Who Knows Vicky Best?" keeps one question mark
-        body: t('celStartText', 'The game opens on every guest\'s phone and starts after a 10 second countdown. Guests need the event page open.'),
+        body: t('celStartText', 'The game opens on every guest\'s phone. When every team has pressed "Press when ready" (or you press Start now), a 10 second countdown begins. Guests need the event page open.'),
         confirmLabel: t('celStart', 'Start'), icon: 'play',
         onConfirm: function () {
           FF.UI.busy(btn, true);
           post(ev, '/games/' + g.id + '/start').then(function (r) {
             return devMode() ? FF.CelebrateLivePanel.loadDev().then(function (d) { return d.host(r); }) : r;
           }).then(function () {
-            FF.UI.toast(t('celStarted', 'Started! Guests\' phones are counting down.'));
+            FF.UI.toast(t('celStarted', 'Started! Teams are getting ready.'));
             last = null;
             load();
           }, function (e) { FF.UI.busy(btn, false); FF.UI.toast(e.message); });

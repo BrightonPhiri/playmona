@@ -251,7 +251,7 @@ window.FF = window.FF || {};
     function startGame(g, btn) {
       FF.UI.confirm({
         title: t('celStartTitle', 'Start {name}?', { name: String(g.name).replace(/[?]+$/, '') }), // "Who Knows Vicky Best?" keeps one question mark
-        body: t('celStartText', 'The game opens on every guest\'s phone and starts after a 10 second countdown. Guests need the event page open.'),
+        body: t('celStartText', 'The game opens on every guest\'s phone. When every team has pressed "Press when ready" (or you press Start now), a 10 second countdown begins. Guests need the event page open.'),
         confirmLabel: t('celStart', 'Start'), icon: 'play',
         onConfirm: function () {
           FF.UI.busy(btn, true);
@@ -269,7 +269,7 @@ window.FF = window.FF || {};
             var follow = !d.messageId && (d.layout === 'auto' || d.layout === 'game') ? Promise.resolve() : setDisplay({ layout: 'auto' });
             return follow.then(load);
           }).then(function () {
-            FF.UI.toast(t('celMcStarted', 'Started! Phones and the TV are counting down.'));
+            FF.UI.toast(t('celMcStarted', 'Started! Teams are getting ready.'));
           }, function (e) { st.busy = false; FF.UI.busy(btn, false); FF.UI.toast(e.message); });
         }
       });

@@ -165,7 +165,8 @@ async function game(opts) {
   const run = {
     runId: 'r_1', cid: CID, gameId: 'g_1', template: 'quiz', name: 'Who Knows Vicky Best?', instructions: 'Pick together',
     startAt: clock.now + 10000, teams, celebrant: 'Vicky Banda',
-    config: Object.assign({ kind: 'whoKnows', seconds: 20, points: 500, questions: QUESTIONS }, opts.config || {})
+    config: Object.assign({ kind: 'whoKnows', seconds: 20, points: 500, questions: QUESTIONS }, opts.config || {}),
+    waitReady: !!opts.waitReady
   };
   const ref = Ref.create({
     run, room, store: { load: () => Promise.resolve(saved.value), save: (s) => { saved.value = s; return Promise.resolve(); } },
@@ -404,4 +405,34 @@ test('quiz: the runner loads it; the inbox rule takes q and choice', function ()
   const inbox = rules.celebrations.$cid.inbox.$uid.$id;
   assert(inbox.q && /isNumber/.test(inbox.q['.validate']) && /<= 100/.test(inbox.q['.validate']), 'q');
   assert(inbox.choice && /isNumber/.test(inbox.choice['.validate']) && /<= 3/.test(inbox.choice['.validate']), 'choice');
+});
+
+test('ready: no countdown until every team with players presses ready; one press readies the team', async function () {
+  const g = await game({ waitReady: true });
+  assertEqual(g.view().waitReady, true);
+  await g.clock.advance(60000);
+  assertEqual(g.view().phase, 'starting', 'the clock waits for the teams');
+  await g.room.set('ready/g1', 'r_1');
+  await flush();
+  assertEqual(g.view().ready.t_gold, true, "Ann's press readies Gold");
+  assertEqual(g.view().waitReady, true, 'Ruby is not ready yet');
+  await g.room.set('ready/zz', 'r_1');
+  await g.room.set('ready/r1', 'r_old');
+  await flush();
+  assertEqual(!!(g.view().ready || {}).t_ruby, false, 'a stranger or an old run readies nobody');
+  await g.room.set('ready/r1', 'r_1');
+  await flush();
+  assertEqual(g.view().waitReady, false, 'Jade has nobody, so every team is ready');
+  assertEqual(g.view().startAt, g.clock.now + 10000, 'a 10 s countdown');
+  await g.clock.advance(10000);
+  assertEqual(g.view().phase, 'question');
+});
+
+test('ready: Start now begins the countdown while teams are getting ready', async function () {
+  const g = await game({ waitReady: true });
+  await g.control('next');
+  assertEqual(g.view().waitReady, false);
+  assertEqual(g.view().phase, 'starting', 'the countdown, not the first question');
+  await g.clock.advance(10000);
+  assertEqual(g.view().phase, 'question');
 });

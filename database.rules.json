@@ -975,6 +975,12 @@
         "run": {
           ".read": "auth != null && (root.child('celebrations').child($cid).child('members').child(auth.uid).exists() || root.child('celebrations').child($cid).child('viewers').child(auth.uid).exists())"
         },
+        "ready": {
+          "$uid": {
+            ".write": "auth != null && $uid === auth.uid && newData.exists() && !root.child('bans').child(auth.uid).exists() && root.child('celebrations').child($cid).child('members').child(auth.uid).exists()",
+            ".validate": "newData.isString() && newData.val() === root.child('celebrations').child($cid).child('run').child('runId').val()"
+          }
+        },
         "inbox": {
           "$uid": {
             "$id": {

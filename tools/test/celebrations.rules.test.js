@@ -30,7 +30,9 @@ test('celebrations: phones write only game commands; the game view is for guests
       else if (node[k] && typeof node[k] === 'object') walk(node[k], at + '/' + k);
     });
   })(c, '');
-  assertEqual(writes.join(','), '/inbox/$uid/$id', 'the inbox is the only place a phone writes');
+  assertEqual(writes.sort().join(','), '/inbox/$uid/$id,/ready/$uid', 'phones write only the inbox and their own ready flag');
+  assertEqual(/\$uid === auth\.uid/.test(c.ready.$uid['.write']) && /members'\)\.child\(auth\.uid\)\.exists\(\)/.test(c.ready.$uid['.write']), true, 'a guest readies only themselves');
+  assertEqual(/run'\)\.child\('runId'\)\.val\(\)/.test(c.ready.$uid['.validate']), true, 'only for the game being played');
   assertEqual(c.control, undefined, 'the organiser\'s controls go through the server');
   assertEqual(c.run['.write'], undefined);
   assertEqual(/members'\)\.child\(auth\.uid\)\.exists\(\)/.test(c.run['.read']) && /viewers'\)\.child\(auth\.uid\)\.exists\(\)/.test(c.run['.read']), true, 'guests of the event and organisers watching');

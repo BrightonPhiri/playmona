@@ -275,6 +275,8 @@ window.FF = window.FF || {};
         // Word by Word: a new word, a struck word or the next turn.
         v.count, v.turn ? v.turn.id + '/' + v.turn.teamId : '',
         // Quiz: the question, who has picked or is sure (never which answer), and the reveal.
+        // Before the countdown: which teams are ready.
+        v.waitReady ? 'w' + Object.keys(v.ready || {}).sort().join(',') : '',
         v.q, v.question && v.question.text, v.question && list(v.question.choices).join('|'), v.right, v.picks ? Object.keys(v.picks).sort().map(function (k) { return k + (v.picks[k].sure ? '!' : ''); }).join(',') : ''];
     }
 
@@ -450,6 +452,7 @@ window.FF = window.FF || {};
         wait.appendChild(el('h1', { class: 'tv-h1' }, p.name));
         return wait;
       }
+      if (v.phase === 'starting' && v.waitReady) return readyScreen(v);
       if (v.template === 'pictureRush') return pictureRush(v);
       if (v.template === 'wordByWord') return wordByWord(v);
       if (v.template === 'quiz') return quiz(v);
@@ -736,6 +739,34 @@ window.FF = window.FF || {};
         ol.appendChild(li);
       });
       return ol;
+    }
+
+    /* ---------- "Press when ready", before any game's countdown ---------- */
+
+    function readyScreen(v) {
+      var box = div('tv-game tv-ready');
+      var head = div('tv-game__head');
+      head.appendChild(el('h1', { class: 'tv-game__name' }, v.name));
+      box.appendChild(head);
+      var s = div('tv-pr__start');
+      s.appendChild(el('p', { class: 'tv-kicker' }, t('celTvGetReady', 'Get ready!')));
+      s.appendChild(el('p', { class: 'tv-lead' }, t('celTvReadyPress', 'Each team: press "Press when ready" on your phone. The countdown starts when every team is ready.')));
+      if (v.instructions) s.appendChild(el('p', { class: 'tv-lead' }, v.instructions));
+      box.appendChild(s);
+      var ready = v.ready || {};
+      var ol = el('ol', { class: 'tv-wbw__strip tv-ready__strip' });
+      Object.keys(v.teams || {}).forEach(function (tid) {
+        var tm = v.teams[tid] || {};
+        if (!Object.keys(tm.players || {}).length) return;
+        var li = el('li', { class: 'tv-wbw__team' + (ready[tid] ? ' is-ready' : '') });
+        li.style.setProperty('--team', tm.color || '#888888');
+        li.appendChild(el('span', { class: 'tv-row__swatch', 'aria-hidden': 'true' }));
+        li.appendChild(el('strong', { class: 'tv-wbw__name' }, tm.name || ''));
+        li.appendChild(el('span', { class: 'tv-wbw__pts' }, ready[tid] ? t('celTvReadyYes', 'Ready ✓') : t('celTvReadyNo', 'Not yet')));
+        ol.appendChild(li);
+      });
+      box.appendChild(ol);
+      return box;
     }
 
     /* ---------- Quiz ---------- */

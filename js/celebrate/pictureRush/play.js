@@ -181,8 +181,9 @@ window.FF = window.FF || {};
       header();
       var card = el('div', 'pr-card pr-ready');
       card.appendChild(el('p', 'pr-ready__kicker', t('prGetReady', 'Get ready')));
-      parts.big = el('p', 'pr-ready__count');
-      card.appendChild(parts.big);
+      // Before the countdown each team presses "We're ready" (js/celebrate/ready.js).
+      if (v.waitReady) card.appendChild(FF.CelebrateReady.block(v, { uid: uid, team: myTeam(), T: T }));
+      else { parts.big = el('p', 'pr-ready__count'); card.appendChild(parts.big); }
       if (v.instructions) card.appendChild(el('p', 'pr-ready__how', v.instructions));
       card.appendChild(el('p', 'pr-ready__tip', t('prTip', 'Tap a tile, then tap where it goes. Or drag it there.')));
       if (!myTeam()) card.appendChild(el('p', 'pr-note', t('prNoTeam', 'You are not in a team for this game, so you can watch along.')));
@@ -347,7 +348,7 @@ window.FF = window.FF || {};
 
     function draw() {
       if (!v || stopped) return;
-      var key = v.runId + ':' + v.phase + ':' + v.round + ':' + (myTeam() || '-');
+      var key = v.runId + ':' + v.phase + ':' + v.round + ':' + (myTeam() || '-') + (v.phase === 'starting' ? ':' + (v.waitReady ? 'w' + Object.keys(v.ready || {}).sort().join(',') : 'c') : '');
       // The referee's writes can land a moment apart: redraw the results screens when their data arrives.
       if (v.phase === 'roundEnd') key += ':' + JSON.stringify([list(v.results)[v.round] || null, v.totals || null, v.photo && v.photo.title]);
       if (v.phase === 'ended') key += ':' + JSON.stringify(v.result || null);
@@ -420,6 +421,7 @@ window.FF = window.FF || {};
     var lastBeep = -1;
     function tick() {
       if (!v) return;
+      if (v.phase === 'starting' && v.waitReady) { if (parts.timer) parts.timer.textContent = ''; return; }
       var t0 = v.paused ? v.pausedAt : now();
       var due = 0;
       if (v.phase === 'starting') due = v.startAt;
