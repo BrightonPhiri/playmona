@@ -216,8 +216,9 @@ window.FF = window.FF || {};
       header();
       var card = el('div', 'pr-card pr-ready');
       card.appendChild(el('p', 'pr-ready__kicker', t('prGetReady', 'Get ready')));
-      parts.big = el('p', 'pr-ready__count');
-      card.appendChild(parts.big);
+      // Before the countdown each team presses "We're ready" (js/celebrate/ready.js).
+      if (v.waitReady) card.appendChild(FF.CelebrateReady.block(v, { uid: uid, team: myTeam(), T: T }));
+      else { parts.big = el('p', 'pr-ready__count'); card.appendChild(parts.big); }
       if (v.instructions) card.appendChild(el('p', 'pr-ready__how', v.instructions));
       card.appendChild(el('p', 'pr-ready__tip', v.mode === 'blind'
         ? t('wbwTipBlind', 'On your group\'s turn, add one word. You only see the word before yours, so keep the message going!')
@@ -377,7 +378,7 @@ window.FF = window.FF || {};
     function draw() {
       if (!v || stopped) return;
       var mine = myTurn();
-      var key = v.runId + ':' + v.phase + ':' + (v.turn ? v.turn.id + '/' + v.turn.teamId : '-') + ':' + (myTeam() || '-') + ':' + mine;
+      var key = v.runId + ':' + v.phase + ':' + (v.turn ? v.turn.id + '/' + v.turn.teamId : '-') + ':' + (myTeam() || '-') + ':' + mine + (v.phase === 'starting' ? ':' + (v.waitReady ? 'w' + Object.keys(v.ready || {}).sort().join(',') : 'c') : '');
       if (v.phase === 'ended') key += ':' + JSON.stringify(v.result || null);
       if (key !== screenKey) {
         var wasMine = parts.input && screenKey.split(':')[0] === v.runId;
@@ -402,6 +403,7 @@ window.FF = window.FF || {};
     var lastBeep = -1;
     function tick() {
       if (!v) return;
+      if (v.phase === 'starting' && v.waitReady) { if (parts.timer) parts.timer.textContent = ''; return; }
       var left = 0;
       if (v.phase === 'starting') left = v.startAt - now();
       else if (v.phase === 'playing' && v.turn) left = v.paused ? (v.turn.leftMs || 0) : v.turn.endsAt - now();

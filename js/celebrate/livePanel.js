@@ -235,8 +235,8 @@ window.FF = window.FF || {};
 
     function draw() {
       if (!v) return;
-      if (v.template === 'quiz') { drawQuiz(); ended(); tick(); return; }
-      if (v.template === 'wordByWord') { drawWords(); ended(); tick(); return; }
+      if (v.template === 'quiz') { drawQuiz(); ended(); tick(); readyNote(); return; }
+      if (v.template === 'wordByWord') { drawWords(); ended(); tick(); readyNote(); return; }
       var p = PHASE[v.phase] || ['', ''];
       status.textContent = (v.paused ? t('celPausedNow', 'Paused.') + ' ' : '') + t(p[0], p[1], { n: v.round + 1, total: v.rounds });
       pauseBtn.hidden = v.phase === 'ended' || v.phase === 'starting';
@@ -277,6 +277,20 @@ window.FF = window.FF || {};
       });
       ended();
       tick();
+      readyNote();
+    }
+
+    /* Before the countdown: how many teams are ready, and Start now for the MC. */
+    function readyNote() {
+      if (!(v.phase === 'starting' && v.waitReady)) return;
+      var left = FF.CelebrateReady ? FF.CelebrateReady.waiting(v).length : 0;
+      var all = Object.keys(v.teams || {}).filter(function (tid) { return Object.keys((v.teams[tid] || {}).players || {}).length > 0; }).length;
+      status.textContent = t('celReadyPanel', 'Waiting for teams to press ready: {n} of {total} ready.', { n: all - left, total: all });
+      timer.textContent = '';
+      FF.ui.clear(nextBtn);
+      nextBtn.appendChild(icon('arrow-right'));
+      nextBtn.appendChild(FF.ui.span('', t('celReadyStartNow', 'Start now')));
+      nextBtn.hidden = false;
     }
 
     /* The winners, once the game is over (every template). */
@@ -297,6 +311,7 @@ window.FF = window.FF || {};
     function tick() {
       if (!alive()) { stop(); return; }
       if (!v) return;
+      if (v.phase === 'starting' && v.waitReady) { timer.textContent = ''; return; }
       if (v.template === 'wordByWord') {
         var left = v.phase === 'playing' && v.turn ? (v.paused ? v.turn.leftMs : v.turn.endsAt - T.serverNow()) : v.phase === 'starting' ? v.startAt - T.serverNow() : null;
         timer.textContent = left == null ? '' : clock(left);

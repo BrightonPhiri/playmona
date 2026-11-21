@@ -255,12 +255,14 @@ class CelebrationGames
             'runId' => $runId, 'cid' => $cid, 'gameId' => $g['id'], 'template' => $g['template'], 'name' => $g['name'],
             'instructions' => (string) $g['instructions'], 'config' => $config, 'teams' => $teams, 'startAt' => $startAt, 'createdAt' => $now,
             'celebrant' => (string) $ev['celebrant_name'],
+            // The countdown waits until every team has pressed "We're ready" (or the MC presses Start now).
+            'waitReady' => true,
         ];
         $who = str_starts_with($actor, 'mc:') ? substr($actor, 3) : $actor;
         try {
             $this->rtdb->set('celebrationRuns/' . $runId, $run);
             $this->rtdb->update('celebrations/' . $cid, [
-                'run' => null, 'inbox' => null, 'control' => null,
+                'run' => null, 'inbox' => null, 'control' => null, 'ready' => null,
                 // The MC acts as "mc:<uid>" in the audit, but database keys cannot hold a colon.
                 'viewers/' . $who => true,
                 'staffers/' . $who => true,

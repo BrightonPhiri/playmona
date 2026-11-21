@@ -178,8 +178,9 @@ window.FF = window.FF || {};
       header();
       var card = el('div', 'pr-card pr-ready');
       card.appendChild(el('p', 'pr-ready__kicker', t('prGetReady', 'Get ready')));
-      parts.big = el('p', 'pr-ready__count');
-      card.appendChild(parts.big);
+      // Before the countdown each team presses "We're ready" (js/celebrate/ready.js).
+      if (v.waitReady) card.appendChild(FF.CelebrateReady.block(v, { uid: uid, team: myTeam(), T: T }));
+      else { parts.big = el('p', 'pr-ready__count'); card.appendChild(parts.big); }
       if (v.instructions) card.appendChild(el('p', 'pr-ready__how', v.instructions));
       card.appendChild(el('p', 'pr-ready__tip', t('qzTip', 'Talk it over with your team. Anyone can tap an answer, and the one lit when time runs out counts.')));
       if (!myTeam()) card.appendChild(el('p', 'pr-note', t('prNoTeam', 'You are not in a team for this game, so you can watch along.')));
@@ -348,7 +349,7 @@ window.FF = window.FF || {};
       // The dev transport writes one field at a time: wait for the question.
       if ((v.phase === 'question' || v.phase === 'reveal') && !(v.question && list(v.question.choices).length)) return;
       // The question text too: fields can land one at a time, so q may move before the new question arrives.
-      var key = v.runId + ':' + v.phase + ':' + v.q + ':' + (myTeam() || '-') + ':' + (v.question ? v.question.text + list(v.question.choices).join('|') : '');
+      var key = v.runId + ':' + v.phase + ':' + v.q + ':' + (myTeam() || '-') + ':' + (v.question ? v.question.text + list(v.question.choices).join('|') : '') + (v.phase === 'starting' ? ':' + (v.waitReady ? 'w' + Object.keys(v.ready || {}).sort().join(',') : 'c') : '');
       if (v.phase === 'reveal') key += ':' + v.right + ':' + JSON.stringify(v.got || null);
       if (v.phase === 'ended') key += ':' + JSON.stringify(v.result || null);
       if (key !== screenKey) {
@@ -371,6 +372,7 @@ window.FF = window.FF || {};
     var lastBeep = -1;
     function tick() {
       if (!v) return;
+      if (v.phase === 'starting' && v.waitReady) { if (parts.timer) parts.timer.textContent = ''; return; }
       var left = 0;
       if (v.phase === 'starting') left = v.startAt - now();
       else if (v.phase === 'question') left = v.paused ? (v.leftMs || 0) : v.deadline - now();

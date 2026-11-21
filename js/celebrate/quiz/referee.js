@@ -97,12 +97,13 @@ window.FF = window.FF || {};
         v: 1, runId: run.runId, cid: run.cid, gameId: run.gameId || '', name: run.name || '', instructions: run.instructions || '',
         startAt: run.startAt || 0, config: { kind: config.kind, seconds: config.seconds, points: config.points },
         deck: deck, teams: teams, members: members, order: order,
-        phase: 'starting', q: -1, deadline: 0, revealUntil: 0, paused: false, pausedAt: 0,
+        phase: 'starting', waitReady: !!run.waitReady, ready: {}, q: -1, deadline: 0, revealUntil: 0, paused: false, pausedAt: 0,
         picks: {}, totals: totals, results: [], n: {}, said: {}, waiting: {}, why: '', result: null, control: ''
       };
     }
 
     function revive(s) {
+      s.ready = s.ready || {};
       s.deck = list(s.deck).map(function (d) { d.choices = list(d.choices); return d; });
       s.order = list(s.order);
       s.results = list(s.results);
@@ -137,6 +138,7 @@ window.FF = window.FF || {};
         offs.push(room.watch('members', onMembers));
         offs.push(room.watch('inbox', onInbox));
         offs.push(room.watch('control', onControl));
+        offs.push(room.watch('ready', onReady));
         save();
         publish();
         schedule();
@@ -236,6 +238,8 @@ window.FF = window.FF || {};
       if (timer != null) timers.clearTimeout(timer);
       timer = null;
       if (!state || state.phase === 'ended' || stopped || state.paused) return;
+      // Waiting for the teams to press "We're ready": no clock yet.
+      if (state.phase === 'starting' && state.waitReady) return;
       var due;
       if (state.phase === 'starting') due = state.startAt;
       else if (state.phase === 'question') due = state.deadline;
@@ -251,7 +255,7 @@ window.FF = window.FF || {};
       var t = now();
       if (state.paused) return;
       if (state.phase === 'starting') {
-        if (t < state.startAt) { schedule(); return; }
+        if (state.waitReady || t < state.startAt) { schedule(); return; }
         beginQuestion(0, t);
       } else if (state.phase === 'question') {
         drainWaiting(true);
@@ -265,6 +269,40 @@ window.FF = window.FF || {};
     }
 
     /* ---------- the organiser's and MC's controls ---------- */
+
+    /* ---------- ready: each team presses "We're ready", then the countdown starts ---------- */
+
+    var READY_COUNTDOWN_MS = 10000;
+
+    /* Teams with someone in them that have not pressed yet. */
+    function notReady() {
+      var has = {};
+      Object.keys(state.members).forEach(function (uid) { has[state.members[uid]] = true; });
+      return Object.keys(state.teams).filter(function (tid) { return has[tid] && !state.ready[tid]; });
+    }
+
+    /* ready/<uid> holds the run a phone pressed "We're ready" for; one press readies the whole team. */
+    function onReady(tree) {
+      if (!state || stopped || !tree || state.phase !== 'starting' || !state.waitReady) return;
+      var changed = false;
+      Object.keys(tree).forEach(function (uid) {
+        var tid = state.members[uid];
+        if (tree[uid] === state.runId && tid && state.teams[tid] && !state.ready[tid]) { state.ready[tid] = true; changed = true; }
+      });
+      if (!changed) return;
+      if (!notReady().length) { countdown(now()); return; }
+      save();
+      publish();
+    }
+
+    /* Every team is ready, or the MC pressed Start now: the countdown begins. */
+    function countdown(t) {
+      state.waitReady = false;
+      state.startAt = t + READY_COUNTDOWN_MS;
+      save();
+      publish();
+      schedule();
+    }
 
     function onControl(c) {
       if (!state || stopped || !c || c.runId !== state.runId || !c.id || c.id === state.control) return;
@@ -289,6 +327,8 @@ window.FF = window.FF || {};
         schedule();
       } else if (action === 'next') {
         if (state.paused) resumeAt(t);
+        // While teams are getting ready, Start now begins the countdown.
+        if (state.phase === 'starting' && state.waitReady) { countdown(t); return; }
         if (state.phase === 'starting') { beginQuestion(0, t); return; }
         if (state.phase === 'question') { reveal(t); return; }
         if (state.phase === 'reveal') { beginQuestion(state.q + 1, t); return; }
@@ -448,7 +488,7 @@ window.FF = window.FF || {};
       var c = state.config;
       var v = {
         v: 1, runId: state.runId, gameId: state.gameId, template: 'quiz', kind: c.kind, name: state.name, instructions: state.instructions,
-        phase: state.phase, startAt: state.startAt, paused: state.paused, q: state.q, total: state.deck.length,
+        phase: state.phase, startAt: state.startAt, waitReady: !!state.waitReady, ready: state.ready || {}, paused: state.paused, q: state.q, total: state.deck.length,
         seconds: c.seconds, points: c.points, question: null, deadline: state.deadline, revealUntil: state.revealUntil,
         teams: teams, order: state.order, picks: null, totals: totals, said: state.said, n: state.n,
         result: state.phase === 'ended' ? state.result : null

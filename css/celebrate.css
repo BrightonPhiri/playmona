@@ -940,6 +940,15 @@ body.mc-page .ev-brand { color: var(--text); }
 .qz-result.is-right { color: var(--success); }
 .qz-result.is-wrong { color: var(--ev-muted); }
 
+/* ---------- "Press when ready" before the countdown (phones and TV) ---------- */
+.cel-ready { display: grid; gap: var(--sp-2); justify-items: center; text-align: center; margin: var(--sp-2) 0; }
+.cel-ready__go { width: 100%; min-height: 64px; font-size: var(--fs-lg); }
+.cel-ready__done { margin: 0; font-weight: 900; font-size: var(--fs-lg); color: var(--success); }
+.cel-ready__note { margin: 0; color: var(--ev-muted, var(--muted)); font-weight: 700; }
+.cel-ready__note:empty { display: none; }
+.tv-ready__strip .tv-wbw__team.is-ready { border-color: var(--success); }
+.tv-ready__strip .tv-wbw__team.is-ready .tv-wbw__pts { color: var(--success); font-weight: 900; }
+
 /* ---------- Quiz on the TV ---------- */
 .tv-qz.is-starting .tv-game__head .tv-timer, .tv-qz.is-reveal .tv-game__head .tv-timer, .tv-qz.is-ended .tv-game__head .tv-timer { display: none; }
 .tv-qz__q { margin: 0.2em auto 0.5em; max-width: 26em; text-align: center; font-family: var(--ev-font, var(--font-display)); font-size: 3.2em; line-height: 1.2; font-weight: 800; color: var(--ev-text); overflow-wrap: anywhere; text-wrap: balance; }
