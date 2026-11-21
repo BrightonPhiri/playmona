@@ -16,7 +16,7 @@ test('stage: the TV and MC links open their pages; other secrets, guests and old
     eq(200, $tv[0], json_encode($tv[1]));
     eq('vicky-birthday', $tv[1]['event']['slug']);
     eq($ev['joinCode'], $tv[1]['join']['code']);
-    eq(['layout' => 'auto', 'showQr' => true, 'messageId' => null, 'at' => 0], $tv[1]['display']);
+    eq(['layout' => 'auto', 'showQr' => true, 'messageId' => null, 'at' => 0], array_diff_key($tv[1]['display'], ['slide' => 1]));
     eq(4, count($tv[1]['scores']));
     eq(true, $w['rtdb']->get("celebrations/$id/viewers/tv1"), 'the TV may watch the game');
     eq(false, isset($tv[1]['event']['tokens']), 'no secrets on the TV');
@@ -147,4 +147,69 @@ test('stage: the MC may read a blind message, the TV may not', function () {
     eq(200, celCall($w, 'GET', "/c/$id/screen", ['token' => guestToken('tv1'), 'headers' => stageKey($ev, 'display')])[0]);
     eq(null, $w['rtdb']->get("celebrations/$id/staffers/tv1"), 'not the TV');
     eq(true, $w['rtdb']->get("celebrations/$id/viewers/tv1"), 'which still watches the game');
+});
+
+test('stage: the programme slide has defaults, merges changes and reaches the TV at once', function () {
+    $w = celWorld();
+    $ev = newEvent($w);
+    $id = $ev['id'];
+    $mc = fn (string $method, string $path, array $json = []) => celCall($w, $method, "/c/$id$path", ['token' => guestToken('mc1'), 'headers' => stageKey($ev, 'mc'), 'json' => $json]);
+    $tv = celCall($w, 'GET', "/c/$id/screen", ['token' => guestToken('tv1'), 'headers' => stageKey($ev, 'display')])[1];
+    eq([
+        'kind' => 'built', 'mediaIds' => [], 'seconds' => 8, 'kicker' => 'Welcome to', 'title' => '', 'subtitle' => '',
+        'showFacts' => true, 'background' => 'theme', 'motion' => 'zoomIn', 'effect' => 'sparkles',
+    ], $tv['display']['slide']);
+    eq([], $tv['slideImages']);
+    [$s, $b] = $mc('POST', '/mc/display', ['layout' => 'programme']);
+    eq(200, $s, json_encode($b));
+    eq('programme', $b['display']['layout']);
+    [$s, $b] = $mc('POST', '/mc/display', ['slide' => ['effect' => 'confetti', 'subtitle' => '40, Fortified and Qualified', 'seconds' => 99]]);
+    eq(200, $s, json_encode($b));
+    eq('confetti', $b['display']['slide']['effect']);
+    eq('40, Fortified and Qualified', $b['display']['slide']['subtitle']);
+    eq('Welcome to', $b['display']['slide']['kicker'], 'only the fields sent change');
+    eq(30, $b['display']['slide']['seconds'], 'seconds stay between 4 and 30');
+    eq('programme', $b['display']['layout'], 'changing the slide keeps the screen');
+    eq('confetti', $w['rtdb']->get("celebrations/$id/live/display/slide/effect"), 'the TV hears at once');
+    eq(400, $mc('POST', '/mc/display', ['slide' => ['effect' => 'disco']])[0]);
+    eq(400, $mc('POST', '/mc/display', ['slide' => ['kind' => 'video']])[0]);
+    eq(400, $mc('POST', '/mc/display', ['slide' => ['motion' => 'spin']])[0]);
+    eq(str_repeat('a', 120), $mc('POST', '/mc/display', ['slide' => ['subtitle' => str_repeat('a', 300)]])[1]['display']['slide']['subtitle'], 'long text is cut');
+});
+
+test('stage: slide pictures come from this event, in order, signed for the TV', function () {
+    $w = celWorld();
+    $ev = newEvent($w);
+    $id = $ev['id'];
+    $mc = fn (string $method, string $path, array $json = []) => celCall($w, $method, "/c/$id$path", ['token' => guestToken('mc1'), 'headers' => stageKey($ev, 'mc'), 'json' => $json]);
+    [$s, $one] = celCall($w, 'POST', "/c/$id/mc/upload", ['token' => guestToken('mc1'), 'headers' => stageKey($ev, 'mc'), 'raw' => photoJpeg(1920, 1080)]);
+    eq(200, $s, json_encode($one));
+    $two = celCall($w, 'POST', "/c/$id/media", ['token' => organiser(), 'query' => ['purpose' => 'slide'], 'raw' => photoJpeg(1080, 1920)])[1];
+    eq(true, isset($two['id']), json_encode($two));
+    eq(403, celCall($w, 'POST', "/c/$id/mc/upload", ['token' => guestToken('tv1'), 'headers' => stageKey($ev, 'display'), 'raw' => photoJpeg()])[0], 'the TV link cannot upload');
+    $cover = celCall($w, 'POST', "/c/$id/media", ['token' => organiser(), 'query' => ['purpose' => 'cover'], 'raw' => photoJpeg()])[1];
+    eq(400, $mc('POST', '/mc/display', ['slide' => ['mediaIds' => [$cover['id']]]])[0], 'a cover is not a slide picture');
+    eq(400, $mc('POST', '/mc/display', ['slide' => ['mediaIds' => array_fill(0, 13, $one['id'])]])[0], 'at most 12');
+    [$s, $b] = $mc('POST', '/mc/display', ['slide' => ['kind' => 'slideshow', 'mediaIds' => [$two['id'], $one['id']]]]);
+    eq(200, $s, json_encode($b));
+    $tv = celCall($w, 'GET', "/c/$id/screen", ['token' => guestToken('tv1'), 'headers' => stageKey($ev, 'display')])[1];
+    eq([$two['id'], $one['id']], array_column($tv['slideImages'], 'id'), 'in the order chosen');
+    eq(true, str_contains($tv['slideImages'][0]['full'], '/api/c/media'), 'the large size, signed');
+    eq(2, count($mc('GET', '/mc')[1]['slideImages']));
+});
+
+test('stage: the organiser sets the slide from the dashboard; nobody else can that way', function () {
+    $w = celWorld();
+    $ev = newEvent($w);
+    $id = $ev['id'];
+    [$s, $b] = celCall($w, 'GET', "/c/$id/slide", ['token' => organiser()]);
+    eq(200, $s, json_encode($b));
+    eq('built', $b['display']['slide']['kind']);
+    eq([], $b['slideImages']);
+    [$s, $b] = celCall($w, 'POST', "/c/$id/slide", ['token' => organiser(), 'json' => ['slide' => ['effect' => 'snow', 'motion' => 'pan'], 'layout' => 'programme']]);
+    eq(200, $s, json_encode($b));
+    eq(['snow', 'pan', 'programme'], [$b['display']['slide']['effect'], $b['display']['slide']['motion'], $b['display']['layout']]);
+    eq(400, celCall($w, 'POST', "/c/$id/slide", ['token' => organiser(), 'json' => ['layout' => 'disco']])[0]);
+    eq(403, celCall($w, 'GET', "/c/$id/slide", ['token' => guestToken('g1')])[0], 'a guest');
+    eq(403, celCall($w, 'POST', "/c/$id/slide", ['token' => organiser('someone'), 'json' => ['slide' => ['effect' => 'none']]])[0], 'another account');
 });

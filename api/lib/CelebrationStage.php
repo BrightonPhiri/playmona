@@ -12,14 +12,25 @@ namespace PlayMona;
  *
  * What the TV shows is the MC's choice, kept with the event (celebrations.display) and copied to
  * celebrations/<cid>/live/display so the TV changes at once:
- *   { layout: auto|welcome|game|scores|wall|winner, showQr: bool, messageId: w_... or null, at }
+ *   { layout: auto|welcome|programme|game|scores|wall|winner, showQr: bool, messageId: w_... or null, slide, at }
+ * "programme" is the opening slide: one picture, a slideshow of pictures or a built text slide, with a
+ * slow movement and an effect drawn over it (slide = see DEFAULT_SLIDE). Only shown when picked.
  * "auto" follows the evening: the game while one is played, otherwise the welcome screen, the
  * scores and the wall in turn. The TV only ever receives approved messages.
  */
 class CelebrationStage
 {
-    public const LAYOUTS = ['auto', 'welcome', 'game', 'scores', 'wall', 'winner'];
-    private const DEFAULT_DISPLAY = ['layout' => 'auto', 'showQr' => true, 'messageId' => null, 'at' => 0];
+    public const LAYOUTS = ['auto', 'welcome', 'programme', 'game', 'scores', 'wall', 'winner'];
+    public const SLIDE_KINDS = ['picture', 'slideshow', 'built'];
+    public const SLIDE_MOTIONS = ['none', 'zoomIn', 'zoomOut', 'pan'];
+    public const SLIDE_EFFECTS = ['none', 'sparkles', 'confetti', 'snow', 'leaves', 'petals', 'balloons', 'hearts'];
+    public const SLIDE_PICTURES_MAX = 12;
+    private const SLIDE_TEXT = ['kicker' => 40, 'title' => 80, 'subtitle' => 120];
+    private const DEFAULT_SLIDE = [
+        'kind' => 'built', 'mediaIds' => [], 'seconds' => 8, 'kicker' => 'Welcome to', 'title' => '', 'subtitle' => '',
+        'showFacts' => true, 'background' => 'theme', 'motion' => 'zoomIn', 'effect' => 'sparkles',
+    ];
+    private const DEFAULT_DISPLAY = ['layout' => 'auto', 'showQr' => true, 'messageId' => null, 'slide' => self::DEFAULT_SLIDE, 'at' => 0];
 
     public function __construct(
         private Db $db,
@@ -54,6 +65,7 @@ class CelebrationStage
             'event' => $this->events->publicView($ev),
             'join' => $this->join($ev),
             'display' => $this->display($ev),
+            'slideImages' => $this->slideImages($ev),
             'scores' => $this->games->scores($ev['id']),
             'active' => $stage['active'],
             'last' => $stage['last'],
@@ -72,6 +84,7 @@ class CelebrationStage
             'event' => $this->events->publicView($ev),
             'join' => $this->join($ev),
             'display' => $this->display($ev),
+            'slideImages' => $this->slideImages($ev),
             'scores' => $this->games->scores($ev['id']),
             'games' => $stage['games'],
             'active' => $stage['active'],
@@ -100,9 +113,33 @@ class CelebrationStage
         return ['showQr' => $d['showQr']];
     }
 
+    /** The MC adds a picture for the opening slide from the phone; saving mediaIds puts it on the slide. */
+    public function upload(array $ev, AuthUser $mc, string $bytes): array
+    {
+        return $this->events->storeMedia($ev['id'], $mc->uid, 'slide', $bytes);
+    }
+
+    /** The organiser's dashboard: the opening slide and which screen is up. */
+    public function ownerSlide(string $cid, AuthUser $user): array
+    {
+        $ev = $this->events->owned($cid, $user);
+        return ['display' => $this->display($ev), 'slideImages' => $this->slideImages($ev)];
+    }
+
+    public function setOwnerSlide(string $cid, AuthUser $user, array $in): array
+    {
+        $ev = $this->events->owned($cid, $user);
+        $this->saveDisplay($ev, $user->uid, array_intersect_key($in, ['slide' => 1, 'layout' => 1]));
+        return $this->ownerSlide($cid, $user);
+    }
+
     private function saveDisplay(array $ev, string $actor, array $in): array
     {
         $d = $this->display($ev);
+        if (array_key_exists('slide', $in)) {
+            if (!is_array($in['slide'])) throw new HttpError(400, 'Unknown slide.', 'bad-slide');
+            $d['slide'] = $this->cleanSlide($ev['id'], $d['slide'], $in['slide']);
+        }
         if (array_key_exists('layout', $in)) {
             if (!in_array($in['layout'], self::LAYOUTS, true)) throw new HttpError(400, 'Unknown screen.', 'bad-layout');
             $d['layout'] = $in['layout'];
@@ -130,7 +167,7 @@ class CelebrationStage
         } catch (\Throwable $e) {
             error_log('PlayMona Celebrations stage: ' . $e->getMessage());
         }
-        $this->events->audit($ev['id'], $actor, 'mc.display', ['layout' => $d['layout'], 'showQr' => $d['showQr'], 'messageId' => $d['messageId']]);
+        $this->events->audit($ev['id'], $actor, 'mc.display', ['layout' => $d['layout'], 'showQr' => $d['showQr'], 'messageId' => $d['messageId'], 'slide' => array_key_exists('slide', $in)]);
         return ['display' => $d];
     }
 
@@ -166,7 +203,51 @@ class CelebrationStage
         $d = is_array($d) ? array_merge(self::DEFAULT_DISPLAY, array_intersect_key($d, self::DEFAULT_DISPLAY)) : self::DEFAULT_DISPLAY;
         if (!in_array($d['layout'], self::LAYOUTS, true)) $d['layout'] = 'auto';
         $d['showQr'] = (bool) $d['showQr'];
+        $d['slide'] = array_merge(self::DEFAULT_SLIDE, is_array($d['slide']) ? array_intersect_key($d['slide'], self::DEFAULT_SLIDE) : []);
         return $d;
+    }
+
+    /** Only the fields sent change; unknown choices are refused, text is cut to length. */
+    private function cleanSlide(string $cid, array $old, array $in): array
+    {
+        $s = $old;
+        $pick = function (string $field, array $allowed) use (&$s, $in) {
+            if (!array_key_exists($field, $in)) return;
+            if (!in_array($in[$field], $allowed, true)) throw new HttpError(400, 'Unknown slide ' . $field . '.', 'bad-slide');
+            $s[$field] = $in[$field];
+        };
+        $pick('kind', self::SLIDE_KINDS);
+        $pick('motion', self::SLIDE_MOTIONS);
+        $pick('effect', self::SLIDE_EFFECTS);
+        $pick('background', ['theme', 'cover']);
+        foreach (self::SLIDE_TEXT as $field => $max) {
+            if (array_key_exists($field, $in)) $s[$field] = mb_substr(trim((string) preg_replace('/\s+/u', ' ', (string) $in[$field])), 0, $max);
+        }
+        if (array_key_exists('showFacts', $in)) $s['showFacts'] = (bool) $in['showFacts'];
+        if (array_key_exists('seconds', $in)) $s['seconds'] = max(4, min(30, (int) $in['seconds']));
+        if (array_key_exists('mediaIds', $in)) {
+            $ids = $in['mediaIds'];
+            if (!is_array($ids) || count($ids) > self::SLIDE_PICTURES_MAX) throw new HttpError(400, 'Choose up to ' . self::SLIDE_PICTURES_MAX . ' pictures.', 'bad-slide');
+            $ids = array_values(array_unique(array_map('strval', $ids)));
+            foreach ($ids as $mid) {
+                if (!$this->db->one("SELECT id FROM celebration_media WHERE id = ? AND cid = ? AND purpose = 'slide' AND deleted_at IS NULL", [$mid, $cid])) {
+                    throw new HttpError(400, 'That slide picture was not found.', 'bad-media');
+                }
+            }
+            $s['mediaIds'] = $ids;
+        }
+        return $s;
+    }
+
+    /** The slide's pictures in the order chosen, signed for a day, in the large size for a TV. */
+    private function slideImages(array $ev): array
+    {
+        $out = [];
+        foreach ($this->display($ev)['slide']['mediaIds'] as $mid) {
+            $m = $this->db->one('SELECT id, width, height FROM celebration_media WHERE id = ? AND deleted_at IS NULL', [$mid]);
+            if ($m) $out[] = $this->events->mediaView($m, 86400, true);
+        }
+        return $out;
     }
 
     /** How guests join: the address (with the code for a private event) and the code to type. */

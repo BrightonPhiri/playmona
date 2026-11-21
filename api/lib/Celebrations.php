@@ -567,11 +567,11 @@ class Celebrations
 
     /* ---------------------------------------------------------------- pictures */
 
-    /** Organiser pictures (event cover, puzzle photos). Guests' wall photos arrive with their message. */
+    /** Organiser pictures (event cover, puzzle photos, the TV's opening slide). Guests' wall photos arrive with their message. */
     public function upload(string $cid, AuthUser $user, string $purpose, string $bytes): array
     {
         $this->owned($cid, $user);
-        if (!in_array($purpose, ['cover', 'puzzle'], true)) throw new HttpError(400, 'Unknown picture use.', 'bad-purpose');
+        if (!in_array($purpose, ['cover', 'puzzle', 'slide'], true)) throw new HttpError(400, 'Unknown picture use.', 'bad-purpose');
         $media = $this->storeMedia($cid, $user->uid, $purpose, $bytes);
         if ($purpose === 'cover') {
             $this->db->run('UPDATE celebrations SET cover_media_id = ?, updated_at = ? WHERE id = ?', [$media['id'], nowMs(), $cid]);
