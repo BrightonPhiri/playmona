@@ -88,7 +88,9 @@ const FILES = [
   'js/celebrate/pictureRush/rules.js',
   'js/celebrate/pictureRush/referee.js',
   'js/celebrate/wordByWord/rules.js',
-  'js/celebrate/wordByWord/referee.js'
+  'js/celebrate/wordByWord/referee.js',
+  'js/celebrate/quiz/rules.js',
+  'js/celebrate/quiz/referee.js'
 ];
 
 function stubElement() {
