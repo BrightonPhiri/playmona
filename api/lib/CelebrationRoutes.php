@@ -87,6 +87,7 @@ class CelebrationRoutes
             $this->c()->delete($cid, $this->who($req));
             return Response::json(['deleted' => true]);
         }
+        if ($m === 'POST' && $rest === '/clear') return Response::json($this->g()->clearTestData($cid, $this->who($req), $req->json()));
         if ($m === 'POST' && $rest === '/media') {
             return Response::json($this->c()->upload($cid, $this->who($req), (string) ($req->query['purpose'] ?? ''), $req->rawBody));
         }

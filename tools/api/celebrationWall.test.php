@@ -189,3 +189,58 @@ test('celebrant: the private page opens by address with its secret, lists approv
     celCall($w, 'POST', "/c/$id/links/celebrant/regenerate", ['token' => organiser()]);
     eq(403, $for($key)[0]);
 });
+
+test('clear test data: results, the Wall and guests go; games, the organiser\'s teams and links stay', function () {
+    $w = celWorld();
+    $r = readyGame($w);
+    $cid = $r['cid'];
+    $games = $w['app']->celebrationGames();
+    // A test game is played and scores points.
+    [, $out] = celCall($w, 'POST', "/c/$cid/games/{$r['game']['id']}/start", ['token' => organiser()]);
+    eq(409, celCall($w, 'POST', "/c/$cid/clear", ['token' => organiser(), 'json' => ['results' => true]])[0], 'never while a game is played');
+    $games->recordResult(['runId' => $out['runId'], 'rounds' => [['round' => 0, 'teams' => [$r['gold'] => ['points' => 1300, 'solved' => true, 'usedMs' => 9000]]]],
+        'ranked' => [['teamId' => $r['gold'], 'place' => 1, 'points' => 1300]]], \PlayMona\nowMs());
+    eq(1300, $games->scores($cid)[0]['points']);
+    // A test message with a photo, a guest-made team, and a removed guest.
+    $photo = celCall($w, 'POST', "/c/$cid/wall/photo", ['token' => guestToken('g1'), 'raw' => photoJpeg()])[1];
+    eq(200, wallPost($w, $cid, 'g1', ['body' => 'Test message', 'mediaId' => $photo['id']])[0]);
+    [$s, $made] = celCall($w, 'POST', "/c/$cid/team/new", ['token' => guestToken('g4'), 'json' => ['name' => 'Testers']]);
+    eq(200, $s, json_encode($made));
+    eq(200, celCall($w, 'POST', "/c/$cid/guests/g3/remove", ['token' => organiser()])[0]);
+    eq(403, celCall($w, 'POST', "/c/$cid/join", ['token' => guestToken('g3'), 'json' => ['name' => 'G3']])[0], 'removed guests are kept out');
+    $before = celCall($w, 'GET', "/c/$cid/manage", ['token' => organiser()])[1];
+
+    // Only the organiser, and something must be chosen.
+    eq(403, celCall($w, 'POST', "/c/$cid/clear", ['token' => organiser('someoneElse'), 'json' => ['results' => true]])[0]);
+    eq(403, celCall($w, 'POST', "/c/$cid/clear", ['token' => guestToken('g1'), 'json' => ['results' => true]])[0]);
+    eq(400, celCall($w, 'POST', "/c/$cid/clear", ['token' => organiser(), 'json' => []])[0]);
+
+    // Results only: points and the last result go, guests and messages stay.
+    [$s, $b] = celCall($w, 'POST', "/c/$cid/clear", ['token' => organiser(), 'json' => ['results' => true]]);
+    eq(200, $s, json_encode($b));
+    eq(['games' => 1, 'messages' => 0, 'guests' => 0, 'teams' => 0], $b['cleared']);
+    eq(0, $games->scores($cid)[0]['points']);
+    eq(null, $games->lastResult($cid), 'the TV has no last result');
+    eq(null, $w['rtdb']->get("celebrations/$cid/live/scores"));
+    eq(1, count(celCall($w, 'GET', "/c/$cid/messages", ['token' => organiser()])[1]['messages']));
+    eq($before['stats']['guests'], $b['event']['stats']['guests']);
+
+    // The Wall and guests.
+    [$s, $b] = celCall($w, 'POST', "/c/$cid/clear", ['token' => organiser(), 'json' => ['wall' => true, 'guests' => true]]);
+    eq(200, $s, json_encode($b));
+    eq(1, $b['cleared']['messages']);
+    eq(4, $b['cleared']['guests'], 'removed guests count too');
+    eq(1, $b['cleared']['teams'], 'the team a guest made');
+    eq([], celCall($w, 'GET', "/c/$cid/messages", ['token' => organiser()])[1]['messages']);
+    eq(true, $w['db']->one('SELECT deleted_at FROM celebration_media WHERE id = ?', [$photo['id']])['deleted_at'] !== null, 'the photo goes');
+    eq(0, $b['event']['stats']['guests']);
+    eq(null, $w['rtdb']->get("celebrations/$cid/members"));
+    $names = array_column($b['event']['teams'], 'name');
+    eq(false, in_array('Testers', $names, true), 'guest-made team gone');
+    eq(count($r['ev']['teams']), count($b['event']['teams']), 'the organiser\'s teams stay');
+    eq(1, count(celCall($w, 'GET', "/c/$cid/games", ['token' => organiser()])[1]['games']), 'games stay');
+    eq($r['ev']['joinCode'], $b['event']['joinCode'], 'the join code stays');
+    // Everyone may join again, the removed guest too, and the game can be played again.
+    eq(200, celCall($w, 'POST', "/c/$cid/join", ['token' => guestToken('g3'), 'json' => ['name' => 'G3', 'teamId' => $r['gold']]])[0]);
+    eq(200, celCall($w, 'POST', "/c/$cid/games/{$r['game']['id']}/start", ['token' => organiser()])[0]);
+});

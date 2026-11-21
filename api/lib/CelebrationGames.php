@@ -450,6 +450,41 @@ class CelebrationGames
         if ($run) $this->quiet(fn () => $this->rtdb->set('celebrations/' . $run['cid'] . '/live/run', null));
     }
 
+    /* ---------------------------------------------------------------- clearing test data */
+
+    /**
+     * After a rehearsal the organiser clears what testing left, and keeps the event, its games, the
+     * teams they made and the private links. Each part is optional: results (every game played and
+     * its points, so the leaderboard and the TV's last result start again), the Wall (messages and
+     * their photos) and guests (everyone joins again, removed ones too, and guest-made teams go).
+     * Never while a game is being played.
+     */
+    public function clearTestData(string $cid, AuthUser $user, array $in): array
+    {
+        $this->events->owned($cid, $user);
+        $what = ['results' => !empty($in['results']), 'wall' => !empty($in['wall']), 'guests' => !empty($in['guests'])];
+        if (!in_array(true, $what, true)) throw new HttpError(400, 'Choose what to clear.', 'nothing-chosen');
+        if ($this->activeView($cid)) throw new HttpError(409, 'A game is being played. End it first.', 'game-live');
+        $done = ['games' => 0, 'messages' => 0, 'guests' => 0, 'teams' => 0];
+        if ($what['results']) {
+            $runs = array_column($this->db->all('SELECT id FROM celebration_runs WHERE cid = ?', [$cid]), 'id');
+            $this->db->transaction(function (Db $db) use ($cid) {
+                $db->run('DELETE FROM celebration_scores WHERE run_id IN (SELECT id FROM celebration_runs WHERE cid = ?)', [$cid]);
+                $db->run('DELETE FROM celebration_runs WHERE cid = ?', [$cid]);
+            });
+            foreach ($runs as $id) $this->clearRun($id);
+            $this->quiet(function () use ($cid) {
+                foreach (['run', 'control', 'inbox', 'staff', 'live/run', 'live/scores'] as $p) $this->rtdb->set('celebrations/' . $cid . '/' . $p, null);
+            });
+            $done['games'] = count($runs);
+        }
+        if ($what['wall'] && $this->wall) $done['messages'] = $this->wall->clearAll($cid);
+        if ($what['guests']) $done = array_merge($done, $this->events->clearGuests($cid));
+        $this->events->audit($cid, $user->uid, 'clear-test-data', ['chosen' => array_keys(array_filter($what)), 'cleared' => $done]);
+        $this->events->publish($cid);
+        return ['cleared' => $done, 'event' => $this->events->manageView($this->events->event($cid))];
+    }
+
     /* ---------------------------------------------------------------- the leaderboard */
 
     /** Every team's total over the games played, best first. Ties: less time, then name order. */
