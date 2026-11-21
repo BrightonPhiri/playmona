@@ -333,8 +333,20 @@ window.FF = window.FF || {};
     return el;
   }
 
+  /* "3 groups have joined" when games are played by groups, "12 guests have joined" when by individuals. */
+  function joinedText(ev) {
+    var settings = ev.settings || {};
+    if (!settings.individuals && typeof ev.groupCount === 'number') {
+      var g = ev.groupCount;
+      return t(g === 1 ? 'celGroupsHereOne' : 'celGroupsHereMany', g === 1 ? '1 group has joined' : '{n} groups have joined', { n: g });
+    }
+    var n = ev.guestCount || 0;
+    return t(n === 1 ? 'celHereOne' : 'celHereMany', n === 1 ? '1 guest has joined' : '{n} guests have joined', { n: n });
+  }
+
   FF.Celebrate = {
     hero: hero,
+    joinedText: joinedText,
     TYPES: TYPES,
     LOOKS: LOOKS,
     FONTS: FONTS,

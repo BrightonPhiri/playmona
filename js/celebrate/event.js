@@ -1,5 +1,5 @@
 /* PlayMona Celebrations: the guest's event page (event.html).
-     /c/<slug>              the celebration: welcome, join with a name, pick a team
+     /c/<slug>              the celebration: welcome, join as a group or on your own, pick a group
      /c?code=ABC234         find a celebration by its join code
      /c/<slug>?code=...     a private celebration (the QR code carries the code)
    Guests never need an account: a Firebase anonymous sign-in identifies the phone,
@@ -244,39 +244,104 @@ window.FF = window.FF || {};
     return card(t('celLeaderboard', 'Leaderboard'), [list]);
   }
 
+  /* ---------- joining ---------- */
+
+  function individuals() { return !!(state.ev.settings && state.ev.settings.individuals); }
+
+  /* How this phone joined: 'group' (a group on one phone) or 'solo' (one person), kept per event. */
+  function joinedAs() {
+    var as = state.joinAs || store('as:' + state.ev.id);
+    if (as === 'group' || as === 'solo') return as;
+    // Joined before the page asked: a team they made for more than one is their group.
+    var mine = state.me && team(state.me.teamId);
+    return state.me && state.me.ownTeam && mine && !mine.solo ? 'group' : 'solo';
+  }
+
   function joinCard() {
+    // Games played by individuals: everyone joins with their own name, no question.
+    if (individuals()) return nameCard('solo');
+    if (!state.joinAs) return chooseCard();
+    return nameCard(state.joinAs);
+  }
+
+  function chooseCard() {
+    var list = el('div', { class: 'ev-choose', role: 'group', 'aria-label': t('celJoinHow', 'How are you joining?') });
+    [
+      ['group', 'users-three', t('celJoinAsGroup', 'As a group'), t('celJoinAsGroupText', 'A few of us, playing together on this phone')],
+      ['solo', 'user', t('celJoinAsMe', 'Just me'), t('celJoinAsMeText', 'I have my own phone. I can join my group next')]
+    ].forEach(function (o) {
+      var b = el('button', { type: 'button', class: 'ev-choice' });
+      var ic = div('ev-choice__icon');
+      ic.appendChild(FF.Icons.icon(o[1]));
+      b.appendChild(ic);
+      var txt = div('ev-choice__text');
+      txt.appendChild(el('strong', {}, o[2]));
+      txt.appendChild(el('span', {}, o[3]));
+      b.appendChild(txt);
+      b.addEventListener('click', function () {
+        state.joinAs = o[0];
+        paint();
+        var input = document.getElementById('ev-name');
+        if (input) input.focus();
+      });
+      list.appendChild(b);
+    });
+    return card(t('celJoinTitle', 'Join in'), [el('p', { class: 'ev-lead' }, t('celJoinHow', 'How are you joining?')), list, accountNote()]);
+  }
+
+  function accountNote() {
+    return el('p', { class: 'ev-note' }, state.ev.settings.requireAccount
+      ? t('celJoinAccountNote', 'This celebration asks guests to sign in to PlayMona first.')
+      : t('celJoinNoteNoAccount', 'No app, no account and no sign-in needed. Just type a name.'));
+  }
+
+  function nameCard(as) {
     var ev = state.ev;
-    var input = el('input', { type: 'text', class: 'input', maxlength: '24', autocomplete: 'given-name', placeholder: t('celYourNameGroupPh', 'e.g. Tracey, or Table 4') });
-    input.value = store('name') || '';
+    var group = as === 'group';
+    var input = el('input', { type: 'text', class: 'input', id: 'ev-name', maxlength: '24', autocomplete: group ? 'off' : 'given-name',
+      placeholder: group ? t('celGroupNamePh', 'e.g. The Aunties, or Table 4') : t('celYourNamePh', 'e.g. Tracey') });
+    input.value = (group ? store('groupName') : store('name')) || '';
     var err = el('p', { class: 'field__error', 'aria-live': 'assertive' });
-    var go = button(t('celJoin', 'Join the celebration'), { type: 'submit', icon: 'confetti' });
+    var go = button(group ? t('celJoinGroupGo', 'Join as a group') : t('celJoin', 'Join the celebration'), { type: 'submit', icon: 'confetti' });
     var form = el('form', { class: 'ev-form', onsubmit: function (e) {
       e.preventDefault();
       var name = input.value.trim();
-      if (!name) { err.textContent = t('celNeedYourName', 'Type your name so your team knows who you are.'); input.focus(); return; }
+      if (!name) {
+        err.textContent = group ? t('celNeedGroupName', 'Type your group\'s name.') : t('celNeedYourName', 'Type your name so your team knows who you are.');
+        input.focus();
+        return;
+      }
       go.disabled = true;
       err.textContent = '';
-      FF.Api.call('POST', '/c/' + ev.id + '/join', { name: name, code: state.code || undefined }, { guest: true }).then(function (r) {
-        store('name', name);
+      FF.Api.call('POST', '/c/' + ev.id + '/join', { name: name, as: as, code: state.code || undefined }, { guest: true }).then(function (r) {
+        store(group ? 'groupName' : 'name', name);
         store('joined:' + ev.id, '1');
+        store('as:' + ev.id, as);
+        state.joinAs = as;
         state.me = r.me;
         state.ev = r.event;
         paint();
         window.scrollTo(0, 0);
+        if (r.teamError && FF.UI && FF.UI.toast) FF.UI.toast(r.teamError);
       }, function (e2) {
         go.disabled = false;
         err.textContent = e2.message;
       });
     } });
-    form.appendChild(el('label', { class: 'field__label', for: 'ev-name' }, t('celWhatNameGroup', "Your name, or your group's name")));
-    input.id = 'ev-name';
+    form.appendChild(el('label', { class: 'field__label', for: 'ev-name' }, group ? t('celGroupName', 'Your group\'s name') : t('celYourName', 'Your name')));
     form.appendChild(input);
     form.appendChild(go);
     form.appendChild(err);
-    var note = el('p', { class: 'ev-note' }, ev.settings.requireAccount
-      ? t('celJoinAccountNote', 'This celebration asks guests to sign in to PlayMona first.')
-      : t('celJoinNote', 'No app and no account needed. Your name is shown to the organiser and your team.'));
-    return card(t('celJoinTitle', 'Join in'), [form, note]);
+    var kids = [form];
+    if (!individuals()) {
+      var back = el('button', { type: 'button', class: 'ev-linklike' }, group ? t('celJoinNotGroup', 'Not a group? Join just me') : t('celJoinNotMe', 'Joining as a group instead?'));
+      back.addEventListener('click', function () { state.joinAs = group ? 'solo' : 'group'; paint(); var i = document.getElementById('ev-name'); if (i) i.focus(); });
+      kids.push(back);
+    } else {
+      kids.push(el('p', { class: 'ev-note' }, t('celJoinIndividuals', 'In these games everyone plays for themselves.')));
+    }
+    kids.push(accountNote());
+    return card(group ? t('celJoinGroupTitle', 'Join as a group') : t('celJoinTitle', 'Join in'), kids);
   }
 
   function team(id) {
@@ -285,9 +350,17 @@ window.FF = window.FF || {};
     return found;
   }
 
+  /* The groups a guest may pick: never someone else's team of one. */
+  function groups() {
+    return (state.ev.teams || []).filter(function (tm) { return !tm.solo || tm.id === state.me.teamId; });
+  }
+
   function needsTeamPick() {
     var ev = state.ev;
-    return !!(ev.settings.guestTeams && !ev.settings.teamsLocked && ((ev.teams && ev.teams.length) || ev.settings.guestMakeTeams));
+    if (individuals()) return false;
+    // A group that has its team is done: nobody asks it to join a group.
+    if (joinedAs() === 'group' && state.me.teamId) return false;
+    return !!(ev.settings.guestTeams && !ev.settings.teamsLocked && (groups().length || ev.settings.guestMakeTeams));
   }
 
   function meCard() {
@@ -301,11 +374,15 @@ window.FF = window.FF || {};
     var text = div('ev-me__text');
     text.appendChild(el('strong', {}, t('celHi', 'Hi {name}!', { name: state.me.name })));
     var line;
-    if (mine) line = t('celYourTeam', 'You are in {team}', { team: mine.name });
-    else if (!state.ev.teams.length && needsTeamPick()) line = t('celMakeTeamBelow', 'Make your team below.');
-    else if (!state.ev.teams.length) line = t('celTeamsSoon', 'Teams are not set up yet. Keep this page open.');
-    else if (!state.ev.settings.guestTeams || state.ev.settings.teamsLocked) line = t('celTeamByOrganiser', 'The organiser will put you in a team.');
-    else line = t('celPickTeamBelow', 'Pick your team below.');
+    var asGroup = joinedAs() === 'group';
+    var picking = state.ev.settings.guestTeams && !state.ev.settings.teamsLocked;
+    if (individuals()) line = mine ? t('celYouPlayAlone', 'You play for yourself in the games.') : t('celTeamByOrganiser', 'The organiser will put you in a team.');
+    else if (mine && asGroup) line = t('celYourGroup', 'You are playing as a group: {team}', { team: mine.name });
+    else if (mine) line = t('celYourTeam', 'You are in {team}', { team: mine.name });
+    else if (!picking) line = t('celTeamByOrganiser', 'The organiser will put you in a team.');
+    else if (groups().length) line = t('celPickGroupBelow', 'Pick your group below.');
+    else if (state.ev.settings.guestMakeTeams) line = t('celStartGroupBelow', 'No groups yet. Start one below, or keep this page open.');
+    else line = t('celTeamsSoon', 'Teams are not set up yet. Keep this page open.');
     text.appendChild(el('span', {}, line));
     row.appendChild(text);
     c.appendChild(row);
@@ -314,7 +391,8 @@ window.FF = window.FF || {};
 
   function teamCard() {
     var list = el('ul', { class: 'ev-teams' });
-    state.ev.teams.forEach(function (tm) {
+    var shown = groups();
+    shown.forEach(function (tm) {
       var full = tm.capacity > 0 && tm.members >= tm.capacity && tm.id !== state.me.teamId;
       var li = el('li', {});
       var b = el('button', { type: 'button', class: 'ev-team' + (tm.id === state.me.teamId ? ' is-mine' : ''), 'aria-pressed': tm.id === state.me.teamId ? 'true' : 'false' });
@@ -341,23 +419,24 @@ window.FF = window.FF || {};
       li.appendChild(b);
       list.appendChild(li);
     });
-    var kids = state.ev.teams.length ? [list] : [];
-    if (state.ev.settings.guestMakeTeams) kids.push(makeTeam());
-    return card(state.me.teamId ? t('celChangeTeam', 'Change team') : state.ev.teams.length ? t('celPickTeam', 'Pick your team') : t('celMakeTeamTitle', 'Make your team'), kids);
+    var kids = shown.length ? [list] : [];
+    if (state.ev.settings.guestMakeTeams) kids.push(makeTeam(shown.length));
+    return card(state.me.teamId ? t('celChangeGroup', 'Change group')
+      : shown.length ? t('celPickGroup', 'Which group are you with?') : t('celStartGroupTitle', 'Start a group'), kids);
   }
 
   /* A group (often several people on one phone) makes its own team and moves into it. */
-  function makeTeam() {
+  function makeTeam(hasGroups) {
     var box = div('ev-maketeam');
-    var open = button(t('celMakeOwnTeam', 'Make our own team'), { icon: 'users', ghost: true });
+    var open = button(t('celStartNewGroup', 'Start a new group'), { icon: 'users', ghost: true });
     var input = el('input', { type: 'text', class: 'input', id: 'ev-team-name', maxlength: '30', autocomplete: 'off', placeholder: t('celTeamNamePh', 'e.g. The Aunties') });
     var err = el('p', { class: 'field__error', 'aria-live': 'assertive' });
-    var go = button(t('celMakeTeamGo', 'Make the team'), { type: 'submit', icon: 'check' });
+    var go = button(t('celStartGroupGo', 'Start the group'), { type: 'submit', icon: 'check' });
     var cancel = button(t('cancel', 'Cancel'), { ghost: true });
     var form = el('form', { class: 'ev-form', hidden: 'hidden', onsubmit: function (e) {
       e.preventDefault();
       var name = input.value.trim();
-      if (!name) { err.textContent = t('celNeedTeamName', 'Type a name for your team.'); input.focus(); return; }
+      if (!name) { err.textContent = t('celNeedGroupName', 'Type your group\'s name.'); input.focus(); return; }
       go.disabled = true;
       err.textContent = '';
       FF.Api.call('POST', '/c/' + state.ev.id + '/team/new', { name: name }, { guest: true }).then(function (r) {
@@ -371,7 +450,7 @@ window.FF = window.FF || {};
         if (e2.code === 'teams-locked' || e2.code === 'no-guest-teams' || e2.code === 'teams-by-organiser') refresh();
       });
     } });
-    form.appendChild(el('label', { class: 'field__label', for: 'ev-team-name' }, t('celTeamName', 'Team name')));
+    form.appendChild(el('label', { class: 'field__label', for: 'ev-team-name' }, t('celGroupName', 'Your group\'s name')));
     form.appendChild(input);
     var acts = div('ev-maketeam__acts');
     acts.appendChild(go);
@@ -380,7 +459,7 @@ window.FF = window.FF || {};
     form.appendChild(err);
     open.addEventListener('click', function () { open.hidden = true; form.hidden = false; input.focus(); });
     cancel.addEventListener('click', function () { form.hidden = true; open.hidden = false; err.textContent = ''; });
-    if (!state.ev.teams.length) { open.hidden = true; form.hidden = false; cancel.hidden = true; }
+    if (!hasGroups) { open.hidden = true; form.hidden = false; cancel.hidden = true; }
     box.appendChild(open);
     box.appendChild(form);
     return box;
@@ -453,10 +532,9 @@ window.FF = window.FF || {};
   }
 
   function lobbyCard() {
-    var n = state.ev.guestCount || 0;
     return card(t('celAllSet', 'You are all set'), [
       el('p', {}, t('celLobbyText', 'Keep this page open. When the MC starts a game, it opens here for your team.')),
-      el('p', { class: 'ev-note' }, t(n === 1 ? 'celHereOne' : 'celHereMany', n === 1 ? '1 guest has joined' : '{n} guests have joined', { n: n }))
+      el('p', { class: 'ev-note' }, C().joinedText(state.ev))
     ]);
   }
 
@@ -472,7 +550,7 @@ window.FF = window.FF || {};
         paint();
         return;
       }
-      var changed = JSON.stringify([r.me, r.event.teams, r.event.settings, r.event.guestCount]) !== JSON.stringify([state.me, state.ev.teams, state.ev.settings, state.ev.guestCount]);
+      var changed = JSON.stringify([r.me, r.event.teams, r.event.settings, r.event.guestCount, r.event.groupCount]) !== JSON.stringify([state.me, state.ev.teams, state.ev.settings, state.ev.guestCount, state.ev.groupCount]);
       state.me = r.me;
       state.ev = r.event;
       if (changed && !document.activeElement.closest('form')) paint();

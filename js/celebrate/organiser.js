@@ -18,7 +18,7 @@ window.FF = window.FF || {};
 
   var DEFAULT_SETTINGS = {
     private: false, requireAccount: false, guestTeams: true, guestMakeTeams: true, anonymousMessages: true,
-    photoUploads: true, leaderboard: true, approveMessages: true, hasMc: false
+    photoUploads: true, leaderboard: true, approveMessages: true, hasMc: false, individuals: false
   };
   var refreshTimer = null;
 
@@ -299,6 +299,11 @@ window.FF = window.FF || {};
     function sw(key, label, desc) {
       box.appendChild(FF.UI.switchRow({ label: label, description: desc, checked: !!s[key], onChange: function (on) { s[key] = on; onChange(); } }));
     }
+    box.appendChild(field(t('celSetPlayAs', 'Games are played'), FF.UI.segmented({
+      label: t('celSetPlayAs', 'Games are played'), value: s.individuals ? 'individuals' : 'groups', compact: true,
+      options: [{ label: t('celSetPlayGroups', 'As groups'), value: 'groups' }, { label: t('celSetPlayIndividuals', 'As individuals'), value: 'individuals' }],
+      onChange: function (v) { s.individuals = v === 'individuals'; onChange(); }
+    }), t('celSetPlayAsHint', 'As groups: guests join as a group (often a few people on one phone), or on their own and pick their group. As individuals: every guest plays for themselves.')));
     sw('guestTeams', t('celSetGuestTeams', 'Guests pick their own team'), t('celSetGuestTeamsDesc', 'Off: you put guests into teams yourself.'));
     sw('guestMakeTeams', t('celSetGuestMakeTeams', 'Guests can make their own team'), t('celSetGuestMakeTeamsDesc', 'A group on one phone types its own team name. You can rename or remove any team. Needs the switch above.'));
     sw('leaderboard', t('celSetLeaderboard', 'Show the live leaderboard to guests'), t('celSetLeaderboardDesc', 'Team scores on everyone\'s phone during the games.'));
@@ -500,7 +505,9 @@ window.FF = window.FF || {};
       TABS.forEach(function (tb) {
         var b = el('button', { type: 'button', role: 'tab', class: 'tabs__tab' + (state.tab === tb.id ? ' active' : ''), 'aria-selected': state.tab === tb.id ? 'true' : 'false' });
         b.appendChild(icon(tb.icon));
-        b.appendChild(FF.ui.span('', C().label(tb.label)));
+        var waiting = tb.id === 'wall' && ev.stats ? ev.stats.messagesWaiting : 0;
+        b.appendChild(FF.ui.span('', C().label(tb.label) + (waiting ? ' (' + waiting + ')' : '')));
+        if (waiting) b.setAttribute('aria-label', t('celTabWallWaiting', 'Wall, {n} to read', { n: waiting }));
         b.addEventListener('click', function () {
           state.tab = tb.id;
           FF.Nav.replace('celebration', { id: ev.id, tab: tb.id });

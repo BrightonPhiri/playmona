@@ -376,6 +376,66 @@ test('celebrations: a group makes its own team', function () {
     eq('#C0392B', teamOf($again)['color']);
 });
 
+test('celebrations: joining as a group makes or finds its team', function () {
+    $w = celWorld();
+    $ev = newEvent($w, ['teamCount' => 2]);
+    $id = $ev['id'];
+    eq(false, $ev['settings']['individuals'], 'games are played by groups by default');
+    [$s, $b] = celCall($w, 'POST', "/c/$id/join", ['token' => guestToken('g1'), 'json' => ['name' => 'The Aunties', 'as' => 'group']]);
+    eq(200, $s, json_encode($b));
+    $mine = teamOf($b);
+    eq('The Aunties', $mine['name']);
+    eq(false, $mine['solo']);
+    eq(true, $b['me']['ownTeam']);
+    eq(1, $b['event']['groupCount']);
+    // A second phone of the same group lands in the same team, any case.
+    $b2 = celCall($w, 'POST', "/c/$id/join", ['token' => guestToken('g2'), 'json' => ['name' => 'the aunties', 'as' => 'group']])[1];
+    eq($mine['id'], $b2['me']['teamId']);
+    eq(false, $b2['me']['ownTeam']);
+    // A group named like an organiser team joins it.
+    $b3 = celCall($w, 'POST', "/c/$id/join", ['token' => guestToken('g3'), 'json' => ['name' => 'Gold', 'as' => 'group']])[1];
+    eq('Gold', teamOf($b3)['name']);
+    eq(2, $b3['event']['groupCount'], 'Gold and the aunties have people');
+    eq(3, $b3['event']['guestCount']);
+    // Someone on their own picks their group afterwards.
+    $b4 = celCall($w, 'POST', "/c/$id/join", ['token' => guestToken('g4'), 'json' => ['name' => 'Tracey', 'as' => 'solo']])[1];
+    eq(null, $b4['me']['teamId']);
+    // A blocked group name still lets them in, with a note.
+    [$s, $b5] = celCall($w, 'POST', "/c/$id/join", ['token' => guestToken('g5'), 'json' => ['name' => 'Shit Crew', 'as' => 'group']]);
+    eq(200, $s);
+    eq(null, $b5['me']['teamId']);
+    eq(true, is_string($b5['teamError'] ?? null));
+    // Locked teams: in, but no team.
+    celCall($w, 'POST', "/c/$id/teams/lock", ['token' => organiser(), 'json' => ['locked' => true]]);
+    eq(null, celCall($w, 'POST', "/c/$id/join", ['token' => guestToken('g6'), 'json' => ['name' => 'Cousins', 'as' => 'group']])[1]['me']['teamId']);
+});
+
+test('celebrations: games played by individuals give everyone a team of one', function () {
+    $w = celWorld();
+    $ev = newEvent($w, ['teamCount' => 0, 'settings' => ['individuals' => true]]);
+    $id = $ev['id'];
+    eq(true, $ev['settings']['individuals']);
+    $a = celCall($w, 'POST', "/c/$id/join", ['token' => guestToken('a'), 'json' => ['name' => 'Tracey']])[1];
+    $t = teamOf($a);
+    eq('Tracey', $t['name']);
+    eq(true, $t['solo']);
+    eq(1, $t['capacity']);
+    $b = celCall($w, 'POST', "/c/$id/join", ['token' => guestToken('b'), 'json' => ['name' => 'tracey', 'as' => 'group']])[1];
+    eq('tracey 2', teamOf($b)['name'], 'a taken name gets a number');
+    eq(1, teamOf($b)['members']);
+    // More people than the team limit can still play.
+    for ($i = 0; $i < 14; $i++) celCall($w, 'POST', "/c/$id/join", ['token' => guestToken("p$i"), 'json' => ['name' => "Guest $i"]]);
+    $view = celCall($w, 'GET', "/c/$id/me", ['token' => guestToken('p13')])[1];
+    eq(16, count($view['event']['teams']));
+    eq('Guest 13', teamOf($view)['name']);
+    // Rejoining keeps the same team.
+    eq($t['id'], celCall($w, 'POST', "/c/$id/join", ['token' => guestToken('a'), 'json' => ['name' => 'Tracey']])[1]['me']['teamId']);
+    // A guest who lost their team gets a new one the next time the page asks.
+    celCall($w, 'POST', "/c/$id/teams/{$t['id']}/delete", ['token' => organiser()]);
+    $again = celCall($w, 'GET', "/c/$id/me", ['token' => guestToken('a')])[1];
+    eq('Tracey', teamOf($again)['name']);
+});
+
 test('celebrations: guest-made teams follow the team rules', function () {
     $w = celWorld();
     $ev = newEvent($w, ['teamCount' => 11]);

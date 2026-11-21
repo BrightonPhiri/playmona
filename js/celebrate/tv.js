@@ -31,7 +31,7 @@ window.FF = window.FF || {};
   var POLL_MS = 30000;
 
   var LAYOUT_NAMES = {
-    welcome: ['celTvWelcome', 'Welcome'], game: ['celTvGame', 'Game'], scores: ['celTvScores', 'Scores'],
+    welcome: ['celTvWelcome', 'Welcome'], programme: ['celTvProgramme', 'Programme'], game: ['celTvGame', 'Game'], scores: ['celTvScores', 'Scores'],
     wall: ['celTvWall', 'Wall of Love'], winner: ['celTvWinner', 'Winners'], auto: ['celTvAuto', 'Automatic']
   };
 
@@ -40,7 +40,7 @@ window.FF = window.FF || {};
   function start(main, slug) {
     var st = {
       id: null, ev: null, join: null, display: { layout: 'auto', showQr: true, messageId: null },
-      scores: [], messages: [], last: null, pointer: null, v: null, endedSeen: 0, endedRun: null,
+      scores: [], messages: [], slideImages: [], stopSlide: null, last: null, pointer: null, v: null, endedSeen: 0, endedRun: null,
       slot: 0, slotAt: Date.now(), msg: 0, msgAt: Date.now(), drawn: '', cheered: '', T: null
     };
     var api = null;
@@ -61,7 +61,12 @@ window.FF = window.FF || {};
     }).then(function (T) {
       st.T = T;
       T.watch('live/display', function (d) {
-        if (d && d.layout) { st.display = d; render(); }
+        if (!d || !d.layout) return;
+        st.display = d;
+        // New slide pictures: their signed addresses come from the API.
+        var want = FF.CelebrateSlide.normal(d.slide).mediaIds.join(','), have = st.slideImages.map(function (m) { return m.id; }).join(',');
+        if (want !== have) { poll(); return; }
+        render();
       });
       var firstScores = true;
       T.watch('live/scores', function () {
@@ -95,6 +100,7 @@ window.FF = window.FF || {};
       if (r.display) st.display = r.display;
       st.scores = r.scores || [];
       st.messages = r.messages || [];
+      st.slideImages = r.slideImages || [];
       st.last = r.last;
       if (!r.active) st.pointer = st.pointer && st.pointer.runId ? st.pointer : null;
     }
@@ -104,7 +110,8 @@ window.FF = window.FF || {};
       api('GET', '/c/' + st.id + '/screen').then(function (r) {
         take(r);
         if (count) count.textContent = guests();
-        st.drawn = '';
+        // The programme slide redraws only when it changed (dataKey), so a slideshow keeps going.
+        if (current().layout !== 'programme') st.drawn = '';
         render();
       }, function () { /* the next poll tries again */ });
     }
@@ -152,8 +159,7 @@ window.FF = window.FF || {};
     }
 
     function guests() {
-      var n = st.ev.guestCount || 0;
-      return t(n === 1 ? 'celHereOne' : 'celHereMany', n === 1 ? '1 guest has joined' : '{n} guests have joined', { n: n });
+      return FF.Celebrate.joinedText(st.ev);
     }
 
     function keepAwake() {
@@ -237,13 +243,14 @@ window.FF = window.FF || {};
       var c = current();
       root.setAttribute('data-layout', c.layout);
       // The team panels need the whole screen, so the corner QR steps aside while they are up.
-      qr.hidden = !st.display.showQr || c.layout === 'welcome' || c.layout === 'winner' || (c.layout === 'game' && usesPanels(st.v));
+      qr.hidden = !st.display.showQr || c.layout === 'welcome' || c.layout === 'programme' || c.layout === 'winner' || (c.layout === 'game' && usesPanels(st.v));
       root.classList.toggle('has-qr', !qr.hidden);
       var key = c.layout + '|' + (st.display.showQr ? 1 : 0) + '|' + JSON.stringify(dataKey(c));
       if (key === st.drawn) { updateClock(); return; }
       st.drawn = key;
+      if (st.stopSlide) { st.stopSlide(); st.stopSlide = null; }
       FF.ui.clear(stage);
-      var screen = ({ welcome: welcome, scores: scores, wall: wall, message: one, winner: winner, game: game })[c.layout] || welcome;
+      var screen = ({ welcome: welcome, programme: programme, scores: scores, wall: wall, message: one, winner: winner, game: game })[c.layout] || welcome;
       var node = screen(c);
       node.classList.add('tv-screen');
       // Same game, same phase: only the boards moved, so no fade-in (tiles land every second with many teams).
@@ -256,6 +263,7 @@ window.FF = window.FF || {};
 
     function dataKey(c) {
       if (c.layout === 'welcome') return [st.ev.title, st.ev.cover && st.ev.cover.play];
+      if (c.layout === 'programme') return [FF.CelebrateSlide.normal(st.display.slide), st.slideImages.map(function (m) { return m.id; }), st.ev.title, st.ev.cover && st.ev.cover.id];
       if (c.layout === 'scores' || c.layout === 'winner') return st.scores.map(function (s) { return [s.teamId, s.points, s.place]; });
       if (c.layout === 'wall') return st.messages.length ? [st.messages[st.msg % st.messages.length].id, st.messages.length] : [];
       if (c.layout === 'message') return [c.message.id];
@@ -272,24 +280,52 @@ window.FF = window.FF || {};
 
     /* ---------- the screens ---------- */
 
+    /* How to join: the event's photo as a wide picture (never cropped), who and what, and the QR card. */
     function welcome() {
       var ev = st.ev;
-      var box = div('tv-welcome' + (st.display.showQr ? ' has-qr' : ''));
+      var cover = ev.cover && ev.cover.play;
+      var box = div('tv-welcome' + (st.display.showQr ? ' has-qr' : '') + (cover ? ' has-cover' : ''));
+      var main = div('tv-welcome__main');
+      if (cover) {
+        var fig = div('tv-media');
+        fig.appendChild(el('img', { class: 'tv-media__blur', src: cover, alt: '' }));
+        fig.appendChild(el('img', { class: 'tv-media__img', src: cover, alt: '' }));
+        main.appendChild(fig);
+      }
       var info = div('tv-welcome__info');
-      if (ev.cover && ev.cover.play) info.appendChild(el('img', { class: 'tv-welcome__cover', src: ev.cover.play, alt: '' }));
       info.appendChild(el('p', { class: 'tv-kicker' }, C().typesLabel(ev)));
       info.appendChild(el('h1', { class: 'tv-welcome__name' }, ev.celebrantName));
       info.appendChild(el('p', { class: 'tv-welcome__title' }, ev.title));
-      var facts = [C().formatDate(ev.date), C().timeRange(ev), ev.venue].filter(Boolean).join('  ·  ');
-      if (facts) info.appendChild(el('p', { class: 'tv-welcome__facts' }, facts));
-      info.appendChild(el('p', { class: 'tv-welcome__count' }, guests()));
-      box.appendChild(info);
+      var facts = [['calendar', C().formatDate(ev.date)], ['clock', C().timeRange(ev)], ['map-pin', ev.venue]].filter(function (f) { return f[1]; });
+      if (facts.length) {
+        var ul = el('ul', { class: 'tv-welcome__facts' });
+        facts.forEach(function (f) {
+          var li = el('li', {});
+          li.appendChild(icon(f[0]));
+          li.appendChild(FF.ui.span('', f[1]));
+          ul.appendChild(li);
+        });
+        info.appendChild(ul);
+      }
+      var n = el('p', { class: 'tv-welcome__count' });
+      n.appendChild(el('span', { class: 'tv-live-dot', 'aria-hidden': 'true' }));
+      n.appendChild(FF.ui.span('', guests()));
+      info.appendChild(n);
+      main.appendChild(info);
+      box.appendChild(main);
       if (st.display.showQr) {
         var join = joinBlock(420);
         join.classList.add('tv-join--big');
         box.appendChild(join);
       }
       return box;
+    }
+
+    /* The opening slide, full screen: the organiser's picture(s) or built slide, moving, with its effect. */
+    function programme() {
+      var node = div('tv-prog');
+      st.stopSlide = FF.CelebrateSlide.render(node, { slide: st.display.slide, images: st.slideImages, ev: st.ev }).stop;
+      return node;
     }
 
     /* Many teams: smaller rows, and two columns from nine teams, so every team fits on the screen. */

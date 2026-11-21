@@ -30,6 +30,7 @@ class Celebrations
         'leaderboard' => true,       // the live leaderboard shows on guests' phones
         'approveMessages' => true,   // messages wait for the organiser before anyone else sees them
         'hasMc' => false,            // a separate MC runs the event with the MC link
+        'individuals' => false,      // games are played by each guest on their own (a team of one each), not by groups
     ];
     public const LIMITS = [
         'enabled' => true,
@@ -446,12 +447,48 @@ class Celebrations
         } else {
             $this->db->run('UPDATE celebration_guests SET name = ?, last_seen = ? WHERE cid = ? AND uid = ?', [$name, $now, $cid, $user->uid]);
         }
+        $teamError = null;
         if (!empty($in['teamId'])) {
             $this->assignOwnTeam($ev, $settings, $user->uid, (string) $in['teamId']);
+        } else {
+            // The guest is in either way; a team that cannot be made is only a note for the page.
+            try {
+                $this->placeOnJoin($ev, $settings, $user->uid, $name, ($in['as'] ?? null) === 'group');
+            } catch (HttpError $e) {
+                $teamError = $e->getMessage();
+            }
         }
         $this->publishMember($cid, $user->uid);
         $this->publish($cid);
-        return $this->guestView($ev, $user->uid);
+        $out = $this->guestView($ev, $user->uid);
+        if ($teamError !== null) $out['teamError'] = $teamError;
+        return $out;
+    }
+
+    /**
+     * Where a guest goes when they join.
+     * - Games played by individuals: everyone plays as a team of one (their own name).
+     * - Games played by groups, joining as a group: the team with that name when there is one
+     *   (a second phone of the same group, or a team the organiser made), else a new team.
+     * - Games played by groups, joining on their own: nowhere yet; they pick their group on the page.
+     * Groups are left alone when the organiser puts guests into teams or the teams are locked.
+     */
+    private function placeOnJoin(array $ev, array $settings, string $uid, string $name, bool $group): void
+    {
+        $cid = $ev['id'];
+        $row = $this->db->one('SELECT team_id FROM celebration_guests WHERE cid = ? AND uid = ?', [$cid, $uid]);
+        if ($settings['individuals']) {
+            if ($row['team_id'] === null) $this->makeOwnTeam($cid, $uid, $name, true);
+            return;
+        }
+        if (!$group || !$settings['guestTeams'] || !empty($settings['teamsLocked'])) return;
+        foreach ($this->teams($cid) as $t) {
+            if (!$t['solo'] && mb_strtolower($t['name']) === mb_strtolower($name)) {
+                if ($row['team_id'] !== $t['id']) $this->assignOwnTeam($ev, $settings, $uid, $t['id']);
+                return;
+            }
+        }
+        if ($settings['guestMakeTeams']) $this->makeOwnTeam($cid, $uid, $name, false);
     }
 
     public function me(string $cid, AuthUser $user): array
@@ -460,6 +497,13 @@ class Celebrations
         $row = $this->db->one('SELECT * FROM celebration_guests WHERE cid = ? AND uid = ?', [$cid, $user->uid]);
         if (!$row || $row['removed_at'] !== null) return ['joined' => false, 'removed' => (bool) ($row['removed_at'] ?? null)];
         $this->db->run('UPDATE celebration_guests SET last_seen = ? WHERE cid = ? AND uid = ?', [nowMs(), $cid, $user->uid]);
+        if ($row['team_id'] === null && $ev['status'] === 'active' && $this->settingsOf($ev)['individuals']) {
+            try {
+                $this->makeOwnTeam($cid, $user->uid, (string) $row['name'], true);
+                $this->publishMember($cid, $user->uid);
+                $this->publish($cid);
+            } catch (HttpError $e) { /* a name that is not allowed: the organiser can place them */ }
+        }
         return $this->guestView($ev, $user->uid);
     }
 
@@ -483,37 +527,59 @@ class Celebrations
         if (!$settings['guestTeams']) throw new HttpError(403, 'The organiser puts guests into teams.', 'teams-by-organiser');
         if (!$settings['guestMakeTeams']) throw new HttpError(403, 'The organiser makes the teams for this celebration.', 'no-guest-teams');
         if ($settings['teamsLocked']) throw new HttpError(403, 'Teams are locked now.', 'teams-locked');
-        $name = $this->cleanText($in['name'] ?? '', 30);
+        $this->makeOwnTeam($cid, $user->uid, (string) ($in['name'] ?? ''), false);
+        $this->publishMember($cid, $user->uid);
+        $this->publish($cid);
+        return $this->guestView($ev, $user->uid);
+    }
+
+    /**
+     * Makes a team for this guest and moves them into it. A solo team (games played by individuals)
+     * holds one person, takes the guest's name, with a number when that name is taken, and does not
+     * count towards the team limit: there is one per guest, and the guest limit caps those.
+     */
+    private function makeOwnTeam(string $cid, string $uid, string $rawName, bool $solo): string
+    {
+        $name = $this->cleanText($rawName, 30);
         if ($name === '') throw new HttpError(400, 'Type a name for your team.', 'no-name');
-        if ($this->blocked($name)) throw new HttpError(400, 'Please pick a different team name.', 'bad-name');
+        if ($this->blocked($name)) throw new HttpError(400, $solo ? 'Please use a different name.' : 'Please pick a different team name.', 'bad-name');
         $limit = $this->limits()['teamsPerEvent'];
-        $tid = $this->db->transaction(function (Db $db) use ($cid, $name, $limit, $user) {
+        $tid = $this->db->transaction(function (Db $db) use ($cid, $name, $limit, $uid, $solo) {
             // The event row is the lock, so two groups making teams at once take turns (no doubled name or colour).
             // Keep it the first statement: MariaDB takes the read snapshot at the first plain read.
             $db->one('SELECT id FROM celebrations WHERE id = ?' . $db->forUpdate(), [$cid]);
             // A team this guest made and is alone in goes when they make another, so one phone cannot use up the limit.
-            $leaving = $this->ownEmptyAfterLeaving($db, $cid, $user->uid);
+            $leaving = $this->ownEmptyAfterLeaving($db, $cid, $uid);
             $live = array_values(array_filter(
-                $db->all('SELECT id, name, color, sort FROM celebration_teams WHERE cid = ? AND deleted_at IS NULL', [$cid]),
+                $db->all('SELECT id, name, color, sort, capacity, made_by FROM celebration_teams WHERE cid = ? AND deleted_at IS NULL', [$cid]),
                 fn ($t) => $t['id'] !== $leaving
             ));
-            if (count($live) >= $limit) throw new HttpError(403, 'This celebration has the most teams it can have. Pick one of the teams.', 'limit');
-            foreach ($live as $t) {
-                if (mb_strtolower($t['name']) === mb_strtolower($name)) throw new HttpError(409, 'There is already a team with that name. Pick it, or try another name.', 'team-taken');
+            $groups = array_filter($live, fn ($t) => !self::isSolo($t));
+            if (!$solo && count($groups) >= $limit) throw new HttpError(403, 'This celebration has the most teams it can have. Pick one of the teams.', 'limit');
+            $taken = array_map(fn ($t) => mb_strtolower((string) $t['name']), $live);
+            if ($solo) {
+                $base = $name;
+                for ($i = 2; in_array(mb_strtolower($name), $taken, true); $i++) $name = mb_substr($base, 0, 26) . ' ' . $i;
+            } elseif (in_array(mb_strtolower($name), $taken, true)) {
+                throw new HttpError(409, 'There is already a team with that name. Pick it, or try another name.', 'team-taken');
             }
             $used = array_map('strtoupper', array_column($live, 'color'));
             $free = array_values(array_diff(self::TEAM_COLOURS, $used));
             $color = $free[0] ?? self::TEAM_COLOURS[count($live) % 12];
             $sort = $live ? max(array_map('intval', array_column($live, 'sort'))) + 1 : 0;
-            $tid = $this->insertTeam($db, $cid, $name, $color, 0, $sort, $user->uid);
-            $db->run('UPDATE celebration_guests SET team_id = ? WHERE cid = ? AND uid = ?', [$tid, $cid, $user->uid]);
+            $tid = $this->insertTeam($db, $cid, $name, $color, $solo ? 1 : 0, $sort, $uid);
+            $db->run('UPDATE celebration_guests SET team_id = ? WHERE cid = ? AND uid = ?', [$tid, $cid, $uid]);
             if ($leaving) $db->run('UPDATE celebration_teams SET deleted_at = ? WHERE id = ?', [nowMs(), $leaving]);
             return $tid;
         });
-        $this->audit($cid, $user->uid, 'team.guest-made', ['team' => $tid, 'name' => $name]);
-        $this->publishMember($cid, $user->uid);
-        $this->publish($cid);
-        return $this->guestView($ev, $user->uid);
+        $this->audit($cid, $uid, $solo ? 'team.solo' : 'team.guest-made', ['team' => $tid, 'name' => $name]);
+        return $tid;
+    }
+
+    /** A guest playing on their own: a team of one that the guest made. */
+    private static function isSolo(array $t): bool
+    {
+        return $t['made_by'] !== null && (int) $t['capacity'] === 1;
     }
 
     /** True when a team name uses a blocked word (also spelled with numbers or symbols, like "sh1t"). */
@@ -567,11 +633,11 @@ class Celebrations
 
     /* ---------------------------------------------------------------- pictures */
 
-    /** Organiser pictures (event cover, puzzle photos). Guests' wall photos arrive with their message. */
+    /** Organiser pictures (event cover, puzzle photos, the TV's opening slide). Guests' wall photos arrive with their message. */
     public function upload(string $cid, AuthUser $user, string $purpose, string $bytes): array
     {
         $this->owned($cid, $user);
-        if (!in_array($purpose, ['cover', 'puzzle'], true)) throw new HttpError(400, 'Unknown picture use.', 'bad-purpose');
+        if (!in_array($purpose, ['cover', 'puzzle', 'slide'], true)) throw new HttpError(400, 'Unknown picture use.', 'bad-purpose');
         $media = $this->storeMedia($cid, $user->uid, $purpose, $bytes);
         if ($purpose === 'cover') {
             $this->db->run('UPDATE celebrations SET cover_media_id = ?, updated_at = ? WHERE id = ?', [$media['id'], nowMs(), $cid]);
@@ -668,6 +734,8 @@ class Celebrations
                 'guests' => count($guests),
                 'teams' => count($this->teams($ev['id'])),
                 'withoutTeam' => count(array_filter($guests, fn ($g) => $g['team_id'] === null)),
+                // Wall of Love messages waiting for the organiser (the Wall tab shows the number).
+                'messagesWaiting' => (int) $this->db->one("SELECT COUNT(*) AS n FROM celebration_messages WHERE cid = ? AND status = 'pending' AND deleted_at IS NULL", [$ev['id']])['n'],
             ],
         ]);
     }
@@ -696,6 +764,8 @@ class Celebrations
             'cover' => $this->coverOf($ev),
             'teams' => $this->teams($ev['id']),
             'guestCount' => (int) $this->db->one('SELECT COUNT(*) AS n FROM celebration_guests WHERE cid = ? AND removed_at IS NULL', [$ev['id']])['n'],
+            // Groups with someone in them: "3 groups have joined" when games are played by groups.
+            'groupCount' => (int) $this->db->one('SELECT COUNT(DISTINCT team_id) AS n FROM celebration_guests WHERE cid = ? AND removed_at IS NULL AND team_id IS NOT NULL', [$ev['id']])['n'],
         ];
     }
 
@@ -703,7 +773,8 @@ class Celebrations
     {
         $row = $this->db->one('SELECT * FROM celebration_guests WHERE cid = ? AND uid = ?', [$ev['id'], $uid]);
         $event = $this->publicView($this->event($ev['id']));
-        return ['joined' => true, 'me' => ['uid' => $uid, 'name' => $row['name'], 'teamId' => $row['team_id']], 'event' => $event];
+        $own = $row['team_id'] !== null && $this->db->one('SELECT id FROM celebration_teams WHERE id = ? AND made_by = ?', [$row['team_id'], $uid]);
+        return ['joined' => true, 'me' => ['uid' => $uid, 'name' => $row['name'], 'teamId' => $row['team_id'], 'ownTeam' => (bool) $own], 'event' => $event];
     }
 
     private function coverOf(array $ev): ?array
@@ -722,6 +793,7 @@ class Celebrations
             'id' => $t['id'], 'name' => $t['name'], 'color' => $t['color'],
             'capacity' => (int) $t['capacity'], 'members' => (int) $t['members'],
             'madeByGuest' => $t['made_by'] !== null,
+            'solo' => self::isSolo($t),
         ], $rows);
     }
 
