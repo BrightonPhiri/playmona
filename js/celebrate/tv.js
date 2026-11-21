@@ -65,7 +65,7 @@ window.FF = window.FF || {};
         st.display = d;
         // New slide pictures: their signed addresses come from the API.
         var want = FF.CelebrateSlide.normal(d.slide).mediaIds.join(','), have = st.slideImages.map(function (m) { return m.id; }).join(',');
-        if (want !== have) poll();
+        if (want !== have) { poll(); return; }
         render();
       });
       var firstScores = true;
@@ -110,7 +110,8 @@ window.FF = window.FF || {};
       api('GET', '/c/' + st.id + '/screen').then(function (r) {
         take(r);
         if (count) count.textContent = guests();
-        st.drawn = '';
+        // The programme slide redraws only when it changed (dataKey), so a slideshow keeps going.
+        if (current().layout !== 'programme') st.drawn = '';
         render();
       }, function () { /* the next poll tries again */ });
     }
@@ -263,7 +264,7 @@ window.FF = window.FF || {};
 
     function dataKey(c) {
       if (c.layout === 'welcome') return [st.ev.title, st.ev.cover && st.ev.cover.play];
-      if (c.layout === 'programme') return [st.display.slide, st.slideImages.map(function (m) { return m.id; }), st.ev.title, st.ev.cover && st.ev.cover.play];
+      if (c.layout === 'programme') return [FF.CelebrateSlide.normal(st.display.slide), st.slideImages.map(function (m) { return m.id; }), st.ev.title, st.ev.cover && st.ev.cover.id];
       if (c.layout === 'scores' || c.layout === 'winner') return st.scores.map(function (s) { return [s.teamId, s.points, s.place]; });
       if (c.layout === 'wall') return st.messages.length ? [st.messages[st.msg % st.messages.length].id, st.messages.length] : [];
       if (c.layout === 'message') return [c.message.id];

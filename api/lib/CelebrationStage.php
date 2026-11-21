@@ -221,7 +221,9 @@ class CelebrationStage
         $pick('effect', self::SLIDE_EFFECTS);
         $pick('background', ['theme', 'cover']);
         foreach (self::SLIDE_TEXT as $field => $max) {
-            if (array_key_exists($field, $in)) $s[$field] = mb_substr(trim((string) preg_replace('/\s+/u', ' ', (string) $in[$field])), 0, $max);
+            if (!array_key_exists($field, $in)) continue;
+            if (!is_scalar($in[$field]) && $in[$field] !== null) throw new HttpError(400, 'Slide text must be text.', 'bad-slide');
+            $s[$field] = mb_substr(trim((string) preg_replace('/\s+/u', ' ', (string) $in[$field])), 0, $max);
         }
         if (array_key_exists('showFacts', $in)) $s['showFacts'] = (bool) $in['showFacts'];
         if (array_key_exists('seconds', $in)) $s['seconds'] = max(4, min(30, (int) $in['seconds']));

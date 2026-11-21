@@ -910,11 +910,11 @@ body.mc-page .ev-brand { color: var(--text); }
   radial-gradient(circle at 25% 30%, color-mix(in srgb, var(--ev-primary) 30%, transparent), transparent 40%),
   radial-gradient(circle at 78% 70%, color-mix(in srgb, var(--ev-secondary, var(--ev-primary)) 28%, transparent), transparent 45%); transform-origin: 50% 50%; }
 /* The slow movement: the picture (or the background of a built slide) drifts while it is up. */
-.cel-slide__media.is-motion-zoomIn .is-on > :is(.cel-slide__img, .cel-slide__glow), .cel-slide__media.is-motion-zoomIn .cel-slide__pic--bg .cel-slide__blur { animation: cel-zoom-in var(--slide-ms, 26s) ease-in-out infinite alternate; }
-.cel-slide__media.is-motion-zoomOut .is-on > :is(.cel-slide__img, .cel-slide__glow), .cel-slide__media.is-motion-zoomOut .cel-slide__pic--bg .cel-slide__blur { animation: cel-zoom-out var(--slide-ms, 26s) ease-in-out infinite alternate; }
-.cel-slide__media.is-motion-pan .is-on > :is(.cel-slide__img, .cel-slide__glow), .cel-slide__media.is-motion-pan .cel-slide__pic--bg .cel-slide__blur { animation: cel-pan var(--slide-ms, 26s) ease-in-out infinite alternate; }
+.cel-slide__media.is-motion-zoomIn :is(.is-on, .is-off) > :is(.cel-slide__img, .cel-slide__glow), .cel-slide__media.is-motion-zoomIn .cel-slide__pic--bg .cel-slide__blur { animation: cel-zoom-in var(--slide-ms, 26s) ease-in-out infinite alternate; }
+.cel-slide__media.is-motion-zoomOut :is(.is-on, .is-off) > :is(.cel-slide__img, .cel-slide__glow), .cel-slide__media.is-motion-zoomOut .cel-slide__pic--bg .cel-slide__blur { animation: cel-zoom-out var(--slide-ms, 26s) ease-in-out infinite alternate; }
+.cel-slide__media.is-motion-pan :is(.is-on, .is-off) > :is(.cel-slide__img, .cel-slide__glow), .cel-slide__media.is-motion-pan .cel-slide__pic--bg .cel-slide__blur { animation: cel-pan var(--slide-ms, 26s) ease-in-out infinite alternate; }
 /* A slideshow runs each picture's movement once, from the start, while it shows. */
-.cel-slide__media.is-show .is-on > .cel-slide__img { animation-iteration-count: 1; animation-direction: normal; animation-fill-mode: both; animation-timing-function: linear; }
+.cel-slide__media.is-show :is(.is-on, .is-off) > .cel-slide__img { animation-iteration-count: 1; animation-direction: normal; animation-fill-mode: both; animation-timing-function: linear; }
 @keyframes cel-zoom-in { from { transform: scale(1); } to { transform: scale(1.12); } }
 @keyframes cel-zoom-out { from { transform: scale(1.12); } to { transform: scale(1); } }
 @keyframes cel-pan { from { transform: scale(1.1) translateX(-3.5%); } to { transform: scale(1.1) translateX(3.5%); } }

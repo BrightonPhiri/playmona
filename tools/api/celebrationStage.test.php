@@ -175,6 +175,7 @@ test('stage: the programme slide has defaults, merges changes and reaches the TV
     eq(400, $mc('POST', '/mc/display', ['slide' => ['kind' => 'video']])[0]);
     eq(400, $mc('POST', '/mc/display', ['slide' => ['motion' => 'spin']])[0]);
     eq(str_repeat('a', 120), $mc('POST', '/mc/display', ['slide' => ['subtitle' => str_repeat('a', 300)]])[1]['display']['slide']['subtitle'], 'long text is cut');
+    eq(400, $mc('POST', '/mc/display', ['slide' => ['title' => ['x']]])[0], 'text must be text');
 });
 
 test('stage: slide pictures come from this event, in order, signed for the TV', function () {

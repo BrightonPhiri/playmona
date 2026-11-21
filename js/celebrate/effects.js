@@ -185,12 +185,14 @@ window.FF = window.FF || {};
     window.addEventListener('resize', size);
     raf = requestAnimationFrame(loop);
     // The safety net: when frames stop coming (a hidden tab), keep moving at about 20 a second.
+    var born = Date.now();
     timer = setInterval(function () {
+      if (!canvas.isConnected && Date.now() - born > 2000) { api.stop(); return; }
       var now = performance.now ? performance.now() : Date.now();
       if (now - last > 120) frame(now);
     }, 50);
 
-    return {
+    var api = {
       stop: function () {
         stopped = true;
         cancelAnimationFrame(raf);
@@ -199,6 +201,7 @@ window.FF = window.FF || {};
         ctx.clearRect(0, 0, W, H);
       }
     };
+    return api;
   }
 
   FF.CelebrateEffects = { start: start, KINDS: KINDS };

@@ -66,7 +66,7 @@ window.FF = window.FF || {};
     FF.ui.clear(box);
     box.classList.add('cel-slide');
     box.setAttribute('data-kind', kind);
-    box.style.setProperty('--slide-ms', (kind === 'slideshow' ? s.seconds * 1000 + 1500 : 26000) + 'ms');
+    box.style.setProperty('--slide-ms', (kind === 'slideshow' ? s.seconds * 1000 + 1500 : 40000) + 'ms');
     var media = div('cel-slide__media is-motion-' + s.motion + (kind === 'slideshow' ? ' is-show' : ''));
     var timers = [];
     if (kind === 'built') {
@@ -89,12 +89,17 @@ window.FF = window.FF || {};
       box.appendChild(media);
       if (kind === 'slideshow' && imgs.length > 1) {
         var at = 0;
-        timers.push(setInterval(function () {
-          var pics = media.children;
-          pics[at].classList.remove('is-on');
+        var show = setInterval(function () {
+          if (!box.isConnected) { clearInterval(show); return; }
+          var pics = media.children, out = pics[at];
+          // The picture leaving keeps moving while it fades, then lets go of its movement.
+          out.classList.add('is-off');
+          out.classList.remove('is-on');
+          setTimeout(function () { out.classList.remove('is-off'); }, 1600);
           at = (at + 1) % pics.length;
           pics[at].classList.add('is-on');
-        }, s.seconds * 1000));
+        }, s.seconds * 1000);
+        timers.push(show);
       }
     }
     var fx = null;
@@ -143,7 +148,7 @@ window.FF = window.FF || {};
   /* ---------- the settings, for the dashboard and the MC panel ---------- */
 
   function editor(opts) {
-    var st = { slide: normal(null), images: [], busy: false, handle: null };
+    var st = { slide: normal(null), images: [], chain: Promise.resolve(), saving: 0, uploading: false, handle: null };
     var root = div('cel-slide-ed');
     var preview = div('cel-slide-ed__preview');
     var stage = div('cel-slide-ed__stage');
@@ -160,18 +165,29 @@ window.FF = window.FF || {};
     function take(r) {
       st.slide = normal(r.display && r.display.slide);
       st.images = list(r.slideImages);
-      draw();
+      // Someone typing in the next box keeps it: only the preview changes then.
+      var a = document.activeElement;
+      if (a && form.contains(a) && (a.tagName === 'INPUT' || a.tagName === 'SELECT') && a.type !== 'checkbox') drawPreview();
+      else draw();
     }
     function say(msg) { note.textContent = msg || ''; }
 
+    /* Saves wait for each other, so a quick title-then-effect never loses one. Resolves true when saved. */
     function save(part) {
-      if (st.busy) return Promise.resolve();
-      st.busy = true;
+      st.saving++;
       say(t('celSaving', 'Saving…'));
-      return opts.save(part).then(function (r) { st.busy = false; take(r); say(t('celSlideSaved', 'Saved. The TV shows it when the Programme screen is on.')); }, function (e) {
-        st.busy = false;
+      var p = st.chain.then(function () { return opts.save(part); }).then(function (r) {
+        st.saving--;
+        take(r);
+        if (!st.saving && !st.uploading) say(t('celSlideSaved', 'Saved. The TV shows it when the Programme screen is on.'));
+        return true;
+      }, function (e) {
+        st.saving--;
         say(e.message);
+        return false;
       });
+      st.chain = p;
+      return p;
     }
 
     function chips(name, items, value, onPick) {
@@ -200,7 +216,7 @@ window.FF = window.FF || {};
     function pictures() {
       var wrap = div('cel-slide-ed__pics');
       var max = st.slide.kind === 'picture' ? 1 : PICTURES_MAX;
-      var shown = ordered(st.slide, st.images);
+      var shown = ordered(st.slide, st.images).slice(0, max);
       shown.forEach(function (m, i) {
         var tile = div('cel-slide-ed__pic');
         tile.appendChild(el('img', { src: m.thumb || m.play, alt: '' }));
@@ -238,33 +254,42 @@ window.FF = window.FF || {};
       save({ mediaIds: ids });
     }
     function addFiles(files) {
-      if (!files.length || st.busy) return;
-      var room = st.slide.kind === 'picture' ? 1 : PICTURES_MAX - st.slide.mediaIds.length;
+      if (!files.length || st.uploading) return;
+      var picture = st.slide.kind === 'picture';
+      var room = picture ? 1 : PICTURES_MAX - st.slide.mediaIds.length;
       files = files.slice(0, Math.max(0, room));
-      st.busy = true;
-      var done = 0, ids = [];
+      if (!files.length) { say(t('celSlideFull', 'The slideshow has {n} pictures already. Remove one first.', { n: PICTURES_MAX })); return; }
+      st.uploading = true;
+      var ids = [], failed = null;
       say(t('celSlideUploading', 'Adding pictures… {n} of {total}', { n: 0, total: files.length }));
       // One at a time keeps a phone on a slow line from timing out.
       files.reduce(function (p, f) {
-        return p.then(function () { return opts.upload(f); }).then(function (m) {
-          ids.push(m.id);
-          done++;
-          say(t('celSlideUploading', 'Adding pictures… {n} of {total}', { n: done, total: files.length }));
+        return p.then(function () {
+          if (failed) return;
+          return opts.upload(f).then(function (m) {
+            ids.push(m.id);
+            say(t('celSlideUploading', 'Adding pictures… {n} of {total}', { n: ids.length, total: files.length }));
+          }, function (e) { failed = e; });
         });
       }, Promise.resolve()).then(function () {
-        st.busy = false;
-        var next = st.slide.kind === 'picture' ? ids.slice(-1) : st.slide.mediaIds.concat(ids).slice(0, PICTURES_MAX);
-        return save({ mediaIds: next });
-      }, function (e) {
-        st.busy = false;
-        say(e.message);
-        if (ids.length) save({ mediaIds: (st.slide.kind === 'picture' ? ids.slice(-1) : st.slide.mediaIds.concat(ids)).slice(0, PICTURES_MAX) });
+        st.uploading = false;
+        if (!ids.length) { say(failed ? failed.message : ''); return; }
+        // One picture: the new one goes first (the one shown); the rest stay for a slideshow.
+        var rest = st.slide.mediaIds;
+        var next = picture ? ids.slice(-1).concat(rest.slice(1)) : rest.concat(ids);
+        return save({ mediaIds: next.slice(0, PICTURES_MAX) }).then(function (ok) {
+          if (ok && failed) say(t('celSlideSomeFailed', 'Added {n} of {total}. {reason}', { n: ids.length, total: files.length, reason: failed.message }));
+        });
       });
     }
 
-    function draw() {
+    function drawPreview() {
       if (st.handle) st.handle.stop();
       st.handle = render(stage, { slide: st.slide, images: st.images, ev: opts.ev, scale: 0.6 });
+    }
+
+    function draw() {
+      drawPreview();
       var s = st.slide;
       FF.ui.clear(form);
       form.appendChild(field(t('celSlideKind', 'Kind of slide'), chips(t('celSlideKind', 'Kind of slide'), KINDS, s.kind, function (v) { save({ kind: v }); })));
