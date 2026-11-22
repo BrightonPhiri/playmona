@@ -55,6 +55,29 @@ window.FF = window.FF || {};
     return h('input', 'mc-input mc-input--num', null, { type: 'number', min: min, max: max, value: Math.round(S.settings[key] / 1000),
       onchange: function (e) { var v = Math.max(min, Math.min(max, Number(e.target.value) || min)); S.settings[key] = v * 1000; commit(); } });
   }
+  /* Quick buttons for how long each team gets, plus a box for any other number.
+     During a game (tm given) the new time starts the current turn's clock again. */
+  var TIME_CHOICES = [5, 10, 15, 20, 30, 45, 60];
+  function timeChips(key, tm, min, max) {
+    min = min || 3; max = max || 120;
+    var cur = Math.round(S.settings[key] / 1000);
+    function set(sec) {
+      sec = Math.max(min, Math.min(max, Math.round(sec) || min));
+      S.settings[key] = sec * 1000;
+      if (tm) {
+        if (tm.running) L().tStart(tm, sec * 1000);
+        else { tm.dur = sec * 1000; tm.left = sec * 1000; }
+      }
+      say('Each turn now lasts ' + sec + ' seconds.', 'ok');
+      commit();
+    }
+    var other = h('input', 'mc-input mc-input--num mc-times__other', null, { type: 'number', min: min, max: max, placeholder: 'Other',
+      value: TIME_CHOICES.indexOf(cur) < 0 ? cur : '', title: 'Any number of seconds',
+      onchange: function (e) { if (e.target.value) set(Number(e.target.value)); } });
+    return h('div', 'mc-times', TIME_CHOICES.map(function (sec) {
+      return btn(sec + ' s', sec === cur ? 'is-on' : '', function () { set(sec); });
+    }).concat([other]));
+  }
   function say(text, kind) { flash = { text: text, kind: kind || 'info', at: Date.now() }; }
 
   /* Save, tell the projector, redraw — keeping the typing cursor where it was. */
@@ -248,8 +271,8 @@ window.FF = window.FF || {};
 
     body.appendChild(card('Timers', [
       h('div', 'mc-grid2', [
-        field('Picture Rush turn (seconds)', secsInput('prTurnMs', 5, 120)),
-        field('Word by Word turn (seconds)', secsInput('wbwTurnMs', 3, 60)),
+        field('Picture Rush: seconds per move', timeChips('prTurnMs', null, 3, 120)),
+        field('Word by Word: seconds per word', timeChips('wbwTurnMs', null, 3, 60)),
         field('Quiz question (seconds)', secsInput('quizMs', 5, 180)),
         field('Memory: looking time (seconds)', secsInput('memShowMs', 5, 120)),
         field('Memory: writing time (seconds)', secsInput('memWriteMs', 10, 300))
@@ -314,7 +337,7 @@ window.FF = window.FF || {};
         field('1. Pick a photo', grid),
         field('2. How hard?', sizes, (prDraft.size * prDraft.size) + ' tiles'),
         h('div', 'mc-grid2', [
-          field('Seconds per turn', secsInput('prTurnMs', 5, 120)),
+          field('Seconds per move', timeChips('prTurnMs', null, 3, 120)),
           field('After a correct move', h('select', 'mc-input', [h('option', '', 'Next team\'s turn', { value: '0' }), h('option', '', 'Same team goes again', { value: '1' })],
             { onchange: function (x) { S.settings.prKeepTurn = x.target.value === '1'; commit(); } }))
         ]),
@@ -350,34 +373,85 @@ window.FF = window.FF || {};
       else say((r.team ? r.team.name + ': ' : '') + txt + (r.ok ? (r.bonus ? ' ✓ correct, plus a lucky bonus (+2)' : ' ✓ correct (+1)') : ' ✗ not there'), r.ok ? 'ok' : 'no');
       if (!r.error) { var el = document.getElementById('prMove'); if (el) el.value = ''; }
       commit();
-      var f = document.getElementById('prMove'); if (f) f.focus();
     }
 
-    var mini = h('div', 'mc-mini', null, { style: '--n:' + size });
+    /* The MC's board: click the tile the team names, then the square it goes to — or drag it there.
+       Click the picked tile again (or press Esc) to put it back. */
+    var board = h('div', 'mc-mini' + (prPick >= 0 ? ' is-picking' : ''), null, { style: '--n:' + size + ';--a:' + (g.aspect || 1) });
     var url = null;
     var cells = [];
     for (var p = 0; p < n; p++) (function (p) {
       var piece = g.tiles[p], home = piece === p;
       var c = h('button', 'mc-mini__cell' + (home ? ' is-home' : '') + (prPick === p ? ' is-pick' : ''), h('span', '', L().coord(p, size)), { type: 'button',
+        title: L().coord(p, size), 'data-pos': String(p),
         onclick: function () {
-          if (prPick < 0) { if (home) { say(L().coord(p, size) + ' is already in place.', 'warn'); draw(); return; } prPick = p; moveIn.value = L().coord(p, size) + ' '; draw(); return; }
-          if (prPick === p) { prPick = -1; moveIn.value = ''; draw(); return; }
+          if (dragged) { dragged = false; return; }   // the click that ends a drag
+          if (prPick < 0) { if (home) { say(L().coord(p, size) + ' is already in place.', 'warn'); draw(); return; } prPick = p; draw(); return; }
+          if (prPick === p) { prPick = -1; draw(); return; }
           doMove(prPick, p);
-        } });
+        }
+      });
       var row = Math.floor(piece / size), col = piece % size, step = size > 1 ? 100 / (size - 1) : 0;
       c.style.backgroundSize = (size * 100) + '% ' + (size * 100) + '%';
       c.style.backgroundPosition = (col * step) + '% ' + (row * step) + '%';
+      if (url) c.style.backgroundImage = 'url("' + url + '")';
       cells.push(c);
-      mini.appendChild(c);
+      board.appendChild(c);
     })(p);
     Store().photoUrl(g.photoId).then(function (u) { url = u; cells.forEach(function (c) { c.style.backgroundImage = 'url("' + url + '")'; }); });
-    if (prPick >= 0) moveIn.value = L().coord(prPick, size) + ' ';
 
-    body.appendChild(h('div', 'mc-split', [
-      card('Picture Rush · ' + size + ' × ' + size + ' · ' + placed + ' of ' + n + ' in place', [
+    /* Dragging, with pointer events (mouse, pen or touch): press on a tile, move it onto a square, let go. */
+    var drag = null, dragged = false;
+    function cellAt(x, y) {
+      var e = document.elementFromPoint(x, y);
+      while (e && e !== board && !(e.dataset && e.dataset.pos != null)) e = e.parentNode;
+      return e && e !== board && e.dataset ? Number(e.dataset.pos) : -1;
+    }
+    board.addEventListener('pointerdown', function (e) {
+      var p = cellAt(e.clientX, e.clientY);
+      if (p < 0 || g.tiles[p] === p || e.button > 0) return;
+      drag = { from: p, x: e.clientX, y: e.clientY, on: false, over: -1 };
+    });
+    board.addEventListener('pointermove', function (e) {
+      if (!drag) return;
+      if (!drag.on && Math.abs(e.clientX - drag.x) + Math.abs(e.clientY - drag.y) < 10) return;
+      if (!drag.on) { drag.on = true; board.classList.add('is-dragging'); cells[drag.from].classList.add('is-pick'); try { board.setPointerCapture(e.pointerId); } catch (x) {} }
+      var over = cellAt(e.clientX, e.clientY);
+      if (over !== drag.over) {
+        if (drag.over >= 0) cells[drag.over].classList.remove('is-over');
+        drag.over = over;
+        if (over >= 0 && over !== drag.from) cells[over].classList.add('is-over');
+      }
+      e.preventDefault();
+    });
+    function endDrag(e, cancel) {
+      if (!drag) return;
+      var d = drag;
+      drag = null;
+      board.classList.remove('is-dragging');
+      if (!d.on) return;
+      dragged = true;   // swallow the click the browser sends next
+      setTimeout(function () { dragged = false; }, 50);
+      var to = cancel ? -1 : cellAt(e.clientX, e.clientY);
+      if (to >= 0 && to !== d.from) doMove(d.from, to);
+      else draw();
+    }
+    board.addEventListener('pointerup', function (e) { endDrag(e, false); });
+    board.addEventListener('pointercancel', function (e) { endDrag(e, true); });
+
+    var hint = prPick >= 0
+      ? h('div', 'mc-pickhint is-on', [h('b', '', L().coord(prPick, size)), ' picked up. Now click the square it goes to.', btn('Put back', 'mc-btn--tiny mc-btn--ghost', function () { prPick = -1; draw(); })])
+      : h('div', 'mc-pickhint', (t ? t.name + ' says “move A1 to B4”: ' : '') + 'click A1, then B4. Or drag it.');
+    var typed = h('details', 'mc-typed', [
+      h('summary', '', 'Or type the move'),
+      h('div', 'mc-row', [moveIn, btn('Submit', '', submit)])
+    ]);
+
+    body.appendChild(h('div', 'mc-prlive', [
+      card('Picture Rush · ' + size + ' × ' + size + ' · ' + placed + ' of ' + n + ' in place', [hint, board], 'mc-card--board'),
+      card(null, [
         turnBox(t, g.tm, !g.started ? btn('▶ Start turns', 'mc-btn--gold mc-btn--big', act(function () { L().prGo(S); })) : null),
-        h('div', 'mc-moveform', [h('span', 'mc-field__label', 'Team says “move A1 to B4”:'), h('div', 'mc-row', [moveIn, btn('Submit move', 'mc-btn--gold mc-btn--big', submit)])]),
-        h('p', 'mc-note', 'Or click the tile they name, then the square it goes to. Gold squares are already in place.'),
+        field('Seconds per move', timeChips('prTurnMs', g.tm, 3, 120)),
         h('div', 'mc-row', [
           btn('Skip turn', '', act(function () { L().prSkip(S); prPick = -1; })),
           g.started ? btn(g.tm.running ? '❚❚ Pause timer' : '▶ Resume timer', '', act(function () { L().togglePause(S); })) : null,
@@ -387,11 +461,10 @@ window.FF = window.FF || {};
         h('div', 'mc-row mc-row--end', [
           btn('Restart this round', 'mc-btn--ghost', function () { if (!confirm('Reshuffle this photo and take back the points from this round?')) return; L().prRestart(S); prPick = -1; commit(); }),
           btn('End round (keep points)', 'mc-btn--ghost', function () { if (!confirm('End this round now? Points already won stay.')) return; S.pr.done = true; L().tStop(S.pr.tm); S.pr = null; commit(); })
-        ])
-      ]),
-      card('The board (only you see the answers)', [mini])
+        ]),
+        typed
+      ])
     ]));
-    setTimeout(function () { var f = document.getElementById('prMove'); if (f && document.activeElement === document.body) f.focus(); }, 0);
   }
 
   /* ----- Who Knows Vicky Best? ----- */
@@ -480,7 +553,7 @@ window.FF = window.FF || {};
         h('p', 'mc-note', 'Teams take turns adding one word each. You type the word they say. When time runs out, the turn passes on.'),
         field('The message starts with', open),
         h('div', 'mc-grid2', [
-          field('Seconds per turn', secsInput('wbwTurnMs', 3, 60)),
+          field('Seconds per word', timeChips('wbwTurnMs', null, 3, 60)),
           field('Points per word', h('select', 'mc-input', [h('option', '', 'No points (just for fun)', { value: '0' }), h('option', '', '1 point per word', { value: '1' })],
             { id: 'wbwPts', onchange: function (x) { S.settings.wbwPoints = Number(x.target.value); commit(true); } }))
         ]),
@@ -502,6 +575,7 @@ window.FF = window.FF || {};
     body.appendChild(h('div', 'mc-split', [
       card(w.done ? 'The message is finished' : 'Word by Word · ' + w.words.length + ' words', [
         w.done ? null : turnBox(t, w.tm, !w.started ? btn('▶ Start turns', 'mc-btn--gold mc-btn--big', act(function () { L().wbwGo(S); })) : null),
+        w.done ? null : field('Seconds per word', timeChips('wbwTurnMs', w.tm, 3, 60)),
         w.done ? null : h('div', 'mc-moveform', [h('span', 'mc-field__label', 'Word from ' + (t ? t.name : 'the team') + ':'), h('div', 'mc-row', [word, btn('Add word', 'mc-btn--gold mc-btn--big', add)])]),
         h('div', 'mc-row', w.done ? [
           btn('Keep adding words', '', act(function () { w.done = false; })),
@@ -614,6 +688,8 @@ window.FF = window.FF || {};
     sideEl = h('aside', 'mc-side');
     root = h('div', 'mc', [topEl, h('div', 'mc-cols', [mainEl, sideEl])]);
     document.body.appendChild(root);
+    // Esc puts a picked-up Picture Rush tile back.
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && prPick >= 0) { prPick = -1; draw(); } });
     Store().onChange(function (m) {
       if (m.type === 'screen') { var was = Date.now() - screenSeen < 5000; screenSeen = Date.now(); screenInfo = m; if (!was) drawTop(); }
       if (m.type === 'mc' && m.id !== me) { var had = Date.now() - otherMc < 6000; otherMc = Date.now(); if (!had) drawTop(); }
