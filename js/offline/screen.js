@@ -152,10 +152,14 @@ window.FF = window.FF || {};
 
   /* ---------- scenes: build(s) returns { el, update(s), timer() } ---------- */
 
+  /* With a Welcome photo, the photo is the whole screen: shown uncropped over a soft,
+     blurred copy of itself, and no title on top unless the MC asks for it. */
   function sceneWelcome(s) {
     var bg = h('div', 'os-welcome__bg');
-    var el = h('section', 'os-scene os-welcome', [
-      bg,
+    var pic = h('div', 'os-welcome__pic');
+    var photo = !!s.event.welcomePhotoId;
+    var el = h('section', 'os-scene os-welcome' + (photo ? ' has-photo' : '') + (photo && s.event.welcomeText ? ' with-text' : ''), [
+      bg, pic,
       h('div', 'os-welcome__veil'),
       h('div', 'os-welcome__inner', [
         h('div', 'os-welcome__kicker', 'Welcome to'),
@@ -164,7 +168,11 @@ window.FF = window.FF || {};
         h('div', 'os-welcome__rule')
       ])
     ]);
-    if (s.event.welcomePhotoId) Store().photoUrl(s.event.welcomePhotoId).then(function (u) { if (u) { bg.style.backgroundImage = 'url("' + u + '")'; el.classList.add('has-photo'); } });
+    if (photo) Store().photoUrl(s.event.welcomePhotoId).then(function (u) {
+      if (!u) { el.classList.remove('has-photo', 'with-text'); return; }
+      bg.style.backgroundImage = pic.style.backgroundImage = 'url("' + u + '")';
+      el.classList.add('is-loaded');
+    });
     effects('sparkles');
     return { el: el };
   }
@@ -508,7 +516,7 @@ window.FF = window.FF || {};
   /* ---------- which scene ---------- */
   function sceneKey(s) {
     if (s.screen === 'scores' || s.screen === 'winners') return s.screen + ':' + JSON.stringify(L().totals(s)) + s.active.join();
-    if (s.screen === 'welcome') return 'welcome:' + s.event.title + s.event.tagline + s.event.welcomePhotoId;
+    if (s.screen === 'welcome') return 'welcome:' + s.event.title + s.event.tagline + s.event.welcomePhotoId + !!s.event.welcomeText;
     if (s.screen !== 'game' || !s.game) return s.screen;
     if (s.game === 'pictureRush' && s.pr) return 'pr:' + s.pr.round;
     if (s.game === 'quiz') return 'quiz:' + s.quiz.round + ':' + s.quiz.phase + ':' + s.quiz.i + ':' + (L().quizQuestions(s)[s.quiz.i] || {}).q;

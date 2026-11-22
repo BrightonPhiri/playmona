@@ -239,7 +239,11 @@ window.FF = window.FF || {};
     });
     body.appendChild(card('Photos (' + S.photos.length + ')', [
       h('p', 'mc-note', 'Photos of Vicky, family, graduation and friends for Picture Rush and the Welcome screen. They stay on this laptop.'),
-      input, btn('Add photos…', 'mc-btn--gold', function () { input.click(); }), grid
+      input, btn('Add photos…', 'mc-btn--gold', function () { input.click(); }), grid,
+      S.event.welcomePhotoId ? h('label', 'mc-check', [
+        h('input', '', null, { type: 'checkbox', checked: !!S.event.welcomeText, onchange: function (x) { S.event.welcomeText = x.target.checked; commit(); } }),
+        'Also show the title on top of the Welcome photo'
+      ]) : null
     ]));
 
     body.appendChild(card('Timers', [

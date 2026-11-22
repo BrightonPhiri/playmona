@@ -69,10 +69,18 @@ body { background: var(--o-black); color: var(--o-cream); font-family: var(--o-s
 /* Welcome */
 .os-welcome { align-items: center; justify-content: center; text-align: center; padding: 0; }
 .os-welcome__bg { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0; transition: opacity 1.2s; animation: osZoom 30s ease-in-out infinite alternate; }
-.os-welcome.has-photo .os-welcome__bg { opacity: 1; }
+.os-welcome.is-loaded .os-welcome__bg { opacity: 1; }
 @keyframes osZoom { from { transform: scale(1); } to { transform: scale(1.08); } }
-.os-welcome__veil { position: absolute; inset: 0; background: radial-gradient(ellipse at center, rgba(12, 6, 26, 0.35) 0%, rgba(8, 4, 16, 0.85) 75%); }
-.os-welcome:not(.has-photo) .os-welcome__veil { background: none; }
+/* The photo alone: blurred and dimmed to fill the screen, the whole picture sharp on top. */
+.os-welcome.has-photo .os-welcome__bg { inset: -60px; filter: blur(40px) brightness(0.45) saturate(1.2); animation: none; }
+.os-welcome__pic { position: absolute; inset: 40px; background-size: contain; background-repeat: no-repeat; background-position: center; opacity: 0; transition: opacity 1.2s; }
+.os-welcome.is-loaded .os-welcome__pic { opacity: 1; animation: osZoomSoft 40s ease-in-out infinite alternate; filter: drop-shadow(0 30px 60px rgba(0, 0, 0, 0.6)); }
+@keyframes osZoomSoft { from { transform: scale(1); } to { transform: scale(1.03); } }
+.os-welcome.has-photo:not(.with-text) .os-welcome__inner { display: none; }
+.os-welcome__veil { position: absolute; inset: 0; background: none; }
+.os-welcome.with-text .os-welcome__veil { background: radial-gradient(ellipse at center, rgba(12, 6, 26, 0.45) 0%, rgba(8, 4, 16, 0.85) 75%); }
+.mc-check { display: flex; align-items: center; gap: 10px; font-weight: 700; color: #e6dcff; cursor: pointer; }
+.mc-check input { width: 20px; height: 20px; accent-color: var(--o-gold); }
 .os-welcome__inner { position: relative; z-index: 2; max-width: 1500px; padding: 0 60px; }
 .os-welcome__kicker { font: italic 500 46px/1 var(--o-serif); color: var(--o-champagne); letter-spacing: 0.08em; margin-bottom: 26px; animation: osIn 1s 0.2s both; }
 .os-welcome__title { font: 700 128px/1.05 var(--o-serif); margin: 0; animation: osIn 1.2s 0.4s both; padding-bottom: 10px; }
