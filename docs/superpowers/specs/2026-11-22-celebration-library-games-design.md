@@ -92,8 +92,9 @@ Same pattern as the other templates: `FF.CelebrateReferees.library` in
 - Play opens the game page with the run in the URL fragment (cid, runId, game, seed, uid, return
   link). The game page starts that game with `config.celebration`: deals from the run's seed like a
   challenge (`sharedDeal`, standard settings), skips access checks, guest limits and the paywall
-  (as `_checksAccess` does for challenges), and is not recorded on leaderboards, stats or as a
-  friend challenge.
+  (as `_checksAccess` does for challenges), and is not recorded on leaderboards or as a
+  friend challenge (the phone's own play stats still count it). Games see it as a challenge
+  (`config.challenge.celebration`), so they skip their own setup screens and play the standard deal.
 - On the results screen it sends `score` to `inbox/<uid>` through `FF.Transport` on
   `celebrations/<cid>`, shows "Score sent", and a **Back to the party** button to the event page.
   If sending fails it retries and keeps the button.
