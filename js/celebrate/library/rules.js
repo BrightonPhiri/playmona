@@ -96,9 +96,9 @@ window.FF = window.FF || {};
   function safeBack(v) { return typeof v === 'string' && v.charAt(0) === '/' && v.charAt(1) !== '/' && v.charAt(1) !== '\\' ? v.slice(0, 200) : '/'; }
   function word(v, max) { return typeof v === 'string' && v.length <= max && /^[A-Za-z0-9_-]+$/.test(v) ? v : ''; }
 
-  /* o: { cid, runId, game, seed, back } -> page + '#celebrate=…' */
+  /* o: { cid, runId, game, seed, uid, back } -> page + '#celebrate=…' (uid: the guest's id at the event). */
   function link(page, o) {
-    return page + '#celebrate=' + toB64(JSON.stringify({ c: o.cid, r: o.runId, g: o.game, s: o.seed, b: o.back }));
+    return page + '#celebrate=' + toB64(JSON.stringify({ c: o.cid, r: o.runId, g: o.game, s: o.seed, u: o.uid, b: o.back }));
   }
 
   /* The run a game-page link carries, or null. */
@@ -109,8 +109,8 @@ window.FF = window.FF || {};
     var o = null;
     try { o = raw ? JSON.parse(raw) : null; } catch (e) { o = null; }
     if (!o || typeof o !== 'object') return null;
-    var out = { cid: word(o.c, 60), runId: word(o.r, 60), game: gameId(o.g), seed: word(o.s, 40), back: safeBack(o.b) };
-    return out.cid && out.runId && out.game && out.seed ? out : null;
+    var out = { cid: word(o.c, 60), runId: word(o.r, 60), game: gameId(o.g), seed: word(o.s, 40), uid: word(o.u, 128), back: safeBack(o.b) };
+    return out.cid && out.runId && out.game && out.seed && out.uid ? out : null;
   }
 
   FF.LibraryRules = {

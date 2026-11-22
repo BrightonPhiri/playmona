@@ -231,6 +231,8 @@ window.FF = window.FF || {};
         FF.Plus.handleReturn();   // back from a Linkwa checkout
       }
 
+      // A celebration's Play button: straight into that game, on the run's seed.
+      if (FF.CelebrateLibraryRun && FF.CelebrateLibraryRun.boot()) return;
       // A shared link like .../play#room=ABC123 goes straight to join.
       var challengeCode = FF.Challenge && FF.Challenge.codeFromUrl();
       if (challengeCode) { FF.Challenge.openCode(challengeCode); return; }

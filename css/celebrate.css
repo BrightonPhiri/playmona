@@ -1090,3 +1090,8 @@ body.mc-page .ev-brand { color: var(--text); }
 .cel-libgame__art img { width: 100%; height: 100%; object-fit: cover; }
 .cel-libgame__text { display: flex; flex-direction: column; gap: 2px; }
 .cel-libgame__text span { color: var(--muted); font-size: var(--fs-sm); }
+.cel-libsend { margin: var(--sp-2) auto; max-width: 28rem; padding: var(--sp-3); border-radius: var(--r-lg); background: var(--surface-2, rgba(127,127,127,0.12)); text-align: center; }
+.cel-libsend p { margin: 0 0 var(--sp-2); }
+.cel-libsend p:last-child { margin-bottom: 0; }
+.cel-libsend.is-sent { border: 1px solid var(--success, #1E8449); }
+.cel-libsend.is-failed, .cel-libsend.is-late { border: 1px solid var(--danger, #C0392B); }

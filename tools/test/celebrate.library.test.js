@@ -40,7 +40,7 @@ test('library rules: ranking by best score, ties by who finished first, equal sh
 
 test('library rules: a play link carries the run and comes back the same', function () {
   const R = loadFF(RULES).LibraryRules;
-  const o = { cid: 'cel_abc', runId: 'r_1', game: 'bibleVerseRush', seed: 'abc123', back: '/c/vicky' };
+  const o = { cid: 'cel_abc', runId: 'r_1', game: 'bibleVerseRush', seed: 'abc123', uid: 'u_9-x', back: '/c/vicky' };
   const hash = R.link('/play', o).split('#')[1];
   assert(/^celebrate=[A-Za-z0-9_-]+$/.test(hash), hash);
   assertEqual(JSON.stringify(R.decode('#' + hash)), JSON.stringify(o));
@@ -255,4 +255,35 @@ test('library: the runner loads it; the inbox rule takes score and ms', function
   const inbox = rules.celebrations.$cid.inbox.$uid.$id;
   assert(inbox.score && /isNumber/.test(inbox.score['.validate']) && /<= 10000000/.test(inbox.score['.validate']), 'score');
   assert(inbox.ms && /isNumber/.test(inbox.ms['.validate']), 'ms');
+});
+
+/* ---------- the game page ---------- */
+
+const FLOW = ['js/core.js', 'js/storage.js', 'js/scoring.js', 'js/data/avatars.js', 'js/avatars.js', 'js/players.js',
+  'js/registry.js', 'js/auth.js', 'js/cloud.js', 'js/gameConfig.js', 'js/leaderboards.js'];
+
+function flow() {
+  const FF = loadFF(FLOW);
+  FF.__sandbox.crypto = require('crypto').webcrypto;
+  FF.__sandbox.TextEncoder = TextEncoder;
+  FF.Storage.init();
+  FF.Storage.set('devAuth', true);
+  FF.Games.register({ id: 'quickTap', name: 'Quick Tap', category: 'reaction', players: [1, 8], modes: ['solo', 'turn'] });
+  return FF;
+}
+
+test('library on the game page: a celebration run plays standard settings from the run seed, free, one go', function () {
+  const FF = flow();
+  FF.Settings.set('difficulty', 'hard');
+  const def = FF.Games.get('quickTap');
+  const cel = { cid: 'cel_abc', runId: 'r_1', game: 'quickTap', seed: 'k3y9x2p1abcd', uid: 'u1', back: '/c/vicky' };
+  const config = FF.GameFlow.buildConfig(def, { celebration: cel });
+  const std = FF.Leaderboards.standard();
+  assertEqual([config.mode, config.difficulty, config.length, config.timer, config.clock], ['solo', std.difficulty, std.length, std.timer, 0]);
+  assertEqual(config.sharedDeal, true);
+  assertEqual(config.randomOrder, false);
+  assertEqual(FF.GameFlow._seedFor(def, config), 'cel|k3y9x2p1abcd|quickTap|init');
+  assertEqual(config.challengeSeed || null, null, 'never a friend challenge');
+  assertEqual(FF.GameFlow._checksAccess({ celebration: cel }), false, 'no paywall, guest limit or switch');
+  assertEqual(FF.GameFlow._canRestart({ config: config }), false);
 });
