@@ -369,6 +369,51 @@ test('word by word: a Wall that fails does not stop the game ending', function (
     eq(null, $w['rtdb']->get("celebrationRuns/{$out['runId']}"), 'the runner lets go');
 });
 
+/* ---------------------------------------------------------------- Games from the library */
+
+test('library: the organiser adds a leaderboard game; others are refused', function () {
+    $w = celWorld();
+    $cid = newEvent($w)['id'];
+    [$s, $g] = celCall($w, 'POST', "/c/$cid/games", ['token' => organiser(), 'json' => ['template' => 'library', 'game' => 'bibleVerseRush', 'name' => 'Verse Rush']]);
+    eq(200, $s, json_encode($g));
+    eq('library', $g['template']);
+    eq(['game' => 'bibleVerseRush', 'minutes' => 10, 'prize' => 3000], $g['config']);
+    eq('Verse Rush', $g['name']);
+    eq('bibleVerseRush', $g['game']);
+    eq(true, str_contains($g['instructions'], 'Verse Rush on their phone'), $g['instructions']);
+    [$s, $r] = celCall($w, 'POST', "/c/$cid/games", ['token' => organiser(), 'json' => ['template' => 'library', 'game' => 'imposters']]);
+    eq(409, $s, 'a party game is not a library game here');
+    eq('no-game', $r['error'] ?? null);
+    eq(409, celCall($w, 'POST', "/c/$cid/games", ['token' => organiser(), 'json' => ['template' => 'library']])[0]);
+});
+
+test('library: settings keep to the offered values and the game never changes', function () {
+    $w = celWorld();
+    $cid = newEvent($w)['id'];
+    [, $g] = celCall($w, 'POST', "/c/$cid/games", ['token' => organiser(), 'json' => ['template' => 'library', 'game' => 'bibleVerseRush']]);
+    [$s, $g] = celCall($w, 'POST', "/c/$cid/games/{$g['id']}/save", ['token' => organiser(), 'json' => ['config' => ['game' => 'bibleQuiz', 'minutes' => '15', 'prize' => 999]]]);
+    eq(200, $s, json_encode($g));
+    eq(['game' => 'bibleVerseRush', 'minutes' => 15, 'prize' => 3000], $g['config']);
+    eq(200, celCall($w, 'POST', "/c/$cid/games/{$g['id']}/publish", ['token' => organiser()])[0]);
+});
+
+test('library: start hands the runner the game and its settings; the lineup says how long', function () {
+    $w = celWorld();
+    $ev = newEvent($w);
+    $cid = $ev['id'];
+    [, $g] = celCall($w, 'POST', "/c/$cid/games", ['token' => organiser(), 'json' => ['template' => 'library', 'game' => 'bibleVerseRush']]);
+    eq(200, celCall($w, 'POST', "/c/$cid/games/{$g['id']}/publish", ['token' => organiser()])[0]);
+    eq(200, celCall($w, 'POST', "/c/$cid/join", ['token' => guestToken('g1'), 'json' => ['name' => 'G1', 'teamId' => $ev['teams'][0]['id']]])[0]);
+    [, $lineup] = celCall($w, 'GET', "/c/$cid/lineup", ['token' => guestToken('g1')]);
+    eq('bibleVerseRush', $lineup['games'][0]['game']);
+    eq(10, $lineup['games'][0]['minutes']);
+    [$s, $out] = celCall($w, 'POST', "/c/$cid/games/{$g['id']}/start", ['token' => organiser()]);
+    eq(200, $s, json_encode($out));
+    $run = $w['rtdb']->get('celebrationRuns/' . $out['runId']);
+    eq('library', $run['template']);
+    eq(['game' => 'bibleVerseRush', 'minutes' => 10, 'prize' => 3000], $run['config']);
+});
+
 /* ---------------------------------------------------------------- Quiz */
 
 /** One complete question and one with no text, for the quiz tests. */
