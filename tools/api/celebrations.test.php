@@ -226,14 +226,20 @@ test('celebrations: shuffle into teams fills the smallest team with room', funct
     eq(null, $w['rtdb']->get("celebrations/$id/members/g0/team"));
 });
 
-test('celebrations: a removed guest cannot come back; settings can require accounts', function () {
+test('celebrations: a removed guest may join again; settings can require accounts', function () {
     $w = celWorld();
     $ev = newEvent($w);
     $id = $ev['id'];
     celCall($w, 'POST', "/c/$id/join", ['token' => guestToken('g1'), 'json' => ['name' => 'Spammer']]);
     eq(0, celCall($w, 'POST', "/c/$id/guests/g1/remove", ['token' => organiser()])[1]['stats']['guests']);
     eq(null, $w['rtdb']->get("celebrations/$id/members/g1"));
-    eq(403, celCall($w, 'POST', "/c/$id/join", ['token' => guestToken('g1'), 'json' => ['name' => 'Again']])[0]);
+    eq(['joined' => false, 'removed' => true], celCall($w, 'GET', "/c/$id/me", ['token' => guestToken('g1')])[1]);
+    [$s, $back] = celCall($w, 'POST', "/c/$id/join", ['token' => guestToken('g1'), 'json' => ['name' => 'Again']]);
+    eq(200, $s, json_encode($back));
+    eq('Again', $back['me']['name']);
+    eq(true, celCall($w, 'GET', "/c/$id/me", ['token' => guestToken('g1')])[1]['joined']);
+    eq(1, celCall($w, 'GET', "/c/$id/manage", ['token' => organiser()])[1]['stats']['guests']);
+    eq('Again', $w['rtdb']->get("celebrations/$id/members/g1/name"));
     celCall($w, 'POST', "/c/$id/update", ['token' => organiser(), 'json' => ['settings' => ['requireAccount' => true]]]);
     eq(403, celCall($w, 'POST', "/c/$id/join", ['token' => guestToken('g2'), 'json' => ['name' => 'Anon']])[0]);
     eq(200, celCall($w, 'POST', "/c/$id/join", ['token' => idToken(['sub' => 'member1']), 'json' => ['name' => 'Member']])[0]);
