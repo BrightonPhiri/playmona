@@ -1099,3 +1099,7 @@ body.mc-page .ev-brand { color: var(--text); }
 .lib-card__score { font-size: 2.5rem; font-weight: 800; margin: 0; font-variant-numeric: tabular-nums; }
 .lib-board { margin-top: var(--sp-3); }
 .lib-board__count { text-align: center; font-weight: 600; margin: 0 0 var(--sp-2); }
+.tv-lib__mid { display: flex; align-items: center; gap: 2vw; margin: 2vh 0; }
+.tv-lib__art { width: 16vw; max-width: 260px; aspect-ratio: 1; flex: none; border-radius: 1.2vw; }
+.tv-lib .tv-pr__start .tv-lib__art { margin: 0 auto 2vh; }
+.tv-lib__count { font-size: 3.2vw; font-weight: 800; margin: 0 0 1vh; }

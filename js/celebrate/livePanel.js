@@ -76,6 +76,7 @@ window.FF = window.FF || {};
       FF.UI.confirm({
         title: t('celEndTitle', 'End {name} now?', { name: active.name }),
         body: active.template === 'quiz' ? t('celQuizEndText', 'The game stops for everyone. Points won so far count; the question on screen does not.')
+          : active.template === 'library' ? t('celLibEndText', 'The game stops for everyone. Groups with a score are ranked; groups still playing score nothing.')
           : t('celEndText', 'The game stops for everyone. Points won so far count, and unfinished pictures score their tiles in place.'),
         confirmLabel: t('celEndGame', 'End game'), danger: true,
         onConfirm: function () { control('end', endBtn); }
@@ -234,8 +235,39 @@ window.FF = window.FF || {};
       });
     }
 
+    /* A library game: how many groups have finished, and each group's best score so far. */
+    function drawLibrary() {
+      var finished = v.finished || {};
+      var done = R().list(v.order).filter(function (tid) { return finished[tid]; }).length;
+      status.textContent = v.phase === 'starting' ? t('celPhStarting', 'Counting down. Guests see the instructions.')
+        : v.phase === 'playing' ? t('celLibPhPlaying', 'Playing on phones: {n} of {total} groups finished.', { n: done, total: v.total || 0 })
+        : t('celPhEnded', 'The game is over.');
+      pauseBtn.hidden = true;
+      nextBtn.hidden = v.phase !== 'starting';
+      FF.ui.clear(nextBtn);
+      nextBtn.appendChild(icon('arrow-right'));
+      nextBtn.appendChild(FF.ui.span('', t('celQuizStartNow', 'Start now')));
+      endBtn.hidden = v.phase === 'ended';
+      FF.ui.clear(teams);
+      R().list(v.order).forEach(function (tid) {
+        var tm = v.teams[tid];
+        if (!tm) return;
+        var f = finished[tid];
+        var li = el('li', { class: 'cel-live__team' + (f ? ' is-done' : '') });
+        li.style.setProperty('--team', tm.color);
+        var name = div('cel-live__name');
+        name.appendChild(el('span', { class: 'cel-live__swatch', 'aria-hidden': 'true' }));
+        name.appendChild(el('strong', {}, tm.name));
+        name.appendChild(el('span', { class: 'cel-live__people' }, t('celPlayersN', '{n} playing', { n: Object.keys(tm.players || {}).length })));
+        li.appendChild(name);
+        li.appendChild(el('span', { class: 'cel-live__pts' }, f ? t('celLibBest', 'Best {n}', { n: f.score }) : t('celTvLibPlaying', 'Playing…')));
+        teams.appendChild(li);
+      });
+    }
+
     function draw() {
       if (!v) return;
+      if (v.template === 'library') { drawLibrary(); ended(); tick(); readyNote(); return; }
       if (v.template === 'quiz') { drawQuiz(); ended(); tick(); readyNote(); return; }
       if (v.template === 'wordByWord') { drawWords(); ended(); tick(); readyNote(); return; }
       var p = PHASE[v.phase] || ['', ''];
@@ -316,6 +348,11 @@ window.FF = window.FF || {};
       if (v.template === 'wordByWord') {
         var left = v.phase === 'playing' && v.turn ? (v.paused ? v.turn.leftMs : v.turn.endsAt - T.serverNow()) : v.phase === 'starting' ? v.startAt - T.serverNow() : null;
         timer.textContent = left == null ? '' : clock(left);
+        return;
+      }
+      if (v.template === 'library') {
+        var lLeft = v.phase === 'playing' ? v.endsAt - T.serverNow() : v.phase === 'starting' ? v.startAt - T.serverNow() : null;
+        timer.textContent = lLeft == null ? '' : clock(lLeft);
         return;
       }
       if (v.template === 'quiz') {
