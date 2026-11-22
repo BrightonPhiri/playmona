@@ -333,7 +333,7 @@ window.FF = window.FF || {};
       var finished = {};
       Object.keys(state.best).forEach(function (tid) { finished[tid] = { score: state.best[tid].score, by: state.best[tid].by }; });
       return {
-        v: 1, runId: state.runId, gameId: state.gameId, template: 'library', game: state.game, name: state.name, instructions: state.instructions,
+        v: 1, runId: state.runId, cid: state.cid, gameId: state.gameId, template: 'library', game: state.game, name: state.name, instructions: state.instructions,
         phase: state.phase, startAt: state.startAt, waitReady: !!state.waitReady, ready: state.ready || {},
         // The seed reaches the phones only once the game is on.
         seed: state.phase === 'starting' ? '' : state.seed,

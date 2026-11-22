@@ -1095,3 +1095,7 @@ body.mc-page .ev-brand { color: var(--text); }
 .cel-libsend p:last-child { margin-bottom: 0; }
 .cel-libsend.is-sent { border: 1px solid var(--success, #1E8449); }
 .cel-libsend.is-failed, .cel-libsend.is-late { border: 1px solid var(--danger, #C0392B); }
+.lib-card .lib-play { display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2); text-decoration: none; min-height: 52px; padding: 0 var(--sp-5); font-size: var(--fs-lg); margin: var(--sp-2) 0; }
+.lib-card__score { font-size: 2.5rem; font-weight: 800; margin: 0; font-variant-numeric: tabular-nums; }
+.lib-board { margin-top: var(--sp-3); }
+.lib-board__count { text-align: center; font-weight: 600; margin: 0 0 var(--sp-2); }
