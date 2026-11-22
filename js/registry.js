@@ -470,7 +470,10 @@ window.FF = window.FF || {};
         round: overrides.round || null,
         tournament: !!overrides.tournament,
         daily: overrides.daily || null,       // the daily challenge's date (FF.Daily)
-        challenge: overrides.challenge || null,   // a friend's challenge being played: { id, seed }
+        // A friend's challenge being played: { id, seed }. A celebration's run shows up here too
+        // (marked celebration: true), so games skip their setup screens and play the standard deal.
+        challenge: overrides.challenge || (overrides.celebration
+          ? { id: 'cel-' + overrides.celebration.runId, seed: overrides.celebration.seed, opts: null, celebration: true } : null),
         celebration: overrides.celebration || null, // a celebration's run: { cid, runId, game, seed, uid, back } (FF.CelebrateLibraryRun)
         challengeSeed: null,                  // set in start() when this run can become a challenge
         standard: !!overrides.standard,       // started from the challenge picker
@@ -1441,7 +1444,9 @@ window.FF = window.FF || {};
       this._overlay({
         icon: 'alert',
         title: t('leaveGameQ', 'Leave this game?'),
-        sub: cur && cur.config && cur.config.challenge
+        sub: cur && cur.config && cur.config.celebration
+          ? t('celLibLeaveBody', 'Your score is not sent. You go back to the party, and can press Play again while there is time.')
+          : cur && cur.config && cur.config.challenge
           ? t('challengeLeaveBody', 'Leaving now ends the challenge with the points you have so far.')
           : t('progressLost', 'Scores from this game will not be saved.'),
         actions: [

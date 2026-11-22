@@ -286,4 +286,7 @@ test('library on the game page: a celebration run plays standard settings from t
   assertEqual(config.challengeSeed || null, null, 'never a friend challenge');
   assertEqual(FF.GameFlow._checksAccess({ celebration: cel }), false, 'no paywall, guest limit or switch');
   assertEqual(FF.GameFlow._canRestart({ config: config }), false);
+  // Games skip their own setup screens for a challenge, so the run looks like one to them.
+  assertEqual(config.challenge && config.challenge.celebration, true, 'games see a challenge and play the standard deal');
+  assertEqual(config.challenge.seed, 'k3y9x2p1abcd');
 });

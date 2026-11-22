@@ -121,7 +121,7 @@ window.FF = window.FF || {};
       if (v.waitReady) card.appendChild(FF.CelebrateReady.block(v, { uid: uid, team: myTeam(), T: T }));
       else { parts.big = el('p', 'pr-ready__count'); card.appendChild(parts.big); }
       if (v.instructions) card.appendChild(el('p', 'pr-ready__how', v.instructions));
-      card.appendChild(el('p', 'pr-ready__tip', t('celLibTip', 'Same questions for every group. One go each, {n} minutes to play. Your group keeps its best score.', { n: v.minutes })));
+      card.appendChild(el('p', 'pr-ready__tip', t('celLibTip', '{n} minutes to play. Anyone in your group can have a go on their own phone; your best score counts.', { n: v.minutes })));
       if (!myTeam()) card.appendChild(el('p', 'pr-note', t('prNoTeam', 'You are not in a team for this game, so you can watch along.')));
       root.appendChild(card);
     }
