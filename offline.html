@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#0b0714">
+  <!-- Offline Event Mode for Vicky's celebration. Served by the local server:
+         /offline          the MC control panel (laptop)
+         /offline?screen   the projector display
+       Everything on this page is local: no internet, no accounts, no cloud. -->
+  <title>Offline Event · PlayMona</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/brand/favicon-32.png">
+  <link rel="stylesheet" href="css/fonts.css">
+  <link rel="stylesheet" href="css/offline.css">
+</head>
+<body>
+  <noscript>Offline Event Mode needs JavaScript.</noscript>
+  <script src="js/confetti.js"></script>
+  <script src="js/celebrate/effects.js"></script>
+  <script src="js/offline/logic.js"></script>
+  <script src="js/offline/store.js"></script>
+  <script src="js/offline/objects.js"></script>
+  <script src="js/offline/screen.js"></script>
+  <script src="js/offline/mc.js"></script>
+  <script>
+    (function () {
+      var screen = /[?&]screen\b/.test(location.search);
+      document.title = (screen ? 'Projector' : 'MC panel') + ' · Offline Event · PlayMona';
+      if (screen) FF.OfflineScreen.start(); else FF.OfflineMC.start();
+    })();
+  </script>
+</body>
+</html>
