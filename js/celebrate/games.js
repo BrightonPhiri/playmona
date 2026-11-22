@@ -13,6 +13,7 @@ window.FF = window.FF || {};
   var R = function () { return FF.PictureRushRules; };
   var W = function () { return FF.WordByWordRules; };
   var Q = function () { return FF.QuizRules; };
+  var L = function () { return FF.LibraryRules; };
   function t(k, f, v) { return FF.t(k, f, v); }
   function el(tag, attrs, kids) { return FF.ui.el(tag, attrs, kids); }
   function div(cls, kids) { return FF.ui.div(cls, kids); }
@@ -38,7 +39,20 @@ window.FF = window.FF || {};
     draft: ['celGameDraft', 'Draft'], published: ['celGameReady', 'Ready to play'], inactive: ['celGameOff', 'Switched off']
   };
 
+  // A finished game from the library, played on each group's phone (it is not in the list above:
+  // the picker lists the games themselves).
+  var LIBRARY_TP = { id: 'library', icon: 'game-controller', name: ['celLibName', 'Library game'],
+    text: ['celLibText', 'Every group plays the same game on their phones. Best score wins.'] };
+
+  /* The library games an organiser may add: on the leaderboards, switched on, and on this page. */
+  function libraryGames() {
+    if (!FF.Games || !FF.Leaderboards) return [];
+    return FF.Games.all().filter(function (d) { return FF.Leaderboards.active(d); });
+  }
+  function libraryName(id) { return FF.Leaderboards && FF.Games && FF.Games.get(id) ? FF.Leaderboards.gameName(id) : id; }
+
   function template(id) {
+    if (id === 'library') return LIBRARY_TP;
     for (var i = 0; i < TEMPLATES.length; i++) if (TEMPLATES[i].id === id) return TEMPLATES[i];
     return { id: id, icon: 'game-controller', name: ['', id], text: ['', ''] };
   }
@@ -176,8 +190,46 @@ window.FF = window.FF || {};
         li.appendChild(b);
         list.appendChild(li);
       });
-      list.appendChild(el('li', { class: 'cel-template-soon' }, t('celMoreGamesSoon2', 'More games are on the way.')));
-      dlg = FF.UI.sheet({ title: t('celPickTemplate', 'Choose a game'), body: list });
+      var body = div('cel-pick');
+      body.appendChild(el('h3', { class: 'cel-pick__title' }, t('celMadeForParties', 'Made for celebrations')));
+      body.appendChild(list);
+      var games = libraryGames();
+      if (games.length) {
+        body.appendChild(el('h3', { class: 'cel-pick__title' }, t('celFromLibrary', 'From the game library')));
+        body.appendChild(el('p', { class: 'hint' }, t('celFromLibraryText', 'Every group plays the same game on their phones at the same time. Their best score wins points for the leaderboard.')));
+        var lib = el('ul', { class: 'cel-templates cel-templates--library' });
+        var search = null;
+        if (games.length > 8) {
+          search = el('input', { type: 'search', class: 'input cel-pick__search', placeholder: t('celSearchGames', 'Search games'), autocomplete: 'off', 'aria-label': t('celSearchGames', 'Search games') });
+          body.appendChild(search);
+        }
+        var rows = games.map(function (d) {
+          var name = libraryName(d.id);
+          var b = el('button', { type: 'button', class: 'cel-template' });
+          b.appendChild(C().gameArt('library', 'cel-template__cover', d.id));
+          var txt = div('cel-template__text');
+          txt.appendChild(el('strong', {}, name));
+          if (d.description) txt.appendChild(el('span', {}, d.description));
+          b.appendChild(txt);
+          b.addEventListener('click', function () {
+            b.disabled = true;
+            post(ev, '/games', { template: 'library', game: d.id, name: name }).then(function (g) {
+              if (dlg) dlg.close();
+              FF.Nav.go('celebrationGame', { id: ev.id, gameId: g.id });
+            }, function (e) { b.disabled = false; FF.UI.toast(e.message); });
+          });
+          var li = el('li', {});
+          li.appendChild(b);
+          lib.appendChild(li);
+          return { li: li, key: (name + ' ' + (d.tags || []).join(' ')).toLowerCase() };
+        });
+        if (search) search.addEventListener('input', function () {
+          var q = search.value.trim().toLowerCase();
+          rows.forEach(function (r) { r.li.hidden = !!q && r.key.indexOf(q) === -1; });
+        });
+        body.appendChild(lib);
+      }
+      dlg = FF.UI.sheet({ title: t('celPickTemplate', 'Choose a game'), body: body });
     }
 
     function gameCard(g, active) {
@@ -185,6 +237,7 @@ window.FF = window.FF || {};
       var li = el('li', { class: 'cel-game is-' + g.status });
       var pic = div('cel-game__pic');
       if (g.thumb) pic.appendChild(el('img', { src: g.thumb, alt: '', loading: 'lazy' }));
+      else if (g.template === 'library') pic.appendChild(C().gameArt('library', '', g.game));
       else pic.appendChild(coverImg(tp) || icon(tp.icon));
       li.appendChild(pic);
       var body = div('cel-game__body');
@@ -203,6 +256,10 @@ window.FF = window.FF || {};
       if (g.template === 'quiz') {
         bits.push(t(g.questions === 1 ? 'celQuizOne' : 'celQuizMany', g.questions === 1 ? '1 question' : '{n} questions', { n: g.questions || 0 }));
         if (g.seconds) bits.push(t('celQuizPerQuestion', '{time} a question', { time: mins(g.seconds) }));
+      }
+      if (g.template === 'library') {
+        bits = [libraryName(g.game), t('celLibOnPhones', 'On phones')];
+        if (g.minutes) bits.push(t('celMins', '{n} min', { n: g.minutes }));
       }
       body.appendChild(el('span', { class: 'cel-game__meta' }, bits.join(' · ')));
       body.appendChild(el('span', { class: 'cel-status cel-status--' + g.status }, C().label(STATUS[g.status] || ['', g.status])));
@@ -341,6 +398,7 @@ window.FF = window.FF || {};
       if (g.template === 'pictureRush') pictureRushFields();
       if (g.template === 'wordByWord') wordByWordFields();
       if (g.template === 'quiz') quizFields();
+      if (g.template === 'library') libraryFields();
 
       var bar = div('cel-savebar');
       saveBtn = FF.UI.button(t('celSaveChanges', 'Save changes'), { class: 'btn-secondary', icon: 'check', onClick: function () { save().then(function () { FF.UI.toast(t('saved', 'Saved')); }, function () {}); } });
@@ -586,6 +644,22 @@ window.FF = window.FF || {};
     }
 
     /* ---------- Quiz ---------- */
+
+    function libraryFields() {
+      var cfg = draft.config;
+      shell.appendChild(el('h2', { class: 'cel-section-title' }, t('celWbwHow', 'How it is played')));
+      var pick = div('cel-libgame');
+      pick.appendChild(C().gameArt('library', 'cel-libgame__art', cfg.game));
+      var txt = div('cel-libgame__text');
+      txt.appendChild(el('strong', {}, libraryName(cfg.game)));
+      txt.appendChild(el('span', {}, t('celLibSame', 'Every group plays the same questions on their phones, on the standard settings. One go each; a group counts its best phone.')));
+      pick.appendChild(txt);
+      shell.appendChild(pick);
+      shell.appendChild(field(t('celLibMinutes', 'Time to play'), select(L().MINUTES.map(function (m) { return [String(m), t('celMins', '{n} min', { n: m })]; }), String(cfg.minutes), function (v) { cfg.minutes = Number(v); changed(); }),
+        t('celLibMinutesHint', 'The game ends when every group has a score, or when the time runs out. A group still playing then scores nothing.')));
+      shell.appendChild(field(t('celLibPrize', 'Points for first place'), select(L().PRIZES.map(function (p) { return [String(p), String(p)]; }), String(cfg.prize), function (v) { cfg.prize = Number(v); changed(); }),
+        t('celLibPrizeHint', 'Groups get points by their place, so every game counts the same on the leaderboard. With 5 groups and 3000: 3000, 2400, 1800, 1200, 600.')));
+    }
 
     function quizFields() {
       var cfg = draft.config;

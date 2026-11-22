@@ -456,6 +456,7 @@ window.FF = window.FF || {};
       if (v.template === 'pictureRush') return pictureRush(v);
       if (v.template === 'wordByWord') return wordByWord(v);
       if (v.template === 'quiz') return quiz(v);
+      if (v.template === 'library') return library(v);
       var other = div('tv-game');
       other.appendChild(el('h1', { class: 'tv-h1' }, v.name || ''));
       return other;
@@ -809,6 +810,54 @@ window.FF = window.FF || {};
       return box;
     }
 
+    /* A library game: every group plays it on their phones. The TV shows the time left and the groups as they finish. */
+    function library(v) {
+      var box = div('tv-game tv-lib is-' + v.phase);
+      var head = div('tv-game__head');
+      head.appendChild(el('h1', { class: 'tv-game__name' }, v.name));
+      if (v.phase === 'playing') head.appendChild(el('span', { class: 'tv-chip' }, t('celTvLibOnPhones', 'Playing on your phones')));
+      head.appendChild(el('span', { class: 'tv-timer', role: 'timer' }));
+      box.appendChild(head);
+      if (v.phase === 'starting') {
+        var s = div('tv-pr__start');
+        s.appendChild(FF.Celebrate.gameArt('library', 'tv-lib__art', v.game));
+        s.appendChild(el('p', { class: 'tv-kicker' }, t('celTvGetReady', 'Get ready!')));
+        s.appendChild(el('p', { class: 'tv-pr__big tv-timer', role: 'timer' }));
+        if (v.instructions) s.appendChild(el('p', { class: 'tv-lead' }, v.instructions));
+        box.appendChild(s);
+      } else if (v.phase === 'playing') {
+        var finished = v.finished || {};
+        var done = list(v.order).filter(function (tid) { return finished[tid]; });
+        var mid = div('tv-lib__mid');
+        mid.appendChild(FF.Celebrate.gameArt('library', 'tv-lib__art', v.game));
+        var txt = div('tv-lib__text');
+        txt.appendChild(el('p', { class: 'tv-lib__count' }, t('celLibFinishedOf', '{n} of {total} groups finished', { n: done.length, total: v.total || 0 })));
+        txt.appendChild(el('p', { class: 'tv-lead' }, t('celTvLibHow', 'Tap Play on your phone. Same questions for every group, best score wins.')));
+        mid.appendChild(txt);
+        box.appendChild(mid);
+        var ol = el('ol', { class: 'tv-wbw__strip tv-qz__strip' });
+        var order = list(v.order).slice().sort(function (a, b) {
+          var x = finished[a], y = finished[b];
+          if (x && y) return y.score - x.score;
+          return x ? -1 : y ? 1 : 0;
+        });
+        order.forEach(function (tid) {
+          var tm = v.teams[tid] || {};
+          var f = finished[tid];
+          var li = el('li', { class: 'tv-wbw__team' + (f ? ' is-sure' : '') });
+          li.style.setProperty('--team', tm.color || '#888888');
+          li.appendChild(el('span', { class: 'tv-row__swatch', 'aria-hidden': 'true' }));
+          li.appendChild(el('strong', { class: 'tv-wbw__name' }, tm.name || ''));
+          li.appendChild(el('span', { class: 'tv-wbw__pts' }, f ? String(f.score) : t('celTvLibPlaying', 'Playing…')));
+          ol.appendChild(li);
+        });
+        box.appendChild(ol);
+      } else if (v.phase === 'ended') {
+        box.appendChild(finalTable(v));
+      }
+      return box;
+    }
+
     /* Every team along the bottom. While the question is up it shows only whether a team has picked, never which answer. */
     function quizStrip(v) {
       var ol = el('ol', { class: 'tv-wbw__strip tv-qz__strip' });
@@ -852,6 +901,9 @@ window.FF = window.FF || {};
         // The quiz counts down to the start and each question; the reveal has no clock.
         if (v.phase === 'starting') text = clock(v.startAt - st.T.serverNow());
         else if (v.phase === 'question') text = clock(v.paused ? (v.leftMs || 0) : v.deadline - st.T.serverNow());
+      } else if (v && st.T && v.template === 'library') {
+        if (v.phase === 'starting' && !v.waitReady) text = clock(v.startAt - st.T.serverNow());
+        else if (v.phase === 'playing') text = clock(v.endsAt - st.T.serverNow());
       } else if (v && st.T && v.phase !== 'ended') {
         var due = { starting: v.startAt, reveal: v.revealUntil, playing: v.deadline, roundEnd: v.nextAt }[v.phase] || 0;
         if (due) text = clock(due - (v.paused ? v.pausedAt : st.T.serverNow()));

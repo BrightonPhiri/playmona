@@ -18,7 +18,7 @@ namespace PlayMona;
  */
 class CelebrationGames
 {
-    public const TEMPLATES = ['pictureRush', 'wordByWord', 'quiz'];
+    public const TEMPLATES = ['pictureRush', 'wordByWord', 'quiz', 'library'];
     public const STATUSES = ['draft', 'published', 'inactive'];
     public const ACTIONS = ['next', 'pause', 'resume', 'end', 'strike'];
     public const COUNTDOWN_MS = 10_000;
@@ -60,7 +60,11 @@ class CelebrationGames
     private const QUIZ_MAX_WRONG = 3;
     private const QUIZ_POINTS_MIN = 100;
     private const QUIZ_POINTS_MAX = 5000;
-    private const NAMES = ['pictureRush' => 'Picture Rush', 'wordByWord' => 'Word by Word', 'quiz' => 'Quiz'];
+    private const NAMES = ['pictureRush' => 'Picture Rush', 'wordByWord' => 'Word by Word', 'quiz' => 'Quiz', 'library' => 'Library game'];
+
+    /** A game from the library (Verse Rush, Bible Quiz …), as FF.LibraryRules. The game must be one of Leaderboards::GAMES. */
+    public const LIBRARY = ['minutes' => [5, 10, 15, 20], 'prize' => [1000, 2000, 3000, 5000]];
+    private const LIBRARY_DEFAULTS = ['minutes' => 10, 'prize' => 3000];
 
     public function __construct(
         private Db $db,
@@ -146,11 +150,14 @@ class CelebrationGames
         $n = (int) $this->db->one('SELECT COUNT(*) AS n FROM celebration_games WHERE cid = ? AND deleted_at IS NULL', [$cid])['n'];
         if ($n >= self::MAX_GAMES) throw new HttpError(429, 'That is a lot of games. Delete one you will not play first.', 'too-many-games');
         $name = $this->events->cleanText($in['name'] ?? '', 80) ?: $this->defaultName($template, $ev);
+        // A library game is made for one game, chosen in the picker.
+        $config = $this->sanitize($template, $template === 'library' ? ['game' => $in['game'] ?? ''] : [], $cid);
+        if ($template === 'library') $this->ready($template, $config);
         $id = newId('g');
         $now = nowMs();
         $this->db->run('INSERT INTO celebration_games (id, cid, template, name, instructions, config, status, sort, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
-            $id, $cid, $template, $name, $this->instructionsFor($template, $ev),
-            json_encode($this->sanitize($template, [], $cid)), 'draft', $n, $now, $now,
+            $id, $cid, $template, $name, $this->instructionsFor($template, $ev, $name),
+            json_encode($config), 'draft', $n, $now, $now,
         ]);
         return $this->view($this->game($cid, $id), true);
     }
@@ -163,6 +170,8 @@ class CelebrationGames
         if ($name === '') throw new HttpError(400, 'Give the game a name.', 'no-name');
         $instructions = $this->events->cleanText($in['instructions'] ?? $g['instructions'], 400, true);
         $config = $this->sanitize($g['template'], is_array($in['config'] ?? null) ? $in['config'] : json_decode($g['config'], true), $cid);
+        // The game itself never changes: pick another from the library instead.
+        if ($g['template'] === 'library') $config['game'] = (string) (json_decode($g['config'], true)['game'] ?? '');
         if ($g['template'] === 'quiz') {
             foreach ($config['questions'] as $q) {
                 if ($this->quizProblem($q) === 'same') throw new HttpError(400, 'Two answers are the same.', 'same-answers');
@@ -356,6 +365,7 @@ class CelebrationGames
                 'id' => $g['id'], 'template' => $g['template'], 'name' => $g['name'], 'instructions' => (string) $g['instructions'],
                 'rounds' => (int) ($config['rounds'] ?? 0), 'level' => $config['level'] ?? null, 'seconds' => (int) ($config['seconds'] ?? 0),
                 'questions' => count($this->quizPlayable($config)), 'kind' => $config['kind'] ?? null,
+                'game' => $config['game'] ?? null, 'minutes' => (int) ($config['minutes'] ?? 0),
                 'live' => $active !== null && $active['game_id'] === $g['id'],
             ];
         }, $rows)];
@@ -527,6 +537,15 @@ class CelebrationGames
         $raw = is_array($raw) ? $raw : [];
         if ($template === 'wordByWord') return $this->sanitizeWords($raw);
         if ($template === 'quiz') return $this->sanitizeQuiz($raw);
+        if ($template === 'library') {
+            $pick = function (string $k) use ($raw) {
+                $v = $raw[$k] ?? null;
+                if (is_numeric($v)) $v = (int) $v;
+                return in_array($v, self::LIBRARY[$k], true) ? $v : self::LIBRARY_DEFAULTS[$k];
+            };
+            $game = is_string($raw['game'] ?? null) && in_array($raw['game'], Leaderboards::GAMES, true) ? $raw['game'] : '';
+            return ['game' => $game, 'minutes' => $pick('minutes'), 'prize' => $pick('prize')];
+        }
         if ($template !== 'pictureRush') throw new HttpError(400, 'That game is not available yet.', 'bad-template');
         $pick = function (string $k) use ($raw) {
             $v = $raw[$k] ?? null;
@@ -657,8 +676,11 @@ class CelebrationGames
     }
 
     /** What the guests read first, by template. */
-    private function instructionsFor(string $template, array $ev): string
+    private function instructionsFor(string $template, array $ev, string $name = ''): string
     {
+        if ($template === 'library') {
+            return 'Every group plays ' . ($name !== '' ? $name : 'this game') . ' on their phone. Same questions for everyone, one go each. Best score wins.';
+        }
         if ($template === 'quiz') {
             $who = trim((string) ($ev['celebrant_name'] ?? ''));
             $first = $who !== '' ? (preg_split('/\s+/u', $who)[0] ?? '') : '';
@@ -678,6 +700,9 @@ class CelebrationGames
         if ($template === 'pictureRush' && empty($config['photos'])) {
             throw new HttpError(409, 'Add at least one photo first.', 'no-photos');
         }
+        if ($template === 'library' && empty($config['game'])) {
+            throw new HttpError(409, 'Choose a game from the library first.', 'no-game');
+        }
         if ($template === 'quiz' && !$this->quizPlayable(is_array($config) ? $config : [])) {
             throw new HttpError(409, 'Add at least one question with its answers.', 'no-questions');
         }
@@ -694,6 +719,7 @@ class CelebrationGames
             'level' => $config['level'] ?? null, 'seconds' => (int) ($config['seconds'] ?? 0), 'updatedAt' => (int) $g['updated_at'],
             'mode' => $config['mode'] ?? null,
             'questions' => count($this->quizPlayable($config)), 'kind' => $config['kind'] ?? null,
+            'game' => $config['game'] ?? null, 'minutes' => (int) ($config['minutes'] ?? 0),
         ];
         $first = $config['photos'][0]['id'] ?? null;
         if ($first) $out['thumb'] = $this->media->url($first, 'thumb', 6 * 3600);

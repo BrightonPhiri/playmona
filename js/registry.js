@@ -425,7 +425,8 @@ window.FF = window.FF || {};
     buildConfig: function (def, overrides) {
       overrides = overrides || {};
       // standard: started from the challenge picker, so the run can become a challenge.
-      if (overrides.daily || overrides.challenge || overrides.standard) {
+      // celebration: a library game at a celebration, the same seeded run on every group's phone.
+      if (overrides.daily || overrides.challenge || overrides.standard || overrides.celebration) {
         const std = FF.Leaderboards ? FF.Leaderboards.standard() : { difficulty: 'normal', length: 'normal', timer: FF.Settings.defaults.timer };
         const meP = FF.Players.me() || FF.Players.get()[0];
         overrides = Object.assign({}, overrides, { mode: 'solo', difficulty: std.difficulty, length: std.length, timer: std.timer, clock: 0, variation: 'standard', soloPlayer: meP });
@@ -469,7 +470,11 @@ window.FF = window.FF || {};
         round: overrides.round || null,
         tournament: !!overrides.tournament,
         daily: overrides.daily || null,       // the daily challenge's date (FF.Daily)
-        challenge: overrides.challenge || null,   // a friend's challenge being played: { id, seed }
+        // A friend's challenge being played: { id, seed }. A celebration's run shows up here too
+        // (marked celebration: true), so games skip their setup screens and play the standard deal.
+        challenge: overrides.challenge || (overrides.celebration
+          ? { id: 'cel-' + overrides.celebration.runId, seed: overrides.celebration.seed, opts: null, celebration: true } : null),
+        celebration: overrides.celebration || null, // a celebration's run: { cid, runId, game, seed, uid, back } (FF.CelebrateLibraryRun)
         challengeSeed: null,                  // set in start() when this run can become a challenge
         standard: !!overrides.standard,       // started from the challenge picker
         onEnd: overrides.onEnd || null,
@@ -479,7 +484,7 @@ window.FF = window.FF || {};
       // A shared deal gives every phone the same content from the seed alone
       // (games skip this phone's history and saved choices when it is set). Rooms
       // already share their deal through FF.Race / FF.Parallel.
-      config.sharedDeal = !!(config.daily || config.challenge);
+      config.sharedDeal = !!(config.daily || config.challenge || config.celebration);
       if (config.sharedDeal) config.randomOrder = false;
       return config;
     },
@@ -818,7 +823,7 @@ window.FF = window.FF || {};
     // Older entry points, now views of the details screen.
     // Whether a launch goes through the switches, guest access and the paywall.
     _checksAccess: function (overrides) {
-      return !(overrides && (overrides.room || overrides.daily || overrides.challenge));
+      return !(overrides && (overrides.room || overrides.daily || overrides.challenge || overrides.celebration));
     },
 
     /* The seed a local run deals from, or null for an unseeded run. A run that can
@@ -827,6 +832,7 @@ window.FF = window.FF || {};
     _seedFor: function (def, config) {
       if (config.room) return null;
       if (config.daily) return FF.Random.roundSeed('daily|' + config.daily, def.id, 'init');
+      if (config.celebration) return FF.Random.roundSeed('cel|' + config.celebration.seed, def.id, 'init');
       if (config.challenge) {
         config.challengeSeed = config.challenge.seed;
         return FF.Random.roundSeed('ch|' + config.challenge.seed, def.id, 'init');
@@ -854,7 +860,7 @@ window.FF = window.FF || {};
     },
 
     // A friend's challenge is one go: no restarting to see the rounds first.
-    _canRestart: function (cur) { return !(cur && cur.config && cur.config.challenge); },
+    _canRestart: function (cur) { return !(cur && cur.config && (cur.config.challenge || cur.config.celebration)); },
 
     // Re-launch with the same settings so difficulty/length/timer and any
     // tournament/room context survive a restart.
@@ -892,7 +898,7 @@ window.FF = window.FF || {};
       FF.Scoring.init(config.scorers, config.mode);
       if (FF.Track) FF.Track.play(def.id, !!config.room);
       // Uses up one of today's free plays (limited games only). Room guests play on the host's.
-      if (FF.Access && !config.room && !config.daily && !config.challenge) FF.Access.usePlay(def.id);
+      if (FF.Access && !config.room && !config.daily && !config.challenge && !config.celebration) FF.Access.usePlay(def.id);
       const api = {
         def: def,
         config: config,
@@ -1137,6 +1143,14 @@ window.FF = window.FF || {};
         return;
       }
       if (cur.config.challengeSeed && FF.Random.unseed) FF.Random.unseed();
+      // A celebration's run: the score goes to the event, never to the leaderboards or a challenge.
+      if (cur.config.celebration && FF.CelebrateLibraryRun) {
+        if (FF.Random.unseed) FF.Random.unseed();
+        const mineE = this._myResult(results.results);
+        results.celebration = FF.CelebrateLibraryRun.finish(cur.config.celebration, mineE ? mineE.points : 0);
+        this.showResults(results);
+        return;
+      }
       if (cur.config.challenge && FF.Challenge) {
         const mineC = this._myResult(results.results);
         FF.Challenge.finishRun(cur, mineC ? mineC.points : 0, results);
@@ -1248,6 +1262,12 @@ window.FF = window.FF || {};
           FF.GameFlow.close('leaderboard', { tab: 'daily', highlight: true });
         } }));
         actions.appendChild(FF.UI.button(t('navHome', 'Home'), { class: 'btn-lg btn-ghost', icon: 'house', onClick: function () { FF.GameFlow.exitToHome(); } }));
+      } else if (results.celebration) {
+        // A celebration's run: say whether the score reached the event, then back to the party.
+        wrap.appendChild(FF.CelebrateLibraryRun.status(results.celebration));
+        actions.appendChild(FF.UI.button(t('celBackToParty', 'Back to the party'), { class: 'btn-lg btn-primary', icon: 'confetti', onClick: function () {
+          FF.CelebrateLibraryRun.back(results.celebration);
+        } }));
       } else if (results.challenge) {
         // A friend's challenge: the reveal shows who won.
         actions.appendChild(FF.UI.button(t('chSeeWhoWon', 'See who won'), { class: 'btn-lg btn-primary', icon: 'trophy', onClick: function () {
@@ -1424,7 +1444,9 @@ window.FF = window.FF || {};
       this._overlay({
         icon: 'alert',
         title: t('leaveGameQ', 'Leave this game?'),
-        sub: cur && cur.config && cur.config.challenge
+        sub: cur && cur.config && cur.config.celebration
+          ? t('celLibLeaveBody', 'Your score is not sent. You go back to the party, and can press Play again while there is time.')
+          : cur && cur.config && cur.config.challenge
           ? t('challengeLeaveBody', 'Leaving now ends the challenge with the points you have so far.')
           : t('progressLost', 'Scores from this game will not be saved.'),
         actions: [
@@ -1440,6 +1462,11 @@ window.FF = window.FF || {};
       // Leaving an online game early: stop following its rounds, and tell the
       // room so nobody's round waits for this player.
       const leaving = this.current;
+      // Leaving a celebration's run before the end goes back to the party (Play is still there).
+      if (leaving && leaving.config && leaving.config.celebration && !leaving.ended && FF.CelebrateLibraryRun) {
+        if (FF.Random.unseed) FF.Random.unseed();
+        FF.CelebrateLibraryRun.leave(leaving.config.celebration);
+      }
       // A game's own timer must not run on (beeping, or ending the next game).
       if (leaving && leaving.shell && leaving.shell.timer && leaving.shell.timer.stop) leaving.shell.timer.stop();
       if (leaving && leaving.config && leaving.config.daily) {

@@ -196,7 +196,8 @@ window.FF = window.FF || {};
   var PLAYERS = {
     pictureRush: function () { return FF.PictureRushPlay; },
     wordByWord: function () { return FF.WordByWordPlay; },
-    quiz: function () { return FF.QuizPlay; }
+    quiz: function () { return FF.QuizPlay; },
+    library: function () { return FF.LibraryPlay; }
   };
 
   function openGame(p) {
@@ -505,7 +506,7 @@ window.FF = window.FF || {};
     var ul = el('ul', { class: 'ev-games' });
     games.forEach(function (g) {
       var li = el('li', { class: 'ev-game ev-game--art' + (g.live ? ' is-live' : '') });
-      li.appendChild(C().gameArt(g.template, 'ev-game__art'));
+      li.appendChild(C().gameArt(g.template, 'ev-game__art', g.game));
       var body = div('ev-game__body');
       li.appendChild(body);
       var top = div('ev-game__top');
@@ -517,8 +518,10 @@ window.FF = window.FF || {};
       body.appendChild(top);
       var wbw = g.template === 'wordByWord';
       var quiz = g.template === 'quiz';
-      var facts = [g.template === 'pictureRush' ? t('celTplPictureRush', 'Picture Rush') : wbw ? t('celTplWordByWord', 'Word by Word') : quiz ? t('celTplQuiz', 'Quiz') : g.template];
-      if (quiz) facts.push(t(g.questions === 1 ? 'celQuizOne' : 'celQuizMany', g.questions === 1 ? '1 question' : '{n} questions', { n: g.questions || 0 }));
+      var lib = g.template === 'library';
+      var facts = [g.template === 'pictureRush' ? t('celTplPictureRush', 'Picture Rush') : wbw ? t('celTplWordByWord', 'Word by Word') : quiz ? t('celTplQuiz', 'Quiz') : lib ? t('celLibOnPhones', 'On phones') : g.template];
+      if (lib && g.minutes) facts.push(t('celMins', '{n} min', { n: g.minutes }));
+      else if (quiz) facts.push(t(g.questions === 1 ? 'celQuizOne' : 'celQuizMany', g.questions === 1 ? '1 question' : '{n} questions', { n: g.questions || 0 }));
       else if (g.rounds && wbw) facts.push(t(g.rounds === 1 ? 'celWbwTurnOne' : 'celWbwTurnsEach', g.rounds === 1 ? '1 turn each' : '{n} turns each', { n: g.rounds }));
       else if (g.rounds) facts.push(t(g.rounds === 1 ? 'celPicturesOne' : 'celPicturesMany', g.rounds === 1 ? '1 picture' : '{n} pictures', { n: g.rounds }));
       if (g.level) facts.push(levelLabel(g.level));

@@ -1025,6 +1025,12 @@
               "choice": {
                 ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 3"
               },
+              "score": {
+                ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000"
+              },
+              "ms": {
+                ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 86400000"
+              },
               "$other": {
                 ".validate": false
               }
