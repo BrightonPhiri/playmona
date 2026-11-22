@@ -382,7 +382,7 @@ class Celebrations
         return $this->manageView($this->event($cid));
     }
 
-    /** Removes a guest from the event. They cannot join again with the same device. */
+    /** Removes a guest from the event. They may join again from the event page. */
     public function removeGuest(string $cid, string $uid, AuthUser $user): array
     {
         $this->owned($cid, $user);
@@ -456,8 +456,13 @@ class Celebrations
         $ipHash = substr(hash('sha256', 'cel-ip:' . $ip), 0, 16);
 
         $existing = $this->db->one('SELECT * FROM celebration_guests WHERE cid = ? AND uid = ?', [$cid, $user->uid]);
-        if ($existing && $existing['removed_at'] !== null) throw new HttpError(403, 'The organiser removed you from this celebration.', 'removed');
-        if (!$existing) {
+        // A guest the organiser removed may join again, as someone new (blocking comes later).
+        $back = $existing && $existing['removed_at'] !== null;
+        if ($back) {
+            $guests = (int) $this->db->one('SELECT COUNT(*) AS n FROM celebration_guests WHERE cid = ? AND removed_at IS NULL', [$cid])['n'];
+            if ($guests >= $limits['guestsPerEvent']) throw new HttpError(403, 'This celebration is full.', 'full');
+            $this->db->run('UPDATE celebration_guests SET name = ?, team_id = NULL, removed_at = NULL, joined_at = ?, last_seen = ? WHERE cid = ? AND uid = ?', [$name, $now, $now, $cid, $user->uid]);
+        } elseif (!$existing) {
             $guests = (int) $this->db->one('SELECT COUNT(*) AS n FROM celebration_guests WHERE cid = ? AND removed_at IS NULL', [$cid])['n'];
             if ($guests >= $limits['guestsPerEvent']) throw new HttpError(403, 'This celebration is full.', 'full');
             $recent = (int) $this->db->one('SELECT COUNT(*) AS n FROM celebration_guests WHERE ip_hash = ? AND joined_at > ?', [$ipHash, $now - 3600_000])['n'];

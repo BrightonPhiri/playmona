@@ -127,8 +127,7 @@ window.FF = window.FF || {};
     FF.ui.clear(main);
     main.appendChild(C().hero(ev, { tag: 'h1', extra: countdown(ev) }));
     if (state.removed) {
-      main.appendChild(card(t('celRemovedTitle', 'You are not in this celebration'), [el('p', {}, t('celRemovedText', 'The organiser removed you from this celebration.'))]));
-      return;
+      main.appendChild(card(t('celRemovedTitle', 'You left this celebration'), [el('p', {}, t('celRemovedText', 'The organiser took you out. You can join again below.'))]));
     }
     if (ev.welcome || ev.description) {
       var w = card(null, []);
@@ -318,6 +317,7 @@ window.FF = window.FF || {};
         store('joined:' + ev.id, '1');
         store('as:' + ev.id, as);
         state.joinAs = as;
+        state.removed = false;
         state.me = r.me;
         state.ev = r.event;
         paint();

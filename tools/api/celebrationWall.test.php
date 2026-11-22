@@ -207,7 +207,6 @@ test('clear test data: results, the Wall and guests go; games, the organiser\'s 
     [$s, $made] = celCall($w, 'POST', "/c/$cid/team/new", ['token' => guestToken('g4'), 'json' => ['name' => 'Testers']]);
     eq(200, $s, json_encode($made));
     eq(200, celCall($w, 'POST', "/c/$cid/guests/g3/remove", ['token' => organiser()])[0]);
-    eq(403, celCall($w, 'POST', "/c/$cid/join", ['token' => guestToken('g3'), 'json' => ['name' => 'G3']])[0], 'removed guests are kept out');
     $before = celCall($w, 'GET', "/c/$cid/manage", ['token' => organiser()])[1];
 
     // Only the organiser, and something must be chosen.
