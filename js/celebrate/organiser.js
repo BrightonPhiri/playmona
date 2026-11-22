@@ -27,8 +27,12 @@ window.FF = window.FF || {};
     refreshTimer = null;
   }
 
-  /* Who may organise: a real PlayMona account on the live site (or the local dev mode). */
-  function blocked(main) {
+  function isGuest() { return !FF.Auth || !FF.Auth.isGuest || FF.Auth.isGuest(); }
+
+  /* Who may organise: a real PlayMona account on the live site (or the local dev mode).
+     allowGuest: the Celebrations page itself, where guests join a celebration by its code;
+     they are asked to sign up only when they press "Create a celebration". */
+  function blocked(main, allowGuest) {
     var dev = FF.Net && FF.Net.devMode && FF.Net.devMode();
     if (!dev && (!FF.Auth || FF.Auth.mode() !== 'firebase' || typeof location === 'undefined' || !/^https?:$/.test(location.protocol))) {
       main.appendChild(FF.UI.emptyState({
@@ -37,7 +41,7 @@ window.FF = window.FF || {};
       }));
       return true;
     }
-    if (FF.Auth.isGuest()) {
+    if (!allowGuest && FF.Auth.isGuest()) {
       main.appendChild(FF.Access.lockedPanel('celebrations', t('celSignUpTitle', 'Sign up free to organise a celebration')));
       return true;
     }
@@ -81,11 +85,30 @@ window.FF = window.FF || {};
 
   function listView(main) {
     stopRefresh();
-    if (blocked(main)) return;
+    // Guests may come in: they join a celebration by its code. Organising one asks them to sign up.
+    if (blocked(main, true)) return;
+    var guest = isGuest();
     var head = div('cel-page-head');
     head.appendChild(FF.App.pageHead(t('celebrations', 'Celebrations'),
       t('celebrationsSub', 'Personal games, team competitions and a wall of love for birthdays, weddings, graduations and more.')));
     main.appendChild(head);
+
+    // Open a celebration by its code. Guests see it first; organisers below their own list.
+    var join = el('form', { class: 'cel-code-form' + (guest ? ' cel-code-form--first' : ''), onsubmit: function (e) {
+      e.preventDefault();
+      var code = codeInput.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+      if (code.length === 6) location.href = '/c?code=' + encodeURIComponent(code);
+      else FF.UI.toast(t('celCodeShort', 'The code has 6 letters and numbers.'));
+    } });
+    var codeInput = textInput('', { max: 6, placeholder: 'ABC234' });
+    codeInput.classList.add('cel-code-input');
+    codeInput.setAttribute('autocapitalize', 'characters');
+    join.appendChild(field(guest ? t('celJoinByCode', 'Join a celebration: type the code from your invitation') : t('celHaveCode', 'Invited to a celebration? Type its code'), codeInput,
+      guest ? t('celJoinByCodeHint', 'Or scan the QR code at the party. No account needed.') : null));
+    var joinBtn = FF.UI.button(guest ? t('celJoinGo', 'Join') : t('celOpen', 'Open'), { class: guest ? 'btn-primary' : 'btn-ghost', icon: 'arrow-right' });
+    joinBtn.type = 'submit';
+    join.appendChild(joinBtn);
+    if (guest) main.appendChild(join);
 
     var intro = el('section', { class: 'cel-intro' });
     C().applyTheme(intro, { look: 'gala' });
@@ -103,10 +126,15 @@ window.FF = window.FF || {};
       points.appendChild(li);
     });
     introBody.appendChild(points);
-    introBody.appendChild(FF.UI.button(t('celCreate', 'Create a celebration'), { class: 'btn-lg cel-btn-primary', icon: 'plus', onClick: function () { FF.Nav.go('celebrationNew'); } }));
+    introBody.appendChild(FF.UI.button(t('celCreate', 'Create a celebration'), { class: 'btn-lg cel-btn-primary', icon: 'plus', onClick: function () {
+      // Only organisers need an account; the sign-up invitation shows here, not to every guest.
+      if (isGuest()) FF.Access.prompt('celebrations');
+      else FF.Nav.go('celebrationNew');
+    } }));
     intro.appendChild(introBody);
     main.appendChild(intro);
 
+    if (guest) return;
     var listWrap = div('cel-list-wrap');
     main.appendChild(listWrap);
     listWrap.appendChild(FF.UI.loading(t('loading', 'Loading…')));
@@ -139,18 +167,6 @@ window.FF = window.FF || {};
       listWrap.appendChild(el('p', { class: 'field__error' }, e.message));
     });
 
-    // Guests sometimes land here first: let them open an event by its code.
-    var join = el('form', { class: 'cel-code-form', onsubmit: function (e) {
-      e.preventDefault();
-      var code = codeInput.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
-      if (code.length === 6) location.href = '/c?code=' + encodeURIComponent(code);
-      else FF.UI.toast(t('celCodeShort', 'The code has 6 letters and numbers.'));
-    } });
-    var codeInput = textInput('', { max: 6, placeholder: 'ABC234' });
-    codeInput.classList.add('cel-code-input');
-    codeInput.setAttribute('autocapitalize', 'characters');
-    join.appendChild(field(t('celHaveCode', 'Invited to a celebration? Type its code'), codeInput));
-    join.appendChild(FF.UI.button(t('celOpen', 'Open'), { class: 'btn-ghost', icon: 'arrow-right' }));
     main.appendChild(join);
   }
 

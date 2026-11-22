@@ -215,6 +215,7 @@ window.FF = window.FF || {};
     function screenStarting() {
       header();
       var card = el('div', 'pr-card pr-ready');
+      card.appendChild(FF.Celebrate.gameArt('wordByWord', 'pr-ready__art'));
       card.appendChild(el('p', 'pr-ready__kicker', t('prGetReady', 'Get ready')));
       // Before the countdown each team presses "We're ready" (js/celebrate/ready.js).
       if (v.waitReady) card.appendChild(FF.CelebrateReady.block(v, { uid: uid, team: myTeam(), T: T }));

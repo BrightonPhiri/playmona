@@ -344,8 +344,32 @@ window.FF = window.FF || {};
     return t(n === 1 ? 'celHereOne' : 'celHereMany', n === 1 ? '1 guest has joined' : '{n} guests have joined', { n: n });
   }
 
+  /* Each game's cover picture (assets/images/covers), by template. Picture Rush has no
+     cover art yet, so it shows its icon (the MC list shows its first photo instead). */
+  var GAME_ART = {
+    pictureRush: { icon: 'puzzle-piece' },
+    wordByWord: { cover: 'wordByWord', icon: 'text-aa' },
+    quiz: { cover: 'celebrationQuiz', icon: 'question' }
+  };
+  function gameCover(template) {
+    var a = GAME_ART[template];
+    if (!a || !a.cover) return null;
+    var m = FF.AssetManifest && FF.AssetManifest.covers;
+    return 'assets/images/covers/' + a.cover + '.webp' + (m && m[a.cover] ? '?v=' + m[a.cover] : '');
+  }
+  /* The cover as an element: the picture, or the game's icon on a tile. */
+  function gameArt(template, cls) {
+    var src = gameCover(template);
+    var box = FF.ui.el('div', { class: 'cel-gameart' + (cls ? ' ' + cls : '') + (src ? '' : ' cel-gameart--icon'), 'aria-hidden': 'true' });
+    if (src) box.appendChild(FF.ui.el('img', { src: src, alt: '', decoding: 'async' }));
+    else box.appendChild(FF.Icons.icon((GAME_ART[template] || {}).icon || 'confetti'));
+    return box;
+  }
+
   FF.Celebrate = {
     hero: hero,
+    gameCover: gameCover,
+    gameArt: gameArt,
     joinedText: joinedText,
     TYPES: TYPES,
     LOOKS: LOOKS,
