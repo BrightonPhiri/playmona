@@ -25,13 +25,6 @@ browser for that address, so a different port starts empty.
 
 ## During the event
 
-- **Who Knows Vicky Best?**: type the answers into the 20 questions. Use one line per question:
-  `Question | option | *right option | option | option`. With no options, `Question | = answer`
-  makes an open question for paper answers.
-- **Save a backup file** (Setup tab) once everything is in.
-
-## During the event
-
 - **On screen** (top bar) picks what the projector shows: Welcome, the game, Leaderboard,
   Winners or Blank. **Pause** freezes the game's clock.
 - **Picture Rush**: pick a photo, a size (3×3 to 6×6) and the seconds per move (5, 10, 15,
