@@ -351,18 +351,22 @@ window.FF = window.FF || {};
     wordByWord: { cover: 'wordByWord', icon: 'text-aa' },
     quiz: { cover: 'celebrationQuiz', icon: 'question' }
   };
-  function gameCover(template) {
+  /* A library game (template 'library') shows that game's own cover, when it has one. */
+  function gameCover(template, game) {
+    var m = FF.AssetManifest && FF.AssetManifest.covers;
+    if (template === 'library') {
+      return game && m && m[game] ? 'assets/images/covers/' + game + '.webp?v=' + m[game] : null;
+    }
     var a = GAME_ART[template];
     if (!a || !a.cover) return null;
-    var m = FF.AssetManifest && FF.AssetManifest.covers;
     return 'assets/images/covers/' + a.cover + '.webp' + (m && m[a.cover] ? '?v=' + m[a.cover] : '');
   }
   /* The cover as an element: the picture, or the game's icon on a tile. */
-  function gameArt(template, cls) {
-    var src = gameCover(template);
+  function gameArt(template, cls, game) {
+    var src = gameCover(template, game);
     var box = FF.ui.el('div', { class: 'cel-gameart' + (cls ? ' ' + cls : '') + (src ? '' : ' cel-gameart--icon'), 'aria-hidden': 'true' });
     if (src) box.appendChild(FF.ui.el('img', { src: src, alt: '', decoding: 'async' }));
-    else box.appendChild(FF.Icons.icon((GAME_ART[template] || {}).icon || 'confetti'));
+    else box.appendChild(FF.Icons.icon(template === 'library' ? 'game-controller' : (GAME_ART[template] || {}).icon || 'confetti'));
     return box;
   }
 

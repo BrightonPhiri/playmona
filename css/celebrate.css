@@ -1076,3 +1076,17 @@ body.mc-page .ev-brand { color: var(--text); }
 .mc-slide > summary { cursor: pointer; list-style: none; }
 .mc-slide > summary::-webkit-details-marker { display: none; }
 .mc-slide__hint { margin: 0; color: var(--muted); font-size: var(--fs-sm); }
+
+/* ---------- Games from the library ---------- */
+.cel-pick { display: flex; flex-direction: column; gap: var(--sp-2); }
+.cel-pick__title { margin: var(--sp-2) 0 0; font-size: var(--fs-md); }
+.cel-pick__title:first-child { margin-top: 0; }
+.cel-pick__search { width: 100%; }
+.cel-templates--library .cel-template__text span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.cel-template .cel-gameart.cel-template__cover { width: 56px; height: 56px; flex: none; border-radius: var(--r-md); overflow: hidden; }
+.cel-gameart.cel-template__cover img { width: 100%; height: 100%; object-fit: cover; }
+.cel-libgame { display: flex; gap: var(--sp-3); align-items: center; padding: var(--sp-3); border: 1px solid var(--border); border-radius: var(--r-lg); margin-bottom: var(--sp-3); }
+.cel-libgame__art { width: 72px; height: 72px; flex: none; border-radius: var(--r-md); overflow: hidden; }
+.cel-libgame__art img { width: 100%; height: 100%; object-fit: cover; }
+.cel-libgame__text { display: flex; flex-direction: column; gap: 2px; }
+.cel-libgame__text span { color: var(--muted); font-size: var(--fs-sm); }
