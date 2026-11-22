@@ -34,7 +34,8 @@ window.FF = window.FF || {};
     if (!FF.WordFlowRules) files.push('js/wordflow/rules.js');
     if (!FF.WordByWordRules) files.push('js/celebrate/wordByWord/rules.js');
     if (!FF.QuizRules) files.push('js/celebrate/quiz/rules.js');
-    files.push('js/celebrate/pictureRush/referee.js', 'js/celebrate/wordByWord/referee.js', 'js/celebrate/quiz/referee.js', 'js/celebrate/dev.js');
+    if (!FF.LibraryRules) files.push('js/celebrate/library/rules.js');
+    files.push('js/celebrate/pictureRush/referee.js', 'js/celebrate/wordByWord/referee.js', 'js/celebrate/quiz/referee.js', 'js/celebrate/library/referee.js', 'js/celebrate/dev.js');
     return files.reduce(function (p, src) {
       return p.then(function () {
         return new Promise(function (resolve, reject) {
