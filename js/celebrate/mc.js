@@ -236,10 +236,16 @@ window.FF = window.FF || {};
       var ul = el('ul', { class: 'mc-games' });
       r.games.forEach(function (g) {
         var li = el('li', { class: 'mc-game' });
+        // Picture Rush shows its first photo; the other games their cover picture.
         if (g.thumb) li.appendChild(el('img', { class: 'mc-game__thumb', src: g.thumb, alt: '' }));
+        else li.appendChild(FF.Celebrate.gameArt(g.template, 'mc-game__thumb'));
         var text = div('mc-game__text');
         text.appendChild(el('strong', {}, g.name));
-        text.appendChild(el('span', {}, t(g.rounds === 1 ? 'celMcPictureOne' : 'celMcPictures', g.rounds === 1 ? '1 picture' : '{n} pictures', { n: g.rounds })));
+        var sub;
+        if (g.template === 'quiz') sub = t(g.questions === 1 ? 'celQuizOne' : 'celQuizMany', g.questions === 1 ? '1 question' : '{n} questions', { n: g.questions || 0 });
+        else if (g.template === 'wordByWord') sub = t('celMcWbwSub', 'One message, one word per turn');
+        else sub = t(g.rounds === 1 ? 'celMcPictureOne' : 'celMcPictures', g.rounds === 1 ? '1 picture' : '{n} pictures', { n: g.rounds });
+        text.appendChild(el('span', {}, sub));
         li.appendChild(text);
         var go = FF.UI.button(t('celStart', 'Start'), { class: 'btn-primary btn-sm', icon: 'play', onClick: function () { startGame(g, go); } });
         li.appendChild(go);

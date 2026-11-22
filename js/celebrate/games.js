@@ -372,7 +372,9 @@ window.FF = window.FF || {};
         g = r;
         draft = JSON.parse(JSON.stringify({ name: g.name, instructions: g.instructions, config: g.config }));
         dirty = false;
+        var y = window.pageYOffset;   // saving redraws the editor: stay where the organiser was
         render();
+        if (window.pageYOffset !== y) window.scrollTo(0, y);
         return r;
       }, function (e) { FF.UI.busy(saveBtn, false); FF.UI.toast(e.message); throw e; });
     }
@@ -631,7 +633,11 @@ window.FF = window.FF || {};
         noWrong: ['celQuizNoWrong', 'Add a wrong answer.'], same: ['celQuizSame', 'Two answers are the same.']
       };
 
-      function draw() {
+      /* Redraws the questions where they are: the page keeps its place (rebuilding the list
+         used to throw the organiser back to the top), and focusOn(list) may pick a field to type in. */
+      function draw(focusOn) {
+        var y = window.pageYOffset;
+        listBox.style.minHeight = listBox.offsetHeight + 'px';
         FF.ui.clear(listBox);
         if (!cfg.questions.length) listBox.appendChild(el('li', { class: 'hint cel-quiz-empty' }, t('celQuizEmpty', 'No questions yet. Start with some ideas, then type the answers.')));
         cfg.questions.forEach(function (q, i) {
@@ -663,12 +669,18 @@ window.FF = window.FF || {};
             var inp = textInput(w, { max: Q().MAX_ANSWER, placeholder: t('celQuizWrongPh', 'A wrong answer'), onInput: function (v) { q.wrong[k] = v; changed(); check(); } });
             inp.setAttribute('aria-label', t('celQuizWrongN', 'Wrong answer {n}', { n: k + 1 }));
             row.appendChild(inp);
-            if (q.wrong.length > 1) row.appendChild(FF.UI.iconButton('x', t('celQuizRemoveWrongN', 'Remove wrong answer {n}', { n: k + 1 }), function () { q.wrong.splice(k, 1); changed(); draw(); }, 'btn-ghost btn-sm'));
+            if (q.wrong.length > 1) row.appendChild(FF.UI.iconButton('x', t('celQuizRemoveWrongN', 'Remove wrong answer {n}', { n: k + 1 }), function () {
+              q.wrong.splice(k, 1); changed();
+              draw(function (box) { var c = cardAt(box, i), w = c && c.querySelectorAll('.cel-quiz-q__wrong input'); return w && w.length ? w[Math.min(k, w.length - 1)] : null; });
+            }, 'btn-ghost btn-sm'));
             if (k === 0) li.appendChild(el('p', { class: 'field__label' }, t('celQuizWrong', 'Wrong answers')));
             li.appendChild(row);
           });
           if (q.wrong.length < Q().MAX_WRONG) {
-            li.appendChild(FF.UI.button(t('celQuizAddWrong', 'Add a wrong answer'), { class: 'btn-ghost btn-sm', icon: 'plus', onClick: function () { q.wrong.push(''); changed(); draw(); } }));
+            li.appendChild(FF.UI.button(t('celQuizAddWrong', 'Add a wrong answer'), { class: 'btn-ghost btn-sm', icon: 'plus', onClick: function () {
+              q.wrong.push(''); changed();
+              draw(function (box) { var c = cardAt(box, i), w = c && c.querySelectorAll('.cel-quiz-q__wrong input'); return w && w.length ? w[w.length - 1] : null; });
+            } }));
           }
           li.appendChild(note);
           check();
@@ -678,7 +690,13 @@ window.FF = window.FF || {};
         ideasBtn.disabled = atMax;
         ownBtn.disabled = atMax;
         full.hidden = !atMax;
+        listBox.style.minHeight = '';
+        if (window.pageYOffset !== y) window.scrollTo(0, y);
+        var f = focusOn && focusOn(listBox);
+        if (f) { try { f.focus({ preventScroll: true }); } catch (e) { f.focus(); } }
       }
+      /* Question i's card, after a redraw. */
+      function cardAt(box, i) { return box.querySelectorAll('.cel-quiz-q')[i] || null; }
 
       function move(i, by) {
         var j = i + by;
