@@ -21,6 +21,7 @@ FF.AssetManifest = {
     "miniCrossword": "ca1c3143",
     "numberChallenge": "de9368b5",
     "numberRush": "588554f9",
+    "pictureRush": "259c2765",
     "quickTap": "1020b24c",
     "rememberSequence": "f1924cf8",
     "sayWhat": "3295ea65",
