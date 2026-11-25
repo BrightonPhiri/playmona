@@ -640,3 +640,11 @@ test('nc online: a screen taken off the page cleans itself up, so it can never e
   assertEqual(unwatched, 1, 'it stops following the room');
   assertEqual(ends, 0, 'and it never calls api.end for whatever game runs now');
 });
+
+test('numberChallenge cover: processed and in the asset manifest', function () {
+  const fs = require('fs');
+  const path = require('path');
+  const ROOT = path.resolve(__dirname, '..', '..');
+  assert(fs.existsSync(path.join(ROOT, 'assets/images/covers/numberChallenge.webp')), 'cover file');
+  assert(/"numberChallenge"/.test(fs.readFileSync(path.join(ROOT, 'js/data/assetManifest.js'), 'utf8')), 'has a cover');
+});
