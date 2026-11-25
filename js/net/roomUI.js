@@ -15,7 +15,6 @@ window.FF = window.FF || {};
     // Parallel play: same letters for everyone, each keeps their own score.
     'letterRush',
     'whatsMissing',
-    'numberChallenge',
     // Races: the same card, word, clues or verse for everyone at once.
     'wordScramble', 'bibleWhoAmI', 'bibleVerseRush',
     // Parallel challenges (js/net/parallel.js): the same puzzle on every
@@ -42,7 +41,9 @@ window.FF = window.FF || {};
     // Sayings dealt and answers checked by the server's referee (js/saywhat/referee.js), same clock for everyone.
     'sayWhat',
     // The same puzzle for everyone; every move checked by the server's referee (js/wordshift/referee.js).
-    'wordShift'
+    'wordShift',
+    // Sums, chains, targets or a sprint, dealt and checked by the server's referee (js/numberchallenge/referee.js).
+    'numberChallenge'
     // Brain Battle is deliberately absent: its format is a personal
     // streak run per player, so there is no shared question to race for.
   ];

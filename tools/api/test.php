@@ -1110,6 +1110,7 @@ require __DIR__ . '/crossword.test.php';
 require __DIR__ . '/logoRush.test.php';
 require __DIR__ . '/sketchBack.test.php';
 require __DIR__ . '/sayWhat.test.php';
+require __DIR__ . '/numberChallenge.test.php';
 require __DIR__ . '/wordShift.test.php';
 require __DIR__ . '/leaderboards.test.php';
 require __DIR__ . '/celebrations.test.php';

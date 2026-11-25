@@ -366,3 +366,27 @@ test('sayWhat cover: processed and in the asset manifest', function () {
   assert(fs.existsSync(path.join(ROOT, 'assets/images/covers/sayWhat.webp')), 'cover file');
   assert(/"sayWhat"/.test(fs.readFileSync(path.join(ROOT, 'js/data/assetManifest.js'), 'utf8')), 'has a cover');
 });
+
+test('sw online: a screen taken off the page cleans itself up, so it can never end the next game', async () => {
+  const FF = loadFF(GAME.concat(['js/storage.js', 'js/saywhat/client.js']));
+  const doc = FF.__sandbox.document;
+  let raceEnds = 0, ends = 0, unwatched = 0;
+  FF.Race = { begin: function () {}, end: function () { raceEnds++; } };
+  const root = doc.createElement('div');
+  doc.body.appendChild(root);
+  const api = {
+    def: { id: 'sayWhat' },
+    shell: { root: root, hideTimer: function () {}, updateScores: function () {} },
+    audio: { play: function () {} },
+    end: function () { ends++; }
+  };
+  const T = { watch: function () { return function () { unwatched++; }; }, serverNow: function () { return Date.now(); }, set: function () { return Promise.resolve(); } };
+  FF.SayWhatGame.online(api, { transport: T, uid: 'p1', code: 'ROOM01', meta: { swMatch: 'y_1' }, players: {} });
+  await new Promise((r) => setTimeout(r, 450));
+  assertEqual(raceEnds, 0, 'still on the page: still running');
+  doc.body.removeChild(root);
+  await new Promise((r) => setTimeout(r, 450));
+  assertEqual(raceEnds, 1, 'its own race is closed once');
+  assertEqual(unwatched > 0, true, 'it stops following the room');
+  assertEqual(ends, 0, 'and it never calls api.end for whatever game runs now');
+});

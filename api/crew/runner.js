@@ -84,6 +84,7 @@ async function main() {
   const logorushes = new Map(); // Logo Rush matchId -> { ref, transport }
   const sketchbacks = new Map(); // SketchBack matchId -> { ref, transport }
   const saywhats = new Map(); // Say What? matchId -> { ref, transport }
+  const numberchallenges = new Map(); // Number Challenge matchId -> { ref, transport }
   const celebrations = new Map(); // Celebrations runId -> { ref, transport }
   let lastActive = Date.now();
   const isQuiet = (w) => FF.Words.isQuiet(w);
@@ -480,6 +481,41 @@ async function main() {
     if (saywhats.size) lastActive = Date.now();
   }, log);
 
+  /* Number Challenge: the runner is the referee for every online match the API started (numberchallengeRuns). */
+  function startNumberChallenge(matchId, run) {
+    if (!run || !run.roomCode || !run.seats) return;
+    const code = run.roomCode;
+    const transport = roomTransport(rtdb, code, serverNow, (m) => log(matchId + ': ' + m));
+    const stopIt = () => {
+      const r = numberchallenges.get(matchId);
+      if (!r) return;
+      r.ref.stop();
+      transport.close();
+      numberchallenges.delete(matchId);
+      lastActive = Date.now();
+    };
+    const ref = FF.NumberChallengeReferee.create({
+      run, room: transport,
+      store: {
+        load: () => rtdb.get('numberchallengeState/' + matchId),
+        save: (s) => rtdb.set('numberchallengeState/' + matchId, s)
+      },
+      randomInt: (n) => crypto.randomInt(n),
+      log: (m) => log(matchId + ': ' + m),
+      report: (event, payload) => api('report', Object.assign({}, payload, { matchId, event })),
+      onEnd: () => setTimeout(stopIt, 60000)
+    });
+    numberchallenges.set(matchId, { ref, transport });
+    log('refereeing Number Challenge ' + matchId + ' in ' + code);
+    ref.start().catch((e) => { log(matchId + ': referee failed: ' + (e && e.message)); stopIt(); });
+  }
+
+  const numberchallengeRuns = rtdb.stream('numberchallengeRuns', (all) => {
+    all = all || {};
+    Object.keys(all).forEach((id) => { if (!numberchallenges.has(id)) startNumberChallenge(id, all[id]); });
+    if (numberchallenges.size) lastActive = Date.now();
+  }, log);
+
   /* WordShift: the runner is the referee for every online match the API started (wordshiftRuns). */
   function startWordShift(matchId, run) {
     if (!run || !run.roomCode || !run.seats) return;
@@ -562,7 +598,7 @@ async function main() {
 
   async function beat() {
     try {
-      const res = await api('heartbeat', { pid: process.pid, matches: Array.from(playing.keys()), imposters: Array.from(referees.keys()), wordflow: Array.from(wordflows.keys()), ballswap: Array.from(ballswaps.keys()), sortrush: Array.from(sortrushes.keys()), geospin: Array.from(geospins.keys()), whatsmissing: Array.from(whatsmissings.keys()), crossword: Array.from(crosswords.keys()), logorush: Array.from(logorushes.keys()), sketchback: Array.from(sketchbacks.keys()), saywhat: Array.from(saywhats.keys()), wordshift: Array.from(wordshifts.keys()), celebration: Array.from(celebrations.keys()) });
+      const res = await api('heartbeat', { pid: process.pid, matches: Array.from(playing.keys()), imposters: Array.from(referees.keys()), wordflow: Array.from(wordflows.keys()), ballswap: Array.from(ballswaps.keys()), sortrush: Array.from(sortrushes.keys()), geospin: Array.from(geospins.keys()), whatsmissing: Array.from(whatsmissings.keys()), crossword: Array.from(crosswords.keys()), logorush: Array.from(logorushes.keys()), sketchback: Array.from(sketchbacks.keys()), saywhat: Array.from(saywhats.keys()), numberchallenge: Array.from(numberchallenges.keys()), wordshift: Array.from(wordshifts.keys()), celebration: Array.from(celebrations.keys()) });
       (res.drop || []).forEach((id) => { const m = playing.get(id); if (m) m.ctl.stop(); });
       (res.dropImposters || []).forEach((id) => {
         const r = referees.get(id);
@@ -608,6 +644,10 @@ async function main() {
         const r = saywhats.get(id);
         if (r) { r.ref.stop(); r.transport.close(); saywhats.delete(id); }
       });
+      (res.dropNumberchallenge || []).forEach((id) => {
+        const r = numberchallenges.get(id);
+        if (r) { r.ref.stop(); r.transport.close(); numberchallenges.delete(id); }
+      });
       (res.dropCelebration || []).forEach((id) => {
         const r = celebrations.get(id);
         if (r) { r.ref.stop(); r.transport.close(); celebrations.delete(id); }
@@ -615,7 +655,7 @@ async function main() {
     } catch (e) {
       log('heartbeat failed: ' + e.message);
     }
-    if (!playing.size && !referees.size && !wordflows.size && !ballswaps.size && !sortrushes.size && !geospins.size && !whatsmissings.size && !crosswords.size && !logorushes.size && !sketchbacks.size && !saywhats.size && !wordshifts.size && !celebrations.size && Date.now() - lastActive > (cfg.idleMinutes || 5) * 60000) {
+    if (!playing.size && !referees.size && !wordflows.size && !ballswaps.size && !sortrushes.size && !geospins.size && !whatsmissings.size && !crosswords.size && !logorushes.size && !sketchbacks.size && !saywhats.size && !numberchallenges.size && !wordshifts.size && !celebrations.size && Date.now() - lastActive > (cfg.idleMinutes || 5) * 60000) {
       log('nothing to play; stopping');
       runs.close();
       imposterRuns.close();
@@ -628,6 +668,7 @@ async function main() {
       logorushRuns.close();
       sketchbackRuns.close();
       saywhatRuns.close();
+      numberchallengeRuns.close();
       wordshiftRuns.close();
       celebrationRuns.close();
       try { await api('stopped', { pid: process.pid }); } catch (e) { /* the API notices anyway */ }
@@ -649,6 +690,7 @@ async function main() {
     logorushRuns.close();
     sketchbackRuns.close();
     saywhatRuns.close();
+    numberchallengeRuns.close();
     wordshiftRuns.close();
     celebrationRuns.close();
     playing.forEach((m) => { try { m.transport.close(); } catch (e) { /* gone */ } });
@@ -662,6 +704,7 @@ async function main() {
     logorushes.forEach((r) => { try { r.ref.stop(); r.transport.close(); } catch (e) { /* gone */ } });
     sketchbacks.forEach((r) => { try { r.ref.stop(); r.transport.close(); } catch (e) { /* gone */ } });
     saywhats.forEach((r) => { try { r.ref.stop(); r.transport.close(); } catch (e) { /* gone */ } });
+    numberchallenges.forEach((r) => { try { r.ref.stop(); r.transport.close(); } catch (e) { /* gone */ } });
     wordshifts.forEach((r) => { try { r.ref.stop(); r.transport.close(); r.inbox.close(); } catch (e) { /* gone */ } });
     celebrations.forEach((r) => { try { r.ref.stop(); r.transport.close(); } catch (e) { /* gone */ } });
     cleanup();   // free the lock for the new copy

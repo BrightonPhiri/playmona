@@ -245,6 +245,21 @@ window.FF = window.FF || {};
       swSeats.start();
     }
 
+    /* Number Challenge online is refereed by the server: its seats work each sum out (a chain from
+       the steps they saw) and answer through the inbox while it is open (js/crew/brains/numberChallenge.js). */
+    var ncSeats = null, ncKey = null;
+    function onNumberChallenge() {
+      var playing = meta && meta.status === 'playing' && meta.gameId === 'numberChallenge' && meta.ncMatch && FF.CrewNumberChallenge;
+      var key = playing ? gameKey() : null;
+      if (ncSeats && ncKey !== key) { ncSeats.stop(); ncSeats = null; }
+      if (!playing || ncSeats) return;
+      ncKey = key;
+      ncSeats = FF.CrewNumberChallenge.create({
+        transport: T, uids: function () { return uids.filter(present); }, crew: crew, later: later, log: log
+      });
+      ncSeats.start();
+    }
+
     /* WordShift online is refereed by the server: its seats find their own way to the target and
        move through the inbox, each reading only its own words (js/crew/brains/wordShift.js). */
     var wsSeats = null, wsKey = null;
@@ -271,6 +286,7 @@ window.FF = window.FF || {};
       onWordFlow();
       onWhatsMissing();
       onSayWhat();
+      onNumberChallenge();
       onWordShift();
     }
 
@@ -281,6 +297,7 @@ window.FF = window.FF || {};
       if (wfSeats) { wfSeats.stop(); wfSeats = null; }
       if (wmSeats) { wmSeats.stop(); wmSeats = null; }
       if (swSeats) { swSeats.stop(); swSeats = null; }
+      if (ncSeats) { ncSeats.stop(); ncSeats = null; }
       if (wsSeats) { wsSeats.stop(); wsSeats = null; }
       offs.forEach(function (off) { try { off(); } catch (e) { /* already closed */ } });
       offs = [];
