@@ -21,17 +21,17 @@ class Crew
     public const ONLINE_GAMES = [
         'bibleQuiz',
         'guessIt', 'familyQuiz', 'guessWho', 'quickTap',
-        'letterRush', 'whatsMissing', 'numberChallenge', 'visualRiddle',
+        'letterRush', 'whatsMissing', 'numberChallenge',
         'wordScramble', 'bibleWhoAmI', 'bibleVerseRush', 'memoryMatch',
         'rememberSequence', 'picturePuzzle', 'spotDifference', 'hiddenObject', 'bibleBooks', 'numberRush',
-        'whoIsMostLikely', 'imposters', 'wordFlow', 'ballSwap', 'blinkRemember', 'sortRush', 'stacoend', 'geoSpin', 'miniCrossword', 'logoRush', 'sketchBack', 'sayWhat', 'wordShift',
+        'imposters', 'wordFlow', 'ballSwap', 'blinkRemember', 'sortRush', 'stacoend', 'geoSpin', 'miniCrossword', 'logoRush', 'sketchBack', 'sayWhat', 'wordShift',
     ];
 
     /** The online games crew can play (each has a brain in js/crew/brains). Crew are only seated in these. */
     public const GAMES = [
         'bibleQuiz',
         'guessIt', 'familyQuiz', 'guessWho', 'quickTap',
-        'letterRush', 'whatsMissing', 'numberChallenge', 'visualRiddle', 'imposters', 'wordFlow', 'sayWhat', 'wordShift',
+        'letterRush', 'whatsMissing', 'numberChallenge', 'imposters', 'wordFlow', 'sayWhat', 'wordShift',
     ];
 
     public const TRAITS = ['competitiveness', 'friendliness', 'reaction', 'accuracy', 'risk', 'strategy', 'patience', 'consistency', 'social'];
@@ -233,10 +233,10 @@ class Crew
     public const ARCHETYPES = [
         'quizzer' => ['base' => [45, 60], 'strong' => ['familyQuiz', 'guessWho', 'bibleQuiz'], 'traits' => ['accuracy' => 20, 'patience' => 10]],
         'speedster' => ['base' => [40, 55], 'strong' => ['quickTap'], 'traits' => ['reaction' => 30, 'risk' => 15, 'patience' => -15]],
-        'wordsmith' => ['base' => [45, 60], 'strong' => ['letterRush', 'guessWho', 'visualRiddle'], 'traits' => ['strategy' => 20, 'patience' => 15]],
+        'wordsmith' => ['base' => [45, 60], 'strong' => ['letterRush', 'guessWho', 'wordShift'], 'traits' => ['strategy' => 20, 'patience' => 15]],
         'traveller' => ['base' => [40, 55], 'strong' => ['guessIt', 'geoSpin'], 'traits' => ['accuracy' => 15]],
         'casual' => ['base' => [30, 45], 'strong' => ['guessIt'], 'traits' => ['friendliness' => 20, 'competitiveness' => -20, 'consistency' => -10]],
-        'thinker' => ['base' => [45, 60], 'strong' => ['numberChallenge', 'visualRiddle', 'whatsMissing'], 'traits' => ['strategy' => 25, 'reaction' => -10]],
+        'thinker' => ['base' => [45, 60], 'strong' => ['numberChallenge', 'whatsMissing', 'familyQuiz'], 'traits' => ['strategy' => 25, 'reaction' => -10]],
         'allrounder' => ['base' => [50, 65], 'strong' => [], 'traits' => ['consistency' => 15, 'competitiveness' => 15]],
         'sporty' => ['base' => [38, 52], 'strong' => ['guessIt', 'quickTap'], 'traits' => ['social' => 15, 'risk' => 10]],
         'pictures' => ['base' => [40, 55], 'strong' => ['guessIt', 'whatsMissing'], 'traits' => ['patience' => 10]],

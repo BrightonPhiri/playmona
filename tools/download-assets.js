@@ -123,7 +123,7 @@ const GAME = {
   guessWho: 'detective',
   // visual
   picturePuzzle: 'puzzle-piece', spotDifference: 'magnifying-glass',
-  hiddenObject: 'binoculars', visualRiddle: 'question',
+  hiddenObject: 'binoculars',
   guessIt: 'images',
   // memory
   memoryMatch: 'cards', whatsMissing: 'eye-slash',
@@ -132,11 +132,8 @@ const GAME = {
   quickTap: 'hand-tap',
   // creative
   charades: 'person-arms-spread',
-  dontSayIt: 'x-circle', drawingChallenge: 'pencil', pictionary: 'chalkboard',
   // numbers
   numberChallenge: 'hash', numberRush: 'target', ballSwap: 'arrows-left-right', blinkRemember: 'eye', sortRush: 'stack', geoSpin: 'globe-hemisphere-west',
-  // party
-  whoIsMostLikely: 'target',
 };
 // extra UI chrome icons used by the shell
 const UI = {

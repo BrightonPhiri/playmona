@@ -222,16 +222,12 @@ test('ch decks: every card is short enough to act and read', function () {
 
 test('ch registered: own file, old block gone, scripts listed in order', function () {
   assert(/id:\s*'charades'/.test(read('js/games/charades.js')), 'registered in charades.js');
-  const creative = read('js/games/creativeGames.js');
-  assert(!/id:\s*'charades'/.test(creative), 'no longer in creativeGames.js');
-  assert(/id:\s*'dontSayIt'/.test(creative), 'Don\'t Say It stays');
-  assert(!/id:\s*'visualCharades'/.test(creative), 'Visual Charades was removed');
+  assert(!fs.existsSync(path.join(ROOT, 'js/games/creativeGames.js')), 'the old creative games file is gone');
   [['play.html', 'js/'], ['tools/test-seed.html', '../js/'], ['tools/load-check.js', 'js/']].forEach(function (pair) {
     const src = read(pair[0]);
     const at = (f) => src.indexOf(pair[1] + f);
     ['data/charadesDecks.js', 'charades/rules.js', 'games/charades.js'].forEach((f) => assert(at(f) !== -1, pair[0] + ' lists ' + f));
     assert(at('data/charadesDecks.js') < at('games/charades.js') && at('charades/rules.js') < at('games/charades.js'), pair[0] + ': data and rules before the game');
-    assert(at('games/creativeGames.js') < at('games/charades.js'), pair[0] + ': after creativeGames.js');
   });
   assert(/"charades"/.test(read('js/icons.js')), 'has an icon');
 });

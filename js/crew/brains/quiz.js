@@ -15,7 +15,6 @@ window.FF = window.FF || {};
 
   var GAMES = [
     'bibleQuiz', 'guessWho', 'familyQuiz',
-    'visualRiddle',
     'guessIt'
   ];
 
