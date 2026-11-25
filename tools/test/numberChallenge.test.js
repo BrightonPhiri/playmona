@@ -382,3 +382,66 @@ test('nc deal: player 2 is matched in kind and tier but has different numbers', 
   });
   assert(same / total < 0.1, same + ' of ' + total + ' matched items are identical');
 });
+
+/* ---------- judging an answer, and the Sprint clock (shared by the screen and the referee) ---------- */
+
+test('nc judge: a standard run answered right at 1.5 s scores 10 x 225, as the old game', () => {
+  const R = Rof();
+  const items = R.deal(R.STANDARD, 'old-game').items;
+  const total = items.reduce((sum, it) => sum + R.judge(R.STANDARD, it, String(it.answer), 1500).points, 0);
+  assertEqual(total, 2250);
+  assertEqual(R.judge(R.STANDARD, items[0], String(items[0].answer + 1), 1500), { ok: false, points: 0 });
+  assertEqual(R.judge(R.STANDARD, items[0], null, 20000).ok, false);
+});
+
+test('nc judge: chain and target answers', () => {
+  const R = Rof();
+  const cs = R.sanitize({ mode: 'chain', level: 'normal' });
+  const c = R.deal(cs, 'j').items[0];
+  assertEqual(R.judge(cs, c, String(c.answer), 0).points, 300);
+  const ts = R.sanitize({ mode: 'target', level: 'expert' });
+  const tg = R.deal(ts, 'j').items[0];
+  const exact = R.judge(ts, tg, R.submitText(tg.solution, tg.target), 120000);
+  assertEqual(exact, { ok: true, points: 250, off: 0, usedAll: true, value: tg.target });
+  const one = R.judge(ts, tg, R.submitText('', tg.tiles[0]), 0);
+  assertEqual(one.ok, false, 'ok means the target was hit');
+  assertEqual(one.points, R.points('target', { level: 'expert', off: one.off, usedAll: false, ms: 0, limitMs: 120000 }));
+  assertEqual(R.judge(ts, tg, 'rubbish', 0), { ok: false, points: 0, off: null, usedAll: false, value: null });
+});
+
+test('nc sprint: a wrong answer takes the penalty off the end and moves on', () => {
+  const R = Rof();
+  const s = R.sanitize({ mode: 'sprint', level: 'normal', sprint: 60 });
+  const items = R.deal(s, 'sp').items;
+  const st = R.sprintCreate(s, 1000);
+  assertEqual(R.sprintEndAt(st), 61000);
+  const a = R.sprintAnswer(st, items, String(items[0].answer), 2000);
+  assertEqual([a.right, a.points, a.penaltyMs, st.i, st.score], [true, 30, 0, 1, 30]);
+  const b = R.sprintAnswer(st, items, '99999', 3000);
+  assertEqual([b.right, b.points, b.penaltyMs, st.i, st.wrong], [false, 0, 3000, 2, 1]);
+  assertEqual(R.sprintEndAt(st), 58000);
+  assertEqual(st.streak, 0); assertEqual(st.best, 1);
+});
+
+test('nc sprint: answers after the end are ignored, Easy costs 2 s', () => {
+  const R = Rof();
+  const s = R.sanitize({ mode: 'sprint', level: 'easy', sprint: 30 });
+  const items = R.deal(s, 'sp2').items;
+  const st = R.sprintCreate(s, 0);
+  R.sprintAnswer(st, items, 'x', 100);
+  assertEqual(R.sprintEndAt(st), 28000);
+  assertEqual(R.sprintAnswer(st, items, String(items[1].answer), 28001).ignored, true);
+  assertEqual(st.i, 1);
+  assert(st.done === false && R.sprintOver(st, 28001));
+});
+
+test('nc sprint: the list end finishes the sprint', () => {
+  const R = Rof();
+  const s = R.sanitize({ mode: 'sprint', level: 'hard', sprint: 90 });
+  const items = R.deal(s, 'sp3').items;
+  const st = R.sprintCreate(s, 0);
+  items.forEach((it, i) => R.sprintAnswer(st, items, String(it.answer), 10 + i));
+  assertEqual(st.done, true); assertEqual(st.right, 150); assertEqual(st.best, 150);
+  assertEqual(R.sprintAnswer(st, items, '1', 2000).ignored, true);
+  assert(R.sprintOver(st, 2000));
+});

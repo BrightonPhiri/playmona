@@ -603,6 +603,45 @@ window.FF = window.FF || {};
   }
   function itemAt(settings, seed, k, p) { return deal(settings, seed, p).items[k] || null; }
 
+  /* ---------- judging (the screen and the referee mark answers the same way) ---------- */
+
+  /* text: the typed or tapped number, or a target's 'steps;value'. ms: time taken.
+     ok means right (a target: hit exactly). */
+  function judge(settings, item, text, ms) {
+    var s = sanitize(settings);
+    var limitMs = secondsFor(s, item) * 1000;
+    if (s.mode === 'target') {
+      var r = targetResult(item, text);
+      var pts = r.ok ? points('target', { level: s.level, off: r.off, usedAll: r.usedAll, ms: ms, limitMs: limitMs }) : 0;
+      return { ok: r.ok && r.off === 0, points: pts, off: r.off, usedAll: r.usedAll, value: r.value };
+    }
+    var right = text != null && check(item, text);
+    var o = { level: s.level, ms: ms, right: right, tier: item.tier, steps: item.steps ? item.steps.length : 0, limitMs: limitMs };
+    return { ok: right, points: points(s.mode, o) };
+  }
+
+  /* ---------- the Sprint clock: one player's run through the list ---------- */
+
+  function sprintCreate(settings, openAt) {
+    var s = sanitize(settings);
+    return { level: s.level, mode: 'sprint', openAt: openAt || 0, lengthMs: s.sprint * 1000, i: 0, right: 0, wrong: 0, score: 0, penalty: 0, streak: 0, best: 0, done: false };
+  }
+  function sprintEndAt(st) { return st.openAt + st.lengthMs - st.penalty; }
+  function sprintOver(st, now) { return st.done || now > sprintEndAt(st); }
+  /* The answer to the current sum (st.i). Late answers and answers after the list are ignored. */
+  function sprintAnswer(st, items, text, now) {
+    if (sprintOver(st, now) || st.i >= items.length) return { ignored: true };
+    var item = items[st.i];
+    var right = text != null && check(item, text);
+    var pts = right ? points('sprint', { level: st.level, tier: item.tier, right: true }) : 0;
+    var pen = right ? 0 : penaltyMs(st.level);
+    if (right) { st.right++; st.score += pts; st.streak++; st.best = Math.max(st.best, st.streak); }
+    else { st.wrong++; st.penalty += pen; st.streak = 0; }
+    st.i++;
+    if (st.i >= items.length) st.done = true;
+    return { right: right, points: pts, penaltyMs: pen, item: item };
+  }
+
   FF.NumberChallengeRules = {
     MODES: MODES, LEVELS: LEVELS, WEIGHT: WEIGHT, TIMES: TIMES, ROUNDS: ROUNDS, SPRINTS: SPRINTS, SPEEDS: SPEEDS,
     STEP_MS: STEP_MS, STANDARD: STANDARD, MIN_PLAYERS: MIN_PLAYERS, MAX_PLAYERS: MAX_PLAYERS, SPRINT_LIST: SPRINT_LIST,
@@ -612,7 +651,8 @@ window.FF = window.FF || {};
     question: question, choicesFor: choicesFor, seqNexts: seqNexts, solveText: solveText, check: check,
     chain: chain, chainText: chainText, applyStep: applyStep,
     target: target, merge: merge, replay: replay, submitText: submitText, targetResult: targetResult, solveTarget: solveTarget,
-    deal: deal, itemAt: itemAt, keyOf: keyOf,
+    deal: deal, itemAt: itemAt, keyOf: keyOf, judge: judge,
+    sprintCreate: sprintCreate, sprintEndAt: sprintEndAt, sprintOver: sprintOver, sprintAnswer: sprintAnswer,
     speedBonus: speedBonus, linearSpeed: linearSpeed, tierAt: tierAt, penaltyMs: penaltyMs, points: points
   };
 })();
