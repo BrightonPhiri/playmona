@@ -105,7 +105,7 @@ window.FF = window.FF || {};
   "miniCrossword": "squares-four",
   "familyQuiz": "brain",
   "guessWho": "detective",
-  "picturePuzzle": "puzzle-piece",
+  "pictureRush": "puzzle-piece",
   "spotDifference": "magnifying-glass",
   "hiddenObject": "binoculars",
   "imposters": "detective",

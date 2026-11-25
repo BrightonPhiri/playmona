@@ -1,7 +1,7 @@
 /* ============================================================
    PLAYMONA — puzzleGames.js
-   Visual puzzle games: Picture Puzzle, Spot the Difference
-   and Hidden Object.
+   Visual puzzle games: Spot the Difference and Hidden Object.
+   (Picture Puzzle was replaced by Picture Rush, js/games/pictureRush.js.)
    Classic script (no ES modules) so the app runs from file://
    ============================================================ */
 window.FF = window.FF || {};
@@ -33,10 +33,6 @@ window.FF = window.FF || {};
     if (api.config.scorers && api.config.scorers.length) return api.config.scorers;
     if (api.config.players && api.config.players.length) return api.config.players;
     return [];
-  }
-
-  function noData(api, what) {
-    FF.GameUI.exitCard(api, what, FF.t('needsPictures', 'This game needs its picture data, which could not be found. Make sure the visual data file is loaded, then try again.'));
   }
 
   function finish(api) {
@@ -270,15 +266,6 @@ window.FF = window.FF || {};
      Everyone gets the same puzzle at the same moment and keeps their own
      score: these turn one finished (or unfinished) puzzle into points. */
 
-  // A sliding puzzle "par": about four moves a tile.
-  function puzzlePoints(st, ms, limitMs, bonus) {
-    var tiles = st.size * st.size - 1;
-    if (!st.solved) return Math.round(bonus * 100 * (st.placed || 0) / tiles);
-    var par = tiles * 4;
-    var tidy = Math.round(100 * Math.min(1, par / Math.max(1, st.moves)));
-    return Math.round(bonus * (150 + tidy + FF.Parallel.speedBonus(ms, limitMs, 150)));
-  }
-
   function spotPoints(st, ms, limitMs, bonus) {
     var pts = st.found * 100;
     if (st.found >= st.total) pts += FF.Parallel.speedBonus(ms, limitMs, 200);
@@ -295,329 +282,8 @@ window.FF = window.FF || {};
     return n === 1 ? FF.t('wrongTap1', '1 wrong tap') : FF.t('wrongTapsN', '{n} wrong taps', { n: n });
   }
 
-  /* ================= puzzle helpers ================= */
-
-  function puzzleNeighbors(cell, size) {
-    var out = [];
-    var r = Math.floor(cell / size);
-    var c = cell % size;
-    if (r > 0) out.push(cell - size);
-    if (r < size - 1) out.push(cell + size);
-    if (c > 0) out.push(cell - 1);
-    if (c < size - 1) out.push(cell + 1);
-    return out;
-  }
-
-  function puzzleAdjacent(a, b, size) {
-    var ra = Math.floor(a / size), ca = a % size;
-    var rb = Math.floor(b / size), cb = b % size;
-    return (Math.abs(ra - rb) + Math.abs(ca - cb)) === 1;
-  }
-
   /* ============================================================
-     1. PICTURE PUZZLE
-     ============================================================ */
-  FF.registerGame({
-    id: 'picturePuzzle',
-    name: 'Picture Puzzle',
-    description: 'Slide the tiles to unscramble a hidden picture.',
-    category: 'visual',
-    icon: '🧩',
-    players: [1, 8],
-    difficulty: 'Normal',
-    duration: 5,
-    tags: ['visual', 'puzzle'],
-    modes: ['solo', 'turn'],
-    defaultMode: 'solo',
-    howToPlay: [
-      'Slide the tiles by tapping one next to the gap.',
-      'Rearrange them to reveal the hidden picture.',
-      'Fewer moves means more points.',
-      'Finish the picture to score.'
-    ],
-    start: function (api) {
-      var vis = (typeof FF.data !== 'undefined') ? FF.data.visual : null;
-      var pool = [];
-      function addAll(arr) { if (arr && arr.length) pool = pool.concat(arr); }
-      if (vis) {
-        addAll(vis.animals);
-        addAll(vis.food);
-        addAll(vis.landmarks);
-        addAll(vis.objects);
-      }
-      if (typeof FF.data !== 'undefined' && FF.data.visual2) {
-        addAll(FF.data.visual2.sports);
-        addAll(FF.data.visual2.vehicles);
-      }
-      pool = pool.filter(function (it) { return it && it.svg && it.name; });
-      if (!pool.length) { noData(api, 'No puzzle pictures'); return; }
-
-      var size = 3;
-      if (api.config.difficulty === 'normal') size = 4;
-      else if (api.config.difficulty === 'hard') size = 5;
-
-      if (FF.Parallel && FF.Parallel.active()) { picturePuzzleOnline(api, pool, size); return; }
-
-      var list = scorers(api);
-      var index = 0;
-      var rounds = (list.length > 1 && api.config.mode !== 'solo') ? list.length : 1;
-      var bag = new api.random.Bag(pool);
-
-      function playRound() {
-        if (index >= rounds) { finish(api); return; }
-        var scorer = list[index];
-        var label = (list.length > 1) ? FF.t('turnOf', '{name}’s turn', { name: scorer.name }) : FF.t('slideTiles', 'Slide the tiles to reveal the picture');
-        index++;
-        renderPuzzle(api, scorer, bag.next(), size, label, playRound);
-      }
-      playRound();
-    }
-  });
-
-  var PUZZLE_SECONDS = { 3: 150, 4: 300, 5: 480 };
-
-  /* Online: every phone gets the same picture, scrambled the same way. */
-  function picturePuzzleOnline(api, pool, size) {
-    var bonus = bonusFor(api);
-    FF.Parallel.seed(api, 'pictures');
-    var pictures = new api.random.Bag(pool);
-    FF.Parallel.run(api, {
-      rounds: size === 3 ? 2 : 1,
-      seconds: PUZZLE_SECONDS[size] || 300,
-      gate: '.puzzle-tile',
-      play: function (n, ctx) {
-        var item = pictures.next();
-        return renderPuzzle(api, ctx.me, item, size, FF.t('slideTiles', 'Slide the tiles to reveal the picture'), null, {
-          extra: ctx.live,
-          roundText: ctx.roundText,
-          done: function (st) { ctx.done(Object.assign({ value: puzzlePoints(st, ctx.elapsed(), ctx.limitMs, bonus) }, st)); },
-          points: function (st) { return puzzlePoints(st, null, ctx.limitMs, bonus); }
-        });
-      },
-      describe: function () { return { kind: 'card', text: FF.t('ppzWatch', 'Everyone is solving the same sliding puzzle') }; },
-      detail: function (a) {
-        return a.solved
-          ? FF.t('ppzDetailSolved', '{moves} moves · {time}', { moves: a.moves || 0, time: FF.Parallel.clock(a.ms) })
-          : FF.t('ppzDetailPlaced', '{n} tiles in place', { n: a.placed || 0 });
-      }
-    });
-  }
-
-  /* race (a room challenge only): { extra, roundText, done(stats), points(stats) }.
-     Then the board is built at once from the round's seeded random numbers,
-     waits for start(), and returns { start, stop }. */
-  function renderPuzzle(api, scorer, item, size, label, onDone, race) {
-    var root = api.shell.root;
-    api.ui.clear(root);
-    api.shell.updateScores(scorer.id);
-    api.shell.hideTimer();
-
-    var wrap = FF.GameUI.stage();
-
-    if (race) {
-      wrap.appendChild(race.extra);
-      wrap.appendChild(FF.GameUI.turnBar(null, race.roundText));
-    }
-    wrap.appendChild(FF.GameUI.prompt(label, 'sm'));
-    var meta = FF.ui.div('gm-turnbar');
-    meta.appendChild(FF.GameUI.pill(item.name, 'image'));
-    var movesEl = FF.GameUI.pill(FF.t('movesN', 'Moves: {n}', { n: 0 }), 'shuffle');
-    movesEl.classList.add('puzzle-moves');
-    meta.appendChild(movesEl);
-    wrap.appendChild(meta);
-
-    var stage = api.ui.div('puzzle-stage');
-    wrap.appendChild(stage);
-
-    stage.appendChild(FF.GameUI.note(FF.t('preparing', 'Getting the puzzle ready…')));
-
-    // Online everyone keeps the same scramble.
-    if (!race) {
-      var controls = api.ui.div('gm-row puzzle-controls');
-      controls.appendChild(FF.UI.button(FF.t('reshuffle', 'Shuffle again'), { icon: 'shuffle', onClick: function () { buildBoard(); } }));
-      wrap.appendChild(controls);
-    }
-
-    root.appendChild(wrap);
-
-    var board = null;
-    var blankCell = 0;
-    var moves = 0;
-    var solved = false;
-    var tileEls = [];
-    var boardSize = 0;
-    var tileSize = 0;
-    var total = 0;
-    var built = false;
-    var open = !race;
-
-    function isSolved() {
-      for (var cell = 0; cell < total; cell++) {
-        if (cell === total - 1) { if (board[cell] !== null) return false; }
-        else if (board[cell] !== cell) return false;
-      }
-      return true;
-    }
-
-    function updateStatus() {
-      if (movesEl) {
-        FF.ui.clear(movesEl);
-        movesEl.appendChild(FF.Icons.icon('shuffle'));
-        movesEl.appendChild(document.createTextNode(FF.t('movesN', 'Moves: {n}', { n: moves })));
-      }
-    }
-
-    function reposition() {
-      for (var cell = 0; cell < total; cell++) {
-        var tid = board[cell];
-        if (tid == null) continue;
-        var t = tileEls[tid];
-        if (!t) continue;
-        t.style.left = (cell % size) * tileSize + 'px';
-        t.style.top = (Math.floor(cell / size)) * tileSize + 'px';
-      }
-    }
-
-    function placed() {
-      var n = 0;
-      for (var cell = 0; cell < total - 1; cell++) if (board[cell] === cell) n++;
-      return n;
-    }
-
-    function stats() {
-      return { solved: solved && isSolved(), moves: moves, placed: placed(), size: size };
-    }
-
-    function onTap(cell) {
-      if (solved || !built || !open) return;
-      if (puzzleAdjacent(cell, blankCell, size)) {
-        board[blankCell] = board[cell];
-        board[cell] = null;
-        blankCell = cell;
-        moves++;
-        reposition();
-        api.audio.play('tap');
-        updateStatus();
-        if (isSolved()) {
-          solved = true;
-          api.audio.play('winner');
-          if (race) {
-            api.shell.toast(FF.t('ppzSolvedIn', 'Solved in {m} moves!', { m: moves }), 'good');
-            var done = stage.querySelector('.puzzle-board');
-            if (done) done.classList.add('puzzle-board--solved');
-            setTimeout(function () { race.done(stats()); }, 1200);
-            return;
-          }
-          var raw = Math.max(50, 300 - moves * 5);
-          var pts = Math.round(raw * bonusFor(api));
-          api.scoring.add(scorer.id, pts);
-          api.shell.updateScores(scorer.id);
-          api.shell.toast(FF.t('solvedIn', 'Solved in {m} moves! +{n} points', { m: moves, n: pts }), 'good');
-          var cont = stage.querySelector('.puzzle-board');
-          if (cont) cont.classList.add('puzzle-board--solved');
-          setTimeout(onDone, 1500);
-        }
-      } else {
-        api.audio.play('wrong');
-      }
-    }
-
-    function makeTile(tid, cell, uri, cont) {
-      var col = tid % size;
-      var row = Math.floor(tid / size);
-      var t = api.ui.el('button', {
-        type: 'button',
-        class: 'puzzle-tile',
-        'aria-label': FF.t('tileN', 'Tile {n}', { n: tid + 1 }),
-        style: {
-          width: tileSize + 'px',
-          height: tileSize + 'px',
-          left: (cell % size) * tileSize + 'px',
-          top: (Math.floor(cell / size)) * tileSize + 'px',
-          backgroundImage: 'url("' + uri + '")',
-          backgroundSize: boardSize + 'px ' + boardSize + 'px',
-          backgroundPosition: (-col * tileSize) + 'px ' + (-row * tileSize) + 'px'
-        },
-        // Tiles move, so look up where this tile is now (not where it started).
-        onclick: function () { onTap(board.indexOf(tid)); }
-      });
-      cont.appendChild(t);
-      return t;
-    }
-
-    function buildBoard(scrambled) {
-      FF.ui.clear(stage);
-      total = size * size;
-      boardSize = Math.min(340, Math.max(220, (window.innerWidth || 360) - 64));
-      boardSize = Math.floor(boardSize / size) * size;
-      tileSize = boardSize / size;
-
-      board = scrambled || scramble();
-      blankCell = board.indexOf(null);
-      moves = 0;
-      solved = false;
-      tileEls = [];
-
-      var uri = api.assets.svgUri(item.svg);
-      var cont = api.ui.div('puzzle-board');
-      cont.style.width = boardSize + 'px';
-      cont.style.height = boardSize + 'px';
-
-      var cell2;
-      for (cell2 = 0; cell2 < total; cell2++) {
-        var tid = board[cell2];
-        if (tid == null) continue;
-        tileEls[tid] = makeTile(tid, cell2, uri, cont);
-      }
-      stage.appendChild(cont);
-      built = true;
-      updateStatus();
-    }
-
-    /* A solvable scramble: random slides away from the finished picture. */
-    function scramble() {
-      total = size * size;
-      board = [];
-      var i;
-      for (i = 0; i < total - 1; i++) board[i] = i;
-      board[total - 1] = null;
-      blankCell = total - 1;
-
-      var shuffles = total * 30;
-      for (i = 0; i < shuffles; i++) {
-        var nb = puzzleNeighbors(blankCell, size);
-        var cell = nb[FF.util.int(0, nb.length - 1)];
-        board[blankCell] = board[cell];
-        board[cell] = null;
-        blankCell = cell;
-      }
-      if (isSolved()) {
-        var nb2 = puzzleNeighbors(blankCell, size);
-        var c2 = nb2[FF.util.int(0, nb2.length - 1)];
-        board[blankCell] = board[c2];
-        board[c2] = null;
-        blankCell = c2;
-      }
-      return board;
-    }
-
-    if (race) {
-      // Drawn now, while the round's random numbers are seeded.
-      buildBoard(scramble());
-      return {
-        start: function () { open = true; },
-        stop: function () {
-          var st = stats();
-          solved = true;   // freezes the tiles
-          return Object.assign({ value: race.points(st) }, st);
-        }
-      };
-    }
-    setTimeout(function () { if (!built) buildBoard(); }, 250);
-  }
-
-  /* ============================================================
-     2. SPOT THE DIFFERENCE
+     1. SPOT THE DIFFERENCE
      ============================================================ */
   FF.registerGame({
     id: 'spotDifference',
@@ -808,7 +474,7 @@ window.FF = window.FF || {};
   }
 
   /* ============================================================
-     3. HIDDEN OBJECT
+     2. HIDDEN OBJECT
      ============================================================ */
   FF.registerGame({
     id: 'hiddenObject',

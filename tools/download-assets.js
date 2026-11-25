@@ -122,7 +122,7 @@ const GAME = {
   familyQuiz: 'brain',
   guessWho: 'detective',
   // visual
-  picturePuzzle: 'puzzle-piece', spotDifference: 'magnifying-glass',
+  pictureRush: 'puzzle-piece', spotDifference: 'magnifying-glass',
   hiddenObject: 'binoculars',
   guessIt: 'images',
   // memory

@@ -23,7 +23,7 @@ class Crew
         'guessIt', 'familyQuiz', 'guessWho', 'quickTap',
         'letterRush', 'whatsMissing', 'numberChallenge',
         'wordScramble', 'bibleWhoAmI', 'bibleVerseRush', 'memoryMatch',
-        'rememberSequence', 'picturePuzzle', 'spotDifference', 'hiddenObject', 'bibleBooks', 'numberRush',
+        'rememberSequence', 'pictureRush', 'spotDifference', 'hiddenObject', 'bibleBooks', 'numberRush',
         'imposters', 'wordFlow', 'ballSwap', 'blinkRemember', 'sortRush', 'stacoend', 'geoSpin', 'miniCrossword', 'logoRush', 'sketchBack', 'sayWhat', 'wordShift',
     ];
 

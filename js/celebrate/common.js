@@ -344,10 +344,11 @@ window.FF = window.FF || {};
     return t(n === 1 ? 'celHereOne' : 'celHereMany', n === 1 ? '1 guest has joined' : '{n} guests have joined', { n: n });
   }
 
-  /* Each game's cover picture (assets/images/covers), by template. Picture Rush has no
-     cover art yet, so it shows its icon (the MC list shows its first photo instead). */
+  /* Each game's cover picture (assets/images/covers), by template. Picture Rush shares the
+     library game's cover once it exists, and shows its icon until then (the MC list shows
+     its first photo instead). */
   var GAME_ART = {
-    pictureRush: { icon: 'puzzle-piece' },
+    pictureRush: { cover: 'pictureRush', icon: 'puzzle-piece', optional: true },
     wordByWord: { cover: 'wordByWord', icon: 'text-aa' },
     quiz: { cover: 'celebrationQuiz', icon: 'question' }
   };
@@ -359,6 +360,7 @@ window.FF = window.FF || {};
     }
     var a = GAME_ART[template];
     if (!a || !a.cover) return null;
+    if (a.optional && !(m && m[a.cover])) return null;     // not drawn yet
     return 'assets/images/covers/' + a.cover + '.webp' + (m && m[a.cover] ? '?v=' + m[a.cover] : '');
   }
   /* The cover as an element: the picture, or the game's icon on a tile. */

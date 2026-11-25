@@ -1,6 +1,7 @@
 /* ============================================================
    PLAYMONA — visual2.js
-   More illustrations: sports and vehicles (Picture Puzzle).
+   More illustrations: sports and vehicles. Picture Rush draws on them
+   until its own pictures are in (js/games/pictureRush.js).
    Attaches to FF.data.visual.
    Classic script, global window.FF, no modules/network.
    ============================================================ */

@@ -79,7 +79,7 @@ These answer by tapping, timing, drawing, voting or acting:
 
 - Quick Tap
 - Memory Match, Picture Memory
-- Picture Puzzle, Spot the Difference, Hidden Object
+- Picture Rush, Spot the Difference, Hidden Object
 - Letter Rush
 - Charades
 
