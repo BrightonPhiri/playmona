@@ -173,6 +173,16 @@
   --sw-chalk-yellow: #fde68a; --sw-chalk-pink: #f9b4d6; --sw-chalk-green: #a7f3c4; --sw-chalk-red: #fca5a5;
   --sw-wood: #8b5a2b; --sw-wood-hi: #b8834b; --sw-wood-deep: #4e3014;
   --sw-block: #ecd2a4; --sw-block-hi: #f8e6c4; --sw-block-ink: #3a2410;
+  /* Number Challenge (js/games/numberChallenge.js): two looks, the same in both themes.
+     Neon arcade, as the cover: a night-navy arcade, glowing cyan and pink digits, gold for points.
+     Notebook: squared paper with a red margin, pencil sums, a blue pen and a yellow highlighter. */
+  --nc-ink-night: #090b26; --nc-night-2: #141a4d; --nc-night-3: #2a1260;
+  --nc-cyan: #22e6ff; --nc-cyan-deep: #0891b2; --nc-pink: #ff3d9a; --nc-pink-deep: #be185d;
+  --nc-gold: #ffd23f; --nc-gold-hi: #ffe98a; --nc-gold-deep: #c99400; --nc-gold-ink: #2a1d00;
+  --nc-green: #3cf08a; --nc-red: #ff5470; --nc-neon-ink: #eef3ff; --nc-neon-dim: #aab4e8;
+  --nc-paper: #fdfbf3; --nc-paper-2: #f3eedc; --nc-grid: #cfe0f2; --nc-margin: #e46a6a;
+  --nc-pencil: #2f3540; --nc-pencil-soft: #5b6370; --nc-pen: #1d4ed8; --nc-marker: #fde047;
+  --nc-tick: #15803d; --nc-tick-soft: #dcfce7; --nc-cross: #c2322f; --nc-cross-soft: #fde2e1;
   /* Charades (js/games/charades.js): a little theatre that is the same in both themes, as the
      cover: plum-black velvet, crimson curtains, a gold spotlight and marquee bulbs, cream cards. */
   --chr-velvet: #12060c; --chr-velvet-2: #2a0c1a; --chr-plum: #4a1530;

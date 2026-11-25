@@ -445,3 +445,173 @@ test('nc sprint: the list end finishes the sprint', () => {
   assertEqual(R.sprintAnswer(st, items, '1', 2000).ignored, true);
   assert(R.sprintOver(st, 2000));
 });
+
+/* ---------- the game: registration, pages, looks, turns ---------- */
+
+const fs = require('fs');
+const path = require('path');
+const ROOT = path.join(__dirname, '..', '..');
+const read = (f) => fs.readFileSync(path.join(ROOT, f), 'utf8');
+
+test('numberChallenge registered: solo and turns, on the leaderboards, room play, listed in every page', () => {
+  const src = read('js/games/numberChallenge.js');
+  assert(/id:\s*'numberChallenge'/.test(src), 'registered');
+  assert(/modes:\s*\['solo', 'turn'\]/.test(src), 'modes');
+  assert(/leaderboard:\s*true/.test(src), 'on the leaderboards');
+  assert(/room:\s*ROOM/.test(src), 'plays in rooms');
+  assert(/"numberChallenge":\s*"hash"/.test(read('js/icons.js')), 'icon stays hash');
+  ['play.html', 'admin.html', 'tools/load-check.js', 'tools/test-seed.html'].forEach((f) => {
+    const s = read(f);
+    assert(s.indexOf('numberGames.js') === -1, f + ' still loads numberGames.js');
+    let at = -1;
+    ['js/games/geoSpin.js', 'js/numberchallenge/rules.js', 'js/numberchallenge/client.js', 'js/games/numberChallenge.js'].forEach((js) => {
+      const i = s.indexOf(js);
+      assert(i !== -1, f + ' loads ' + js);
+      assert(i > at, f + ': ' + js + ' in order');
+      at = i;
+    });
+  });
+  assert(!fs.existsSync(path.join(ROOT, 'js/games/numberGames.js')), 'the old file is gone');
+});
+
+test('numberChallenge looks: arcade and notebook tokens and rules, Patrick Hand for the notebook', () => {
+  const tokens = read('css/tokens.css');
+  ['--nc-ink-night', '--nc-cyan', '--nc-pink', '--nc-gold', '--nc-green', '--nc-paper', '--nc-grid', '--nc-margin', '--nc-pencil'].forEach((tk) => assert(tokens.indexOf(tk + ':') !== -1, 'token ' + tk));
+  const css = read('css/games.css');
+  assert(css.indexOf('[data-nc-look="notebook"]') !== -1, 'notebook rules');
+  assert(/\.nc\[data-nc-look="notebook"\][^{]*\{[^}]*Patrick Hand/.test(css), 'notebook uses Patrick Hand');
+  assert(/prefers-reduced-motion[\s\S]{0,80}\.nc /.test(css), 'reduced motion turns the animations off');
+});
+
+const GAME = ['js/core.js', 'js/storage.js', 'js/numberchallenge/rules.js', 'js/numberchallenge/client.js', 'js/registry.js', 'js/games/numberChallenge.js'];
+
+test('nc turns: points and streak go to the player who answered, and next wraps', () => {
+  const T = loadFF(GAME).NumberChallengeTurns;
+  let s = T.create(['a', 'b', 'c']);
+  s = T.award(s, 'a', 150, true);
+  s = T.award(s, 'a', 200, true);
+  assertEqual(s.points, { a: 350, b: 0, c: 0 });
+  assertEqual(s.streak, { a: 2, b: 0, c: 0 });
+  s = T.award(s, 'b', 0, false);
+  assertEqual(s.streak.a, 2);
+  s = T.award(s, 'a', 0, false);
+  assertEqual([s.streak.a, s.best.a], [0, 2]);
+  const seen = [];
+  for (let i = 0; i < 5; i++) { seen.push(s.order[s.cur]); s = T.next(s); }
+  assertEqual(seen, ['a', 'b', 'c', 'a', 'b']);
+});
+
+test('nc turns: each turn plays player p item k, matched to player 0', () => {
+  const FF = loadFF(GAME);
+  const plan = FF.NumberChallengeGame.turnPlan(FF.NumberChallengeRules.sanitize({ mode: 'quick', rounds: 10 }), 3);
+  assertEqual(plan.length, 30);
+  assertEqual(plan.slice(0, 4), [{ p: 0, k: 0 }, { p: 1, k: 0 }, { p: 2, k: 0 }, { p: 0, k: 1 }]);
+  assertEqual(FF.NumberChallengeGame.turnPlan(FF.NumberChallengeRules.sanitize({ mode: 'sprint' }), 2), [{ p: 0, k: 0 }, { p: 1, k: 0 }]);
+});
+
+test('nc daily and challenge play the standard settings, whatever was saved', () => {
+  const FF = loadFF(GAME);
+  const G = FF.NumberChallengeGame;
+  assertEqual(JSON.stringify(G.settingsFor({ daily: '2026-11-25' }, { mode: 'chain', level: 'hard' })), JSON.stringify(FF.NumberChallengeRules.STANDARD));
+  assertEqual(JSON.stringify(G.settingsFor({ challenge: { seed: 1 } }, { mode: 'target' })), JSON.stringify(FF.NumberChallengeRules.STANDARD));
+  assertEqual(G.settingsFor({}, { mode: 'target', level: 'expert' }).mode, 'target');
+});
+
+/* ---------- screen parts in the harness DOM ---------- */
+
+const txt = (n) => !n ? '' : (n.textContent || '') + (n.children || []).map(txt).join('');
+const fakeApi = () => ({ audio: { play: function () {} } });
+const byClass = (n, c) => (n.children || []).filter((x) => (x.className || '').split(' ').indexOf(c) !== -1)[0];
+function board(FF, item, level) {
+  const sent = [];
+  const b = FF.NumberChallengeGame.targetBoard(fakeApi(), item, { level: level || 'normal' }, (text) => sent.push(text));
+  b.open();
+  const tiles = () => byClass(b.el, 'nc-tiles').children;
+  const values = () => tiles().map(txt);
+  const sign = (op) => byClass(b.el, 'nc-signs').children[item.ops.indexOf(op)];
+  const tool = (i) => byClass(b.el, 'nc-ttools').children[i];
+  const tap = (v) => tiles().filter((t) => txt(t) === String(v))[0].dispatch('click');
+  return { b, sent, values, sign, tool, tap, log: () => byClass(b.el, 'nc-log').children.map(txt), msg: () => byClass(b.el, 'nc-tmsg') };
+}
+const ITEM = { kind: 'target', tiles: [3, 4, 7, 9], target: 50, ops: ['+', '-', '*', '/'], solution: '' };
+
+test('nc target board: tile, sign, tile merges and logs the step', () => {
+  const t = board(loadFF(GAME), ITEM);
+  t.tap(3); t.sign('*').dispatch('click'); t.tap(4);
+  assertEqual(t.values(), ['7', '9', '12']);
+  assertEqual(t.log(), ['3 \u00d7 4 = 12']);
+  assertEqual(t.sent, []);
+});
+
+test('nc target board: refused merges leave the tiles alone', () => {
+  const t = board(loadFF(GAME), ITEM);
+  t.tap(7); t.sign('/').dispatch('click'); t.tap(3);
+  assertEqual(t.values(), ['3', '4', '7', '9'], '7 \u00f7 3 is not whole');
+  assert(t.msg().classList.contains('is-bad'), 'says why');
+  t.tap(7); t.tap(3); t.sign('-').dispatch('click'); t.tap(7);
+  assertEqual(t.values(), ['3', '4', '7', '9'], '3 \u2212 7 is below 0');
+  assertEqual(t.log(), []);
+});
+
+test('nc target board: a hit submits itself, except on Expert with tiles left', () => {
+  const hit = Object.assign({}, ITEM, { target: 12 });
+  const t = board(loadFF(GAME), hit);
+  t.tap(3); t.sign('*').dispatch('click'); t.tap(4);
+  assertEqual(t.sent, ['3*4;12']);
+  const e = board(loadFF(GAME), hit, 'expert');
+  e.tap(3); e.sign('*').dispatch('click'); e.tap(4);
+  assertEqual(e.sent, [], 'Expert waits so every tile can be used');
+  e.tool(2).dispatch('click');   // Done
+  assertEqual(e.sent, ['3*4;12'], 'Done sends the tile nearest the target');
+});
+
+test('nc target board: Undo and Clear restore the tiles', () => {
+  const t = board(loadFF(GAME), ITEM);
+  t.tap(3); t.sign('+').dispatch('click'); t.tap(4);
+  t.tap(7); t.sign('*').dispatch('click'); t.tap(9);
+  assertEqual(t.values(), ['7', '63']);
+  t.tool(0).dispatch('click');   // Undo
+  assertEqual(t.values(), ['7', '9', '7']);
+  t.tool(1).dispatch('click');   // Clear
+  assertEqual(t.values(), ['3', '4', '7', '9']);
+  assertEqual(t.log(), []);
+});
+
+test('nc chain screen: steps show one at a time and only the current step is in the card', () => {
+  const FF = loadFF(GAME);
+  const R = FF.NumberChallengeRules;
+  const queue = [];
+  FF.__sandbox.setTimeout = (fn, ms) => { queue.push(fn); return queue.length; };
+  FF.__sandbox.clearTimeout = () => {};
+  const item = R.chain('normal', R.rng('chain-screen'));
+  const card = FF.NumberChallengeGame.chainCard(item, R.STEP_MS.steady);
+  let asked = false;
+  card.run(() => { asked = true; });
+  const big = () => txt(card.el.children[1]);
+  assertEqual(big(), String(item.start), 'starts on the start number');
+  queue.shift()();
+  const s1 = big();
+  queue.shift()();
+  const s2 = big();
+  assert(s1 !== s2 && txt(card.el).indexOf(s1) === -1, 'step 1 is gone once step 2 shows: ' + s1 + ' / ' + s2);
+  while (queue.length) queue.shift()();
+  assert(asked && big() === '= ?', 'ends on = ? and opens the answers');
+});
+
+test('nc number pad: leading zeros drop, empty Enter does nothing, 4 digits at most', () => {
+  const FF = loadFF(GAME);
+  const sent = [];
+  const pad = FF.NumberChallengeGame.numberPad(fakeApi(), (v) => sent.push(v));
+  pad.open();
+  const keys = byClass(pad.el, 'nc-pad').children;
+  const key = (label) => keys.filter((k) => txt(k) === label)[0].dispatch('click');
+  key('\u2713');
+  assertEqual(sent, [], 'empty');
+  key('0'); key('0'); key('7');
+  assertEqual(pad.value(), '7');
+  key('1'); key('2'); key('3'); key('4');
+  assertEqual(pad.value(), '7123');
+  key('\u232b');
+  key('\u2713');
+  assertEqual(sent, ['712']);
+});
