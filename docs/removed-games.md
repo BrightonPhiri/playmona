@@ -91,7 +91,25 @@ Last commit with all five: `977f433` (main, before `chore/remove-five-games`).
 game used any more: `charades` (165, Charades has its own decks now), `finishSentence`
 (75) and `describeIt` (95). All are in `977f433:js/data/party.js`.
 
-The sports and vehicle pictures in `js/data/visual2.js` stay: Picture Puzzle uses them.
+The sports and vehicle pictures in `js/data/visual2.js` stay: Picture Rush uses them until its own pictures are in.
+
+## Replaced 2026-11-25: Picture Puzzle (`picturePuzzle`)
+
+Last commit with it: `8976e66` (main, before `feat/picture-rush`).
+
+- **What it was:** a sliding tile puzzle (the 15-puzzle): one gap, tap a tile next to it to slide it.
+- **How it played:** Easy 3×3, Normal 4×4, Hard 5×5. Solo or turns; a solved picture scored
+  `max(50, 300 - 5 × moves)` × the difficulty bonus (1, 1.5, 2). Online it was a parallel race
+  (2 rounds on 3×3, 1 otherwise; 150 / 300 / 480 s), scored by moves against a par of 4 a tile,
+  plus a speed bonus; unfinished boards scored by tiles in place. It had no cover and no crew brain.
+- **Content:** about 147 simple SVG drawings: `js/data/visual.js` (animals, food, landmarks,
+  objects) and `js/data/visual2.js` (sports, vehicles).
+- **Code:** `js/games/puzzleGames.js` (`renderPuzzle`, `picturePuzzleOnline`, `puzzlePoints`),
+  `.puzzle-*` styles in `css/games.css`.
+- **Weak spots:** slow and fiddly on a phone (one move at a time, any order), the flat drawings were
+  hard to read as tiles, and move counts made a dull score.
+- **Replaced by:** Picture Rush (`pictureRush`), the swap-two-tiles game from Celebrations, with
+  its own pictures. Picture Puzzle's leaderboard scores were left behind with the old id.
 
 ## Earlier removals
 

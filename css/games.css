@@ -413,6 +413,16 @@
 .sq-msg { min-height: 1.5em; color: var(--muted); font-weight: 700; }
 .sq-setup__hint { max-width: 620px; margin: var(--sp-2) auto 0; }
 
+/* Picture Rush (js/games/pictureRush.js); the tile board is .prb in css/celebrate.css */
+.prx { gap: var(--sp-2); }
+.prx-meta { justify-content: center; flex-wrap: wrap; }
+.prx-msg { min-height: 1.5em; text-align: center; color: var(--muted); font-weight: 700; }
+.prx-msg.is-good { color: var(--success); }
+.prx-msg.is-out { color: var(--danger); }
+.prx-board { width: min(100%, 560px, 60vh); margin: 0 auto; }
+.prx-board .prb { width: 100%; }
+.prx-foot { display: flex; flex-wrap: wrap; gap: var(--sp-2); justify-content: center; align-items: center; min-height: 48px; }
+
 /* Blink & Remember (js/games/blinkRemember.js) */
 .bk { gap: var(--sp-3); }
 .bk-grid {
@@ -812,22 +822,7 @@
   .gm-duo-btn { min-height: 140px; }
 }
 
-/* ============ Visual puzzles: picture puzzle, spot the difference, hidden object ============ */
-.puzzle-stage { display: flex; justify-content: center; margin: var(--sp-2) auto; }
-.puzzle-board {
-  position: relative; margin: 0 auto; overflow: hidden;
-  border-radius: var(--r-md); background: var(--surface-3);
-  box-shadow: var(--shadow-2);
-  transition: box-shadow var(--dur-slow) var(--ease);
-}
-.puzzle-board--solved { box-shadow: 0 0 0 4px var(--success), var(--shadow-2); }
-.puzzle-tile {
-  position: absolute; padding: 0; border: 0;
-  background-repeat: no-repeat;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4);
-  transition: left 150ms var(--ease), top 150ms var(--ease);
-}
-.puzzle-tile:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: -3px; z-index: 2; }
+/* ============ Visual puzzles: spot the difference, hidden object ============ */
 .spot-panels { display: flex; flex-wrap: wrap; gap: var(--sp-4); justify-content: center; align-items: flex-start; }
 .stage-col { display: inline-flex; flex-direction: column; align-items: center; gap: 6px; }
 .stage-label { font-weight: 800; font-size: var(--fs-sm); color: var(--muted); }

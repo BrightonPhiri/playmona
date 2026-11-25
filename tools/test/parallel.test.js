@@ -15,7 +15,7 @@ const GAMES = {
   rememberSequence: 'sequence.js',
   blinkRemember: 'blinkRemember.js',
   stacoend: 'stacoend.js',
-  picturePuzzle: 'puzzleGames.js',
+  pictureRush: 'pictureRush.js',
   spotDifference: 'puzzleGames.js',
   hiddenObject: 'puzzleGames.js',
   bibleBooks: 'bibleGames.js'
@@ -27,7 +27,8 @@ const EXPOSE = {
   'sequence.js': ['sequencePoints', 'rsLength', 'rsSeconds'],
   'blinkRemember.js': [],
   'stacoend.js': [],
-  'puzzleGames.js': ['puzzlePoints', 'spotPoints', 'hiddenPoints'],
+  'pictureRush.js': [],
+  'puzzleGames.js': ['spotPoints', 'hiddenPoints'],
   'bibleGames.js': ['booksPoints']
 };
 
@@ -36,6 +37,7 @@ const EXPOSE = {
 function phone() {
   const FF = loadFF(['js/core.js', 'js/storage.js', 'js/i18n.js', 'js/ui-kit.js', 'js/icons.js', 'js/gameUI.js',
     'js/net/parallel.js', 'js/data/memoryDecks.js', 'js/data/visual.js', 'js/data/visual2.js',
+    'js/data/pictureRush.js', 'js/celebrate/pictureRush/rules.js', 'js/celebrate/pictureRush/board.js',
     'js/data/words.js', 'js/data/bible.js', 'js/data/wordlist.js', 'js/words.js', 'js/data/lexicon.js']);
   const sb = FF.__sandbox;
   sb.getComputedStyle = function () {
@@ -155,10 +157,6 @@ test('parallel: points reward accuracy and speed in every game', function () {
   assertEqual(s(6, 3, null, 1), 15, 'a slip keeps 5 a right colour');
   assertEqual(FF.__rsLength(4, 20), 12, 'sequences stop growing at 12');
   assert(FF.__rsSeconds(12) >= 12 * 0.6 + 12 * 1.5, 'enough time to watch and repeat');
-
-  const pz = FF.__puzzlePoints;
-  assert(pz({ solved: true, moves: 40, size: 3, placed: 8 }, 0, 150000, 1) > pz({ solved: true, moves: 200, size: 3, placed: 8 }, 0, 150000, 1), 'fewer moves');
-  assertEqual(pz({ solved: false, moves: 50, size: 3, placed: 4 }, null, 150000, 1), 50, 'half the tiles in place');
 
   const sp = FF.__spotPoints;
   assertEqual(sp({ found: 2, total: 5, wrong: 0 }, null, 80000, 1), 200);

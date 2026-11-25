@@ -28,7 +28,7 @@ if ($missing.Count) { Write-Host "MISSING (referenced but not on disk):" -Foregr
 if ($unref) { Write-Host "UNREFERENCED (on disk but not in play.html):" -ForegroundColor Yellow; $unref | ForEach-Object { Write-Host "  $_" } }
 
 Write-Host "`n=== 3. Game registry ===" -ForegroundColor Cyan
-$gameIds = @('letterRush','wordScramble','wordChain','miniCrossword','familyQuiz','guessWho','memoryMatch','whatsMissing','rememberSequence','quickTap','numberChallenge','charades','guessIt','spotDifference','picturePuzzle','hiddenObject','imposters','wordFlow')
+$gameIds = @('letterRush','wordScramble','wordChain','miniCrossword','familyQuiz','guessWho','memoryMatch','whatsMissing','rememberSequence','quickTap','numberChallenge','charades','guessIt','spotDifference','pictureRush','hiddenObject','imposters','wordFlow')
 $allGameCode = (Get-ChildItem -Recurse -Filter *.js -Path (Join-Path $root 'js\games') | ForEach-Object { Get-Content $_.FullName -Raw }) -join "`n"
 foreach ($id in $gameIds) {
   if ($allGameCode -notmatch "id:\s*['""]$id['""]") { Write-Host "NOT REGISTERED: $id" -ForegroundColor Red }

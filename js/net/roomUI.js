@@ -20,7 +20,7 @@ window.FF = window.FF || {};
     // Parallel challenges (js/net/parallel.js): the same puzzle on every
     // phone at once, each player keeps their own score.
     'memoryMatch', 'rememberSequence',
-    'picturePuzzle', 'spotDifference', 'hiddenObject',
+    'pictureRush', 'spotDifference', 'hiddenObject',
     'bibleBooks', 'numberRush', 'blinkRemember', 'stacoend',
     // Secret words dealt by the server's referee (js/imposters/referee.js).
     'imposters',

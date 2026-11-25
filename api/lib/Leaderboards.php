@@ -22,7 +22,7 @@ class Leaderboards
         'bibleQuiz', 'bibleWhoAmI', 'bibleVerseRush', 'bibleBooks',
         'letterRush', 'memoryMatch', 'whatsMissing', 'rememberSequence', 'blinkRemember',
         'numberChallenge', 'numberRush',
-        'picturePuzzle', 'spotDifference', 'hiddenObject', 'sortRush',
+        'pictureRush', 'spotDifference', 'hiddenObject', 'sortRush',
         'guessWho', 'familyQuiz',
         'quickTap',
         'guessIt', 'geoSpin', 'logoRush', 'sketchBack', 'sayWhat', 'wordShift',
