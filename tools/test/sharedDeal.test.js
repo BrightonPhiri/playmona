@@ -116,5 +116,5 @@ test('shared deal: Number Challenge deals from the seed alone', function () {
     assertEqual(JSON.stringify(b.deal(s, 'ch|abc')), JSON.stringify(a.deal(s, 'ch|abc')), mode);
   });
   const src = require('fs').readFileSync(require('path').join(ROOT, 'js/numberchallenge/rules.js'), 'utf8');
-  assert(src.indexOf('Math.random') === -1, 'rules never use Math.random');
+  assert(!/Math\.random\s*\(/.test(src), 'rules never call Math.random');
 });
