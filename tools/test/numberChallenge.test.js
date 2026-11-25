@@ -179,3 +179,66 @@ test('nc sums: a missing-number choice is never a number shown in the sum', () =
     }
   });
 });
+
+/* ---------- chain ---------- */
+
+const STEPS = { easy: 3, normal: 5, hard: 7, expert: 7 };
+
+test('nc chain: 2000 seeds per level keep every value whole within 0-999, the right step count, and answer = last value', () => {
+  const R = Rof();
+  R.LEVELS.forEach((lv) => {
+    for (let s = 0; s < 2000; s++) {
+      const c = R.chain(lv, R.rng('ch' + lv + s));
+      assertEqual(c.kind, 'chain');
+      assertEqual(c.steps.length, STEPS[lv], lv);
+      assertEqual(c.values.length, STEPS[lv]);
+      let v = c.start;
+      assert(Number.isInteger(v) && v >= 0 && v <= 999);
+      c.steps.forEach((st, i) => {
+        v = st.op === '+' ? v + st.n : st.op === '-' ? v - st.n : st.op === 'x' ? v * st.n : st.op === '/' ? v / st.n : st.op === 'double' ? v * 2 : v / 2;
+        assert(Number.isInteger(v) && v >= 0 && v <= 999, lv + ' step ' + i + ' gives ' + v);
+        assertEqual(c.values[i], v);
+        assert(typeof st.label === 'string' && st.label.length > 0);
+      });
+      assertEqual(c.answer, v);
+    }
+  });
+});
+
+test('nc chain: Easy uses only + and - up to 10, Normal never x4 or /', () => {
+  const R = Rof();
+  for (let s = 0; s < 2000; s++) {
+    R.chain('easy', R.rng('ce' + s)).steps.forEach((st) => assert((st.op === '+' || st.op === '-') && st.n >= 1 && st.n <= 10, JSON.stringify(st)));
+    assert(R.chain('easy', R.rng('cs' + s)).start <= 10);
+    R.chain('normal', R.rng('cn' + s)).steps.forEach((st) => {
+      assert(['+', '-', 'x', 'half'].indexOf(st.op) !== -1, st.op);
+      if (st.op === 'x') assert(st.n === 2 || st.n === 3);
+      if (st.op === '+' || st.op === '-') assert(st.n <= 20);
+    });
+  }
+  const ops = {};
+  for (let s = 0; s < 2000; s++) R.chain('hard', R.rng('ch' + s)).steps.forEach((st) => { ops[st.op] = true; });
+  assertEqual(Object.keys(ops).sort(), ['+', '-', '/', 'double', 'half', 'x']);
+});
+
+test('nc chain: choices 4 distinct, one right, and chainText writes it out', () => {
+  const R = Rof();
+  R.LEVELS.forEach((lv) => {
+    for (let s = 0; s < 1000; s++) {
+      const r = R.rng('cc' + lv + s), c = R.chain(lv, r), ch = R.choicesFor(c, r);
+      assertEqual(new Set(ch).size, 4); assertEqual(ch.filter((x) => x === c.answer).length, 1);
+      ch.forEach((x) => assert(Number.isInteger(x) && x >= 0));
+    }
+  });
+  const item = { start: 6, steps: [{ op: '+', n: 4 }, { op: 'x', n: 2 }, { op: '-', n: 5 }, { op: 'half', n: 0 }], values: [10, 20, 15, 7] };
+  assertEqual(R.chainText({ start: 6, steps: item.steps.slice(0, 3), values: [10, 20, 15] }), '6 → +4 → 10 → ×2 → 20 → −5 → 15');
+});
+
+test('nc chain: points', () => {
+  const R = Rof();
+  assertEqual(R.points('chain', { level: 'normal', steps: 5, ms: 0, limitMs: 10000, right: true }), 300);
+  assertEqual(R.points('chain', { level: 'expert', steps: 7, ms: 16000, limitMs: 16000, right: true }), 390);
+  assertEqual(R.points('chain', { level: 'easy', steps: 3, ms: 5000, limitMs: 10000, right: true }), 155);
+  assertEqual(R.points('chain', { level: 'hard', steps: 7, ms: 1000, limitMs: 10000, right: false }), 0);
+  assertEqual(R.points('chain', { level: 'easy', steps: 3, ms: 1000, limitMs: 0, right: true }), 130);
+});

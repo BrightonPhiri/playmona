@@ -335,6 +335,65 @@ window.FF = window.FF || {};
     return /^\d{1,5}$/.test(s) && parseInt(s, 10) === item.answer;
   }
 
+  /* ---------- chain ---------- */
+
+  var CHAIN = {
+    easy: { steps: 3, start: [1, 10], add: 10, ops: ['+', '-'] },
+    normal: { steps: 5, start: [2, 20], add: 20, ops: ['+', '-', 'x', 'half'], mul: [2, 3] },
+    hard: { steps: 7, start: [2, 30], add: 50, ops: ['+', '-', 'x', '/', 'double', 'half'], mul: [2, 5] }
+  };
+  function stepLabel(op, n) {
+    return op === '+' ? '+ ' + n : op === '-' ? MINUS + ' ' + n : op === 'x' ? TIMES_SIGN + ' ' + n : op === '/' ? DIVIDE + ' ' + n : op === 'double' ? 'double it' : 'half it';
+  }
+  function stepShort(op, n) {
+    return op === '+' ? '+' + n : op === '-' ? MINUS + n : op === 'x' ? TIMES_SIGN + n : op === '/' ? DIVIDE + n : op;
+  }
+  function applyStep(v, st) {
+    return st.op === '+' ? v + st.n : st.op === '-' ? v - st.n : st.op === 'x' ? v * st.n : st.op === '/' ? v / st.n : st.op === 'double' ? v * 2 : v / 2;
+  }
+  /* A step that keeps the running total whole and within 0 to 999, or null. */
+  function tryStep(cfg, v, op, rand) {
+    var n = 0, k;
+    if (op === '+') { n = int(rand, 1, cfg.add); if (v + n > 999) return null; }
+    else if (op === '-') { if (v < 1) return null; n = int(rand, 1, Math.min(cfg.add, v)); }
+    else if (op === 'x') { if (v < 1) return null; n = int(rand, cfg.mul[0], cfg.mul[1]); if (v * n > 999) return null; }
+    else if (op === '/') {
+      var ds = [];
+      for (k = 2; k <= 5; k++) if (v >= k * 2 && v % k === 0) ds.push(k);
+      if (!ds.length) return null;
+      n = pickOf(rand, ds);
+    } else if (op === 'double') { if (v < 1 || v * 2 > 999) return null; }
+    else if (op === 'half') { if (v < 2 || v % 2) return null; }
+    return { op: op, n: n, label: stepLabel(op, n) };
+  }
+  function chain(level, rand) {
+    var cfg = CHAIN[band(level)];
+    var start = int(rand, cfg.start[0], cfg.start[1]), v = start, steps = [], values = [], last = null;
+    while (steps.length < cfg.steps) {
+      var tries = shuffle(cfg.ops.filter(function (o) { return o !== last; }), rand).concat(['+', '-']);   // + or − always fits
+      var st = null;
+      for (var i = 0; i < tries.length && !st; i++) st = tryStep(cfg, v, tries[i], rand);
+      v = applyStep(v, st);
+      steps.push(st); values.push(v); last = st.op;
+    }
+    // Likely slips: one step skipped, the total before the last step, the last step's number the wrong way.
+    var traps = [values[values.length - 2]];
+    for (var s = 0; s < steps.length; s++) {
+      var w = start;
+      for (var j = 0; j < steps.length; j++) if (j !== s) w = applyStep(w, steps[j]);
+      traps.push(w);
+    }
+    var lastStep = steps[steps.length - 1];
+    if (lastStep.n) { traps.push(v + lastStep.n, v - lastStep.n); }
+    traps.push(v + 1, v - 1, v + 10, v - 10);
+    return { kind: 'chain', start: start, steps: steps, values: values, answer: v, traps: traps };
+  }
+  function chainText(item) {
+    var out = [String(item.start)];
+    item.steps.forEach(function (st, i) { out.push(stepShort(st.op, st.n), String(item.values[i])); });
+    return out.join(' → ');
+  }
+
   /* ---------- points ---------- */
 
   /* The old game's speed bonus: +50 at 2 s or less, fading to 0 by 15 s. */
@@ -351,7 +410,16 @@ window.FF = window.FF || {};
     var w = WEIGHT[o.level] || WEIGHT.normal, expert = o.level === 'expert';
     if (mode === 'quick') return o.right ? Math.round((100 + speedBonus(o.ms)) * w) + (expert ? 50 : 0) : 0;
     if (mode === 'sprint') return o.right ? Math.round((10 + 10 * (o.tier || 1)) * w) + (expert ? 5 : 0) : 0;
+    if (mode === 'chain') {
+      if (!o.right) return 0;
+      return Math.round((100 + 10 * (o.steps || 0) + linearSpeed(o.ms, o.limitMs)) * w) + (expert ? 50 : 0);
+    }
     return 0;
+  }
+  /* Up to +50, falling evenly to 0 at the time limit; none without a limit. */
+  function linearSpeed(ms, limitMs) {
+    if (!limitMs || limitMs <= 0) return 0;
+    return Math.round(50 * Math.max(0, 1 - (ms || 0) / limitMs));
   }
 
   FF.NumberChallengeRules = {
@@ -361,6 +429,7 @@ window.FF = window.FF || {};
     hash: hash, rng: rng, int: int, pick: pickOf, shuffle: shuffle,
     sanitize: sanitize, sanitizeRoom: sanitizeRoom, isStandard: isStandard, secondsFor: secondsFor,
     question: question, choicesFor: choicesFor, seqNexts: seqNexts, solveText: solveText, check: check,
-    speedBonus: speedBonus, tierAt: tierAt, penaltyMs: penaltyMs, points: points
+    chain: chain, chainText: chainText, applyStep: applyStep,
+    speedBonus: speedBonus, linearSpeed: linearSpeed, tierAt: tierAt, penaltyMs: penaltyMs, points: points
   };
 })();
