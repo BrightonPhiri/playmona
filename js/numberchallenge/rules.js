@@ -394,6 +394,133 @@ window.FF = window.FF || {};
     return out.join(' → ');
   }
 
+  /* ---------- make the target ---------- */
+
+  var TARGET = {
+    easy: { small: 4, big: 0, bigs: [], range: [10, 30], ops: ['+', '-'], use: [2, 4] },
+    normal: { small: 4, big: 1, bigs: [10, 20, 25], range: [20, 100], ops: ['+', '-', '*'], use: [3, 5] },
+    hard: { small: 4, big: 2, bigs: [25, 50, 75, 100], range: [101, 500], ops: ['+', '-', '*', '/'], use: [3, 6] },
+    expert: { small: 4, big: 2, bigs: [25, 50, 75, 100], range: [101, 500], ops: ['+', '-', '*', '/'], use: [6, 6] }
+  };
+  /* a op b under the merge rules (whole, above 0, ÷ exact), or null. */
+  function merge(a, op, b) {
+    var v = op === '+' ? a + b : op === '-' ? a - b : op === '*' ? a * b : op === '/' ? (b ? a / b : NaN) : NaN;
+    return isFinite(v) && v === Math.floor(v) && v > 0 ? v : null;
+  }
+  function pairValues(tiles, ops) {
+    var out = {};
+    for (var i = 0; i < tiles.length; i++) for (var j = 0; j < tiles.length; j++) {
+      if (i === j) continue;
+      ops.forEach(function (op) { var v = merge(tiles[i], op, tiles[j]); if (v != null) out[v] = true; });
+    }
+    return out;
+  }
+  function dealTiles(cfg, rand) {
+    var tiles = [];
+    for (var i = 0; i < cfg.small; i++) tiles.push(int(rand, 1, 10));
+    var bigs = shuffle(cfg.bigs, rand);
+    for (var j = 0; j < cfg.big; j++) tiles.push(bigs[j]);
+    return shuffle(tiles, rand);
+  }
+  /* Tiles and a target built from a random way through them, so it can always be reached. */
+  function target(level, rand) {
+    var cfg = TARGET[level] || TARGET.normal;
+    for (var deal = 0; ; deal++) {
+      var tiles = dealTiles(cfg, rand), pairs = pairValues(tiles, cfg.ops);
+      for (var attempt = 0; attempt < 120; attempt++) {
+        var use = int(rand, cfg.use[0], cfg.use[1]);
+        var pool = shuffle(tiles, rand).slice(0, use), steps = [];
+        while (pool.length > 1) {
+          var a = pool.splice(Math.floor(rand() * pool.length), 1)[0];
+          var b = pool.splice(Math.floor(rand() * pool.length), 1)[0];
+          var op = pickOf(rand, cfg.ops), v = merge(a, op, b);
+          if (v == null && (v = merge(b, op, a)) != null) { var x = a; a = b; b = x; }
+          if (v == null) { op = '+'; v = a + b; }
+          steps.push(a + op + b);
+          pool.push(v);
+        }
+        var goal = pool[0];
+        if (goal >= cfg.range[0] && goal <= cfg.range[1] && tiles.indexOf(goal) === -1 && !pairs[goal]) {
+          return { kind: 'target', tiles: tiles, target: goal, ops: cfg.ops.slice(), solution: steps.join(',') };
+        }
+      }
+      if (deal > 50) throw new Error('Make the target: no target found');
+    }
+  }
+
+  /* Replays a player's merges ('25*4,100+7') on the dealt tiles. */
+  function replay(tiles, ops, stepsText) {
+    var left = (tiles || []).slice();
+    var s = String(stepsText == null ? '' : stepsText).trim();
+    if (!s) return { ok: true, left: left };
+    var parts = s.split(',');
+    for (var i = 0; i < parts.length; i++) {
+      var m = /^(\d+)([+\-*\/])(\d+)$/.exec(parts[i]);
+      if (!m || ops.indexOf(m[2]) === -1) return { ok: false, left: left, error: 'step' };
+      var a = Number(m[1]), b = Number(m[3]);
+      var ia = left.indexOf(a);
+      if (ia === -1) return { ok: false, left: left, error: 'tile' };
+      left.splice(ia, 1);
+      var ib = left.indexOf(b);
+      if (ib === -1) return { ok: false, left: left, error: 'tile' };
+      left.splice(ib, 1);
+      var v = merge(a, m[2], b);
+      if (v == null) return { ok: false, left: left, error: 'value' };
+      left.push(v);
+    }
+    return { ok: true, left: left };
+  }
+  function submitText(steps, value) { return String(steps || '') + ';' + (value == null ? '' : value); }
+  function targetResult(item, text) {
+    var bad = { ok: false, value: null, off: null, usedAll: false };
+    var s = String(text == null ? '' : text), cut = s.lastIndexOf(';');
+    if (cut === -1) return bad;
+    var vs = s.slice(cut + 1).trim();
+    if (!/^\d+$/.test(vs)) return bad;
+    var r = replay(item.tiles, item.ops, s.slice(0, cut));
+    var value = Number(vs);
+    if (!r.ok || r.left.indexOf(value) === -1) return bad;
+    return { ok: true, value: value, off: Math.abs(value - item.target), usedAll: r.left.length === 1 && item.tiles.length > 1 };
+  }
+
+  /* The best a person could do: an exact way if there is one (using every tile when asked), else the nearest tile. */
+  function solveTarget(tiles, goal, ops, opts) {
+    opts = opts || {};
+    var best = null, seen = {};
+    function better(cand) {
+      if (!best) return true;
+      if (cand.off !== best.off) return cand.off < best.off;
+      if (opts.allTiles && cand.usedAll !== best.usedAll) return cand.usedAll;
+      return cand.steps.length < best.steps.length;
+    }
+    function done() { return best && best.off === 0 && (!opts.allTiles || best.usedAll); }
+    function walk(pool, steps) {
+      if (done()) return;
+      var key = pool.slice().sort(function (a, b) { return a - b; }).join(',');
+      if (seen[key]) return;
+      seen[key] = true;
+      for (var i = 0; i < pool.length; i++) {
+        var cand = { steps: steps.join(','), value: pool[i], off: Math.abs(pool[i] - goal), usedAll: pool.length === 1 && tiles.length > 1 };
+        if (better(cand)) best = cand;
+      }
+      if (done() || pool.length < 2) return;
+      for (var a = 0; a < pool.length; a++) for (var b = 0; b < pool.length; b++) {
+        if (a === b) continue;
+        for (var k = 0; k < ops.length; k++) {
+          if ((ops[k] === '+' || ops[k] === '*') && b < a) continue;   // the same merge either way round
+          var v = merge(pool[a], ops[k], pool[b]);
+          if (v == null) continue;
+          var rest = pool.filter(function (_, idx) { return idx !== a && idx !== b; });
+          rest.push(v);
+          walk(rest, steps.concat([pool[a] + ops[k] + pool[b]]));
+          if (done()) return;
+        }
+      }
+    }
+    walk(tiles.slice(), []);
+    return best;
+  }
+
   /* ---------- points ---------- */
 
   /* The old game's speed bonus: +50 at 2 s or less, fading to 0 by 15 s. */
@@ -414,6 +541,15 @@ window.FF = window.FF || {};
       if (!o.right) return 0;
       return Math.round((100 + 10 * (o.steps || 0) + linearSpeed(o.ms, o.limitMs)) * w) + (expert ? 50 : 0);
     }
+    if (mode === 'target') {
+      var off = o.off;
+      if (typeof off !== 'number' || off < 0) return 0;
+      if (off === 0) return Math.round((100 + linearSpeed(o.ms, o.limitMs)) * w) + (expert && o.usedAll ? 50 : 0);
+      var near = o.level === 'easy' ? [2, 5] : [5, 10];
+      if (off <= near[0]) return Math.round(50 * w);
+      if (off <= near[1]) return Math.round(25 * w);
+      return 0;
+    }
     return 0;
   }
   /* Up to +50, falling evenly to 0 at the time limit; none without a limit. */
@@ -430,6 +566,7 @@ window.FF = window.FF || {};
     sanitize: sanitize, sanitizeRoom: sanitizeRoom, isStandard: isStandard, secondsFor: secondsFor,
     question: question, choicesFor: choicesFor, seqNexts: seqNexts, solveText: solveText, check: check,
     chain: chain, chainText: chainText, applyStep: applyStep,
+    target: target, merge: merge, replay: replay, submitText: submitText, targetResult: targetResult, solveTarget: solveTarget,
     speedBonus: speedBonus, linearSpeed: linearSpeed, tierAt: tierAt, penaltyMs: penaltyMs, points: points
   };
 })();

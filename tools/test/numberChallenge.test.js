@@ -242,3 +242,94 @@ test('nc chain: points', () => {
   assertEqual(R.points('chain', { level: 'hard', steps: 7, ms: 1000, limitMs: 10000, right: false }), 0);
   assertEqual(R.points('chain', { level: 'easy', steps: 3, ms: 1000, limitMs: 0, right: true }), 130);
 });
+
+/* ---------- make the target ---------- */
+
+const TILES = { easy: 4, normal: 5, hard: 6, expert: 6 };
+const RANGE = { easy: [10, 30], normal: [20, 100], hard: [101, 500], expert: [101, 500] };
+function twoTileValues(tiles, ops) {
+  const out = new Set();
+  for (let i = 0; i < tiles.length; i++) for (let j = 0; j < tiles.length; j++) {
+    if (i === j) continue;
+    const a = tiles[i], b = tiles[j];
+    if (ops.indexOf('+') !== -1) out.add(a + b);
+    if (ops.indexOf('-') !== -1) out.add(a - b);
+    if (ops.indexOf('*') !== -1) out.add(a * b);
+    if (ops.indexOf('/') !== -1 && b && a % b === 0) out.add(a / b);
+  }
+  return out;
+}
+
+test('nc target: 500 seeds per level deal the right tiles, and the own solution replays to the target', () => {
+  const R = Rof();
+  const t0 = Date.now();
+  R.LEVELS.forEach((lv) => {
+    for (let s = 0; s < 500; s++) {
+      const t = R.target(lv, R.rng('t' + lv + s));
+      assertEqual(t.kind, 'target');
+      assertEqual(t.tiles.length, TILES[lv], lv);
+      assert(t.target >= RANGE[lv][0] && t.target <= RANGE[lv][1], lv + ' target ' + t.target);
+      assertEqual(t.ops, { easy: ['+', '-'], normal: ['+', '-', '*'], hard: ['+', '-', '*', '/'], expert: ['+', '-', '*', '/'] }[lv]);
+      const res = R.targetResult(t, R.submitText(t.solution, t.target));
+      assert(res.ok && res.off === 0, lv + ' ' + JSON.stringify(t));
+      if (lv === 'expert') assert(res.usedAll, 'expert solution uses every tile: ' + t.solution);
+      assert(t.tiles.indexOf(t.target) === -1, 'target is a tile');
+      assert(!twoTileValues(t.tiles, t.ops).has(t.target), 'two tiles make ' + t.target + ' from ' + t.tiles);
+      const small = t.tiles.filter((x) => x <= 10).length;
+      if (lv === 'normal') assert(small >= 4 && t.tiles.every((x) => x <= 10 || x === 20 || x === 25) && t.tiles.filter((x) => [10, 20, 25].indexOf(x) !== -1).length >= 1, t.tiles.join());
+      if (lv === 'hard' || lv === 'expert') assert(t.tiles.filter((x) => [25, 50, 75, 100].indexOf(x) !== -1).length === 2);
+      if (lv === 'easy') t.tiles.forEach((x) => assert(x >= 1 && x <= 10));
+    }
+  });
+  assert(Date.now() - t0 < 10000, 'dealing took ' + (Date.now() - t0) + ' ms');
+});
+
+test('nc target: replay refuses missing or reused tiles, 0, negatives and inexact division', () => {
+  const R = Rof();
+  const T = [25, 4, 7, 3], ALL = ['+', '-', '*', '/'];
+  assert(R.replay(T, ALL, '25*4,100+7').ok);
+  assertEqual(R.replay(T, ALL, '25*4,100+7').left.slice().sort((a, b) => a - b), [3, 107]);
+  assert(R.replay(T, ALL, '').ok);
+  ['25*25', '25-25', '3-7', '7/3', '9+1', '25*4,25+1', '25+', 'abc', '25*4,,7+3', '4/0'].forEach((s) => assert(!R.replay(T, ALL, s).ok, s));
+  assert(!R.replay(T, ['+', '-'], '25*4').ok, 'sign not allowed at this level');
+  assertEqual(R.targetResult({ tiles: T, ops: ALL, target: 107 }, '25*4,100+7;107'), { ok: true, value: 107, off: 0, usedAll: false });
+  assertEqual(R.targetResult({ tiles: T, ops: ALL, target: 107 }, '25*4,100+7,107*3,321/7;') .ok, false);
+  assertEqual(R.targetResult({ tiles: [2, 3], ops: ALL, target: 6 }, '2*3;6'), { ok: true, value: 6, off: 0, usedAll: true });
+  assertEqual(R.targetResult({ tiles: T, ops: ['+'], target: 30 }, ';25').off, 5);
+  assert(!R.targetResult({ tiles: T, ops: ['+'], target: 30 }, ';99').ok);
+  assert(!R.targetResult({ tiles: T, ops: ['+'], target: 30 }, '25').ok);
+  assert(!R.targetResult({ tiles: T, ops: ['+'], target: 30 }, null).ok);
+});
+
+test('nc target: the solver finds an exact way, and an all-tile way when asked', () => {
+  const R = Rof();
+  const t0 = Date.now();
+  R.LEVELS.forEach((lv) => {
+    for (let s = 0; s < 40; s++) {
+      const t = R.target(lv, R.rng('sv' + lv + s));
+      const best = R.solveTarget(t.tiles, t.target, t.ops, { allTiles: lv === 'expert' });
+      assertEqual(best.off, 0, lv + ' ' + t.tiles + ' -> ' + t.target);
+      const res = R.targetResult(t, R.submitText(best.steps, best.value));
+      assert(res.ok && res.off === 0, best.steps);
+      if (lv === 'expert') assert(res.usedAll, 'all tiles: ' + best.steps);
+    }
+  });
+  const near = R.solveTarget([1, 2], 50, ['+', '-'], {});
+  assertEqual(near.value, 3); assertEqual(near.off, 47);
+  assert(Date.now() - t0 < 15000, 'solving took ' + (Date.now() - t0) + ' ms');
+});
+
+test('nc target: points bands', () => {
+  const R = Rof();
+  assertEqual(R.points('target', { level: 'normal', off: 0, usedAll: false, ms: 0, limitMs: 60000 }), 225);
+  assertEqual(R.points('target', { level: 'easy', off: 2, ms: 0, limitMs: 45000 }), 50);
+  assertEqual(R.points('target', { level: 'easy', off: 4, ms: 0, limitMs: 45000 }), 25);
+  assertEqual(R.points('target', { level: 'easy', off: 6, ms: 0, limitMs: 45000 }), 0);
+  assertEqual(R.points('target', { level: 'hard', off: 5, ms: 0, limitMs: 90000 }), 100);
+  assertEqual(R.points('target', { level: 'hard', off: 7, ms: 0, limitMs: 90000 }), 50);
+  assertEqual(R.points('target', { level: 'hard', off: 11, ms: 0, limitMs: 90000 }), 0);
+  assertEqual(R.points('target', { level: 'expert', off: 0, usedAll: true, ms: 120000, limitMs: 120000 }), 250);
+  assertEqual(R.points('target', { level: 'expert', off: 0, usedAll: false, ms: 120000, limitMs: 120000 }), 200);
+  assertEqual(R.points('target', { level: 'expert', off: 3, usedAll: true, ms: 0, limitMs: 120000 }), 100);
+  assertEqual(R.points('target', { level: 'normal', off: null }), 0);
+});
