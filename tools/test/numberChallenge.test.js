@@ -333,3 +333,52 @@ test('nc target: points bands', () => {
   assertEqual(R.points('target', { level: 'expert', off: 3, usedAll: true, ms: 0, limitMs: 120000 }), 100);
   assertEqual(R.points('target', { level: 'normal', off: null }), 0);
 });
+
+/* ---------- deals ---------- */
+
+const keyOf = (it) => it.kind === 'chain' ? JSON.stringify([it.start, it.steps]) : it.kind === 'target' ? it.tiles.join(',') + '>' + it.target : it.text;
+
+test('nc deal: seeded and repeatable for every mode and level, with the right counts', () => {
+  const R = Rof();
+  R.MODES.forEach((mode) => R.LEVELS.forEach((level) => {
+    const s = R.sanitize({ mode, level });
+    const a = R.deal(s, 'seed-1'), b = R.deal(s, 'seed-1'), c = R.deal(s, 'seed-2');
+    assertEqual(JSON.stringify(a), JSON.stringify(b), mode + ' ' + level);
+    assert(JSON.stringify(a) !== JSON.stringify(c));
+    assertEqual(a.items.length, mode === 'sprint' ? 150 : s.rounds, mode);
+    assertEqual(new Set(a.items.map(keyOf)).size, a.items.length, mode + ' ' + level + ' repeats an item');
+    assertEqual(JSON.stringify(R.itemAt(s, 'seed-1', 2)), JSON.stringify(a.items[2]));
+  }));
+  const sp = R.deal(R.sanitize({ mode: 'sprint' }), 'x').items;
+  sp.forEach((it, i) => assertEqual(it.tier, R.tierAt(i)));
+});
+
+test('nc deal: Expert items have no choices, others have 4 with the answer', () => {
+  const R = Rof();
+  ['quick', 'sprint', 'chain'].forEach((mode) => R.LEVELS.forEach((level) => {
+    R.deal(R.sanitize({ mode, level }), 'ch').items.forEach((it) => {
+      if (level === 'expert') assertEqual(it.choices, null);
+      else { assertEqual(it.choices.length, 4); assert(it.choices.indexOf(it.answer) !== -1); }
+    });
+  }));
+});
+
+test('nc deal: player 2 is matched in kind and tier but has different numbers', () => {
+  const R = Rof();
+  let same = 0, total = 0;
+  ['quick', 'sprint', 'chain', 'target'].forEach((mode) => {
+    for (let s = 0; s < 30; s++) {
+      const set = R.sanitize({ mode, level: 'hard' });
+      const p0 = R.deal(set, 'm' + s).items, p1 = R.deal(set, 'm' + s, 1).items;
+      p0.forEach((it, k) => {
+        assertEqual(p1[k].kind, it.kind, mode);
+        if (it.tier) assertEqual(p1[k].tier, it.tier);
+        if (it.kind === 'chain') assertEqual(p1[k].steps.length, it.steps.length);
+        if (it.kind === 'target') assertEqual(p1[k].tiles.length, it.tiles.length);
+        if (R.itemAt(set, 'm' + s, k, 1) && keyOf(R.itemAt(set, 'm' + s, k, 1)) !== keyOf(p1[k])) throw new Error('itemAt and deal disagree');
+        total++; if (keyOf(p1[k]) === keyOf(it)) same++;
+      });
+    }
+  });
+  assert(same / total < 0.1, same + ' of ' + total + ' matched items are identical');
+});

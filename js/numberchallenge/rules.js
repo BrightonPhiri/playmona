@@ -557,6 +557,51 @@ window.FF = window.FF || {};
     if (!limitMs || limitMs <= 0) return 0;
     return Math.round(50 * Math.max(0, 1 - (ms || 0) / limitMs));
   }
+  /* ---------- deals ---------- */
+
+  function keyOf(it) {
+    return it.kind === 'chain' ? JSON.stringify([it.start, it.steps]) : it.kind === 'target' ? it.tiles.join(',') + '>' + it.target : it.text;
+  }
+  /* One item. base (player 0's item k) makes a matched item: same kind and tier, or the same shape. */
+  function makeItem(s, seed, k, p, attempt, base) {
+    var rand = rng(seed + '|' + s.mode + '|' + k + '|' + p + (attempt ? '|' + attempt : ''));
+    var it;
+    if (s.mode === 'target') it = target(s.level, rand);
+    else if (s.mode === 'chain') it = chain(s.level, rand);
+    else {
+      var tier = base ? base.tier : s.mode === 'sprint' ? tierAt(k) : int(rand, 1, 5);
+      it = question(s.level, tier, rand, base ? base.kind : null);
+    }
+    if (it.kind !== 'target') it.choices = s.level === 'expert' ? null : choicesFor(it, rand);
+    it.k = k;
+    return it;
+  }
+  var dealCache = {};
+  /* Player p's whole deal (p = 0 unless Turns); every player p > 0 is matched to player 0. */
+  function deal(settings, seed, p) {
+    var s = sanitize(settings);
+    p = p || 0;
+    var ck = JSON.stringify(s) + '#' + seed + '#' + p;
+    if (dealCache[ck]) return JSON.parse(dealCache[ck]);
+    var base = p ? deal(s, seed, 0).items : null;
+    var count = s.mode === 'sprint' ? SPRINT_LIST : s.rounds;
+    var items = [], keys = {};
+    for (var k = 0; k < count; k++) {
+      var it = null;
+      for (var attempt = 0; attempt < 40; attempt++) {
+        it = makeItem(s, seed, k, p, attempt, base && base[k]);
+        if (!keys[keyOf(it)]) break;
+      }
+      keys[keyOf(it)] = true;
+      items.push(it);
+    }
+    var out = { items: items };
+    var keysList = Object.keys(dealCache);
+    if (keysList.length > 40) delete dealCache[keysList[0]];
+    dealCache[ck] = JSON.stringify(out);
+    return out;
+  }
+  function itemAt(settings, seed, k, p) { return deal(settings, seed, p).items[k] || null; }
 
   FF.NumberChallengeRules = {
     MODES: MODES, LEVELS: LEVELS, WEIGHT: WEIGHT, TIMES: TIMES, ROUNDS: ROUNDS, SPRINTS: SPRINTS, SPEEDS: SPEEDS,
@@ -567,6 +612,7 @@ window.FF = window.FF || {};
     question: question, choicesFor: choicesFor, seqNexts: seqNexts, solveText: solveText, check: check,
     chain: chain, chainText: chainText, applyStep: applyStep,
     target: target, merge: merge, replay: replay, submitText: submitText, targetResult: targetResult, solveTarget: solveTarget,
+    deal: deal, itemAt: itemAt, keyOf: keyOf,
     speedBonus: speedBonus, linearSpeed: linearSpeed, tierAt: tierAt, penaltyMs: penaltyMs, points: points
   };
 })();

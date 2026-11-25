@@ -106,3 +106,15 @@ test('review: a challenge-ready Quiz Mix run still lets you pick topics, and a f
   assertEqual(JSON.stringify(pick({ challenge: { id: 'x', seed: 'y', opts: { topics: ['science'] } } })), JSON.stringify(['science']), 'a friend plays your topics');
   assertEqual(JSON.stringify(pick({ challenge: { id: 'x', seed: 'y' } })), '[]', 'an older challenge plays Everything');
 });
+
+test('shared deal: Number Challenge deals from the seed alone', function () {
+  const a = loadFF(['js/core.js', 'js/numberchallenge/rules.js']).NumberChallengeRules;
+  const b = loadFF(['js/core.js', 'js/numberchallenge/rules.js']).NumberChallengeRules;
+  b.deal(b.sanitize({ mode: 'target', level: 'hard' }), 'other');   // this phone played something else first
+  ['quick', 'sprint', 'chain', 'target'].forEach(function (mode) {
+    const s = a.sanitize({ mode: mode });
+    assertEqual(JSON.stringify(b.deal(s, 'ch|abc')), JSON.stringify(a.deal(s, 'ch|abc')), mode);
+  });
+  const src = require('fs').readFileSync(require('path').join(ROOT, 'js/numberchallenge/rules.js'), 'utf8');
+  assert(src.indexOf('Math.random') === -1, 'rules never use Math.random');
+});
