@@ -169,7 +169,7 @@ window.FF = window.FF || {};
       var due = state.phase === 'starting' ? state.readyAt
         : state.phase === 'ready' ? state.openAt
           : state.phase === 'steps' ? nextStepAt()
-            : state.phase === 'open' ? state.closeAt + GRACE_MS
+            : state.phase === 'open' ? openDue()
               : state.nextAt;
       var id = ++tickNo;
       timer = timers.setTimeout(function () {
@@ -189,7 +189,11 @@ window.FF = window.FF || {};
         return;
       }
       if (state.phase === 'ready') { if (t >= state.openAt) openRound(); else schedule(); return; }
-      if (state.phase === 'open') { if (t >= state.closeAt + GRACE_MS) reveal(); else schedule(); return; }
+      if (state.phase === 'open') {
+        if (t >= state.closeAt + GRACE_MS) reveal();
+        else if (!(mode() === 'sprint' && checkAllIn())) schedule();
+        return;
+      }
       if (state.phase === 'reveal') {
         if (t < state.nextAt) { schedule(); return; }
         if (state.k + 1 >= total()) finish('done');
@@ -229,12 +233,25 @@ window.FF = window.FF || {};
       schedule();
     }
 
-    /* Everyone still here has answered (Sprint: has finished the list): no reason to wait. */
+    /* A Sprint player is finished at the end of the list or once their own clock (with penalties) has run out. */
+    function sprintFinished(uid, t) {
+      var st = state.sprint[uid];
+      return !!st && (st.done || t > R.sprintEndAt(st) + GRACE_MS);
+    }
+    /* When the open phase must next be looked at: the room clock, or in a Sprint the latest player's own end. */
+    function openDue() {
+      if (mode() !== 'sprint') return state.closeAt + GRACE_MS;
+      var latest = 0;
+      state.seats.forEach(function (uid) { var st = state.sprint[uid]; if (st && !st.done) latest = Math.max(latest, R.sprintEndAt(st)); });
+      return Math.min(state.closeAt, latest || state.closeAt) + GRACE_MS + 1;
+    }
+
+    /* Everyone still here has answered (Sprint: has finished the list or run out of clock): no reason to wait. */
     function checkAllIn() {
       var t = now();
       var known = Object.keys(players).length > 0;
       var waiting = state.seats.some(function (uid) {
-        if (mode() === 'sprint' ? state.sprint[uid] && state.sprint[uid].done : state.answers[uid]) return false;
+        if (mode() === 'sprint' ? sprintFinished(uid, t) : state.answers[uid]) return false;
         return !known || online(players[uid], t);
       });
       if (!waiting) { reveal(); return true; }
@@ -270,7 +287,8 @@ window.FF = window.FF || {};
       if (changed) {
         save();
         publishAnswered();
-        if (state.phase === 'open') checkAllIn();
+        // A Sprint miss moves that player's end sooner: look again then.
+        if (state.phase === 'open' && !checkAllIn()) schedule();
       }
     }
 

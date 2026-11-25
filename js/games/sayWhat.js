@@ -780,7 +780,8 @@ window.FF = window.FF || {};
       client.stop();
       if (FF.Race && FF.Race.end) { try { FF.Race.end(); } catch (e) { /* not running */ } }
     }
-    function finish() { if (ended) return; cleanup(); api.end({}); }
+    /* Off the page (the player left, or another game took the screen): end nothing but this screen. */
+    function finish() { if (ended) return; var here = f.root.isConnected; cleanup(); if (here) api.end({}); }
     function maybeNudge(key, due) {
       if (nudged[key] || !due) return;
       if (client.serverNow() - due < NUDGE_MS) return;
@@ -837,6 +838,8 @@ window.FF = window.FF || {};
 
     function tick() {
       if (ended) return;
+      // The screen was closed after the match: sw never changes again, so render() would not notice.
+      if (!f.root.isConnected) { cleanup(); return; }
       var sw = client.view().sw;
       if (!sw || sw.matchId !== expected()) return;
       var now = client.serverNow();

@@ -245,6 +245,24 @@ test('nc referee: sprint answers count only in order and before the player\'s ow
   assertEqual([v.last.results.p1.points, v.last.results.p1.right, v.last.results.p2.right], [st.score, 2, 2]);
 });
 
+test('nc referee: a sprint is revealed once every player’s own clock has run out, not at the room clock', async function () {
+  const m = await match({ settings: { mode: 'sprint', level: 'normal', sprint: 30 } });
+  await m.clock.advance(1000 + m.RF.BRIEF_MS + 1);
+  await m.open();
+  const items = m.R.deal(m.saved.value.settings, m.saved.value.seed).items;
+  const miss = (i) => i + ':' + (items[i].answer + 1);
+  await m.answer('p1', [miss(0), miss(1)].join(','));        // 2 misses: 6 s off on Normal
+  await m.answer('p2', miss(0));                              // 1 miss: 3 s off
+  const ends = [m.nc().p.p1.end, m.nc().p.p2.end];
+  const closeAt = m.nc().closeAt;
+  assertEqual(ends, [closeAt - 6000, closeAt - 3000]);
+  await m.clock.advance(ends[1] + m.RF.GRACE_MS - 50 - m.clock.now);
+  assertEqual(m.nc().phase, 'open', 'p2 may still be answering');
+  await m.clock.advance(100);
+  assertEqual(m.nc().phase, 'reveal', 'both clocks ran out: no idle wait to the room clock');
+  assertEqual([m.nc().last.results.p1.wrong, m.nc().last.results.p2.wrong], [2, 1]);
+});
+
 test('nc referee: the match ends ranked and reports', async function () {
   const m = await match({ settings: { mode: 'target', level: 'easy', rounds: 3 } });
   for (let k = 0; k < 3; k++) {

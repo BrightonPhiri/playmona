@@ -615,3 +615,28 @@ test('nc number pad: leading zeros drop, empty Enter does nothing, 4 digits at m
   key('\u2713');
   assertEqual(sent, ['712']);
 });
+
+test('nc online: a screen taken off the page cleans itself up, so it can never end the next game', async () => {
+  const FF = loadFF(GAME);
+  const doc = FF.__sandbox.document;
+  let raceEnds = 0, ends = 0, unwatched = 0;
+  FF.Race = { begin: function () {}, end: function () { raceEnds++; } };
+  const root = doc.createElement('div');
+  doc.body.appendChild(root);
+  const api = {
+    def: { id: 'numberChallenge' },
+    shell: { root: root, hideTimer: function () {}, updateScores: function () {} },
+    audio: { play: function () {} },
+    end: function () { ends++; }
+  };
+  const T = { watch: function () { return function () { unwatched++; }; }, serverNow: function () { return Date.now(); }, set: function () { return Promise.resolve(); } };
+  FF.NumberChallengeGame.online(api, { transport: T, uid: 'p1', code: 'ROOM01', meta: { ncMatch: 'n_1' }, players: {} });
+  await new Promise((r) => setTimeout(r, 250));
+  assertEqual(raceEnds, 0, 'still on the page: still running');
+  // The player taps the shell's X (or the next game takes the screen): the root leaves the page.
+  doc.body.removeChild(root);
+  await new Promise((r) => setTimeout(r, 250));
+  assertEqual(raceEnds, 1, 'its own race is closed once');
+  assertEqual(unwatched, 1, 'it stops following the room');
+  assertEqual(ends, 0, 'and it never calls api.end for whatever game runs now');
+});
