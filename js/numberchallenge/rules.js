@@ -110,10 +110,257 @@ window.FF = window.FF || {};
     return QUICK_SECONDS[s.time] + (expert ? EXPERT_EXTRA : 0);
   }
 
+  /* ---------- sums ---------- */
+
+  var MINUS = '−', TIMES_SIGN = '×', DIVIDE = '÷';
+  var KINDS = {
+    easy: ['add', 'sub', 'mul', 'missing', 'sequence'],
+    normal: ['add', 'sub', 'mul', 'div', 'missing', 'sequence', 'double', 'half'],
+    hard: ['add', 'sub', 'mul', 'div', 'missing', 'order', 'percent', 'fraction', 'square', 'sequence']
+  };
+  KINDS.expert = KINDS.hard;
+  function band(level) { return level === 'expert' ? 'hard' : level; }
+
+  /* Sizes by tier (1 to 5) inside each level. */
+  var ADD_MAX = { easy: [6, 10, 14, 17, 20], normal: [20, 40, 60, 80, 100], hard: [100, 250, 500, 750, 1000] };
+  var TABLE_MAX = { easy: [3, 5, 6, 8, 10], normal: [5, 6, 8, 9, 10], hard: [6, 8, 10, 12, 12] };
+  var DOUBLE_MAX = [10, 20, 30, 40, 50];
+  var PERCENT_MAX = [100, 200, 300, 400, 500];
+  var FRACTION_MAX = [5, 8, 10, 15, 25];
+  var SQUARE_MAX = [6, 9, 11, 13, 15];
+  var FRACTIONS = [{ glyph: '½', num: 1, den: 2 }, { glyph: '⅓', num: 1, den: 3 }, { glyph: '¼', num: 1, den: 4 }, { glyph: '¾', num: 3, den: 4 }];
+  var GLYPH = { '½': [1, 2], '⅓': [1, 3], '¼': [1, 4], '¾': [3, 4] };
+
+  function swapDigits(n) {
+    var s = String(n);
+    if (s.length < 2) return null;
+    var r = s.split('').reverse().join('');
+    return r[0] === '0' || r === s ? null : Number(r);
+  }
+  /* Two numbers that add up to at most max, scaled so higher tiers use bigger numbers. */
+  function addPair(rand, max) {
+    var lo = Math.max(1, Math.floor(max / 5));
+    var a = int(rand, lo, Math.max(lo, max - lo));
+    var b = int(rand, 1, Math.max(1, max - a));
+    return [a, b];
+  }
+  function tablePair(rand, lv, tier) {
+    var top = TABLE_MAX[lv][tier - 1];
+    if (lv === 'easy') {
+      var t = pickOf(rand, [2, 5, 10]), o = int(rand, 2, top);
+      return rand() < 0.5 ? [t, o] : [o, t];
+    }
+    return [int(rand, 2, top), int(rand, 2, top)];
+  }
+  function q(kind, tier, text, answer, traps) { return { kind: kind, tier: tier, text: text, answer: answer, traps: traps || [] }; }
+
+  function sequence(lv, tier, rand) {
+    var terms, answer, traps;
+    var fam = lv === 'hard' ? pickOf(rand, ['step', 'step', 'double', 'square']) : 'step';
+    if (fam === 'double') {
+      var s0 = int(rand, 1, 2 + 2 * tier);
+      terms = [s0, s0 * 2, s0 * 4, s0 * 8]; answer = s0 * 16; traps = [s0 * 12, s0 * 8 + s0 * 4, s0 * 10];
+    } else if (fam === 'square') {
+      var k = int(rand, 1, 2 + 2 * tier);
+      terms = [k * k, (k + 1) * (k + 1), (k + 2) * (k + 2), (k + 3) * (k + 3)]; answer = (k + 4) * (k + 4);
+      traps = [terms[3] + (terms[3] - terms[2]), answer + 1, answer - 1];
+    } else {
+      var step;
+      if (lv === 'easy') step = pickOf(rand, tier <= 2 ? [1, 2] : [1, 2, 5, 10]);
+      else if (lv === 'normal') step = int(rand, 2, 2 + 2 * tier);
+      else step = int(rand, 3, 4 * tier);
+      var down = lv !== 'easy' && rand() < 0.35;
+      var start = down ? 5 * step + int(rand, 0, 5 * tier) : int(rand, 1, 4 + 3 * tier);
+      var d = down ? -step : step;
+      terms = [start, start + d, start + 2 * d, start + 3 * d]; answer = start + 4 * d;
+      traps = [terms[3], answer + d, answer + 1, answer - 1];
+    }
+    return q('sequence', tier, terms.join(', ') + ', ?', answer, traps);
+  }
+
+  function missing(lv, tier, rand) {
+    var ops = lv === 'easy' ? ['+', '-a', '-b'] : lv === 'normal' ? ['+', '-a', '-b', 'x'] : ['+', '-a', '-b', 'x', '/'];
+    var op = pickOf(rand, ops), p, a, b;
+    if (op === 'x' || op === '/') {
+      p = tablePair(rand, lv, tier); a = p[0]; b = p[1];
+      // Never a number already shown in the sum: that would give the answer away.
+      if (op === 'x') return q('missing', tier, '? ' + TIMES_SIGN + ' ' + b + ' = ' + (a * b), a, [a + 1, a - 1, a + 2]);
+      return q('missing', tier, '? ' + DIVIDE + ' ' + a + ' = ' + b, a * b, [a * (b + 1), a * (b - 1), a + b]);
+    }
+    p = addPair(rand, ADD_MAX[lv][tier - 1]); a = p[0]; b = p[1];
+    if (op === '+') return q('missing', tier, a + ' + ? = ' + (a + b), b, [b + 1, b - 1, b + 10, b - 10]);
+    var top = a + b;   // top - b = a
+    if (op === '-a') return q('missing', tier, top + ' ' + MINUS + ' ? = ' + a, b, [b + 1, b - 1, b + 10, b - 10]);
+    return q('missing', tier, '? ' + MINUS + ' ' + b + ' = ' + a, top, [top + 1, top - 1, top + 10, a - b]);
+  }
+
+  /* One sum for the level and tier. kind forces a kind (tests and Turns matching). */
+  function question(level, tier, rand, kind) {
+    var lv = band(level);
+    tier = Math.max(1, Math.min(5, tier || 1));
+    kind = kind || pickOf(rand, KINDS[lv]);
+    var p, a, b, c;
+    switch (kind) {
+      case 'add':
+        p = addPair(rand, ADD_MAX[lv][tier - 1]); a = p[0]; b = p[1];
+        return q(kind, tier, a + ' + ' + b + ' = ?', a + b, [a + b + 1, a + b - 1, a + b + 10, a + b - 10, Math.abs(a - b), swapDigits(a + b)]);
+      case 'sub':
+        p = addPair(rand, ADD_MAX[lv][tier - 1]); a = p[0] + p[1]; b = p[1];
+        return q(kind, tier, a + ' ' + MINUS + ' ' + b + ' = ?', a - b, [a - b + 1, a - b - 1, a - b + 10, a - b - 10, a + b, swapDigits(a - b)]);
+      case 'mul':
+        p = tablePair(rand, lv, tier); a = p[0]; b = p[1];
+        return q(kind, tier, a + ' ' + TIMES_SIGN + ' ' + b + ' = ?', a * b, [a * (b + 1), a * (b - 1), (a + 1) * b, (a - 1) * b, a + b, swapDigits(a * b)]);
+      case 'div':
+        p = tablePair(rand, lv, tier); a = p[0]; b = p[1];
+        return q(kind, tier, (a * b) + ' ' + DIVIDE + ' ' + a + ' = ?', b, [b + 1, b - 1, b + 2, a, a * b - a]);
+      case 'missing':
+        return missing(lv, tier, rand);
+      case 'sequence':
+        return sequence(lv, tier, rand);
+      case 'double':
+        a = int(rand, 3, DOUBLE_MAX[tier - 1]);
+        return q(kind, tier, 'Double ' + a + ' = ?', a * 2, [a * 2 + 1, a * 2 - 2, a + 2, a * 2 + 10, a * 4]);
+      case 'half':
+        a = 2 * int(rand, 3, DOUBLE_MAX[tier - 1]);
+        return q(kind, tier, 'Half of ' + a + ' = ?', a / 2, [a / 2 + 1, a / 2 - 1, a / 2 + 10, a * 2, a - 2]);
+      case 'order':
+        var top = 3 + 2 * tier;
+        a = int(rand, 2, 4 * top); b = int(rand, 2, top); c = int(rand, 2, top);
+        var form = int(rand, 0, 2);
+        if (form === 0) return q(kind, tier, a + ' + ' + b + ' ' + TIMES_SIGN + ' ' + c + ' = ?', a + b * c, [(a + b) * c, a + b + c, a * b + c, a + b * c + 1]);
+        if (form === 1) return q(kind, tier, b + ' ' + TIMES_SIGN + ' ' + c + ' + ' + a + ' = ?', b * c + a, [b * (c + a), b * c + a + 1, b + c + a, b * c + a - 10]);
+        if (a >= b * c) a = int(rand, 1, b * c - 1);
+        return q(kind, tier, b + ' ' + TIMES_SIGN + ' ' + c + ' ' + MINUS + ' ' + a + ' = ?', b * c - a, [b * (c - a), b * c - a + 1, b * c + a, b * c - a - 10]);
+      case 'percent':
+        var pc = pickOf(rand, tier <= 2 ? [10, 50] : [10, 20, 25, 50, 75]);
+        var m = (pc === 25 || pc === 75) ? 20 : 10;
+        a = m * int(rand, 1, PERCENT_MAX[tier - 1] / m);
+        return q(kind, tier, pc + '% of ' + a + ' = ?', a * pc / 100, [a * pc / 100 + 5, a / 10, a - a * pc / 100, pc, a * pc / 10]);
+      case 'fraction':
+        var f = pickOf(rand, tier <= 2 ? FRACTIONS.slice(0, 3) : FRACTIONS);
+        a = f.den * int(rand, 2, FRACTION_MAX[tier - 1]);
+        var ans = a * f.num / f.den;
+        return q(kind, tier, f.glyph + ' of ' + a + ' = ?', ans, [a / f.den, ans + 1, ans - 1, a - ans, ans * 2]);
+      case 'square':
+        a = int(rand, 2, SQUARE_MAX[tier - 1]);
+        return q(kind, tier, a + '² = ?', a * a, [a * 2, (a + 1) * (a + 1), (a - 1) * (a - 1), a * a + 1, a * a - 10]);
+    }
+    return question(level, tier, rand, 'add');
+  }
+
+  /* 4 choices: the answer and 3 likely mistakes, all distinct, whole and 0 or more. */
+  function choicesFor(item, rand) {
+    var ans = item.answer, out = [], seen = {};
+    seen[ans] = true;
+    // A missing-number sum shows the other numbers; offering one would give the answer away.
+    if (item.kind === 'missing') (String(item.text).match(/\d+/g) || []).forEach(function (n) { seen[Number(n)] = true; });
+    seen[ans] = true;
+    function add(v) {
+      if (out.length >= 3 || v == null || typeof v !== 'number' || !isFinite(v) || v !== Math.floor(v) || v < 0 || v > 9999 || seen[v]) return;
+      seen[v] = true; out.push(v);
+    }
+    shuffle(item.traps || [], rand).forEach(add);
+    [1, -1, 2, -2, 10, -10, 3, -3, 5, -5, 4, -4, 6, 7, 8, 9, 11, 12, 20].forEach(function (o) { add(ans + o); });
+    for (var n = 13; out.length < 3; n++) add(ans + n);
+    return shuffle([ans].concat(out), rand);
+  }
+
+  /* The next terms that the families shown in the game predict (arithmetic, doubling, squares). */
+  function seqNexts(terms) {
+    var out = [];
+    function put(v) { if (out.indexOf(v) === -1) out.push(v); }
+    if (!terms || terms.length < 3) return out;
+    var d = terms[1] - terms[0], arith = d !== 0, dbl = terms[0] > 0, sq = true, k = Math.round(Math.sqrt(terms[0]));
+    for (var i = 1; i < terms.length; i++) {
+      if (terms[i] - terms[i - 1] !== d) arith = false;
+      if (terms[i] !== terms[i - 1] * 2) dbl = false;
+    }
+    for (var j = 0; j < terms.length; j++) if (terms[j] !== (k + j) * (k + j)) sq = false;
+    if (arith) put(terms[terms.length - 1] + d);
+    if (dbl) put(terms[terms.length - 1] * 2);
+    if (sq && k >= 1) put((k + terms.length) * (k + terms.length));
+    return out;
+  }
+
+  /* ---------- reading a sum back from its text (checks the deal, and the crew's eyes) ---------- */
+
+  function whole(v) { return typeof v === 'number' && isFinite(v) && v === Math.floor(v) && v >= 0 ? v : null; }
+  function opOf(ch) { return ch === '+' ? '+' : ch === MINUS || ch === '-' ? '-' : ch === TIMES_SIGN || ch === 'x' || ch === '*' ? '*' : ch === DIVIDE || ch === '/' ? '/' : null; }
+  function apply(a, op, b) { return op === '+' ? a + b : op === '-' ? a - b : op === '*' ? a * b : b === 0 ? NaN : a / b; }
+  function evalExpr(s) {
+    var m;
+    if ((m = /^Double (\d+)$/.exec(s))) return whole(2 * Number(m[1]));
+    if ((m = /^Half of (\d+)$/.exec(s))) return whole(Number(m[1]) / 2);
+    if ((m = /^(\d+)% of (\d+)$/.exec(s))) return whole(Number(m[1]) * Number(m[2]) / 100);
+    if ((m = /^([½⅓¼¾]) of (\d+)$/.exec(s))) return whole(Number(m[2]) * GLYPH[m[1]][0] / GLYPH[m[1]][1]);
+    if ((m = /^(\d+)²$/.exec(s))) return whole(Number(m[1]) * Number(m[1]));
+    var parts = s.split(' ');
+    if (parts.length % 2 !== 1) return null;
+    var vals = [], ops = [];
+    for (var i = 0; i < parts.length; i++) {
+      if (i % 2 === 0) { if (!/^\d+$/.test(parts[i])) return null; vals.push(Number(parts[i])); }
+      else { var op = opOf(parts[i]); if (!op) return null; ops.push(op); }
+    }
+    // × and ÷ first, then + and − from the left.
+    for (var j = 0; j < ops.length;) {
+      if (ops[j] === '*' || ops[j] === '/') { vals.splice(j, 2, apply(vals[j], ops[j], vals[j + 1])); ops.splice(j, 1); } else j++;
+    }
+    var v = vals[0];
+    for (var k = 0; k < ops.length; k++) v = apply(v, ops[k], vals[k + 1]);
+    return whole(v);
+  }
+  function solveText(text) {
+    var s = String(text == null ? '' : text).trim(), m;
+    if (/^\d+(, \d+){2,}, \?$/.test(s)) {
+      var next = seqNexts(s.split(', ').slice(0, -1).map(Number));
+      return next.length === 1 ? whole(next[0]) : null;
+    }
+    var sides = s.split(' = ');
+    if (sides.length !== 2) return null;
+    if (sides[1] === '?') return evalExpr(sides[0]);
+    if (!/^\d+$/.test(sides[1]) || !(m = /^(\?|\d+) (\S) (\?|\d+)$/.exec(sides[0]))) return null;
+    var c = Number(sides[1]), op = opOf(m[2]);
+    if (!op || (m[1] === '?') === (m[3] === '?')) return null;
+    if (m[1] === '?') {
+      var b = Number(m[3]);
+      return whole(op === '+' ? c - b : op === '-' ? c + b : op === '*' ? (b ? c / b : NaN) : c * b);
+    }
+    var a = Number(m[1]);
+    return whole(op === '+' ? c - a : op === '-' ? a - c : op === '*' ? (a ? c / a : NaN) : (c ? a / c : NaN));
+  }
+
+  /* A typed or tapped answer: digits only ('007' is 7). */
+  function check(item, text) {
+    var s = String(text == null ? '' : text).trim();
+    return /^\d{1,5}$/.test(s) && parseInt(s, 10) === item.answer;
+  }
+
+  /* ---------- points ---------- */
+
+  /* The old game's speed bonus: +50 at 2 s or less, fading to 0 by 15 s. */
+  function speedBonus(ms) {
+    if (ms == null) return 0;
+    var t = ms / 1000;
+    if (t <= 2) return 50;
+    return Math.max(0, Math.min(50, Math.round(50 * (1 - (t - 2) / 13))));
+  }
+  function tierAt(i) { return Math.min(5, 1 + Math.floor(i / 4)); }
+  function penaltyMs(level) { return level === 'easy' ? 2000 : 3000; }
+  function points(mode, o) {
+    o = o || {};
+    var w = WEIGHT[o.level] || WEIGHT.normal, expert = o.level === 'expert';
+    if (mode === 'quick') return o.right ? Math.round((100 + speedBonus(o.ms)) * w) + (expert ? 50 : 0) : 0;
+    if (mode === 'sprint') return o.right ? Math.round((10 + 10 * (o.tier || 1)) * w) + (expert ? 5 : 0) : 0;
+    return 0;
+  }
+
   FF.NumberChallengeRules = {
     MODES: MODES, LEVELS: LEVELS, WEIGHT: WEIGHT, TIMES: TIMES, ROUNDS: ROUNDS, SPRINTS: SPRINTS, SPEEDS: SPEEDS,
     STEP_MS: STEP_MS, STANDARD: STANDARD, MIN_PLAYERS: MIN_PLAYERS, MAX_PLAYERS: MAX_PLAYERS, SPRINT_LIST: SPRINT_LIST,
+    KINDS: KINDS,
     hash: hash, rng: rng, int: int, pick: pickOf, shuffle: shuffle,
-    sanitize: sanitize, sanitizeRoom: sanitizeRoom, isStandard: isStandard, secondsFor: secondsFor
+    sanitize: sanitize, sanitizeRoom: sanitizeRoom, isStandard: isStandard, secondsFor: secondsFor,
+    question: question, choicesFor: choicesFor, seqNexts: seqNexts, solveText: solveText, check: check,
+    speedBonus: speedBonus, tierAt: tierAt, penaltyMs: penaltyMs, points: points
   };
 })();

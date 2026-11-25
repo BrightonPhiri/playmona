@@ -48,3 +48,134 @@ test('nc rules: rng is repeatable per seed', () => {
   const r = R.rng('ints');
   for (let i = 0; i < 500; i++) { const v = R.int(r, 3, 7); assert(v >= 3 && v <= 7 && Number.isInteger(v)); }
 });
+
+/* ---------- sums ---------- */
+
+const nums = (text) => (String(text).match(/\d+/g) || []).map(Number);
+
+test('nc sums: 2000 seeds per level give whole answers 0-9999 that the text proves', () => {
+  const R = Rof();
+  R.LEVELS.forEach((lv) => {
+    for (let s = 0; s < 2000; s++) {
+      const r = R.rng(lv + s), q = R.question(lv, 1 + (s % 5), r);
+      assert(Number.isInteger(q.answer) && q.answer >= 0 && q.answer <= 9999, lv + ' ' + q.text + ' = ' + q.answer);
+      assertEqual(R.solveText(q.text), q.answer, lv + ' ' + q.text);
+      assert(R.KINDS[lv].indexOf(q.kind) !== -1, lv + ' ' + q.kind);
+      assertEqual(q.tier, 1 + (s % 5));
+    }
+  });
+});
+
+test('nc sums: every level shows all its kinds; Easy stays within 20 and its tables', () => {
+  const R = Rof();
+  R.LEVELS.forEach((lv) => {
+    const seen = {};
+    for (let s = 0; s < 2000; s++) seen[R.question(lv, 1 + (s % 5), R.rng('k' + lv + s)).kind] = true;
+    R.KINDS[lv].forEach((k) => assert(seen[k], lv + ' never shows ' + k));
+  });
+  assertEqual(R.KINDS.easy.slice().sort(), ['add', 'missing', 'mul', 'sequence', 'sub']);
+  assert(R.KINDS.hard.indexOf('order') !== -1 && R.KINDS.hard.indexOf('percent') !== -1 && R.KINDS.normal.indexOf('order') === -1);
+  assertEqual(R.KINDS.expert, R.KINDS.hard);
+  for (let s = 0; s < 2000; s++) {
+    const q = R.question('easy', 1 + (s % 5), R.rng('e' + s));
+    if (q.kind === 'add' || q.kind === 'sub' || q.kind === 'missing') nums(q.text).concat([q.answer]).forEach((n) => assert(n <= 20, q.text));
+    if (q.kind === 'mul') {
+      const [a, b] = nums(q.text);
+      assert([2, 5, 10].indexOf(a) !== -1 || [2, 5, 10].indexOf(b) !== -1, q.text);
+      assert(a <= 10 && b <= 10, q.text);
+    }
+  }
+  for (let s = 0; s < 2000; s++) {
+    const q = R.question('normal', 1 + (s % 5), R.rng('n' + s));
+    if (q.kind === 'add' || q.kind === 'sub') nums(q.text).concat([q.answer]).forEach((n) => assert(n <= 100, q.text));
+    if (q.kind === 'mul') nums(q.text).forEach((n) => assert(n <= 10, q.text));
+  }
+});
+
+test('nc sums: choices are 4 distinct whole numbers >= 0 with exactly one right', () => {
+  const R = Rof();
+  R.LEVELS.forEach((lv) => {
+    for (let s = 0; s < 2000; s++) {
+      const r = R.rng('c' + lv + s), q = R.question(lv, 1 + (s % 5), r), c = R.choicesFor(q, r);
+      assertEqual(c.length, 4, q.text);
+      assertEqual(new Set(c).size, 4, q.text + ' ' + c);
+      assertEqual(c.filter((x) => x === q.answer).length, 1, q.text);
+      c.forEach((x) => assert(Number.isInteger(x) && x >= 0, q.text + ' ' + c));
+    }
+  });
+});
+
+test('nc sums: no shown sequence fits two families', () => {
+  const R = Rof();
+  let n = 0;
+  R.LEVELS.forEach((lv) => {
+    for (let s = 0; s < 3000; s++) {
+      const q = R.question(lv, 1 + (s % 5), R.rng('q' + lv + s), 'sequence');
+      assertEqual(q.kind, 'sequence');
+      const terms = nums(q.text);
+      assertEqual(terms.length, 4, q.text);
+      assertEqual(R.seqNexts(terms), [q.answer], q.text);
+      n++;
+    }
+  });
+  assertEqual(R.seqNexts([2, 4, 6, 8]), [10]);
+  assertEqual(R.seqNexts([3, 6, 12, 24]), [48]);
+  assertEqual(R.seqNexts([4, 9, 16, 25]), [36]);
+  assertEqual(R.seqNexts([20, 15, 10, 5]), [0]);
+  assertEqual(R.seqNexts([1, 2, 4, 7]), []);
+  assert(n > 0);
+});
+
+test('nc sums: solveText reads every shape the game shows', () => {
+  const R = Rof();
+  assertEqual(R.solveText('12 + 7 = ?'), 19);
+  assertEqual(R.solveText('40 − 13 = ?'), 27);
+  assertEqual(R.solveText('6 × 7 = ?'), 42);
+  assertEqual(R.solveText('56 ÷ 8 = ?'), 7);
+  assertEqual(R.solveText('7 + ? = 12'), 5);
+  assertEqual(R.solveText('? − 4 = 9'), 13);
+  assertEqual(R.solveText('20 − ? = 6'), 14);
+  assertEqual(R.solveText('? × 6 = 42'), 7);
+  assertEqual(R.solveText('? ÷ 3 = 9'), 27);
+  assertEqual(R.solveText('4 + 3 × 5 = ?'), 19);
+  assertEqual(R.solveText('25% of 80 = ?'), 20);
+  assertEqual(R.solveText('¾ of 40 = ?'), 30);
+  assertEqual(R.solveText('13² = ?'), 169);
+  assertEqual(R.solveText('Double 34 = ?'), 68);
+  assertEqual(R.solveText('Half of 46 = ?'), 23);
+  assertEqual(R.solveText('3, 7, 11, 15, ?'), 19);
+  assertEqual(R.solveText('nonsense'), null);
+});
+
+test('nc sums: check takes digits only', () => {
+  const R = Rof();
+  const q = { answer: 7 };
+  assert(R.check(q, '7') && R.check(q, '007') && R.check(q, ' 7 ') && R.check(q, 7));
+  assert(!R.check(q, '') && !R.check(q, '8') && !R.check(q, 'seven') && !R.check(q, null) && !R.check(q, '7.0') && !R.check(q, '-7'));
+});
+
+test('nc points: standard Quick sums score exactly as the old game; Sprint by tier', () => {
+  const R = Rof();
+  assertEqual(R.points('quick', { level: 'normal', ms: 1500, right: true }), 225);
+  assertEqual(R.points('quick', { level: 'normal', ms: 8500, right: true }), 188);
+  assertEqual(R.points('quick', { level: 'normal', ms: 20000, right: true }), 150);
+  assertEqual(R.points('quick', { level: 'easy', ms: 2000, right: true }), 150);
+  assertEqual(R.points('quick', { level: 'expert', ms: 20000, right: true }), 250);
+  assertEqual(R.points('quick', { level: 'hard', ms: 0, right: false }), 0);
+  assertEqual(R.points('sprint', { level: 'normal', tier: 3, right: true }), 60);
+  assertEqual(R.points('sprint', { level: 'expert', tier: 5, right: true }), 125);
+  assertEqual(R.points('sprint', { level: 'easy', tier: 1, right: false }), 0);
+  assertEqual(R.tierAt(0), 1); assertEqual(R.tierAt(3), 1); assertEqual(R.tierAt(4), 2); assertEqual(R.tierAt(16), 5); assertEqual(R.tierAt(140), 5);
+  assertEqual(R.penaltyMs('easy'), 2000); assertEqual(R.penaltyMs('expert'), 3000);
+  assertEqual(R.speedBonus(null), 0); assertEqual(R.speedBonus(15000), 0); assertEqual(R.speedBonus(2000), 50);
+});
+
+test('nc sums: a missing-number choice is never a number shown in the sum', () => {
+  const R = Rof();
+  R.LEVELS.forEach((lv) => {
+    for (let s = 0; s < 1500; s++) {
+      const r = R.rng('m' + lv + s), q = R.question(lv, 1 + (s % 5), r, 'missing'), shown = nums(q.text);
+      R.choicesFor(q, r).forEach((c) => assert(c === q.answer || shown.indexOf(c) === -1, q.text + ' offers ' + c));
+    }
+  });
+});
