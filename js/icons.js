@@ -108,7 +108,6 @@ window.FF = window.FF || {};
   "picturePuzzle": "puzzle-piece",
   "spotDifference": "magnifying-glass",
   "hiddenObject": "binoculars",
-  "visualRiddle": "question",
   "imposters": "detective",
   "wordFlow": "pencil",
   "guessIt": "images",
@@ -117,9 +116,6 @@ window.FF = window.FF || {};
   "rememberSequence": "list-numbers",
   "quickTap": "hand-tap",
   "charades": "person-arms-spread",
-  "dontSayIt": "x-circle",
-  "drawingChallenge": "pencil",
-  "pictionary": "chalkboard",
   "numberChallenge": "hash",
   "numberRush": "target",
   "ballSwap": "arrows-left-right",
@@ -130,7 +126,6 @@ window.FF = window.FF || {};
   "sayWhat": "chalkboard",
   "wordShift": "text-aa",
   "sketchBack": "pencil",
-  "whoIsMostLikely": "target",
 };
   var ui = {
   "play": "play",

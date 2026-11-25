@@ -36,7 +36,7 @@ test('leaderboards: switched-off games and games off the leaderboards are never 
 });
 
 test('leaderboards: party and creative games are not on the server list', function () {
-    foreach (['charades', 'pictionary', 'imposters', 'wouldYouRather', 'whoIsMostLikely'] as $id) {
+    foreach (['charades', 'imposters', 'wordFlow', 'ballSwap'] as $id) {
         eq(false, in_array($id, Leaderboards::GAMES, true), $id);
     }
 });

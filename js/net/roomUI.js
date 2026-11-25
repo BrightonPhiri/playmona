@@ -16,7 +16,6 @@ window.FF = window.FF || {};
     'letterRush',
     'whatsMissing',
     'numberChallenge',
-    'visualRiddle',
     // Races: the same card, word, clues or verse for everyone at once.
     'wordScramble', 'bibleWhoAmI', 'bibleVerseRush',
     // Parallel challenges (js/net/parallel.js): the same puzzle on every
@@ -24,8 +23,6 @@ window.FF = window.FF || {};
     'memoryMatch', 'rememberSequence',
     'picturePuzzle', 'spotDifference', 'hiddenObject',
     'bibleBooks', 'numberRush', 'blinkRemember', 'stacoend',
-    // Votes: everyone votes on their own phone, then sees the same split.
-    'whoIsMostLikely',
     // Secret words dealt by the server's referee (js/imposters/referee.js).
     'imposters',
     // One word each, turns and judging run by the server's referee (js/wordflow/referee.js).

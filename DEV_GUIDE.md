@@ -339,19 +339,6 @@ Also include `FF.data.capitals = [ { country, capital, options:[4], answer } ]` 
 else capital data can be derived from `countries` (each has name + capital). `neighbors` enables the
 "Country Neighbours" game.
 
-### `FF.data.party` (js/data/party.js)
-```js
-FF.data.party = {
-  charades: [ { word, category } ],  // 150+
-  dontSayIt: [ { word, forbidden:[4 strings], category } ],  // 80+
-  drawingPrompts: [ 'bicycle', ... ],  // 120+ (simple nouns, easy to draw)
-  pictionary: [ { word, category, hint } ],  // 120+
-  whoIsMostLikely: [ 'Forget where they put their phone?', ... ],  // 80+
-  finishSentence: [ 'The best thing about weekends is...', ... ],  // 60+
-  describeIt: [ { word, category } ]  // 80+
-};
-```
-
 ### `FF.data.visual` (js/data/visual.js)
 ```js
 FF.data.visual = {
@@ -361,7 +348,6 @@ FF.data.visual = {
   objects: [ { name, svg, fact } ],             // 30+ (household objects)
   sports: [ { name, svg } ],                    // 16+
   vehicles: [ { name, svg } ],                  // 20+
-  visualRiddles: [ { type, question, options:[4], answer, svg } ],  // 30+ (what comes next / odd one out / which completes pattern / which shadow / which doesn't belong)
 };
 ```
 SVG illustrations: viewBox `"0 0 200 200"`, flat vector style, suitable for all ages, high contrast,
