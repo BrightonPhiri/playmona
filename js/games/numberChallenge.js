@@ -1111,31 +1111,498 @@ window.FF = window.FF || {};
 
   /* ================= online Race ================= */
 
-  function online(api) {
-    var f = frame(api, { className: 'nc--play' });
-    var box = FF.ui.div('nc-wait');
-    box.appendChild(FF.ui.el('p', {}, t('ncOnlineSoon', 'Online Number Challenge is getting ready.')));
-    f.panel.appendChild(box);
+  var AUTO_SCORES_MS = 90000;
+  var NUDGE_MS = 8000;
+
+  /* The chain as the referee publishes it: the start, then the step on show, then "= ?". */
+  function onlineChainCard() {
+    var el = FF.ui.div('nc-card nc-card--chain');
+    var label = FF.ui.el('p', { class: 'nc-chain__label' });
+    var big = FF.ui.el('p', { class: 'nc-chain__big', 'aria-live': 'assertive' });
+    var pips = FF.ui.div('nc-pips');
+    el.appendChild(label);
+    el.appendChild(big);
+    el.appendChild(pips);
+    var drawn = null;
+    function show(text, kind) {
+      big.textContent = text;
+      big.className = 'nc-chain__big' + (kind ? ' is-' + kind : '');
+      if (animationsOn()) { big.classList.remove('is-in'); void big.offsetWidth; big.classList.add('is-in'); }
+    }
+    function stepText(st) {
+      if (st.op === 'double') return t('ncDoubleIt', 'double it');
+      if (st.op === 'half') return t('ncHalfIt', 'half it');
+      return opText(st.op === 'x' ? '*' : st.op) + ' ' + st.n;
+    }
+    return {
+      el: el,
+      draw: function (rd, phase) {
+        var key = phase === 'steps' ? 's' + rd.shown : 'ask';
+        if (drawn === key) return;
+        drawn = key;
+        if (pips.children.length !== rd.steps) { FF.ui.clear(pips); for (var i = 0; i < rd.steps; i++) pips.appendChild(FF.ui.span('nc-pip')); }
+        Array.prototype.forEach.call(pips.children, function (p, i) { p.classList.toggle('is-on', i < (phase === 'steps' ? rd.shown : rd.steps)); });
+        if (phase === 'steps' && rd.shown === 0) { label.textContent = t('ncStartAt', 'Start at'); show(String(rd.start)); return; }
+        if (phase === 'steps') { label.textContent = t('ncStepN', 'Step {n} of {m}', { n: rd.shown, m: rd.steps }); show(stepText(rd.step), 'step'); return; }
+        label.textContent = t('ncWhatNow', 'What is the total now?');
+        show('= ?', 'ask');
+      },
+      reveal: function (answer, ok, given) {
+        drawn = 'reveal';
+        label.textContent = ok ? t('ncRightTotal', 'Right total!') : given ? t('ncYouSaid', 'You said {x}', { x: given }) : t('ncTheTotal', 'The total');
+        show(String(answer), ok ? 'right' : 'wrong');
+        el.classList.add(ok ? 'is-right' : 'is-wrong');
+      }
+    };
+  }
+
+  /* Everyone gets the same item at once; the server's referee (js/numberchallenge/referee.js)
+     checks, times and scores every answer. Each phone keeps its own look. */
+  function online(api, room) {
+    var mode0 = (room.meta && room.meta.settings && R.sanitizeRoom(room.meta.settings).mode) || 'quick';
+    var f = frame(api, { className: 'nc--play nc--online nc--' + mode0 });
+    api.shell.hideTimer();
+    if (FF.Race && FF.Race.begin) FF.Race.begin(api.def.id, { rounds: 1, mode: 'parallel' });
+    var client = FF.NumberChallengeClient.create({ room: room, onChange: schedule });
+    var ended = false, pending = null, nudged = {}, autoScores = null;
+    var shownRound = null, board = null, card = null, sentText = null, revealShown = null, finishedShown = false, opened = null;
+    var sprint = null;     // this phone's own marking of its Sprint
+    var lastScores = {};
+    var ring = timerRing();
+    var head = FF.ui.div('nc-head');
+    head.appendChild(ring.el);
+    f.stage.appendChild(head);
+    var cardHost = FF.ui.div('nc-cardhost');
+    f.stage.appendChild(cardHost);
+    var roundChip = chip('', 'nc-chip--round');
+    f.chips.appendChild(roundChip);
+    var levelHolder = FF.ui.span('');
+    f.chips.appendChild(levelHolder);
+    var flameHost = FF.ui.span('nc-flamehost');
+    f.chips.appendChild(flameHost);
+    var boardBox = FF.ui.div('nc-card-s nc-score');
+    f.side.appendChild(boardBox);
+    var ticker = setInterval(tick, 100);
+
+    function expected() { return room.meta && room.meta.ncMatch; }
+    function who(uid) {
+      var p = (room.players || {})[uid] || {};
+      return { id: uid, uid: uid, name: p.name || t('playerLabel', 'Player'), avatar: p.avatar || null, color: p.color || null };
+    }
+    function schedule() { if (!pending) pending = setTimeout(function () { pending = null; render(); }, 0); }
+    function cleanup() {
+      if (ended) return;
+      ended = true;
+      clearInterval(ticker);
+      if (pending) clearTimeout(pending);
+      if (autoScores) clearTimeout(autoScores);
+      if (board) board.destroy();
+      client.stop();
+      if (FF.Race && FF.Race.end) { try { FF.Race.end(); } catch (e) { /* not running */ } }
+    }
+    function finish() { if (ended) return; cleanup(); api.end({}); }
+    function maybeNudge(key, due) {
+      if (nudged[key] || !due) return;
+      if (client.serverNow() - due < NUDGE_MS) return;
+      nudged[key] = true;
+      FF.NumberChallengeApi.nudge(room.code);
+    }
+
+    /* The race board: points, who has answered (a tick, never what), Sprint counts live. */
+    function drawLeader(nc) {
+      FF.ui.clear(boardBox);
+      boardBox.appendChild(FF.ui.el('p', { class: 'nc-card-s__title' }, t('ncRace', 'Number race')));
+      var rows = FF.ui.el('ol', { class: 'nc-board' });
+      var reveal = nc.phase === 'reveal' && nc.last && nc.last.k === nc.k;
+      var order = (nc.order || []).slice().sort(function (a, b) { return ((nc.p[b] || {}).score || 0) - ((nc.p[a] || {}).score || 0); });
+      order.forEach(function (uid, i) {
+        var row = nc.p[uid] || {};
+        var li = FF.ui.el('li', { class: 'nc-row' + (uid === client.uid ? ' is-me' : '') });
+        li.appendChild(FF.ui.span('nc-row__place', String(i + 1)));
+        var ava = FF.ui.span('nc-row__ava');
+        if (FF.Players && FF.Players.avatarEl) ava.appendChild(FF.Players.avatarEl(who(uid), ''));
+        li.appendChild(ava);
+        var nm = FF.ui.span('nc-row__name');
+        nm.appendChild(FF.ui.span('', who(uid).name + (uid === client.uid ? ' ' + t('youTag', '(you)') : '')));
+        if (nc.settings.mode === 'sprint' && nc.phase === 'open') nm.appendChild(FF.ui.span('nc-row__meta', t('ncNRight', '{n} right', { n: row.right || 0 })));
+        li.appendChild(nm);
+        var pts = FF.ui.span('nc-row__pts', FF.util.formatNumber(row.score || 0));
+        li.appendChild(pts);
+        if (nc.phase === 'open' && nc.settings.mode !== 'sprint' && row.inK === nc.k) {
+          var tickEl = FF.ui.span('nc-row__in', '✓');
+          tickEl.setAttribute('aria-label', t('swAnswered', 'answered'));
+          li.appendChild(tickEl);
+        }
+        if (reveal) {
+          var res = nc.last.results[uid] || {};
+          li.classList.add(res.right ? 'is-good' : 'is-bad');
+          var before = lastScores[uid] != null ? lastScores[uid] : (row.score || 0) - (res.points || 0);
+          if (before !== (row.score || 0) && G() && G().countUp) G().countUp(pts, before, row.score || 0, 900);
+        }
+        lastScores[uid] = row.score || 0;
+        rows.appendChild(li);
+      });
+      boardBox.appendChild(rows);
+      FF.ui.clear(flameHost);
+      var me = nc.p[client.uid];
+      if (me) flameHost.appendChild(flame(sprint ? sprint.st.streak : me.streak || 0));
+    }
+
+    function waiting(title, sub) {
+      FF.ui.clear(cardHost);
+      FF.ui.clear(f.panel);
+      var w = FF.ui.div('nc-wait');
+      w.appendChild(FF.ui.div('nc-wait__spin'));
+      w.appendChild(FF.ui.el('h2', { class: 'nc-h' }, title));
+      if (sub) w.appendChild(FF.ui.el('p', { class: 'nc-note' }, sub));
+      f.panel.appendChild(w);
+    }
+
+    function tick() {
+      if (ended) return;
+      var nc = client.view().nc;
+      if (!nc || nc.matchId !== expected()) return;
+      var now = client.serverNow();
+      if (nc.phase === 'open' && nc.round) {
+        if (sprint) sprintTick(now);
+        else ring.set((nc.closeAt - now) / 1000, nc.round.seconds || 1);
+        // Make the target: send the nearest tile just before the clock, so it reaches the referee in time.
+        if (nc.settings.mode === 'target' && board && !board.sent && board.timeUp && now >= nc.closeAt - 400) board.timeUp();
+      }
+      var due = nc.phase === 'starting' ? nc.readyAt : nc.phase === 'ready' || nc.phase === 'steps' ? nc.openAt : nc.phase === 'open' ? nc.closeAt : nc.phase === 'reveal' ? nc.nextAt : 0;
+      if (due) maybeNudge(nc.phase + nc.k, due);
+    }
+
+    function brief(s) {
+      return s.mode === 'sprint' ? t('ncBriefSprint', 'As many sums as you can before your clock runs out. A wrong answer takes seconds off your clock.')
+        : s.mode === 'chain' ? t('ncBriefChain', 'Keep the running total in your head as the steps appear, then pick the total.')
+          : s.mode === 'target' ? t('ncBriefTarget', 'Join tiles with a sign to make new tiles. Hit the target, or get as close as you can.')
+            : t('ncBriefQuick', 'Everyone gets the same sum. Faster right answers score more. One answer per sum.');
+    }
+
+    function render() {
+      if (ended) return;
+      if (!f.root.isConnected) { cleanup(); return; }
+      var v = client.view();
+      var nc = v.nc;
+      if (!nc || (expected() && nc.matchId !== expected()) || !FF.NumberChallengeClient.ready(nc)) {
+        if (!nc || nc.matchId !== expected()) waiting(t('ncGettingReady', 'Dealing the numbers…'), t('ncGettingReadySub', 'Everyone gets the same sum at the same moment.'));
+        return;
+      }
+      var s = nc.settings;
+      FF.ui.clear(levelHolder);
+      levelHolder.appendChild(chip(levelName(s.level), 'nc-chip--lv nc-lv-' + s.level));
+      roundChip.textContent = nc.k < 0 ? t('gsGetReady', 'Get ready') : s.mode === 'sprint' ? modeName('sprint') : t('ncRoundOf', '{r} of {n}', { r: nc.k + 1, n: nc.total });
+      drawLeader(nc);
+      if (nc.phase === 'ended') { if (!finishedShown) showEnd(nc, v); return; }
+      if (nc.phase === 'starting') {
+        ring.idle();
+        waiting(modeName(s.mode), brief(s));
+        return;
+      }
+      if (!v.seated) {
+        waiting(t('gsWatching', 'This game started without you'), t('gsWatchingSub', 'You can join the next one.'));
+        return;
+      }
+      var key = nc.matchId + '|' + nc.k;
+      if (shownRound !== key) buildRound(nc, key, v);
+      if (card && card.draw) card.draw(nc.round, nc.phase);
+      if (!board && s.mode !== 'sprint' && nc.phase !== 'steps') attachBoard(nc);
+      if (nc.phase === 'open' && board && opened !== key) {
+        opened = key;
+        board.open();
+        api.audio.play('land');
+        if (FF.Nav && FF.Nav.focusFirst) FF.Nav.focusFirst(board.el);
+      }
+      var me = nc.p[v.uid] || {};
+      if (s.mode !== 'sprint' && nc.phase === 'open' && me.inK === nc.k && board && !board.sent) { board.sent = true; board.lock(); }
+      if (nc.phase === 'reveal' && revealShown !== key) showReveal(nc, v, key);
+    }
+
+    var lockEl = null;
+    function onSubmit(text) {
+      if (!board || board.sent) return;
+      if (!client.send(text)) return;
+      board.sent = true;
+      sentText = text;
+      board.lock();
+      api.audio.play('select');
+      if (lockEl) { lockEl.textContent = t('bqLockedIn', 'Answer locked in. Waiting for everyone…'); lockEl.classList.add('is-on'); }
+    }
+
+    function buildRound(nc, key, v) {
+      shownRound = key;
+      revealShown = null;
+      sentText = null;
+      sprint = null;
+      opened = null;
+      if (board) board.destroy();
+      board = null;
+      card = null;
+      FF.ui.clear(cardHost);
+      FF.ui.clear(f.panel);
+      f.root.classList.remove('is-revealed');
+      ring.idle();
+      var rd = nc.round;
+      var s = nc.settings;
+      if (s.mode === 'sprint') { buildSprint(nc, v); return; }
+      if (s.mode === 'target') card = targetCard({ tiles: rd.tiles, ops: rd.ops, target: rd.target });
+      else if (s.mode === 'chain') card = onlineChainCard();
+      else card = sumCard(rd.text);
+      cardHost.appendChild(card.el);
+      // A chain's choices come with the open, so its board waits for them.
+      if (s.mode !== 'chain' || nc.phase !== 'steps') attachBoard(nc);
+    }
+
+    function attachBoard(nc) {
+      var rd = nc.round;
+      var s = nc.settings;
+      var inner = s.mode === 'target'
+        ? targetBoard(api, { tiles: rd.tiles, ops: rd.ops, target: rd.target }, s, function (text) { onSubmit(text); })
+        : answerBoard(api, s, { choices: rd.choices }, onSubmit);
+      board = {
+        el: inner.el, sent: false, timeUp: inner.timeUp,
+        open: inner.open, finish: inner.finish, destroy: inner.destroy,
+        lock: function () { inner.el.classList.add('is-locked'); }
+      };
+      lockEl = FF.ui.el('p', { class: 'nc-locked', 'aria-live': 'polite' });
+      f.panel.appendChild(board.el);
+      f.panel.appendChild(lockEl);
+      f.panel.appendChild(FF.ui.div('nc-after'));
+    }
+
+    /* ---------- Sprint: this phone marks at once; the referee's numbers are the ones that count ---------- */
+
+    function buildSprint(nc, v) {
+      var rd = nc.round;
+      var items = rd.list.map(function (x) { return { text: x.text, tier: x.tier, choices: x.choices, answer: R.solveText(x.text) }; });
+      var st = R.sprintCreate(nc.settings, nc.openAt);
+      var me = nc.p[v.uid] || {};
+      // Back after a reload: carry on from where the referee has this player.
+      if (typeof me.at === 'number') { st.i = me.at; st.right = me.right || 0; st.wrong = me.wrong || 0; st.penalty = Math.max(0, nc.openAt + st.lengthMs - (me.end || nc.openAt + st.lengthMs)); st.done = !!me.done; }
+      var bar = FF.ui.div('nc-bar');
+      var fill = FF.ui.div('nc-bar__fill');
+      bar.appendChild(fill);
+      var info = FF.ui.div('nc-sprintinfo');
+      var rightChip = chip(t('ncNRight', '{n} right', { n: st.right }), 'nc-chip--right');
+      var tierPips = FF.ui.span('nc-tiers');
+      for (var i = 1; i <= 5; i++) tierPips.appendChild(FF.ui.span('nc-tier'));
+      info.appendChild(rightChip);
+      info.appendChild(tierPips);
+      cardHost.appendChild(bar);
+      cardHost.appendChild(info);
+      var sumHost = FF.ui.div('nc-sumhost');
+      cardHost.appendChild(sumHost);
+      var sumCardNow = null, inner = null, done = false;
+      sprint = { st: st, items: items, bar: bar, fill: fill };
+      function show() {
+        if (done) return;
+        var item = items[st.i];
+        if (!item || st.done) { over(); return; }
+        Array.prototype.forEach.call(tierPips.children, function (pip, j) { pip.classList.toggle('is-on', j < item.tier); });
+        FF.ui.clear(sumHost);
+        FF.ui.clear(f.panel);
+        sumCardNow = sumCard(item.text, { className: 'nc-card--sprint' });
+        sumHost.appendChild(sumCardNow.el);
+        inner = answerBoard(api, nc.settings, item, answer);
+        f.panel.appendChild(inner.el);
+        if (opened) inner.open();
+      }
+      function answer(text) {
+        if (done) return;
+        var i = st.i;
+        var r = R.sprintAnswer(st, items, text, client.serverNow());
+        if (r.ignored) { over(); return; }
+        client.sendSprint(i, text);
+        rightChip.textContent = t('ncNRight', '{n} right', { n: st.right });
+        FF.ui.clear(flameHost);
+        flameHost.appendChild(flame(st.streak));
+        if (r.right) { api.audio.play('correct'); show(); return; }
+        api.audio.play('wrong');
+        inner.finish(r.item.answer);
+        sumCardNow.reveal(r.item.answer, false, text);
+        bar.classList.add('is-hit');
+        var pen = FF.ui.span('nc-penalty', '−' + (r.penaltyMs / 1000) + ' s');
+        cardHost.appendChild(pen);
+        setTimeout(function () {
+          bar.classList.remove('is-hit');
+          if (pen.parentNode) pen.parentNode.removeChild(pen);
+          show();
+        }, 700);
+      }
+      function over() {
+        if (done) return;
+        done = true;
+        client.flushSprint();
+        if (inner) inner.destroy();
+        FF.ui.clear(sumHost);
+        FF.ui.clear(f.panel);
+        var w = FF.ui.div('nc-wait');
+        w.appendChild(FF.ui.el('h2', { class: 'nc-h nc-h--xl' }, t('ncTimeUpSprint', 'Time!')));
+        w.appendChild(FF.ui.el('p', { class: 'nc-note' }, t('ncSprintMine', '{r} right, {w} wrong', { r: st.right, w: st.wrong })));
+        w.appendChild(FF.ui.el('p', { class: 'nc-note' }, t('ncWaitOthers', 'Waiting for the others to finish…')));
+        f.panel.appendChild(w);
+      }
+      sprint.show = show;
+      sprint.over = over;
+      sprint.open = function () { if (!inner) show(); else inner.open(); };
+      board = { el: FF.ui.div(''), sent: true, open: function () { sprint.open(); }, finish: function () {}, destroy: function () { done = true; if (inner) inner.destroy(); }, lock: function () {} };
+      show();
+    }
+
+    function sprintTick(now) {
+      var st = sprint.st;
+      var total = st.lengthMs / 1000;
+      var rem = Math.max(0, (R.sprintEndAt(st) - now) / 1000);
+      ring.set(rem, total);
+      sprint.fill.style.width = (100 * Math.min(1, rem / total)) + '%';
+      sprint.bar.classList.toggle('is-low', rem <= 5);
+      if (R.sprintOver(st, now)) sprint.over();
+    }
+
+    /* ---------- the reveal ---------- */
+
+    function showReveal(nc, v, key) {
+      revealShown = key;
+      var last = nc.last;
+      var s = nc.settings;
+      var mine = last.results[v.uid] || { right: false, points: 0, text: '' };
+      ring.set(0, 1);
+      f.root.classList.add('is-revealed');
+      if (lockEl) lockEl.classList.remove('is-on');
+      if (s.mode === 'sprint') {
+        if (sprint) sprint.over();
+        FF.ui.clear(f.panel);
+      } else {
+        if (board) board.finish(s.mode === 'target' ? undefined : last.answer);
+        var given = mine.text || sentText;
+        if (s.mode === 'target') card.reveal({ off: mine.off == null ? null : mine.off, value: mine.value == null ? null : mine.value });
+        else if (s.mode === 'chain') card.reveal(last.answer, !!mine.right, given);
+        else card.reveal(last.answer, !!mine.right, mine.right ? null : given);
+      }
+      var good = s.mode === 'sprint' ? (mine.points || 0) > 0 : mine.right === true;
+      api.audio.play(good ? 'correct' : 'wrong');
+      if ((s.mode === 'sprint' ? (mine.right || 0) >= 10 : good) && animationsOn() && FF.Confetti) FF.Confetti.burst(40);
+      var after = (f.panel.querySelector && f.panel.querySelector('.nc-after')) || f.panel.appendChild(FF.ui.div('nc-after'));
+      FF.ui.clear(after);
+      var lines = [];
+      if (s.mode === 'sprint') lines.push(t('ncSprintLineOut', '{r} right, {w} wrong · best streak {b}', { r: mine.right || 0, w: mine.wrong || 0, b: mine.best || 0 }));
+      else if (s.mode === 'target' && !mine.right && last.solution) lines.push(t('ncOneWay', 'One way: {w}', { w: stepLines(last.solution).join(' · ') }));
+      else if (!mine.right && s.mode === 'quick') lines.push(t('ncAnswerIs', 'The answer is {a}.', { a: last.answer }));
+      after.appendChild(revealBar({
+        state: s.mode === 'sprint' ? (mine.points ? 'good' : 'late') : mine.right ? 'good' : mine.points > 0 ? 'close' : mine.answered ? 'bad' : 'late',
+        stampText: s.mode === 'sprint' ? t('ncTimeUpSprint', 'Time!') : null,
+        points: mine.points || 0, lines: lines
+      }));
+      // Everyone's result, best first.
+      var listEl = FF.ui.el('ul', { class: 'nc-results' });
+      (nc.order || []).slice().sort(function (a, b) {
+        var ra = last.results[a] || {}, rb = last.results[b] || {};
+        return (rb.points || 0) - (ra.points || 0) || (ra.ms || 0) - (rb.ms || 0);
+      }).forEach(function (uid) {
+        var r = last.results[uid] || {};
+        var good = s.mode === 'sprint' ? (r.points || 0) > 0 : !!r.right;
+        var li = FF.ui.el('li', { class: 'nc-results__row ' + (good ? 'is-good' : 'is-bad') });
+        li.appendChild(FF.ui.span('nc-results__name', who(uid).name));
+        var said = s.mode === 'sprint' ? t('ncNRight', '{n} right', { n: r.right || 0 })
+          : s.mode === 'target' ? (r.value != null ? t('ncMade', 'made {v}', { v: r.value }) + (r.off ? ' (' + r.off + ' off)' : '') : t('swNoAnswer', 'no answer'))
+            : r.right ? (r.ms / 1000).toFixed(1) + 's' : r.answered && r.text ? r.text : t('swNoAnswer', 'no answer');
+        li.appendChild(FF.ui.span('nc-results__said', said));
+        li.appendChild(FF.ui.span('nc-results__pts', '+' + FF.util.formatNumber(r.points || 0)));
+        listEl.appendChild(li);
+      });
+      after.appendChild(listEl);
+      after.appendChild(FF.ui.el('p', { class: 'nc-note nc-nextin' }, nc.k + 1 >= nc.total ? t('gsFinalSoon', 'Final results coming up…') : t('ncNextSoon', 'Next one in a moment…')));
+    }
+
+    function showEnd(nc, v) {
+      finishedShown = true;
+      if (board) board.destroy();
+      board = null;
+      ring.idle();
+      head.style.display = 'none';
+      FF.ui.clear(cardHost);
+      FF.ui.clear(f.panel);
+      f.root.classList.add('is-recap');
+      var rows = (nc.result && nc.result.rows) || [];
+      var box = FF.ui.div('nc-recap nc-recap--room');
+      var top = rows[0];
+      var meWon = top && top.uid === v.uid && !(rows[1] && rows[1].place === 1);
+      box.appendChild(FF.ui.el('h2', { class: 'nc-h nc-h--xl' }, meWon ? t('ncYouWin', 'You win the number race!')
+        : top ? t('ncWinner', '{name} wins the number race!', { name: who(top.uid).name }) : t('gsOver', 'Game over')));
+      var podium = FF.ui.div('nc-podium');
+      [1, 0, 2].forEach(function (i) {
+        var r = rows[i];
+        if (!r) return;
+        var col = FF.ui.div('nc-podium__col nc-podium__col--' + (i + 1));
+        var ava = FF.ui.span('nc-podium__ava');
+        if (FF.Players && FF.Players.avatarEl) ava.appendChild(FF.Players.avatarEl(who(r.uid), ''));
+        col.appendChild(ava);
+        col.appendChild(FF.ui.span('nc-podium__name', who(r.uid).name));
+        col.appendChild(FF.ui.span('nc-podium__pts', FF.util.formatNumber(r.points || 0)));
+        var step = FF.ui.div('nc-podium__step');
+        step.appendChild(FF.ui.span('', String(r.place || i + 1)));
+        col.appendChild(step);
+        podium.appendChild(col);
+      });
+      box.appendChild(podium);
+      var listEl = FF.ui.el('ol', { class: 'nc-board nc-board--big' });
+      rows.forEach(function (r) {
+        var li = FF.ui.el('li', { class: 'nc-row' + (r.uid === v.uid ? ' is-me' : '') + (r.place === 1 ? ' is-top' : '') });
+        li.appendChild(FF.ui.span('nc-row__place', String(r.place)));
+        var ava = FF.ui.span('nc-row__ava');
+        if (FF.Players && FF.Players.avatarEl) ava.appendChild(FF.Players.avatarEl(who(r.uid), ''));
+        li.appendChild(ava);
+        var nm = FF.ui.span('nc-row__name');
+        nm.appendChild(FF.ui.span('', who(r.uid).name));
+        var bits = [nc.settings.mode === 'sprint' ? t('ncNRight', '{n} right', { n: r.right || 0 }) : t('qmRightOf', '{c}/{a} right', { c: r.right || 0, a: nc.total })];
+        if (r.best > 1) bits.push(t('qmBestStreak', 'best streak {n}', { n: r.best }));
+        nm.appendChild(FF.ui.span('nc-row__meta', bits.join(' · ')));
+        li.appendChild(nm);
+        li.appendChild(FF.ui.span('nc-row__pts', FF.util.formatNumber(r.points || 0)));
+        listEl.appendChild(li);
+      });
+      box.appendChild(listEl);
+      var go = FF.ui.el('button', { type: 'button', class: 'nc-btn nc-btn--go nc-btn--big' });
+      go.appendChild(icon('trophy'));
+      go.appendChild(FF.ui.span('', t('srtSeeScores', 'See scores')));
+      go.addEventListener('click', function () { api.audio.play('click'); finish(); });
+      box.appendChild(go);
+      f.panel.appendChild(box);
+      api.audio.play(meWon ? 'winner' : 'roundEnd');
+      if (meWon && animationsOn() && FF.Confetti) FF.Confetti.burst(100);
+      if (FF.Nav && FF.Nav.focusFirst) FF.Nav.focusFirst(box);
+      if (!autoScores) autoScores = setTimeout(finish, AUTO_SCORES_MS);
+    }
+
+    render();
   }
 
   /* ================= room settings ================= */
 
-  function roomFields() {
+  /* The host's choices for a room, each mode with its own options (rooms always have a clock). */
+  function roomFields(gs) {
     function opt(label, value) { return { label: label, value: value }; }
-    return [
-      { key: 'mode', label: t('ncWayToPlay', 'Way to play'), options: R.MODES.map(function (m) { return opt(modeName(m), m); }) },
-      { key: 'level', label: t('gcLevel', 'Level'), options: R.LEVELS.map(function (l) { return opt(levelName(l), l); }) },
-      { key: 'rounds', label: t('ncHowMany', 'How many'), options: [3, 5, 8, 10, 15, 20].map(function (x) { return opt(String(x), x); }) },
-      { key: 'time', label: t('ncTimeEach', 'Time for each'), options: ['quick', 'normal', 'relaxed'].map(function (x) { return opt(timeName(x), x); }) },
-      { key: 'sprint', label: t('ncLength', 'Sprint length'), options: R.SPRINTS.map(function (x) { return opt(x + ' s', x); }) },
-      { key: 'speed', label: t('ncSpeed', 'Chain speed'), options: R.SPEEDS.map(function (x) { return opt(speedName(x), x); }) }
+    gs = gs || {};
+    var s = R.sanitizeRoom(gs);
+    // A mode change can leave a count the new mode does not offer: show its usual one.
+    if (gs.mode != null && gs.rounds !== s.rounds) gs.rounds = s.rounds;
+    if (gs.time != null && gs.time !== s.time) gs.time = s.time;
+    var out = [
+      { key: 'mode', label: t('ncWayToPlay', 'Way to play'), redraw: true, options: R.MODES.map(function (m) { return opt(modeName(m), m); }) },
+      { key: 'level', label: t('gcLevel', 'Level'), options: R.LEVELS.map(function (l) { return opt(levelName(l), l); }) }
     ];
+    if (s.mode === 'sprint') out.push({ key: 'sprint', label: t('ncLength', 'Sprint length'), options: R.SPRINTS.map(function (x) { return opt(x + ' s', x); }) });
+    else out.push({ key: 'rounds', label: s.mode === 'chain' ? t('ncChains', 'Chains') : s.mode === 'target' ? t('ncTargets', 'Targets') : t('ncSums', 'Sums'), options: R.ROUNDS[s.mode].map(function (x) { return opt(String(x), x); }) });
+    if (s.mode === 'chain') out.push({ key: 'speed', label: t('ncSpeed', 'Speed'), options: R.SPEEDS.map(function (x) { return opt(speedName(x), x); }) });
+    if (s.mode === 'quick' || s.mode === 'target') out.push({ key: 'time', label: s.mode === 'target' ? t('ncTimeTarget', 'Time for each target') : t('ncTimeSum', 'Time for each sum'), options: ['quick', 'normal', 'relaxed'].map(function (x) { return opt(timeName(x), x); }) });
+    return out;
   }
 
   var ROOM = {
     minPlayers: R.MIN_PLAYERS,
     defaults: R.STANDARD,
-    fields: function () { return roomFields(); },
+    fields: function (gs) { return roomFields(gs); },
     sanitize: function (s) { return R.sanitizeRoom(s); },
     summary: function (s) { return summary(R.sanitizeRoom(s)); },
     start: function (room, pick) { return FF.NumberChallengeApi.start(room, pick); }

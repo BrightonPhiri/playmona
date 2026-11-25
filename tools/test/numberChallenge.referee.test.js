@@ -283,3 +283,114 @@ test('nc referee: a restarted referee carries on from saved state', async functi
   await m2.answer('p2', String(m2.item().answer));
   assertEqual([m2.nc().phase, m2.nc().p.p1.streak], ['reveal', 2]);
 });
+
+/* ---------- the phone's client ---------- */
+
+async function phone(m, uid) {
+  const FF = loadFF(FILES.concat(['js/numberchallenge/client.js']));
+  const T = FF.Transport.dev({ bus: m.bus, root: 'rooms/ROOM01' });
+  await T.connect();
+  T.serverNow = () => m.clock.now;
+  let changes = 0;
+  const c = FF.NumberChallengeClient.create({ room: { transport: T, uid, code: 'ROOM01' }, onChange: () => { changes++; }, timers: m.clock });
+  await flush();
+  return { FF, c, changes: () => changes };
+}
+
+test('nc client: one answer per item, sent only while it is open, and the referee takes it', async function () {
+  const m = await match();
+  const a = await phone(m, 'p1');
+  const b = await phone(m, 'p2');
+  await m.clock.advance(1000 + m.RF.BRIEF_MS + 10);
+  assertEqual(a.c.view().nc.phase, 'ready');
+  const item = m.item();
+  assertEqual(a.c.send(String(item.answer)), false, 'not before the clock starts');
+  await m.open();
+  assert(a.c.view().seated && a.c.view().me, 'p1 is seated');
+  assertEqual(a.c.send(String(item.answer)), true);
+  assertEqual(a.c.send('1'), false, 'one answer per item');
+  await flush();
+  assertEqual(m.nc().p.p1.inK, 0, 'the referee took it');
+  assertEqual(b.c.send(wrongOf(item)), true);
+  await flush();
+  assertEqual(m.nc().phase, 'reveal');
+  assert(m.nc().last.results.p1.right && !m.nc().last.results.p2.right);
+  assertEqual(a.c.send('5'), false, 'not after the reveal');
+  assert(a.changes() > 0, 'the screen hears about changes');
+  a.c.stop();
+  b.c.stop();
+});
+
+test('nc client: a phase is drawn only once its round has arrived in full', async function () {
+  const cases = [
+    { settings: { mode: 'quick', level: 'normal' }, fields: ['text', 'choices', 'seconds'] },
+    { settings: { mode: 'quick', level: 'expert' }, fields: ['text', 'seconds'] },
+    { settings: { mode: 'chain', level: 'easy', rounds: 5 }, fields: ['start', 'steps', 'shown', 'seconds'] },
+    { settings: { mode: 'target', level: 'normal', rounds: 3 }, fields: ['tiles', 'ops', 'target', 'seconds'] },
+    { settings: { mode: 'sprint', level: 'normal' }, fields: ['list', 'seconds'] }
+  ];
+  for (const cs of cases) {
+    const m = await match({ settings: cs.settings });
+    const { FF } = await phone(m, 'p1');
+    const C = FF.NumberChallengeClient;
+    const copy = () => C.tidy(JSON.parse(JSON.stringify(m.nc())));
+    assert(C.ready(copy()), 'starting is ready');
+    await m.clock.advance(1000 + m.RF.BRIEF_MS + 10);
+    assert(C.ready(copy()), cs.settings.mode + ': a full first phase is ready');
+    for (const field of cs.fields) {
+      const v = copy();
+      delete v.round[field];
+      assert(!C.ready(v), cs.settings.mode + ' ' + cs.settings.level + ': not ready without ' + field);
+    }
+    const stale = copy();
+    stale.round.k = stale.k - 1;
+    assert(!C.ready(stale), 'last item is not this one');
+    if (cs.settings.mode === 'sprint') {
+      const v = copy();
+      v.round.list = v.round.list.slice(0, 20);
+      assert(!C.ready(v), 'half a sprint list is not ready');
+      assertEqual(copy().round.list[0].choices.length, 4, 'sprint choices come back as lists');
+    }
+    if (cs.settings.mode === 'target') assertEqual(copy().round.tiles.every((x) => typeof x === 'number'), true, 'tiles are numbers');
+    await m.open();
+    if (cs.settings.mode === 'chain') {
+      const v = copy();
+      delete v.round.choices;
+      assert(!C.ready(v), 'an open chain needs its choices');
+    }
+  }
+});
+
+test('nc client: sprint answers flush in order, batched', async function () {
+  const m = await match({ settings: { mode: 'sprint', level: 'easy', sprint: 60 } });
+  const a = await phone(m, 'p1');
+  await m.open();
+  const items = m.R.deal(m.saved.value.settings, m.saved.value.seed).items;
+  for (let i = 0; i < 18; i++) assertEqual(a.c.sendSprint(i, String(items[i].answer)), true);
+  await flush();
+  assertEqual(m.nc().p.p1.at, 0, 'nothing until the flush');
+  await m.clock.advance(500);
+  assertEqual([m.nc().p.p1.at, m.nc().p.p1.right], [18, 18], 'every answer arrived, in order');
+  assertEqual(a.c.sendSprint(17, '1'), false, 'an answer already sent');
+  a.c.stop();
+});
+
+test('nc client: a rejoining phone sees the current chain step and its own sprint position', async function () {
+  const m = await match({ settings: { mode: 'chain', level: 'normal', rounds: 5, speed: 'steady' } });
+  await m.clock.advance(1000 + m.RF.BRIEF_MS + 1 + 2 * m.R.STEP_MS.steady);
+  const late = await phone(m, 'p2');
+  const v = late.c.view().nc;
+  const item = m.item();
+  assert(late.FF.NumberChallengeClient.ready(v), 'the mid-chain view is complete');
+  assertEqual([v.phase, v.round.shown, v.round.step.op], ['steps', 2, item.steps[1].op]);
+
+  const s = await match({ settings: { mode: 'sprint', level: 'easy', sprint: 30 } });
+  await s.open();
+  const items = s.R.deal(s.saved.value.settings, s.saved.value.seed).items;
+  await s.answer('p1', [0, 1, 2].map((i) => i + ':' + items[i].answer).join(','));
+  const back = await phone(s, 'p1');
+  const me = back.c.view().me;
+  assertEqual([me.at, me.right, me.end], [3, 3, s.nc().openAt + 30000]);
+  assertEqual(back.c.sendSprint(0, '1'), false, 'cannot re-answer a sum the referee already has');
+  assertEqual(back.c.sendSprint(3, String(items[3].answer)), true, 'carries on from the referee\'s position');
+});
