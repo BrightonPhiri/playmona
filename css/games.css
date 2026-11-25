@@ -5468,7 +5468,8 @@ button.imp-card:focus-visible { outline: 3px solid var(--focus-ring); outline-of
 @media (max-width: 899px) {
   .nc--play { padding-top: var(--sp-2); }
   .nc--play .nc-top { flex-wrap: nowrap; gap: 6px; margin-bottom: var(--sp-2); }
-  .nc--play .nc-brand { font-size: 1.1rem; }
+  /* The app bar already names the game; the chips need the room. */
+  .nc.nc--play .nc-brand { display: none; }
   .nc--play .nc-chips { flex-wrap: nowrap; gap: 4px; min-width: 0; overflow: hidden; }
   .nc--play .nc-chip, .nc--play .nc-flame { min-height: 26px; padding: 2px 8px; font-size: 0.75rem; white-space: nowrap; }
   .nc--play .nc-chip--lv { display: none; }

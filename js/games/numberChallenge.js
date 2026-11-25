@@ -207,7 +207,7 @@ window.FF = window.FF || {};
     var el = FF.ui.el('div', { class: 'nc-choices is-waiting', role: 'group', 'aria-label': t('ncPickAnswer', 'Pick the answer') });
     var open = false, locked = false;
     var btns = (values || []).map(function (v, i) {
-      var b = FF.ui.el('button', { type: 'button', class: 'nc-choice nc-choice--' + i });
+      var b = FF.ui.el('button', { type: 'button', class: 'nc-choice nc-choice--' + i, 'aria-label': String(v), 'aria-keyshortcuts': String(i + 1) });
       b.appendChild(FF.ui.span('nc-choice__k', String(i + 1)));
       b.appendChild(FF.ui.span('nc-choice__v', String(v)));
       b.addEventListener('click', function () { pick(v, b); });
@@ -737,6 +737,7 @@ window.FF = window.FF || {};
         rows.appendChild(li);
       });
       scoreBox.appendChild(rows);
+      if (api.shell.updateScores) api.shell.updateScores(n > 1 ? activeId : undefined);
       scoreChip.textContent = FF.util.formatNumber(api.scoring.get(activeId) || 0);
       FF.ui.clear(flameHost);
       flameHost.appendChild(flame(turn.streak[activeId] || 0));
@@ -831,7 +832,7 @@ window.FF = window.FF || {};
         api.audio.play('click');
         if (current) { current(); current = null; }
         next();
-      }, { class: 'nc-btn nc-btn--go nc-next' });
+      }, { class: 'nc-btn nc-btn--go nc-next', primary: false });
       after.appendChild(nextBtn);
       if (after.scrollIntoView && window.innerWidth < 900) { try { after.scrollIntoView({ behavior: animationsOn() ? 'smooth' : 'auto', block: 'nearest' }); } catch (e) { /* old browser */ } }
       setTimeout(function () { if (document.body.contains(nextBtn)) focus(nextBtn); }, 400);
@@ -964,6 +965,8 @@ window.FF = window.FF || {};
         var r = R.sprintAnswer(st, items, text, Date.now());
         if (r.ignored) { finish(); return; }
         rightChip.textContent = t('ncNRight', '{n} right', { n: st.right });
+        FF.ui.clear(flameHost);
+        flameHost.appendChild(flame(st.streak));
         if (r.right) {
           api.audio.play('correct');
           scoreChip.textContent = FF.util.formatNumber((api.scoring.get(entity.id) || 0) + st.score);
@@ -1009,7 +1012,7 @@ window.FF = window.FF || {};
             st.right ? t('ncPerMinute', 'About {n} a minute', { n: per }) : '']
         }));
         var last = idx + 1 >= plan.length;
-        var nextBtn = FF.Advance.button(last ? t('seeResults', 'See results') : t('ncNext', 'Next'), function () { api.audio.play('click'); current = null; next(); }, { class: 'nc-btn nc-btn--go nc-next' });
+        var nextBtn = FF.Advance.button(last ? t('seeResults', 'See results') : t('ncNext', 'Next'), function () { api.audio.play('click'); current = null; next(); }, { class: 'nc-btn nc-btn--go nc-next', primary: false });
         after.appendChild(nextBtn);
         setTimeout(function () { if (document.body.contains(nextBtn)) focus(nextBtn); }, 400);
       }
