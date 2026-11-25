@@ -77,6 +77,9 @@ const FILES = [
   'js/saywhat/rules.js',
   'js/saywhat/referee.js',
   'js/crew/brains/sayWhat.js',
+  // Number Challenge: the referee the runner hosts (sums are made from the seed, no data file).
+  'js/numberchallenge/rules.js',
+  'js/numberchallenge/referee.js',
   // WordShift: the referee the runner hosts and the crew seats' brain, with the puzzles.
   // Words are checked against the word bank above.
   'js/data/wordshiftPuzzles.js',

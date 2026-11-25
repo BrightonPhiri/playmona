@@ -117,6 +117,10 @@ class App
     {
         return $this->make('wordshift', fn () => new WordShift($this->db(), $this->rtdb(), $this->runner()));
     }
+    public function numberchallenge(): NumberChallenge
+    {
+        return $this->make('numberchallenge', fn () => new NumberChallenge($this->db(), $this->rtdb(), $this->runner()));
+    }
     public function wordflowJudge(): WordFlowJudge { return $this->make('wordflowJudge', fn () => new WordFlowJudge($this->ai(), $this->wordflow())); }
     public function celebrationMedia(): CelebrationMedia
     {

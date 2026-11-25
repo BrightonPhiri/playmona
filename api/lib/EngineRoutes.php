@@ -129,6 +129,12 @@ class EngineRoutes
         if ($m === 'POST' && $p === '/wordshift/finish') {
             return Response::json($this->app->wordshift()->finish($this->user($req), $req->json(), $now));
         }
+        if ($m === 'POST' && $p === '/numberchallenge/start') {
+            return Response::json($this->app->numberchallenge()->start($this->user($req), $req->json(), $now));
+        }
+        if ($m === 'POST' && $p === '/numberchallenge/nudge') {
+            return Response::json($this->app->numberchallenge()->nudge($this->user($req), $req->json(), $now));
+        }
         if ($m === 'POST' && $p === '/saywhat/start') {
             return Response::json($this->app->saywhat()->start($this->user($req), $req->json(), $now));
         }
@@ -244,9 +250,10 @@ class EngineRoutes
                 $dropSketchback = $this->app->sketchback()->stillActive((array) ($body['sketchback'] ?? []));
                 $dropSaywhat = $this->app->saywhat()->stillActive((array) ($body['saywhat'] ?? []));
                 $dropWordshift = $this->app->wordshift()->stillActive((array) ($body['wordshift'] ?? []));
+                $dropNumberchallenge = $this->app->numberchallenge()->stillActive((array) ($body['numberchallenge'] ?? []));
                 $dropCelebration = $this->app->celebrationGames()->stillActive((array) ($body['celebration'] ?? []));
                 $s = $this->app->crew()->settings();
-                return Response::json(['drop' => $drop, 'dropImposters' => $dropImposters, 'dropWordflow' => $dropWordflow, 'dropBallswap' => $dropBallswap, 'dropSortrush' => $dropSortrush, 'dropGeospin' => $dropGeospin, 'dropWhatsmissing' => $dropWhatsmissing, 'dropCrossword' => $dropCrossword, 'dropLogorush' => $dropLogorush, 'dropSketchback' => $dropSketchback, 'dropSaywhat' => $dropSaywhat, 'dropWordshift' => $dropWordshift, 'dropCelebration' => $dropCelebration, 'settings' => ['mode' => $s['mode'], 'stopNew' => $s['stopNew']]]);
+                return Response::json(['drop' => $drop, 'dropImposters' => $dropImposters, 'dropWordflow' => $dropWordflow, 'dropBallswap' => $dropBallswap, 'dropSortrush' => $dropSortrush, 'dropGeospin' => $dropGeospin, 'dropWhatsmissing' => $dropWhatsmissing, 'dropCrossword' => $dropCrossword, 'dropLogorush' => $dropLogorush, 'dropSketchback' => $dropSketchback, 'dropSaywhat' => $dropSaywhat, 'dropWordshift' => $dropWordshift, 'dropNumberchallenge' => $dropNumberchallenge, 'dropCelebration' => $dropCelebration, 'settings' => ['mode' => $s['mode'], 'stopNew' => $s['stopNew']]]);
             case 'report':
                 $matchId = (string) ($body['matchId'] ?? '');
                 $event = (string) ($body['event'] ?? '');
@@ -292,6 +299,10 @@ class EngineRoutes
                 }
                 if ($event === 'celebration') {
                     $this->app->celebrationGames()->recordResult($body, $now);
+                    return Response::json(['ok' => true]);
+                }
+                if ($event === 'numberchallenge') {
+                    $this->app->numberchallenge()->recordResult($body, $now);
                     return Response::json(['ok' => true]);
                 }
                 if ($event === 'saywhat') {
