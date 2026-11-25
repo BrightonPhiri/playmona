@@ -28,7 +28,7 @@ if ($missing.Count) { Write-Host "MISSING (referenced but not on disk):" -Foregr
 if ($unref) { Write-Host "UNREFERENCED (on disk but not in play.html):" -ForegroundColor Yellow; $unref | ForEach-Object { Write-Host "  $_" } }
 
 Write-Host "`n=== 3. Game registry ===" -ForegroundColor Cyan
-$gameIds = @('letterRush','wordScramble','wordChain','miniCrossword','familyQuiz','guessWho','memoryMatch','whatsMissing','rememberSequence','quickTap','numberChallenge','charades','dontSayIt','drawingChallenge','pictionary','whoIsMostLikely','guessIt','spotDifference','picturePuzzle','hiddenObject','visualRiddle','imposters','wordFlow')
+$gameIds = @('letterRush','wordScramble','wordChain','miniCrossword','familyQuiz','guessWho','memoryMatch','whatsMissing','rememberSequence','quickTap','numberChallenge','charades','guessIt','spotDifference','picturePuzzle','hiddenObject','imposters','wordFlow')
 $allGameCode = (Get-ChildItem -Recurse -Filter *.js -Path (Join-Path $root 'js\games') | ForEach-Object { Get-Content $_.FullName -Raw }) -join "`n"
 foreach ($id in $gameIds) {
   if ($allGameCode -notmatch "id:\s*['""]$id['""]") { Write-Host "NOT REGISTERED: $id" -ForegroundColor Red }
@@ -37,7 +37,7 @@ Write-Host "Checked $($gameIds.Count) expected game ids."
 
 Write-Host "`n=== 4. Data namespace ===" -ForegroundColor Cyan
 $dataCode = (Get-ChildItem -Recurse -Filter *.js -Path (Join-Path $root 'js\data') | ForEach-Object { Get-Content $_.FullName -Raw }) -join "`n"
-foreach ($prop in @('questions','trueFalse','guessWho','dictionary','scramble','categories','missingLetters','crosswords','countries','charades','dontSayIt','drawingPrompts','pictionary','whoIsMostLikely','finishSentence','describeIt','animals','food','landmarks','objects','sports','vehicles','visualRiddles')) {
+foreach ($prop in @('questions','trueFalse','guessWho','dictionary','scramble','categories','missingLetters','crosswords','countries','animals','food','landmarks','objects','sports','vehicles')) {
   if ($dataCode -notmatch $prop) { Write-Host "MISSING DATA: $prop" -ForegroundColor Red }
 }
 Write-Host "Checked data properties."

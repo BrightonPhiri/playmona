@@ -2418,7 +2418,7 @@ window.FF = window.FF || {};
 
     /* ================= Quick play / demo ================= */
     quickPlayPool: function () {
-      return FF.Games.all().filter(function (g) { return g.id !== 'drawingChallenge' && FF.Access.canPlay(g.id); });
+      return FF.Games.all().filter(function (g) { return FF.Access.canPlay(g.id); });
     },
 
     // Five random games to choose from, then difficulty, length and timer.

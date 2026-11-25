@@ -65,7 +65,6 @@ real words spelled right: no forgiveness).
 | Game | File | What to spell | Other names to accept |
 |---|---|---|---|
 | Guess Who / What | `js/games/quizGames.js` | The person or thing from the clues | Per answer |
-| Visual Riddle | `js/games/puzzleGames.js` | The riddle's answer word | Per answer, singular and plural |
 | Number Challenge | `js/games/numberGames.js` | The number, on a number pad | None: numbers must be exact (no spelling forgiveness) |
 
 ### Needs a decision
@@ -82,8 +81,7 @@ These answer by tapping, timing, drawing, voting or acting:
 - Memory Match, Picture Memory
 - Picture Puzzle, Spot the Difference, Hidden Object
 - Letter Rush
-- Charades, Visual Charades, Don't Say It, Drawing Challenge, Pictionary
-- Who Is Most Likely?
+- Charades
 
 Word games are already about spelling, and their answers must be exact:
 
