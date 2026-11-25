@@ -50,6 +50,7 @@ second checker.
 | What's Missing? | `js/games/whatsMissing.js` | Expert spells each gone picture (Gone and Several gone); Added and Swapped are still tapped. Other names from `js/data/memoryAliases.js` (Doughnut, Chips, Teddy…). +6 s, +50 per right gap. Rooms play Normal to Expert, never Endless. |
 | WordShift | `js/games/wordShift.js` | Every move is a spelled word, typed on the puzzle's own keys or a real keyboard (`FF.WordShiftBoard`), checked letter by letter against the word bank. Expert is 6 to 8 letters. No hints at all. Rooms play every level. |
 | Say What? | `js/games/sayWhat.js` | Spelling is the standard: letter tiles with twice the answer's letters, scrambled (shared `FF.SpellTiles`, `difficulty: 'hard'`), checked by `FF.AnswerMatch` with each gap's accepted variants (Practise/Practice). Hard hides two words in some sayings (+10 s, +50). Pick a word is the easier option and never counts for leaderboards. Rooms play tiles or choices, Normal or Hard. |
+| Number Challenge | `js/games/numberChallenge.js` | Expert answers on a number pad instead of four choices (Quick sums, Sprint, Chain): numbers must be exact, no forgiveness. Quick sums and Chain get +6 s and +50 for a right answer; Sprint +5 a sum. Make the target: +50 for an exact hit that uses every tile. Rooms play every level. |
 
 ### Already upgraded, Expert still missing
 
@@ -66,7 +67,6 @@ real words spelled right: no forgiveness).
 |---|---|---|---|
 | Guess Who / What | `js/games/quizGames.js` | The person or thing from the clues | Per answer |
 | Visual Riddle | `js/games/puzzleGames.js` | The riddle's answer word | Per answer, singular and plural |
-| Number Challenge | `js/games/numberGames.js` | The number, on a number pad | None: numbers must be exact (no spelling forgiveness) |
 
 ### Needs a decision
 
