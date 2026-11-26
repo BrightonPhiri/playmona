@@ -2,10 +2,10 @@
   "game": "spotDifference",
   "prompts": "docs/art/spotDifference-prompts.md",
   "source": "assets/playmona_assets/spot-difference",
-  "ids": ["market-day"],
+  "ids": ["market-day", "family-kitchen", "beach-day", "farm-yard", "toy-shop", "city-park", "coral-reef", "snowy-village", "birthday-party", "lakeside-camp", "train-station", "art-class", "safari-waterhole"],
   "sets": [
-    { "name": "a", "from": "{id}-a.png", "to": "assets/images/games/spotDifference/{id}-a.webp", "size": [1024, 1024], "max_kb": 230 },
-    { "name": "b", "from": "{id}-b.png", "to": "assets/images/games/spotDifference/{id}-b.webp", "size": [1024, 1024], "max_kb": 230 }
+    { "name": "a", "from": "{id}-a.png", "to": "assets/images/games/spotDifference/{id}-a.webp", "size": [1024, 1024], "max_kb": 360 },
+    { "name": "b", "from": "{id}-b.png", "to": "assets/images/games/spotDifference/{id}-b.webp", "size": [1024, 1024], "max_kb": 360 }
   ],
   "focus": {},
   "cover": {

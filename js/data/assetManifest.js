@@ -284,7 +284,31 @@ FF.AssetManifest = {
     "vehicles-tractor": "a44a8fb8"
   },
   "games/spotDifference": {
-    "market-day-a": "a2679aed",
-    "market-day-b": "6916305d"
+    "art-class-a": "fba26088",
+    "art-class-b": "99cad57e",
+    "beach-day-a": "5794cb0f",
+    "beach-day-b": "5bd44666",
+    "birthday-party-a": "e8845368",
+    "birthday-party-b": "c6d36f29",
+    "city-park-a": "e3fc5f97",
+    "city-park-b": "a7eaef0a",
+    "coral-reef-a": "faca640a",
+    "coral-reef-b": "eea1ba68",
+    "family-kitchen-a": "c6ae3d9c",
+    "family-kitchen-b": "9d2e8fa2",
+    "farm-yard-a": "d25adbcc",
+    "farm-yard-b": "273de00c",
+    "lakeside-camp-a": "7280af91",
+    "lakeside-camp-b": "3613ef1f",
+    "market-day-a": "1fe696c2",
+    "market-day-b": "7e58f735",
+    "safari-waterhole-a": "0fc576f9",
+    "safari-waterhole-b": "5aec1f18",
+    "snowy-village-a": "45b658fb",
+    "snowy-village-b": "1c882636",
+    "toy-shop-a": "d87f05c4",
+    "toy-shop-b": "7a62b5a5",
+    "train-station-a": "6bac53dc",
+    "train-station-b": "d0eb2bde"
   }
 };

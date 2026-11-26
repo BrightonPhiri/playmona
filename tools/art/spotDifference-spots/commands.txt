@@ -1,0 +1,17 @@
+# How each pair's spots were found: python tools/art/spot-diff-find.py <line>
+# Merges join the pieces of one change, --restore/--restore-box paint Codex's
+# stray edits back from picture A (the untouched B is kept as <id>-b-original.png),
+# --split cuts two touching changes apart. Numbers come from a plain run.
+market-day
+family-kitchen --merge 2+5+6,8+9+10+11,13+14 --restore 3,16 --split 2:box=0.598,0.155,0.76,0.34
+beach-day --merge 4+6,11+12 --restore 10 --split 9:y=0.795
+farm-yard --merge 3+4
+toy-shop --merge 6+7
+city-park --merge 6+7,8+9 --split 10:box=0.78,0.40,0.86,0.448
+coral-reef --restore-box 0.08,0.905,0.40,1.0 --split 7:box=0.13,0.6,0.47,0.9 --split 8:box=0.66,0.815,0.77,0.89
+snowy-village --restore 1,2,3,5 --split 11:y=0.527
+birthday-party --merge 4+7,8+12 --restore 2 --split 8:box=0,0.66,0.075,0.81
+lakeside-camp --merge 7+8,9+10
+train-station --merge 1+2,5+6 --split 11:box=0.715,0.735,0.83,0.875
+art-class --restore 3,4,5 --split 12:y=0.94
+safari-waterhole --merge 2+3,6+7,10+11 --split 4:box=0.59,0.44,0.645,0.515

@@ -78,11 +78,25 @@ window.FF = window.FF || {};
     return a;
   }
 
-  /* One pair with `count` of its spots live, chosen by rand(). */
+  /* One pair with `count` of its spots live, chosen by rand(). Spots that
+     share a group `g` overlap (a canoe and the rod lying across it), so they
+     are live together or painted back together: painting one back would
+     cover part of the other. Tries a few shuffles to hit the count exactly. */
   function dealPair(pair, count, rand) {
-    var idx = pair.spots.map(function (_, i) { return i; });
-    var active = shuffle(idx, rand).slice(0, Math.min(count, idx.length)).sort(function (a, b) { return a - b; });
-    return { id: pair.id, name: pair.name, spots: pair.spots, active: active };
+    var units = [], groups = {};
+    pair.spots.forEach(function (s, i) {
+      if (s.g == null) { units.push([i]); return; }
+      if (!groups[s.g]) { groups[s.g] = []; units.push(groups[s.g]); }
+      groups[s.g].push(i);
+    });
+    var want = Math.min(count, pair.spots.length), active = [];
+    for (var tries = 0; tries < 40 && active.length !== want; tries++) {
+      active = [];
+      shuffle(units, rand).forEach(function (u) {
+        if (active.length + u.length <= want) active = active.concat(u);
+      });
+    }
+    return { id: pair.id, name: pair.name, spots: pair.spots, active: active.sort(function (a, b) { return a - b; }) };
   }
 
   /* The pictures for a game: cfg.pictures different pairs (fewer if there aren't enough). */
