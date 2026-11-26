@@ -60,6 +60,28 @@ test('spot difference: the deal is shared and picks distinct live spots', functi
   assert(new Set(others).size > 1, 'different seeds pick different spots');
 });
 
+test('spot difference: linked spots are live together or painted back together', function () {
+  const FF = load();
+  const S = FF.SpotDifference;
+  const box = { b: [0, 0, 0.1, 0.1], p: [0, 0, 0.2, 0.2] };
+  const spots = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(function () { return Object.assign({}, box); });
+  spots[1].g = 1; spots[2].g = 1;          // e.g. a canoe and the rod lying across it
+  spots[4].g = 2; spots[5].g = 2; spots[6].g = 2;
+  const pair = { id: 'p', name: 'P', spots: spots };
+  [5, 7, 10].forEach(function (count) {
+    for (let n = 0; n < 60; n++) {
+      const a = seeded(FF, 'g' + count + '-' + n, function (r) { return S.dealPair(pair, count, r).active; });
+      assertEqual(a.length, count, 'always exactly ' + count + ' live');
+      assertEqual(new Set(a).size, count, 'no spot twice');
+      assert(a.indexOf(1) !== -1 === (a.indexOf(2) !== -1), 'group 1 together: ' + a);
+      const g2 = [4, 5, 6].filter(function (i) { return a.indexOf(i) !== -1; }).length;
+      assert(g2 === 0 || g2 === 3, 'group 2 together: ' + a);
+    }
+  });
+  const shared = seeded(FF, 'room', function (r) { return S.dealPair(pair, 5, r).active; });
+  assertEqual(seeded(FF, 'room', function (r) { return S.dealPair(pair, 5, r).active; }), shared, 'same seed, same spots');
+});
+
 test('spot difference: taps count inside a live spot, with a finger margin', function () {
   const S = load().SpotDifference;
   const item = { spots: [{ b: [0.1, 0.1, 0.1, 0.1] }, { b: [0.6, 0.6, 0.1, 0.1] }, { b: [0.4, 0.1, 0.05, 0.05] }], active: [0, 1] };
