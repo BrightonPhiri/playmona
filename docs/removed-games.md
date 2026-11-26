@@ -111,6 +111,26 @@ Last commit with it: `8976e66` (main, before `feat/picture-rush`).
 - **Replaced by:** Picture Rush (`pictureRush`), the swap-two-tiles game from Celebrations, with
   its own pictures. Picture Puzzle's leaderboard scores were left behind with the old id.
 
+## Replaced 2026-11-26: the emoji Hidden Object (`hiddenObject`)
+
+Last commit with it: `027c3a7` (main, before `feat/hidden-object`).
+
+- **What it was:** 18 to 36 emoji and coloured shapes scattered on a plain light box, one target
+  per round ("Find the 🍩" or "Find the red ball"), tapped before the 20 s clock ran out.
+- **How it played:** 6 rounds by default (`FF.GameLength`), turns passed round by round. Each round
+  added more, smaller items (Easy 2 fewer, Hard 2 more). A find scored
+  `bonus × (50 + up to 100 for speed)`, wrong taps cost 10, bonus 1 / 1.5 / 2. Online: a parallel
+  race of 6 rounds, 20 s each, the same scene on every phone.
+- **Code:** `js/games/puzzleGames.js` (the last game left in it: `renderHiddenRound`,
+  `placeSceneItems`, `hiddenOnline`, `hiddenPoints`), `.scene-*` and `.find-prompt*` styles in
+  `css/games.css`.
+- **Weak spots:** random emoji on a blank box looked nothing like a hidden object game, one target
+  at a time made rounds very short, and the scenes were generated, so there was nothing to search.
+- **Replaced by:** the same id with real pictures (`js/games/hiddenObject.js`,
+  `js/data/hiddenObject.js`): one busy storybook scene, a list of 6 / 9 / 12 objects to find, pinch
+  and drag zoom. It keeps its leaderboards and daily-game spot (ranked runs play Normal: 9 objects,
+  1 picture), so older emoji scores stay on the boards until they age out.
+
 ## Earlier removals
 
 - **2026-11-17** (`2145a67`): True or False, Color Reaction, Picture Quiz, Higher or

@@ -1,0 +1,17 @@
+{
+  "game": "hiddenObject",
+  "prompts": "docs/art/hiddenObject-prompts.md",
+  "source": "assets/playmona_assets/hidden-object",
+  "ids": ["attic"],
+  "sets": [
+    { "name": "hidden", "from": "{id}-hidden.png", "to": "assets/images/games/hiddenObject/{id}.webp", "size": [1024, 1024], "max_kb": 360 }
+  ],
+  "focus": {},
+  "cover": {
+    "from": "cover.png",
+    "to": "assets/images/covers/hiddenObject.webp",
+    "size": [1086, 1448],
+    "max_kb": 240,
+    "focus": [0.5, 0.5]
+  }
+}

@@ -17,7 +17,7 @@ const GAMES = {
   stacoend: 'stacoend.js',
   pictureRush: 'pictureRush.js',
   spotDifference: 'spotDifference.js',
-  hiddenObject: 'puzzleGames.js',
+  hiddenObject: 'hiddenObject.js',
   bibleBooks: 'bibleGames.js'
 };
 
@@ -29,7 +29,7 @@ const EXPOSE = {
   'stacoend.js': [],
   'pictureRush.js': [],
   'spotDifference.js': [],
-  'puzzleGames.js': ['hiddenPoints'],
+  'hiddenObject.js': [],
   'bibleGames.js': ['booksPoints']
 };
 
@@ -38,15 +38,15 @@ const EXPOSE = {
 function phone() {
   const FF = loadFF(['js/core.js', 'js/storage.js', 'js/i18n.js', 'js/ui-kit.js', 'js/icons.js', 'js/gameUI.js',
     'js/net/parallel.js', 'js/data/memoryDecks.js', 'js/data/visual.js', 'js/data/visual2.js',
-    'js/data/pictureRush.js', 'js/data/spotDifference.js', 'js/celebrate/pictureRush/rules.js', 'js/celebrate/pictureRush/board.js',
+    'js/data/pictureRush.js', 'js/data/spotDifference.js', 'js/data/hiddenObject.js', 'js/celebrate/pictureRush/rules.js', 'js/celebrate/pictureRush/board.js',
     'js/data/words.js', 'js/data/bible.js', 'js/data/wordlist.js', 'js/words.js', 'js/data/lexicon.js']);
   const sb = FF.__sandbox;
   sb.getComputedStyle = function () {
     return { paddingLeft: '0', paddingRight: '0', paddingTop: '0', paddingBottom: '0', rowGap: '0' };
   };
   FF.Storage.init();
-  // Spot the Difference plays only pairs whose pictures exist.
-  FF.AssetManifest = { 'games/spotDifference': { 'market-day-a': 'a', 'market-day-b': 'b' } };
+  // Spot the Difference and Hidden Object play only pictures that exist.
+  FF.AssetManifest = { 'games/spotDifference': { 'market-day-a': 'a', 'market-day-b': 'b' }, 'games/hiddenObject': { attic: 'h' } };
   FF.Players = { avatarEl: function () { return FF.ui.span('ava'); } };
   FF.Room = { current: function () { return { uid: 'u1', meta: { seed: 'abc123' } }; } };
   FF.defs = {};
@@ -160,11 +160,6 @@ test('parallel: points reward accuracy and speed in every game', function () {
   assertEqual(s(6, 3, null, 1), 15, 'a slip keeps 5 a right colour');
   assertEqual(FF.__rsLength(4, 20), 12, 'sequences stop growing at 12');
   assert(FF.__rsSeconds(12) >= 12 * 0.6 + 12 * 1.5, 'enough time to watch and repeat');
-
-  const h = FF.__hiddenPoints;
-  assertEqual(h({ found: false, wrong: 0 }, null, 20000, 1), 0);
-  assertEqual(h({ found: true, wrong: 0 }, 0, 20000, 1), 150);
-  assertEqual(h({ found: true, wrong: 2 }, 0, 20000, 1), 130, 'wrong taps cost 10');
 
   const b = FF.__booksPoints;
   assertEqual(b({ points: 300, right: 3, total: 6 }, 0, 30000), 350, 'speed bonus scaled by right answers');

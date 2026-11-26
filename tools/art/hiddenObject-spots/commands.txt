@@ -1,0 +1,2 @@
+# How each scene's objects were found: python tools/art/spot-diff-find.py --game hiddenObject --expect 12 <line>
+attic --restore 2 --split 6:box=0.77,0.435,0.818,0.51 --split 9:y=0.70
