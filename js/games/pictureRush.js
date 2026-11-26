@@ -2,7 +2,7 @@
    PLAYMONA — games/pictureRush.js
    Picture Rush: a picture is cut into square tiles and scrambled.
    Swap two tiles at a time (tap one then another, or drag one onto
-   another) until the picture is whole. A tile in its place locks.
+   another) until the picture is whole. Nothing marks a tile in its place.
    A quick look at the whole picture first, and a Peek button that
    costs points.
 
@@ -248,7 +248,7 @@ window.FF = window.FF || {};
       onPick: function (p) { if (phase !== 'play') return; selected = p; api.audio.play('click'); paint(); },
       onDrop: function () { selected = -1; paint(); },
       onSwap: onSwap,
-      canTake: function (p) { return phase === 'play' && tiles[p] !== p; }
+      canTake: function () { return phase === 'play'; }
     });
 
     function later(fn, ms) {
@@ -392,7 +392,7 @@ window.FF = window.FF || {};
           onChange: function (v) { gs[f.key] = v; renote(); }
         })));
       });
-      box.appendChild(FF.ui.el('p', { class: 'gm-note sq-setup__hint' }, t('prxHowNote', 'Tiles in their place lock green. Bigger grids score more; each Peek costs points.')));
+      box.appendChild(FF.ui.el('p', { class: 'gm-note sq-setup__hint' }, t('prxHowNote', 'Bigger grids score more; each Peek costs points.')));
       renote();
     }
     function renote() {
@@ -606,7 +606,7 @@ window.FF = window.FF || {};
     howToPlay: [
       'Look at the whole picture for a moment, then it breaks into scrambled tiles.',
       'Tap a tile, then the tile you want to swap it with (or drag one onto the other).',
-      'A tile in its right place locks with a green dot. Rebuild the picture before the clock runs out.',
+      'Rebuild the picture before the clock runs out. Nothing tells you which tiles are already right.',
       'Quicker means more points. Peek shows the whole picture again, but costs points.'
     ],
     room: ROOM,
