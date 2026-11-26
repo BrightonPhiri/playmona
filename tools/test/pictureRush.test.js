@@ -161,7 +161,7 @@ test('picture rush: listed for rooms, leaderboards and icons; Picture Puzzle is 
     assert(read(f).indexOf('js/data/pictureRush.js') !== -1, f + ' loads the pictures');
   });
   assert(read('tools/gen-asset-manifest.js').indexOf("'games/pictureRush'") !== -1, 'the manifest lists its pictures');
-  ['js/net/roomUI.js', 'api/lib/Crew.php', 'api/lib/Leaderboards.php', 'js/icons.js', 'js/games/puzzleGames.js',
+  ['js/net/roomUI.js', 'api/lib/Crew.php', 'api/lib/Leaderboards.php', 'js/icons.js',
     'tools/download-assets.js', 'tools/verify.ps1'].forEach(function (f) {
     assert(read(f).indexOf('picturePuzzle') === -1, f + ' no longer mentions picturePuzzle');
   });

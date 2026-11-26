@@ -33,6 +33,8 @@ The first --restore, --restore-box or --recolor keeps Codex's B as <id>-b-origin
 every later run starts again from that file.
 
 Reads   assets/playmona_assets/spot-difference/<id>-a.png and -b.png
+        (--game hiddenObject: assets/playmona_assets/hidden-object/<id>-empty.png and -hidden.png,
+         writing tools/art/hiddenObject-spots/<id>.json)
 Writes  tools/art/spotDifference-spots/<id>.json
         assets/playmona_assets/spot-difference/<id>-spots.jpg (review picture)
 Exits 1 unless it finds exactly --expect spots.
@@ -49,6 +51,12 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 RAW = os.path.join(ROOT, 'assets', 'playmona_assets', 'spot-difference')
 OUT = os.path.join(ROOT, 'tools', 'art', 'spotDifference-spots')
+SIDES = ('a', 'b')
+# Hidden Object uses the same finder: an empty scene and the same scene with objects added.
+GAMES = {
+    'spotDifference': ('spot-difference', 'spotDifference-spots', ('a', 'b')),
+    'hiddenObject': ('hidden-object', 'hiddenObject-spots', ('empty', 'hidden')),
+}
 WORK = 320          # the diff runs at this size: fast, and noise averages out
 CORE = 30           # a spot's own changed pixels (no padding): a patch must not cover another spot's
 PAD = 0.012         # padding round each spot's box
@@ -60,8 +68,8 @@ def load(pid, side):
 
 
 def load_b(pid):
-    orig = os.path.join(RAW, pid + '-b-original.png')
-    return Image.open(orig).convert('RGB') if os.path.exists(orig) else load(pid, 'b')
+    orig = os.path.join(RAW, '%s-%s-original.png' % (pid, SIDES[1]))
+    return Image.open(orig).convert('RGB') if os.path.exists(orig) else load(pid, SIDES[1])
 
 
 def numbers(text):
@@ -69,9 +77,9 @@ def numbers(text):
 
 
 def keep_original(pid):
-    orig = os.path.join(RAW, pid + '-b-original.png')
+    orig = os.path.join(RAW, '%s-%s-original.png' % (pid, SIDES[1]))
     if not os.path.exists(orig):
-        os.replace(os.path.join(RAW, pid + '-b.png'), orig)
+        os.replace(os.path.join(RAW, '%s-%s.png' % (pid, SIDES[1])), orig)
 
 
 def recolor(b, rule):
@@ -274,6 +282,7 @@ def review(b, boxes, patches, dest):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('id')
+    ap.add_argument('--game', default='spotDifference', choices=sorted(GAMES), help='whose pictures (hiddenObject: <id>-empty/-hidden)')
     ap.add_argument('--expect', type=int, default=10)
     ap.add_argument('--threshold', type=int, default=60)
     ap.add_argument('--min', type=float, default=0.0004, help='smallest spot, as a share of the picture')
@@ -283,8 +292,12 @@ def main():
     ap.add_argument('--recolor', action='append', default=[], help='x0,y0,x1,y1:fromHue:toHue (repeatable)')
     ap.add_argument('--restore-box', action='append', default=[], help='x0,y0,x1,y1: paint this area back from A (repeatable)')
     args = ap.parse_args()
+    global RAW, OUT, SIDES
+    folder, out, SIDES = GAMES[args.game]
+    RAW = os.path.join(ROOT, 'assets', 'playmona_assets', folder)
+    OUT = os.path.join(ROOT, 'tools', 'art', out)
 
-    a, b = load(args.id, 'a'), load_b(args.id)
+    a, b = load(args.id, SIDES[0]), load_b(args.id)
     if a.size != b.size:
         sys.exit('%s: A is %s but B is %s; they must match' % (args.id, a.size, b.size))
     for rule in args.recolor:
@@ -305,7 +318,7 @@ def main():
         b = restore(a, b, [found[n - 1]['box'] for n in restores], args.id)
     if restores or args.recolor or args.restore_box:
         keep_original(args.id)
-        b.save(os.path.join(RAW, args.id + '-b.png'))
+        b.save(os.path.join(RAW, '%s-%s.png' % (args.id, SIDES[1])))
     # each change: its first spot number -> its pixels (merges join, then splits cut)
     items = {n: found[n - 1]['px'] for n in range(1, len(found) + 1) if n not in restores and n not in sum(merges, [])}
     for g in merges:

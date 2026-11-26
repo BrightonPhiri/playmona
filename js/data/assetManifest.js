@@ -14,6 +14,7 @@ FF.AssetManifest = {
     "geoSpin": "8e264823",
     "guessIt": "567daa53",
     "guessWho": "06291604",
+    "hiddenObject": "bae81fca",
     "imposters": "1275cfc4",
     "letterRush": "b0eb5db2",
     "logoRush": "7215e088",
@@ -310,5 +311,8 @@ FF.AssetManifest = {
     "toy-shop-b": "7a62b5a5",
     "train-station-a": "6bac53dc",
     "train-station-b": "d0eb2bde"
+  },
+  "games/hiddenObject": {
+    "attic": "50a92ebb"
   }
 };
