@@ -1,0 +1,18 @@
+{
+  "game": "spotDifference",
+  "prompts": "docs/art/spotDifference-prompts.md",
+  "source": "assets/playmona_assets/spot-difference",
+  "ids": ["market-day"],
+  "sets": [
+    { "name": "a", "from": "{id}-a.png", "to": "assets/images/games/spotDifference/{id}-a.webp", "size": [1024, 1024], "max_kb": 230 },
+    { "name": "b", "from": "{id}-b.png", "to": "assets/images/games/spotDifference/{id}-b.webp", "size": [1024, 1024], "max_kb": 230 }
+  ],
+  "focus": {},
+  "cover": {
+    "from": "cover.png",
+    "to": "assets/images/covers/spotDifference.webp",
+    "size": [1086, 1448],
+    "max_kb": 240,
+    "focus": [0.5, 0.5]
+  }
+}
