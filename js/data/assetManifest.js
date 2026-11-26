@@ -281,5 +281,9 @@ FF.AssetManifest = {
     "vehicles-steam-train": "70a86df1",
     "vehicles-submarine": "90322b60",
     "vehicles-tractor": "a44a8fb8"
+  },
+  "games/spotDifference": {
+    "market-day-a": "a2679aed",
+    "market-day-b": "6916305d"
   }
 };

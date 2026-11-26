@@ -16,7 +16,7 @@ const GAMES = {
   blinkRemember: 'blinkRemember.js',
   stacoend: 'stacoend.js',
   pictureRush: 'pictureRush.js',
-  spotDifference: 'puzzleGames.js',
+  spotDifference: 'spotDifference.js',
   hiddenObject: 'puzzleGames.js',
   bibleBooks: 'bibleGames.js'
 };
@@ -28,7 +28,8 @@ const EXPOSE = {
   'blinkRemember.js': [],
   'stacoend.js': [],
   'pictureRush.js': [],
-  'puzzleGames.js': ['spotPoints', 'hiddenPoints'],
+  'spotDifference.js': [],
+  'puzzleGames.js': ['hiddenPoints'],
   'bibleGames.js': ['booksPoints']
 };
 
@@ -37,13 +38,15 @@ const EXPOSE = {
 function phone() {
   const FF = loadFF(['js/core.js', 'js/storage.js', 'js/i18n.js', 'js/ui-kit.js', 'js/icons.js', 'js/gameUI.js',
     'js/net/parallel.js', 'js/data/memoryDecks.js', 'js/data/visual.js', 'js/data/visual2.js',
-    'js/data/pictureRush.js', 'js/celebrate/pictureRush/rules.js', 'js/celebrate/pictureRush/board.js',
+    'js/data/pictureRush.js', 'js/data/spotDifference.js', 'js/celebrate/pictureRush/rules.js', 'js/celebrate/pictureRush/board.js',
     'js/data/words.js', 'js/data/bible.js', 'js/data/wordlist.js', 'js/words.js', 'js/data/lexicon.js']);
   const sb = FF.__sandbox;
   sb.getComputedStyle = function () {
     return { paddingLeft: '0', paddingRight: '0', paddingTop: '0', paddingBottom: '0', rowGap: '0' };
   };
   FF.Storage.init();
+  // Spot the Difference plays only pairs whose pictures exist.
+  FF.AssetManifest = { 'games/spotDifference': { 'market-day-a': 'a', 'market-day-b': 'b' } };
   FF.Players = { avatarEl: function () { return FF.ui.span('ava'); } };
   FF.Room = { current: function () { return { uid: 'u1', meta: { seed: 'abc123' } }; } };
   FF.defs = {};
@@ -157,12 +160,6 @@ test('parallel: points reward accuracy and speed in every game', function () {
   assertEqual(s(6, 3, null, 1), 15, 'a slip keeps 5 a right colour');
   assertEqual(FF.__rsLength(4, 20), 12, 'sequences stop growing at 12');
   assert(FF.__rsSeconds(12) >= 12 * 0.6 + 12 * 1.5, 'enough time to watch and repeat');
-
-  const sp = FF.__spotPoints;
-  assertEqual(sp({ found: 2, total: 5, wrong: 0 }, null, 80000, 1), 200);
-  assertEqual(sp({ found: 2, total: 5, wrong: 3 }, null, 80000, 1), 140, 'wrong taps cost 20');
-  assertEqual(sp({ found: 0, total: 5, wrong: 9 }, null, 80000, 1), 0, 'never below zero');
-  assert(sp({ found: 5, total: 5, wrong: 0 }, 10000, 80000, 1) > 500, 'finding them all fast adds a bonus');
 
   const h = FF.__hiddenPoints;
   assertEqual(h({ found: false, wrong: 0 }, null, 20000, 1), 0);

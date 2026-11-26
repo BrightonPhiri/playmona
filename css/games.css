@@ -822,10 +822,68 @@
   .gm-duo-btn { min-height: 140px; }
 }
 
-/* ============ Visual puzzles: spot the difference, hidden object ============ */
-.spot-panels { display: flex; flex-wrap: wrap; gap: var(--sp-4); justify-content: center; align-items: flex-start; }
-.stage-col { display: inline-flex; flex-direction: column; align-items: center; gap: 6px; }
-.stage-label { font-weight: 800; font-size: var(--fs-sm); color: var(--muted); }
+/* ============ Spot the Difference (js/games/spotDifference.js) ============
+   Wide screens: the two pictures side by side. Phones: one at a time in a
+   scroll-snap track (swipe), with an Original / Changed switch. */
+.sdx { gap: var(--sp-2); }
+.sdx-meta { justify-content: center; flex-wrap: wrap; }
+.sdx-msg { min-height: 1.5em; text-align: center; color: var(--muted); font-weight: 700; }
+.sdx-msg.is-good { color: var(--success); }
+.sdx-msg.is-out { color: var(--danger); }
+.sdx-switch { display: none; }
+.sdx-track {
+  display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3);
+  width: min(100%, 1180px, calc(2 * (100vh - 290px) + var(--sp-3)));
+  min-width: min(100%, 520px); margin: 0 auto;
+}
+.sdx-panel { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.sdx-label { font-weight: 800; font-size: var(--fs-sm); color: var(--muted); text-align: center; }
+.sdx-frame {
+  position: relative; aspect-ratio: 1 / 1; overflow: hidden;
+  border-radius: var(--r-md); background: var(--surface-2); box-shadow: var(--shadow-2);
+  cursor: crosshair; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
+}
+.sdx-track.is-waiting .sdx-frame > * { visibility: hidden; }
+.sdx-track.is-done .sdx-frame { cursor: default; }
+.sdx-img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; -webkit-user-drag: none; }
+.sdx-patch { position: absolute; background-repeat: no-repeat; pointer-events: none; }
+.sdx-marks { position: absolute; inset: 0; pointer-events: none; }
+.sdx-ring {
+  position: absolute; border-radius: 50%; transform: scale(1.18);
+  border: 4px solid #22c55e; box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9), 0 0 16px rgba(34, 197, 94, 0.75);
+  animation: sdx-pop 320ms var(--ease);
+}
+.sdx-ring.is-missed { border: 4px dashed #f59e0b; box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9); }
+@keyframes sdx-pop { from { transform: scale(1.7); opacity: 0; } to { transform: scale(1.18); opacity: 1; } }
+.sdx-miss {
+  position: absolute; width: 38px; height: 38px; margin: -19px 0 0 -19px;
+  display: grid; place-items: center; border-radius: 50%;
+  color: #fff; background: rgba(220, 38, 38, 0.92); box-shadow: 0 0 0 2px #fff;
+  animation: gm-shake 300ms var(--ease);
+}
+.sdx-miss svg { width: 22px; height: 22px; }
+.sdx-foot { display: flex; justify-content: center; align-items: center; min-height: 48px; }
+@media (max-width: 719px) {
+  .sdx-switch {
+    display: inline-flex; align-self: center; gap: 4px; padding: 4px;
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-pill);
+  }
+  .sdx-switch__btn {
+    min-height: 40px; padding: 6px 18px; border: 0; border-radius: var(--r-pill);
+    background: transparent; color: var(--muted); font: inherit; font-weight: 800; cursor: pointer;
+  }
+  .sdx-switch__btn.is-on { background: var(--accent); color: var(--accent-text); }
+  .sdx-track {
+    display: flex; gap: 0; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
+    width: min(100%, calc(100vh - 300px)); min-width: min(100%, 300px); overscroll-behavior-x: contain;
+  }
+  .sdx-track::-webkit-scrollbar { display: none; }
+  .sdx-panel { flex: 0 0 100%; scroll-snap-align: center; scroll-snap-stop: always; }
+  .sdx-label { display: none; }
+  .sdx-frame { border-radius: var(--r-sm); }
+}
+
+/* ============ Visual puzzles: hidden object ============ */
 .scene-wrap { display: flex; justify-content: center; }
 /* Scenes stay light in dark mode so the coloured shapes keep their contrast. */
 .scene-frame {
