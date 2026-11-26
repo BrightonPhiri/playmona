@@ -1,2 +1,5 @@
 # How each scene's objects were found: python tools/art/spot-diff-find.py --game hiddenObject --expect 12 <line>
 attic --restore 2 --split 6:box=0.77,0.435,0.818,0.51 --split 9:y=0.70
+
+# Batch 2 (2026-11-26): boxes set by eye from overlays (see js/data/hiddenObject.js), not from commands.
+# fishing-harbour left out: its paintbrush reads as a wooden spoon, the football is a speck, and the edit redrew a cottage window.
