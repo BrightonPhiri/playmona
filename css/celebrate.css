@@ -313,11 +313,6 @@
   transition: transform var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease), filter var(--dur-fast) var(--ease);
 }
 .prb__tile:focus-visible { outline: 3px solid var(--ev-primary, var(--accent)); outline-offset: 1px; z-index: 2; }
-.prb__tile.is-home { box-shadow: inset 0 0 0 2px var(--prb-good); }
-.prb__tile.is-home::after {
-  content: ""; position: absolute; right: 4px; bottom: 4px; width: 9px; height: 9px; border-radius: 50%;
-  background: var(--prb-good); box-shadow: 0 0 0 2px #ffffff; opacity: 0.9;
-}
 .prb__tile.is-selected { transform: scale(0.92); box-shadow: 0 0 0 4px var(--ev-primary, var(--accent)), 0 8px 18px rgba(0, 0, 0, 0.35); z-index: 3; }
 .prb__tile.is-held { box-shadow: inset 0 0 0 4px var(--prb-held); filter: saturate(0.6) brightness(0.85); cursor: not-allowed; }
 .prb__who {
@@ -328,6 +323,8 @@
 .prb__tile.is-held .prb__who { display: grid; }
 .prb__tile.is-refused { animation: prb-no 0.32s; }
 @keyframes prb-no { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+/* room.css fades any .is-locked to 0.45; the board only stops taking taps. */
+.prb.is-locked { opacity: 1; }
 .prb.is-locked .prb__tile { cursor: default; }
 .prb.is-dragging .prb__tile { cursor: grabbing; }
 .prb__ghost { position: fixed; left: 0; top: 0; z-index: var(--z-dialog); pointer-events: none; opacity: 0.9; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45); border-radius: 6px; }
@@ -338,7 +335,6 @@
 .prb.is-peek .prb__peek { opacity: 1; }
 .prb.is-solved { gap: 0; padding: 0; background: transparent; box-shadow: 0 0 0 4px var(--prb-good), 0 12px 32px var(--ev-glow, rgba(0, 0, 0, 0.25)); }
 .prb.is-solved .prb__tile { border-radius: 0; box-shadow: none; }
-.prb.is-solved .prb__tile::after { display: none; }
 @media (prefers-reduced-motion: reduce) { .prb__tile, .prb__peek { transition: none; } .prb__tile.is-refused { animation: none; } }
 
 /* ================= Games on a guest's phone ================= */
