@@ -27,6 +27,7 @@ FF.AssetManifest = {
     "sayWhat": "3295ea65",
     "sketchBack": "64466eee",
     "sortRush": "50e83102",
+    "spotDifference": "61137b38",
     "stacoend": "4f134bbc",
     "whatsMissing": "9657275b",
     "wordByWord": "bab366ce",
