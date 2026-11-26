@@ -313,6 +313,16 @@ FF.AssetManifest = {
     "train-station-b": "d0eb2bde"
   },
   "games/hiddenObject": {
-    "attic": "50a92ebb"
+    "attic": "50a92ebb",
+    "bakery": "a054246e",
+    "castle-kitchen": "2de8ed49",
+    "fairy-forest": "d2aec486",
+    "greenhouse": "345b1b2b",
+    "inventor-workshop": "3db36c1e",
+    "jungle-temple": "9e5c957f",
+    "kids-bedroom": "c466e0fb",
+    "moon-base": "afced97a",
+    "pirate-ship": "70da29db",
+    "wizard-library": "0cca3ec3"
   }
 };

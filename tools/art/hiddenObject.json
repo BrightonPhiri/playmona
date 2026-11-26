@@ -2,7 +2,7 @@
   "game": "hiddenObject",
   "prompts": "docs/art/hiddenObject-prompts.md",
   "source": "assets/playmona_assets/hidden-object",
-  "ids": ["attic"],
+  "ids": ["attic", "wizard-library", "pirate-ship", "greenhouse", "inventor-workshop", "bakery", "moon-base", "castle-kitchen", "fairy-forest", "jungle-temple", "kids-bedroom"],
   "sets": [
     { "name": "hidden", "from": "{id}-hidden.png", "to": "assets/images/games/hiddenObject/{id}.webp", "size": [1024, 1024], "max_kb": 360 }
   ],
