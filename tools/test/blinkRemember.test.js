@@ -86,10 +86,9 @@ test('blink & remember: more right scores more, and all right earns a bonus', fu
   const B = load().BlinkRemember;
   assertEqual(B.points(0, 6, 1000, 1), 0, 'nothing right, nothing scored');
   assert(B.points(4, 6, 20000, 1) > B.points(3, 6, 20000, 1), 'more right');
-  assert(B.points(6, 6, 20000, 1) - B.points(5, 6, 20000, 1) > 100, 'all-right bonus');
+  assert(B.points(6, 6, 20000, 1) - B.points(5, 6, 20000, 1) >= 10, 'all-right bonus');
   assert(B.points(6, 6, 2000, 1) > B.points(6, 6, 25000, 1), 'quicker answers');
-  assertEqual(B.points(6, 6, 999999, 1), 900, '6 x 100 + 300 bonus, no speed bonus');
-  assertEqual(B.points(6, 6, 999999, 2), 1800, 'difficulty bonus');
+  assertEqual(B.points(6, 6, 999999, 1), 40, '6 x 5 + 10 bonus, no speed bonus');
   const boxes = [{ id: 'a' }, { id: 'b' }, { id: 'c' }];
   assertEqual(B.score(boxes, ['a', 'c', 'b']), 1);
   assertEqual(B.score(boxes, ['a', 'b', null]), 2, 'an empty box is wrong');

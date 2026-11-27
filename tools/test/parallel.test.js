@@ -149,21 +149,21 @@ test('parallel: points reward accuracy and speed in every game', function () {
   const perfect = m({ matched: 10, pairs: 10, moves: 10 }, 0, 120000, 1);
   const sloppy = m({ matched: 10, pairs: 10, moves: 30 }, 0, 120000, 1);
   const slow = m({ matched: 10, pairs: 10, moves: 10 }, 110000, 120000, 1);
-  assertEqual(perfect, 700, '10 pairs + 150 for no wasted flips + 150 for speed');
+  assertEqual(perfect, 65, '10 pairs + 5 for no wasted flips + 10 for speed');
   assert(sloppy < perfect && slow < perfect, 'fewer flips and a faster finish score more');
-  assertEqual(m({ matched: 4, pairs: 10, moves: 20 }, null, 120000, 1), 160, 'an unfinished board keeps its pairs');
-  assertEqual(m({ matched: 4, pairs: 10, moves: 20 }, null, 120000, 2), 320, 'difficulty bonus');
+  assertEqual(m({ matched: 4, pairs: 10, moves: 20 }, null, 120000, 1), 20, 'an unfinished board keeps its pairs');
+  assertEqual(m({ matched: 4, pairs: 10, moves: 20 }, null, 120000, 2), 20, 'no difficulty multiplier');
 
   const s = FF.__sequencePoints;
   assert(s(6, 6, 2000, 1) > s(6, 6, 8000, 1), 'a quicker repeat scores more');
   assert(s(7, 7, 8000, 1) > s(6, 6, 8000, 1), 'a longer sequence scores more');
-  assertEqual(s(6, 3, null, 1), 15, 'a slip keeps 5 a right colour');
+  assertEqual(s(6, 3, null, 1), 1, 'a slip keeps half the right colours, rounded down');
   assertEqual(FF.__rsLength(4, 20), 12, 'sequences stop growing at 12');
   assert(FF.__rsSeconds(12) >= 12 * 0.6 + 12 * 1.5, 'enough time to watch and repeat');
 
   const b = FF.__booksPoints;
-  assertEqual(b({ points: 300, right: 3, total: 6 }, 0, 30000), 350, 'speed bonus scaled by right answers');
-  assertEqual(b({ points: 300, right: 3, total: 6 }, null, 30000), 300, 'out of time: no speed bonus');
+  assertEqual(b({ points: 30, right: 3, total: 6 }, 0, 30000), 33, 'speed bonus (up to 5) scaled by right answers');
+  assertEqual(b({ points: 30, right: 3, total: 6 }, null, 30000), 30, 'out of time: no speed bonus');
 });
 
 test('parallel: two phones with the same round seed get the same puzzle', function () {

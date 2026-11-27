@@ -112,24 +112,18 @@ window.FF = window.FF || {};
     return { deckName: deckName, tint: tint, boxes: boxes, choices: shuffle(picked, rand) };
   }
 
-  function bonusFor(difficulty) {
-    if (difficulty === 'easy') return 1;
-    if (difficulty === 'hard') return 2;
-    return 1.5;
-  }
-
   function speedBonus(ms, limitMs, max) {
     if (FF.Parallel && FF.Parallel.speedBonus) return FF.Parallel.speedBonus(ms, limitMs, max);
     if (ms == null || !limitMs) return 0;
     return Math.round(max * Math.max(0, Math.min(1, 1 - ms / limitMs)));
   }
 
-  /* 100 a right box, half as much again when every box is right, and a
-     little for answering quickly (only for the boxes that were right). */
-  function points(right, n, answerMs, bonus) {
+  /* 5 a right box, 10 more when every box is right, and up to 5 for
+     answering quickly (1 for each right box, so a guess earns little). */
+  function points(right, n, answerMs) {
     if (!right) return 0;
-    var base = right * 100 + (right >= n ? n * 50 : 0);
-    return Math.round((bonus || 1) * (base + speedBonus(answerMs, n * 5000, right * 20)));
+    var base = right * 5 + (right >= n ? 10 : 0);
+    return base + speedBonus(answerMs, n * 5000, Math.min(5, right));
   }
 
   /* How many picks match their box. picks[i] is a card id or null. */
@@ -207,7 +201,6 @@ window.FF = window.FF || {};
     var cfg = o.cfg;
     var dealt = o.dealt;
     var n = cfg.boxes;
-    var bonus = bonusFor(api.config.difficulty);
     var calm = reduceMotion();
     var root = api.shell.root;
     FF.ui.clear(root);
@@ -430,7 +423,7 @@ window.FF = window.FF || {};
     }
 
     function result(right) {
-      return { right: right, boxes: n, points: points(right, n, answerMs, bonus), answerMs: answerMs };
+      return { right: right, boxes: n, points: points(right, n, answerMs), answerMs: answerMs };
     }
 
     function finish(right) {

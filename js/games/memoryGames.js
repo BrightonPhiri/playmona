@@ -11,14 +11,13 @@ window.FF = window.FF || {};
 
   /* ---------- shared constants & helpers ---------- */
 
-  function bonusFor(difficulty) {
-    if (difficulty === 'easy') return 1;
-    if (difficulty === 'hard') return 2;
-    return 1.5;
-  }
+  // Points: 5 a pair, whatever the difficulty (no award is above 10).
+  var PAIR = 5;
 
-  function roundPoints(base, difficulty) {
-    return Math.round(base * bonusFor(difficulty));
+  function speedBonus(ms, limitMs, max) {
+    if (FF.Parallel && FF.Parallel.speedBonus) return FF.Parallel.speedBonus(ms, limitMs, max);
+    if (ms == null || !limitMs) return 0;
+    return Math.round(max * Math.max(0, Math.min(1, 1 - ms / limitMs)));
   }
 
   function scorersFor(api) {
@@ -246,7 +245,7 @@ window.FF = window.FF || {};
           flip(b, true);
           matched++;
           api.audio.play('correct');
-          var pts = roundPoints(50, api.config.difficulty);
+          var pts = PAIR;
           // A challenge's points come from the room once the board is done.
           if (!parallel) api.scoring.add(currentScorer().id, pts, { correct: true });
           renderStats();
@@ -369,14 +368,16 @@ window.FF = window.FF || {};
 
   /* Points for one board of a room challenge: every pair counts, and a
      cleared board adds a bonus for few flips and one for speed. */
-  function matchPoints(st, ms, limitMs, bonus) {
-    var pts = st.matched * 40;
+  function matchPoints(st, ms, limitMs) {
+    var pts = st.matched * PAIR;
     if (st.pairs && st.matched >= st.pairs) {
-      pts += Math.round(150 * st.pairs / Math.max(st.moves, st.pairs));
-      pts += FF.Parallel.speedBonus(ms, limitMs, 150);
+      pts += Math.round(5 * st.pairs / Math.max(st.moves, st.pairs));
+      pts += speedBonus(ms, limitMs, 10);
     }
-    return Math.round(pts * (bonus || 1));
+    return pts;
   }
+
+  FF.MemoryMatchPoints = { PAIR: PAIR, matchPoints: matchPoints };
 
   function matchDetail(a) {
     if (a.pairs && a.matched >= a.pairs) {
@@ -388,7 +389,6 @@ window.FF = window.FF || {};
   /* A room challenge for the card-matching games: every phone gets the
      same board each round. o: { rounds, seconds, deal, theme, render, label, watch } */
   function matchOnline(api, o) {
-    var bonus = bonusFor(api.config.difficulty);
     FF.Parallel.run(api, {
       rounds: o.rounds,
       seconds: o.seconds,
@@ -402,13 +402,13 @@ window.FF = window.FF || {};
           theme: o.theme,
           render: o.render,
           label: o.label,
-          onDone: function (st) { ctx.done(Object.assign({ value: matchPoints(st, ctx.elapsed(), ctx.limitMs, bonus) }, st)); }
+          onDone: function (st) { ctx.done(Object.assign({ value: matchPoints(st, ctx.elapsed(), ctx.limitMs) }, st)); }
         });
         return {
           start: board.start,
           stop: function () {
             var st = board.stop();
-            return Object.assign({ value: matchPoints(st, null, ctx.limitMs, bonus) }, st);
+            return Object.assign({ value: matchPoints(st, null, ctx.limitMs) }, st);
           }
         };
       },

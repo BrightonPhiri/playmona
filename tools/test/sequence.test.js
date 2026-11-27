@@ -117,11 +117,10 @@ test('sequence: every set gives one distinct pad face per pad', function () {
   assertEqual(cols.join(','), 'red,blue,green,yellow', 'the classic four');
 });
 
-test('sequence: longer and quicker sequences score more', function () {
+test('sequence: a repeated sequence scores 1 a step, so longer scores more', function () {
   const S = load().Sequence;
-  assert(S.roundPoints(8, 4000, 1) > S.roundPoints(5, 4000, 1), 'longer');
-  assert(S.roundPoints(6, 1000, 1) > S.roundPoints(6, 8000, 1), 'quicker');
-  assertEqual(S.roundPoints(5, null, 2), 100, 'difficulty bonus');
+  assert(S.roundPoints(8) > S.roundPoints(5), 'longer');
+  assertEqual(S.roundPoints(5), 5, '1 a step, whatever the difficulty');
   assertEqual(S.rsLength(S.ONLINE_START, 0), 4);
   assertEqual(S.rsLength(S.ONLINE_START, 50), S.RS_MAX_LEN);
 });

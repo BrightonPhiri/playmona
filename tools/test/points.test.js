@@ -149,4 +149,33 @@ test('points: number challenge scores 10 plus small bonuses, sprint 1 to 5 by ti
   assertEqual(NC.points('quick', { right: false, ms: 0, level: 'hard' }), 0);
 });
 
+/* ---------------- Task 5: Memory Match, Remember the Sequence, Blink & Remember ---------------- */
+
+test('points: memory match is 5 a pair; a cleared room board adds few flips up to 5 and speed up to 10', function () {
+  const MM = loadGame(['js/core.js', 'js/storage.js', 'js/data/memoryDecks.js'], ['js/games/memoryGames.js']).MemoryMatchPoints;
+  assert(MM, 'FF.MemoryMatchPoints exists');
+  assertEqual(MM.PAIR, 5);
+  assertEqual(MM.matchPoints({ matched: 8, pairs: 8, moves: 8 }, 0, 60000), 40 + 5 + 10);
+  assertEqual(MM.matchPoints({ matched: 8, pairs: 8, moves: 16 }, 60000, 60000), 40 + 3);
+  assertEqual(MM.matchPoints({ matched: 3, pairs: 8, moves: 20 }, 0, 60000), 15);
+});
+
+test('points: remember the sequence is 1 a step', function () {
+  const RS = loadGame(['js/core.js', 'js/data/memoryDecks.js'], ['js/games/sequence.js']).Sequence;
+  assertEqual(RS.roundPoints(7, 0), 7);
+  assertEqual(RS.roundPoints(3, 99999), 3);
+  assertEqual(RS.sequencePoints(6, 6, 0), 9);
+  assertEqual(RS.sequencePoints(6, 6, 99999), 6);
+  assertEqual(RS.sequencePoints(6, 4, 0), 2);
+  assertEqual(RS.sequencePoints(6, 0, 0), 0);
+});
+
+test('points: blink and remember is 5 a box, +10 all right, speed up to 5', function () {
+  const BR = loadGame(['js/core.js', 'js/data/memoryDecks.js'], ['js/games/blinkRemember.js']).BlinkRemember;
+  assertEqual(BR.points(6, 6, 0), 30 + 10 + 5);
+  assertEqual(BR.points(4, 6, 99999), 20);
+  assertEqual(BR.points(2, 6, 0), 10 + 2);
+  assertEqual(BR.points(0, 6, 0), 0);
+});
+
 module.exports = { loadGame: loadGame, within: within, UI: UI };

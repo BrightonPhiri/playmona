@@ -128,12 +128,6 @@ window.FF = window.FF || {};
     return { on: Math.max(170, SHOW_ON - 22 * r), gap: Math.max(70, SHOW_GAP - 10 * r) };
   }
 
-  function bonusFor(difficulty) {
-    if (difficulty === 'easy') return 1;
-    if (difficulty === 'hard') return 2;
-    return 1.5;
-  }
-
   function speedBonus(ms, limitMs, max) {
     if (FF.Parallel && FF.Parallel.speedBonus) return FF.Parallel.speedBonus(ms, limitMs, max);
     if (ms == null || !limitMs) return 0;
@@ -143,14 +137,14 @@ window.FF = window.FF || {};
   /* Points for one sequence in a room challenge: the whole sequence scores
      by its length plus a bonus for a quick repeat; a slip keeps a little
      for every pad that was right. */
-  function sequencePoints(len, got, inputMs, bonus) {
-    if (got >= len) return Math.round((bonus || 1) * (len * 20 + speedBonus(inputMs, len * 1500, len * 10)));
-    return Math.round((bonus || 1) * got * 5);
+  function sequencePoints(len, got, inputMs) {
+    if (got >= len) return len + speedBonus(inputMs, len * 1500, 3);
+    return Math.floor(got / 2);
   }
 
   /* Points for a sequence repeated in a local run: longer is worth more. */
-  function roundPoints(len, inputMs, bonus) {
-    return Math.round((bonus || 1) * (len * 10 + speedBonus(inputMs, len * 1500, len * 5)));
+  function roundPoints(len) {
+    return len;
   }
 
   /* Online, round n plays a sequence one longer than the last. */
@@ -619,7 +613,6 @@ window.FF = window.FF || {};
      complete. o: { cfg, faces, rounds, who, multi, roundText, onDone(stats) } */
   function run(api, o) {
     var cfg = o.cfg;
-    var bonus = bonusFor(api.config.difficulty);
     var r = 0;
     var lives = cfg.lives;
     var points = 0;
@@ -656,7 +649,7 @@ window.FF = window.FF || {};
           current = null;
           if (res.ok) {
             var len = round.seq.length;
-            var pts = roundPoints(len, res.inputMs, bonus);
+            var pts = roundPoints(len);
             points += pts;
             longest = Math.max(longest, len);
             api.scoring.add(o.who.id, pts, { correct: true });
@@ -981,7 +974,7 @@ window.FF = window.FF || {};
         api.shell.hideTimer();
         chain.push(i);
         b.trail(chain.length, chain);
-        var pts = chain.length * 10;
+        var pts = chain.length;
         p.points += pts;
         p.longest = Math.max(p.longest, chain.length - 1);
         api.scoring.add(p.who.id, pts, { correct: true });
@@ -1048,7 +1041,6 @@ window.FF = window.FF || {};
     var cfg = sanitize(roomSettings());
     cfg.lives = 1;
     cfg.play = 'turns';
-    var bonus = bonusFor(api.config.difficulty);
     FF.Parallel.run(api, {
       rounds: 6,
       seconds: function (n) { return rsSeconds(rsLength(ONLINE_START, n)) + (cfg.twist === 'shuffle' ? 2 : 0); },
@@ -1073,7 +1065,7 @@ window.FF = window.FF || {};
         b.state('ready', t('rsGetReady', 'Get ready to watch'));
         if (face.deckName) b.msg(face.deckName);
 
-        function result() { return { value: sequencePoints(len, got, inputMs, bonus), len: len, got: got }; }
+        function result() { return { value: sequencePoints(len, got, inputMs), len: len, got: got }; }
 
         return {
           start: function () {
