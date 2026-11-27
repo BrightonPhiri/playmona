@@ -6061,7 +6061,16 @@ button.imp-card:focus-visible { outline: 3px solid var(--focus-ring); outline-of
 .mt-shell .game-shell__timer, .mt-shell .game-shell__scores { display: none; }
 .mt-shell .game-shell__content {
   position: relative; padding: 0; display: flex; flex-direction: column; color: var(--mt-ink);
-  background: radial-gradient(70% 45% at 50% 0%, var(--mt-meadow-2), transparent 70%), var(--mt-meadow);
+  /* A sunny sky: soft clouds up top, two rolling hills along the bottom. */
+  background:
+    radial-gradient(ellipse 46px 18px at 16% 9%, var(--mt-cloud) 96%, transparent 100%),
+    radial-gradient(ellipse 34px 22px at 21% 7%, var(--mt-cloud) 96%, transparent 100%),
+    radial-gradient(ellipse 30px 14px at 11% 10%, var(--mt-cloud) 96%, transparent 100%),
+    radial-gradient(ellipse 54px 20px at 82% 16%, var(--mt-cloud) 96%, transparent 100%),
+    radial-gradient(ellipse 36px 24px at 87% 13%, var(--mt-cloud) 96%, transparent 100%),
+    radial-gradient(ellipse 80% 16% at 18% 100%, var(--mt-hill-2) 99%, transparent 100%),
+    radial-gradient(ellipse 90% 20% at 88% 104%, var(--mt-hill-1) 99%, transparent 100%),
+    linear-gradient(180deg, var(--mt-sky-1) 0%, var(--mt-sky-2) 78%);
 }
 .mt-screen {
   width: 100%; max-width: 640px; margin: 0 auto; box-sizing: border-box;
@@ -6075,8 +6084,8 @@ button.imp-card:focus-visible { outline: 3px solid var(--focus-ring); outline-of
 .mt-shell .btn:disabled { opacity: 0.45; }
 .mt-title { font-family: var(--font-display); font-size: clamp(1.8rem, 7vw, 2.6rem); line-height: 1.05; margin: 0; color: var(--mt-ink); }
 .mt-title--sm { font-size: clamp(1.4rem, 5.5vw, 2rem); }
-.mt-tagline { margin: 0; font-weight: 700; color: var(--mt-green); font-size: var(--fs-lg); }
-.mt-kicker { font-weight: 800; font-size: var(--fs-sm); color: var(--mt-ink-soft); }
+.mt-tagline { margin: 0; font-weight: 800; color: var(--mt-sky-ink); font-size: var(--fs-lg); }
+.mt-kicker { font-weight: 800; font-size: var(--fs-sm); color: var(--mt-sky-ink); }
 .mt-actions { display: flex; flex-direction: column; gap: var(--sp-2); width: 100%; max-width: 360px; }
 .mt-actions .btn { min-height: 48px; width: 100%; justify-content: center; }
 .mt-actions .mt-btn-main { min-height: 56px; font-size: var(--fs-lg); }
@@ -6090,7 +6099,7 @@ button.imp-card:focus-visible { outline: 3px solid var(--focus-ring); outline-of
 
 /* Stage picker */
 .mt-picker__head { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2); }
-.mt-picker__meta { display: flex; gap: var(--sp-3); flex-wrap: wrap; justify-content: center; font-weight: 700; color: var(--mt-ink-soft); }
+.mt-picker__meta { display: flex; gap: var(--sp-3); flex-wrap: wrap; justify-content: center; font-weight: 700; color: var(--mt-sky-ink); }
 .mt-picker__stars { display: inline-flex; align-items: center; gap: 4px; }
 .mt-picker__stars svg { width: 1.1em; height: 1.1em; color: var(--mt-gold-deep); }
 .mt-bar { width: 100%; height: 10px; border-radius: 999px; background: color-mix(in srgb, var(--mt-ink) 12%, transparent); overflow: hidden; }
@@ -6159,34 +6168,57 @@ button.imp-card:focus-visible { outline: 3px solid var(--focus-ring); outline-of
 .mt-dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--mt-hud-ink); box-sizing: border-box; }
 .mt-dot.is-done { background: var(--mt-gold); border-color: var(--mt-gold); }
 .mt-view { position: relative; flex: 1; min-height: 260px; }
-.mt-map { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; background: #9cc46a; cursor: pointer; }
-.mt-msg { min-height: 1.5em; margin: 6px 12px 0; text-align: center; font-weight: 800; color: var(--mt-ink-soft); }
+.mt-map { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; background: var(--mt-grass-bg); cursor: pointer; }
+.mt-msg { min-height: 1.9em; margin: 6px auto 0; padding: 0 14px; text-align: center; font-weight: 800; color: var(--mt-ink); line-height: 1.9em; border-radius: 999px; }
+.mt-msg:not(:empty) { background: var(--mt-paper); box-shadow: 0 2px 8px color-mix(in srgb, var(--mt-sky-ink) 18%, transparent); }
 .mt-msg.is-good { color: var(--mt-good); }
 .mt-msg.is-bad { color: var(--mt-bad); }
 .mt-pad {
-  display: grid; grid-template-columns: repeat(3, 64px); grid-template-rows: repeat(3, 64px); gap: 6px; justify-content: center;
-  padding: 6px 0 calc(10px + env(safe-area-inset-bottom)); touch-action: none; user-select: none; -webkit-user-select: none;
+  position: relative; display: grid; grid-template-columns: repeat(3, 64px); grid-template-rows: repeat(3, 64px); gap: 4px;
+  justify-content: center; align-content: center; padding: 14px 0 calc(16px + env(safe-area-inset-bottom));
+  touch-action: none; user-select: none; -webkit-user-select: none;
+}
+/* The round base the keys sit on. */
+.mt-pad::before {
+  content: ""; grid-column: 1 / 4; grid-row: 1 / 4; margin: -10px; border-radius: 50%;
+  background: radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--mt-key) 70%, transparent), color-mix(in srgb, var(--mt-key) 35%, transparent));
+  box-shadow: inset 0 2px 6px color-mix(in srgb, var(--mt-sky-ink) 22%, transparent), 0 6px 18px color-mix(in srgb, var(--mt-sky-ink) 16%, transparent);
 }
 .mt-arrow, .mt-check {
-  display: grid; place-items: center; border-radius: 18px; font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent;
-  background: var(--mt-paper); color: var(--mt-ink); border: 2px solid var(--mt-paper-edge); box-shadow: 0 4px 0 var(--mt-paper-edge);
+  position: relative; display: grid; place-items: center; font: inherit; cursor: pointer; border: 0; padding: 0;
+  -webkit-tap-highlight-color: transparent; transition: transform 0.06s, box-shadow 0.06s;
 }
-.mt-arrow svg { width: 30px; height: 30px; }
-.mt-arrow:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--mt-paper-edge); }
-.mt-arrow--up { grid-column: 2; grid-row: 1; }
-.mt-arrow--left { grid-column: 1; grid-row: 2; }
-.mt-arrow--right { grid-column: 3; grid-row: 2; }
-.mt-arrow--down { grid-column: 2; grid-row: 3; }
+.mt-arrow {
+  border-radius: 18px; color: var(--mt-sky-ink);
+  background: linear-gradient(180deg, var(--mt-key) 0%, var(--mt-key-2) 100%);
+  box-shadow: 0 5px 0 var(--mt-key-edge), 0 9px 14px color-mix(in srgb, var(--mt-sky-ink) 22%, transparent);
+}
+.mt-arrow svg { width: 34px; height: 34px; }
+.mt-arrow:active, .mt-arrow.is-down { transform: translateY(4px); box-shadow: 0 1px 0 var(--mt-key-edge), 0 3px 6px color-mix(in srgb, var(--mt-sky-ink) 22%, transparent); }
+.mt-arrow--up { grid-column: 2; grid-row: 1; border-radius: 22px 22px 14px 14px; }
+.mt-arrow--left { grid-column: 1; grid-row: 2; border-radius: 22px 14px 14px 22px; }
+.mt-arrow--right { grid-column: 3; grid-row: 2; border-radius: 14px 22px 22px 14px; }
+.mt-arrow--down { grid-column: 2; grid-row: 3; border-radius: 14px 14px 22px 22px; }
 .mt-check {
-  grid-column: 2; grid-row: 2; gap: 0; font-size: var(--fs-xs); font-weight: 800; align-content: center;
-  background: var(--mt-green); color: var(--mt-on-accent); border-color: var(--mt-green-deep); box-shadow: 0 4px 0 var(--mt-green-deep);
-  animation: mt-check-in 0.25s var(--ease);
+  grid-column: 2; grid-row: 2; margin: 4px; border-radius: 50%; gap: 0; align-content: center;
+  font-size: 0.7rem; font-weight: 800; color: var(--mt-on-accent);
+  background: radial-gradient(circle at 35% 30%, var(--mt-check-hi), var(--mt-green) 72%);
+  box-shadow: 0 4px 0 var(--mt-green-deep), 0 0 0 3px var(--mt-key), 0 8px 16px color-mix(in srgb, var(--mt-green-deep) 45%, transparent);
+  animation: mt-check-in 0.25s var(--ease), mt-check-glow 1.6s 0.25s ease-in-out infinite;
 }
 .mt-check svg { width: 24px; height: 24px; }
-.mt-check.is-hidden { visibility: hidden; animation: none; }
+.mt-check:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--mt-green-deep), 0 0 0 3px var(--mt-key); }
+/* Nothing in reach: a quiet hub, so the pad still reads as one control. */
+.mt-check.is-hidden {
+  cursor: default; animation: none; color: transparent;
+  background: color-mix(in srgb, var(--mt-key-2) 80%, transparent);
+  box-shadow: inset 0 2px 5px color-mix(in srgb, var(--mt-sky-ink) 22%, transparent);
+}
+.mt-check.is-hidden > * { visibility: hidden; }
 @keyframes mt-check-in { from { transform: scale(0.6); opacity: 0; } }
+@keyframes mt-check-glow { 50% { box-shadow: 0 4px 0 var(--mt-green-deep), 0 0 0 3px var(--mt-key), 0 0 0 9px color-mix(in srgb, var(--mt-check-hi) 35%, transparent); } }
 @media (min-height: 760px) {
-  .mt-pad { grid-template-columns: repeat(3, 72px); grid-template-rows: repeat(3, 72px); }
+  .mt-pad { grid-template-columns: repeat(3, 70px); grid-template-rows: repeat(3, 70px); }
 }
 
 /* First-time tip */
@@ -6199,13 +6231,13 @@ button.imp-card:focus-visible { outline: 3px solid var(--focus-ring); outline-of
 .mt-results.is-failed .mt-title { color: var(--mt-bad); }
 .mt-score { display: flex; align-items: baseline; gap: 8px; }
 .mt-score__n { font-family: var(--font-display); font-size: clamp(2.6rem, 12vw, 3.6rem); font-weight: 800; line-height: 1; }
-.mt-score__of { font-weight: 700; color: var(--mt-ink-soft); }
-.mt-best { font-weight: 800; color: var(--mt-ink-soft); }
-.mt-best.is-new { color: var(--mt-green); }
+.mt-score__of { font-weight: 700; color: var(--mt-sky-ink); }
+.mt-best { font-weight: 800; color: var(--mt-sky-ink); }
+.mt-best.is-new { color: var(--mt-green); background: var(--mt-paper); padding: 2px 12px; border-radius: 999px; }
 .mt-breakdown { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 8px; padding: var(--sp-3); box-sizing: border-box; border-radius: 18px; background: var(--mt-paper); border: 1px solid var(--mt-paper-edge); }
 .mt-part { display: grid; grid-template-columns: 7.5em 1fr 3em; align-items: center; gap: 8px; text-align: left; font-size: var(--fs-sm); font-weight: 700; }
 .mt-part__value { text-align: right; }
-.mt-results__hint { margin: 0; font-weight: 700; color: var(--mt-ink-soft); }
+.mt-results__hint { margin: 0; font-weight: 700; color: var(--mt-sky-ink); }
 
 @media (prefers-reduced-motion: reduce) {
   .mt-envelope, .mt-paper, .mt-stars--big .mt-star, .mt-clock.is-warn, .mt-clock.is-hit, .mt-check { animation: none; }

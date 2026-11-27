@@ -198,7 +198,13 @@ window.FF = window.FF || {};
 
   function letter(root, stage, playerName, onUnderstood) {
     var b = stage.briefing || {};
-    var steps = FF.MissionTrail.Rules.directions(stage.route || []);
+    var names = (FF.data && FF.data.missionTrail && FF.data.missionTrail.identityNames) || {};
+    var steps = FF.MissionTrail.Rules.directions(stage.route || [], {
+      name: function (key) {
+        var id = stage.identities && stage.identities[key];
+        return id ? t('mtPlace_' + id, names[id] || id) : key;
+      }
+    });
     var ok = button(t('mtUnderstand', 'I understand'), { primary: true, icon: 'check', class: 'mt-understand' });
     var used = false;
     ok.addEventListener('click', function () {

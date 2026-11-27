@@ -221,6 +221,9 @@
   --mt-green: #276b33; --mt-green-deep: #1f5a2a; --mt-red: #b8321f; --mt-gold: #f2b632; --mt-gold-deep: #9a6200;
   --mt-hud: #1e2b1d; --mt-hud-ink: #ffffff; --mt-warn: #ffb4a0;
   --mt-good: #1f7a35; --mt-bad: #b42318; --mt-locked: #e4e1d6; --mt-locked-ink: #575345;
+  --mt-sky-1: #5fb8ee; --mt-sky-2: #cdeefe; --mt-sky-ink: #0d3355; --mt-cloud: #ffffff;
+  --mt-hill-1: #86cc5e; --mt-hill-2: #5ea843; --mt-grass-bg: #9cc46a;
+  --mt-key: #ffffff; --mt-key-2: #e6f0f8; --mt-key-edge: #9fb7cc; --mt-check-hi: #359a46;
   --medal-gold: #ffc83d; --medal-silver: #cfd6f6; --medal-bronze: #ff9a52; --medal-ink: #0b1030;
 }
 
