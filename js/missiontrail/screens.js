@@ -9,7 +9,8 @@
      letter(root, stage, playerName, onUnderstood)
                                               the mission letter; "I understand" removes it
      tip(root, onDone)                        first-time controls tip, over the play screen
-     play(root, opts) -> handle               HUD, town canvas, message line, arrows + Check
+     play(root, opts) -> handle               HUD (with the bag), town canvas, message line,
+                                              arrows + Check, and pick scenes over the town
      results(root, ctx, info)                 complete / failed, stars, score, breakdown
 
    ctx = { progress, stages, groups, open(stageId), home(), picker(groupIndex), done() }
@@ -262,9 +263,31 @@ window.FF = window.FF || {};
 
   /* ---------------- play ---------------- */
 
+  // Where choices stand in a pick scene, as % of the scene (centre x, bottom y). Things lie
+  // scattered around a room; people stand in two rows. Choices are shuffled onto these spots.
+  var SPOTS = {
+    objects: [[14, 40], [39, 33], [63, 41], [86, 34], [26, 70], [51, 64], [75, 72], [10, 92], [40, 95], [66, 93], [90, 90], [88, 62]],
+    characters: [[14, 62], [38, 58], [62, 62], [86, 58], [26, 96], [50, 92], [74, 96], [8, 90], [92, 92]]
+  };
+  var SCENE_PROMPT = {
+    collect: ['mtSceneCollect', 'Pick what your letter asks for.'],
+    give: ['mtSceneGive', 'Who should get it?'],
+    meet: ['mtSceneMeet', 'Who are you looking for?']
+  };
+
+  function shuffled(list) {
+    var a = list.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+    }
+    return a;
+  }
+
   var DIR_KEYS = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', w: 'up', s: 'down', a: 'left', d: 'right', W: 'up', S: 'down', A: 'left', D: 'right' };
 
-  /* opts = { stage, total, onMove(dir), onCheck(), onTap(event) }. Returns a handle the game drives. */
+  /* opts = { stage, total, onMove(dir), onCheck(), onTap(event), onPick(id), onCloseScene() }.
+     Returns a handle the game drives. */
   function play(root, opts) {
     var stage = opts.stage;
     var timeText = span('mt-clock__text', clock((stage.time || 60) * 1000));
@@ -273,6 +296,8 @@ window.FF = window.FF || {};
     var dots = div('mt-dots');
     for (var i = 0; i < (opts.total || 0); i++) dots.appendChild(span('mt-dot'));
     dots.setAttribute('aria-label', t('mtStepsLeft', '{x} of {y} done', { x: 0, y: opts.total || 0 }));
+    var bag = div('mt-bag is-empty');
+    bag.setAttribute('aria-label', t('mtBagEmpty', 'Your bag is empty'));
     var canvas = el('canvas', { class: 'mt-map' });
     canvas.setAttribute('aria-label', t('mtMapLabel', 'The town. Use the arrows to walk.'));
     canvas.addEventListener('click', function (e) { opts.onTap(e); });
@@ -293,9 +318,11 @@ window.FF = window.FF || {};
       arrow('right', t('mtRight', 'Right')), arrow('down', t('mtDown', 'Down'))
     ]);
 
+    var view = div('mt-view', [canvas]);
+    var sceneEl = null;
     var wrap = div('mt-play', [
-      div('mt-hud', [span('mt-pill', t('mtStageN', 'Stage {n}', { n: stage.id })), clockEl, dots]),
-      div('mt-view', [canvas]),
+      div('mt-hud', [span('mt-pill', t('mtStageN', 'Stage {n}', { n: stage.id })), clockEl, div('mt-hud__end', [bag, dots])]),
+      view,
       msg,
       padEl
     ]);
@@ -314,6 +341,11 @@ window.FF = window.FF || {};
       var tag = e.target && e.target.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
       if (overlayOpen() || (root.querySelector && root.querySelector('.mt-tip'))) return;
+      // In a pick scene the keys move between the choices (the page's own focus moves).
+      if (sceneEl) {
+        if (e.key === 'Escape' && opts.onCloseScene) { e.preventDefault(); e.stopPropagation(); opts.onCloseScene(); }
+        return;
+      }
       var dir = DIR_KEYS[e.key];
       if (dir) {
         e.preventDefault();
@@ -364,7 +396,69 @@ window.FF = window.FF || {};
       showCheck: function (on) {
         check.classList.toggle('is-hidden', !on);
         check.disabled = !on;
-      }
+      },
+      /* items: [{ id, src, name }] the player carries. */
+      setBag: function (items) {
+        FF.ui.clear(bag);
+        items.forEach(function (it) {
+          var im = el('img', { class: 'mt-bag__item', src: it.src, alt: it.name || '' });
+          bag.appendChild(im);
+        });
+        bag.className = 'mt-bag' + (items.length ? '' : ' is-empty');
+        bag.setAttribute('aria-label', items.length
+          ? t('mtBagHolds', 'In your bag: {list}', { list: items.map(function (it) { return it.name; }).join(', ') })
+          : t('mtBagEmpty', 'Your bag is empty'));
+      },
+      /* A pick scene over the town. sc = { kind, backdrop: src, options: [{ id, src, name }],
+         closable, category: 'objects' | 'characters' }. */
+      openScene: function (sc) {
+        if (sceneEl && sceneEl.parentNode) sceneEl.parentNode.removeChild(sceneEl);
+        var spots = shuffled(SPOTS[sc.category] || SPOTS.objects);
+        var room = div('mt-scene__room');
+        if (sc.backdrop) room.appendChild(el('img', { class: 'mt-scene__bg', src: sc.backdrop, alt: '' }));
+        var buttons = [];
+        shuffled(sc.options).forEach(function (o, i) {
+          var spot = spots[i % spots.length];
+          var b = el('button', { class: 'mt-thing mt-thing--' + (sc.category || 'objects'), type: 'button' },
+            [el('img', { src: o.src, alt: '' })]);
+          b.setAttribute('aria-label', o.name || o.id);
+          b.dataset.pick = o.id;
+          b.style.left = spot[0] + '%';
+          b.style.top = spot[1] + '%';
+          b.addEventListener('click', function () { if (opts.onPick) opts.onPick(o.id); });
+          buttons.push(b);
+          room.appendChild(b);
+        });
+        var prompt = SCENE_PROMPT[sc.kind] || SCENE_PROMPT.collect;
+        var kids = [el('p', { class: 'mt-scene__prompt' }, t(prompt[0], prompt[1])), room];
+        if (sc.closable) {
+          var back = button(t('mtSceneBack', 'Back to the street'), { variant: 'secondary', icon: 'arrow-left', onClick: function () { if (opts.onCloseScene) opts.onCloseScene(); } });
+          if (back.classList) back.classList.add('mt-scene__back');
+          kids.push(back);
+        }
+        sceneEl = div('mt-scene', kids);
+        sceneEl.setAttribute('role', 'dialog');
+        sceneEl.setAttribute('aria-label', t(prompt[0], prompt[1]));
+        view.appendChild(sceneEl);
+        padEl.classList.add('is-off');
+        if (buttons[0] && buttons[0].focus) buttons[0].focus();
+      },
+      sceneWrong: function (id) {
+        if (!sceneEl) return;
+        var kids = sceneEl.querySelectorAll ? sceneEl.querySelectorAll('.mt-thing') : [];
+        for (var k = 0; k < kids.length; k++) {
+          if (kids[k].dataset.pick !== id) continue;
+          kids[k].classList.remove('is-wrong');
+          void kids[k].offsetWidth;   // restart the animation
+          kids[k].classList.add('is-wrong');
+        }
+      },
+      closeScene: function () {
+        if (sceneEl && sceneEl.parentNode) sceneEl.parentNode.removeChild(sceneEl);
+        sceneEl = null;
+        padEl.classList.remove('is-off');
+      },
+      sceneOpen: function () { return !!sceneEl; }
     };
   }
 
@@ -384,7 +478,7 @@ window.FF = window.FF || {};
     var stage = info.stage;
     var before = info.before;
     var m = r.mistakes || {};
-    var mistakes = (m.wrongTurns || 0) + (m.wrongChecks || 0) + (m.bumps || 0);
+    var mistakes = (m.wrongTurns || 0) + (m.wrongChecks || 0) + (m.wrongPicks || 0) + (m.bumps || 0);
     var head = r.done ? t('mtComplete', 'Mission complete!') : (info.timeUp ? t('mtTimeUp', 'Time is up!') : t('mtFailed', 'Mission failed'));
     var best = null;
     if (r.done && before && before.done) {

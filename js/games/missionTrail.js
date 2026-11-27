@@ -17,10 +17,20 @@ window.FF = window.FF || {};
   function t(key, fallback, vars) { return FF.t ? FF.t(key, fallback, vars) : fallback; }
   function sound(name) { if (FF.Audio && FF.Audio.play) FF.Audio.play(name); }
 
-  /* The thing the Check button checks: what the walker faces, else the nearest in reach. */
-  function checkTarget(map, pos, revealed) {
+  function nearThings(map, pos, skip) {
     var R = FF.MissionTrail.Rules;
-    var near = map.things.filter(function (th) { return th.check && !revealed[th.key] && R.inReach(pos, th); });
+    return map.things.filter(function (th) { return th.check && !skip[th.key] && R.inReach(pos, th); });
+  }
+
+  /* How many places Check could mean from here. */
+  function checkChoices(map, pos, skip) { return nearThings(map, pos, skip || {}).length; }
+
+  /* The thing the Check button checks: what the walker faces, else the nearest in reach,
+     else the nearest one ahead. Two equally good choices give null: Check never guesses
+     (a wrong guess would cost the player time), so the player taps the one they mean. */
+  function checkTarget(map, pos, skip) {
+    var R = FF.MissionTrail.Rules;
+    var near = nearThings(map, pos, skip || {});
     if (!near.length) return null;
     var d = R.DIRS[pos.facing] || [0, 0];
     var fx = pos.x + d[0];
@@ -34,7 +44,9 @@ window.FF = window.FF || {};
       var cy = Math.max(th.y, Math.min(pos.y, th.y + th.h - 1));
       return Math.abs(cx - pos.x) + Math.abs(cy - pos.y);
     }
-    near.sort(function (a, b) { return dist(a) - dist(b); });
+    function ahead(th) { return (th.x + th.w / 2 - 0.5 - pos.x) * d[0] + (th.y + th.h / 2 - 0.5 - pos.y) * d[1]; }
+    near.sort(function (a, b) { return dist(a) - dist(b) || ahead(b) - ahead(a); });
+    if (near.length > 1 && dist(near[0]) === dist(near[1]) && ahead(near[0]) === ahead(near[1])) return null;
     return near[0].key;
   }
 
@@ -73,6 +85,22 @@ window.FF = window.FF || {};
     };
   }
 
+  /* The stages a player can see: the run from Stage 1 up to the first stage whose map is
+     missing or whose pictures are not cut yet (the art pack sends them later). */
+  function availableStages(stages, mapsById) {
+    var MT = FF.MissionTrail;
+    var out = [];
+    var checkArt = !!(FF.AssetManifest && MT.Assets && MT.Assets.forStage);
+    for (var i = 0; i < stages.length; i++) {
+      var stage = stages[i];
+      var def = mapsById[stage.map];
+      if (!def) break;
+      if (checkArt && MT.Assets.missing(MT.Assets.forStage(stage, MT.Rules.mapFor(def, stage))).length) break;
+      out.push(stage);
+    }
+    return out;
+  }
+
   /* The summary PlayMona's end screen shows for one visit. */
   function visitSummary(visit) {
     return {
@@ -91,6 +119,8 @@ window.FF = window.FF || {};
     var MT = FF.MissionTrail;
     var data = FF.data.missionTrail;
     var maps = FF.data.missionTrailMaps || [];
+    var mapsById = {};
+    maps.forEach(function (m) { mapsById[m.id] = m; });
     var root = api.shell.root;
     if (api.shell.el && api.shell.el.classList) api.shell.el.classList.add('mt-shell');
     var player = (api.config.scorers && api.config.scorers[0]) || { id: 'me', name: t('you', 'You') };
@@ -100,7 +130,7 @@ window.FF = window.FF || {};
 
     var ctx = {
       api: api,
-      stages: data.stages,
+      stages: availableStages(data.stages, mapsById),
       groups: data.groups,
       progress: MT.Progress.load(),
       open: open,
@@ -112,7 +142,7 @@ window.FF = window.FF || {};
     function shown() { return !!root && root.isConnected !== false; }
     function fresh() { stop(); token += 1; ctx.progress = MT.Progress.load(); return token; }
     function stageById(id) {
-      for (var i = 0; i < data.stages.length; i++) if (data.stages[i].id === id) return data.stages[i];
+      for (var i = 0; i < ctx.stages.length; i++) if (ctx.stages[i].id === id) return ctx.stages[i];
       return null;
     }
 
@@ -137,10 +167,10 @@ window.FF = window.FF || {};
       if (!stage || MT.Progress.state(ctx.progress, id) === 'locked') { MT.Screens.picker(root, ctx, 0); return; }
       var def = maps.filter(function (m) { return m.id === stage.map; })[0];
       if (!def) { FF.GameUI.exitCard(api, t('mtName', 'Mission Trail'), t('needsPictures', 'This game needs its pictures, which could not be found. Please try again later.')); return; }
-      var map = MT.Rules.buildMap(JSON.parse(JSON.stringify(def)));
+      var map = MT.Rules.mapFor(JSON.parse(JSON.stringify(def)), stage);
       FF.ui.clear(root);
       if (FF.UI && FF.UI.loading) root.appendChild(FF.UI.loading(t('mtLoading', 'Getting the town ready…')));
-      MT.Assets.load(MT.Assets.forMap(map)).then(function (images) {
+      MT.Assets.load(MT.Assets.forStage(stage, map)).then(function (images) {
         if (my !== token || !shown()) return;
         MT.Screens.letter(root, stage, player.name, function () {
           if (my !== token || !shown()) return;
@@ -162,14 +192,17 @@ window.FF = window.FF || {};
         total: (stage.steps || []).length,
         onMove: function (dir, repeat) { if (mover) mover.move(dir, repeat); },
         onCheck: function () {
-          var key = checkTarget(map, run.pos, run.revealed);
+          var key = checkTarget(map, run.pos, skipped());
           if (key) doCheck(key);
+          else if (checkChoices(map, run.pos, skipped()) > 1) handle.say(t('mtTapWhich', 'Tap the place you mean.'), 'info');
           else handle.say(t('mtWalkCloser', 'Walk closer to check it.'), 'info');
         },
         onTap: function (e) {
           var key = a.view && a.view.thingAtPoint(e.clientX, e.clientY);
           if (key) doCheck(key);
-        }
+        },
+        onPick: function (id) { doPick(id); },
+        onCloseScene: function () { if (run.closeScene()) { handle.closeScene(); sync(); } }
       });
       a.handle = handle;
       var view = MT.Render.create(handle.canvas, map, images, { fog: !!stage.fog });
@@ -182,7 +215,17 @@ window.FF = window.FF || {};
         vis.forEach(function (i) { explored.add(i); });
         view.fog(vis, explored);
       }
-      function sync() { handle.showCheck(run.state === 'playing' && !!checkTarget(map, run.pos, run.revealed)); }
+      // Places already found are not offered again, except the one the current step still needs
+      // (a give or meet place reopens its scene); the car being driven is never offered.
+      function skipped() {
+        var skip = {};
+        Object.keys(run.revealed).forEach(function (k) { skip[k] = true; });
+        var step = (stage.steps || [])[run.stepIndex];
+        if (step) { delete skip[step.target]; delete skip[step.at]; }
+        if (run.vehicle) skip[run.vehicle] = true;
+        return skip;
+      }
+      function sync() { handle.showCheck(run.state === 'playing' && !run.scene && checkChoices(map, run.pos, skipped()) > 0); }
       fog();
       sync();
       mover = createMover(run, view, {
@@ -195,16 +238,60 @@ window.FF = window.FF || {};
         if (r.type === 'far') handle.say(t('mtWalkCloser', 'Walk closer to check it.'), 'info');
         else if (r.type === 'wrong') {
           sound('wrong');
-          handle.say(t('mtNotThePlace', 'This isn’t the place from your letter. {n} seconds off!', { n: MT.Engine.WRONG_CHECK_MS / 1000 }), 'bad');
+          var isCar = (map.thing(key) || {}).kind === 'vehicle';
+          handle.say(isCar
+            ? t('mtNotTheCar', 'That isn’t the car from your letter. {n} seconds off!', { n: MT.Engine.WRONG_CHECK_MS / 1000 })
+            : t('mtNotThePlace', 'This isn’t the place from your letter. {n} seconds off!', { n: MT.Engine.WRONG_CHECK_MS / 1000 }), 'bad');
           handle.penalty();
           view.shake();
-        } else if (r.type === 'revealed') {
+        } else if (r.type === 'revealed' || r.type === 'scene') {
           sound('correct');
           view.reveal(key, r.name);
-          handle.say(t('mtFound', 'You found the {name}!', { name: String(r.name).toLowerCase() }), 'good');
+          if (r.type === 'revealed') handle.say(t('mtFound', 'You found the {name}!', { name: String(r.name).toLowerCase() }), 'good');
+        } else if (r.type === 'entered') {
+          sound('correct');
+          handle.say(t('mtInTheCar', 'You are in the car. Drive!'), 'good');
         }
         sync();
       }
+
+      var names = { objects: data.objectNames || {}, characters: data.peopleNames || {} };
+      function choice(category, id) {
+        return { id: id, src: MT.Assets.path(category, id), name: t('mtThing_' + id, names[category][id] || id) };
+      }
+      function doPick(id) {
+        if (run.state !== 'playing' || !run.scene) return;
+        var r = run.pick(id);
+        if (r.type === 'wrong') {
+          sound('wrong');
+          handle.say(t('mtNotThatOne', 'Not that one. {n} seconds off!', { n: MT.Engine.WRONG_CHECK_MS / 1000 }), 'bad');
+          handle.penalty();
+          handle.sceneWrong(id);
+        }
+      }
+      a.off.push(run.on('scene', function (sc) {
+        var category = MT.Assets.OPTION_CAT[sc.kind] || 'objects';
+        handle.openScene({
+          kind: sc.kind,
+          category: category,
+          closable: sc.closable,
+          backdrop: sc.backdrop ? MT.Assets.path('scenes', sc.backdrop) : null,
+          options: sc.options.map(function (id) { return choice(category, id); })
+        });
+        sync();
+      }));
+      a.off.push(run.on('picked', function (e) {
+        sound('correct');
+        handle.closeScene();
+        handle.setBag(e.inventory.map(function (id) { return choice('objects', id); }));
+        var who = e.kind === 'collect' ? null : choice('characters', e.id).name;
+        var thing = e.kind === 'collect' ? choice('objects', e.id).name : null;
+        if (e.kind === 'collect') handle.say(t('mtPickedUp', '{name} is in your bag.', { name: thing }), 'good');
+        else if (e.kind === 'give') handle.say(t('mtGaveTo', 'You gave it to the {name}.', { name: String(who).toLowerCase() }), 'good');
+        else handle.say(t('mtMet', 'You found the {name}!', { name: String(who).toLowerCase() }), 'good');
+        sync();
+      }));
+      a.off.push(run.on('entered', function (e) { view.drive(e.key, e.look); }));
 
       a.off.push(run.on('stepDone', function (e) { handle.setSteps(e.index + 1); }));
       a.off.push(run.on('complete', function (res) { finish(stage, res, false); }));
@@ -241,6 +328,7 @@ window.FF = window.FF || {};
       if (a.raf) { window.cancelAnimationFrame(a.raf); a.raf = null; }
       a.handle.unbind();
       a.handle.showCheck(false);
+      a.handle.closeScene();
       a.handle.setClock(a.run.remaining());
       var before = MT.Progress.load();
       var prevStage = before.stages[String(stage.id)] ? JSON.parse(JSON.stringify(before.stages[String(stage.id)])) : null;
@@ -274,7 +362,7 @@ window.FF = window.FF || {};
   }
 
   FF.MissionTrail = FF.MissionTrail || {};
-  FF.MissionTrail.Game = { checkTarget: checkTarget, visitSummary: visitSummary, createMover: createMover };
+  FF.MissionTrail.Game = { checkTarget: checkTarget, checkChoices: checkChoices, visitSummary: visitSummary, createMover: createMover, availableStages: availableStages };
 
   FF.registerGame({
     id: 'missionTrail',
@@ -293,6 +381,7 @@ window.FF = window.FF || {};
       'Read the mission letter carefully. You can read it only once.',
       'Walk the town with the arrows, following the directions from memory.',
       'When you are next to the right place, tap it or press Check.',
+      'Some missions ask you to pick something up, hand it to someone or drive a car.',
       'A wrong place costs 3 seconds. Finish before the clock runs out to earn up to 3 stars.'
     ],
     start: start

@@ -180,7 +180,7 @@ test('mission trail: a perfect stage 1 scores 100', function () {
   assertEqual(r.check('stopB'), { type: 'revealed', name: 'Bus stop' });
   const res = r.result();
   assertEqual([r.state, res.done, res.score, res.stars, completes], ['complete', true, 100, 3, 1]);
-  assertEqual(res.mistakes, { wrongTurns: 0, extraSteps: 0, bumps: 0, wrongChecks: 0 });
+  assertEqual(res.mistakes, { wrongTurns: 0, extraSteps: 0, bumps: 0, wrongChecks: 0, wrongPicks: 0 });
 });
 
 test('mission trail: the clock waits for the letter', function () {
@@ -678,6 +678,177 @@ test('mission trail: stages 2 to 5 exist and play on the town map', function () 
   const R = load().MissionTrail.Rules;
   const names = function (k) { return d.identityNames[d.stages[4].identities[k]] || k; };
   assert(R.directions(d.stages[4].route, { name: names }).indexOf('Take Dave Street.') !== -1, 'stage 5 names Dave Street');
+});
+
+/* ---------------- Stages 6-10: things to carry, people, cars ---------------- */
+
+const ERRAND_MAP = Object.assign(JSON.parse(JSON.stringify(SMALL)), {
+  id: 'errand',
+  buildings: [{ key: 'lib', look: 'hall-stone', x: 3, y: 4 }, { key: 'shop', look: 'shop-red', x: 2, y: 4 }]
+});
+const ERRAND = {
+  id: 1, title: 'Errand', map: 'errand', time: 40, start: { x: 5, y: 5, facing: 'left' },
+  identities: { lib: 'library', shop: 'shop' },
+  vehicles: [{ key: 'carG', look: 'car-green', x: 6, y: 3, facing: 'down' }, { key: 'carR', look: 'car-red', x: 6, y: 1, facing: 'down' }],
+  route: [{ go: 1 }],
+  steps: [
+    { do: 'collect', item: 'red-cap', scene: { backdrop: 'bedroom', options: ['red-cap', 'blue-cap', 'green-cap'] } },
+    { do: 'give', target: 'lib', item: 'red-cap', to: 'librarian', scene: { backdrop: 'library', options: ['librarian', 'teacher', 'doctor'] } }
+  ]
+};
+function errand(stagePatch) {
+  const FF = load(ENGINE);
+  const clock = { t: 1000 };
+  const stage = Object.assign(JSON.parse(JSON.stringify(ERRAND)), stagePatch || {});
+  const m = FF.MissionTrail.Rules.mapFor(JSON.parse(JSON.stringify(ERRAND_MAP)), stage);
+  const run = FF.MissionTrail.Engine.create(stage, m, { now: function () { return clock.t; } });
+  return { FF: FF, clock: clock, run: run, map: m };
+}
+
+test('mission trail: a stage parks its cars on the map', function () {
+  const o = errand();
+  const car = o.map.thing('carG');
+  assertEqual([car.kind, car.look, car.check, o.map.walkable(6, 3)], ['vehicle', 'car-green-down', true, false]);
+});
+
+test('mission trail: a pick scene opens when the letter closes and holds the walker', function () {
+  const o = errand(), r = o.run;
+  const scenes = [];
+  r.on('scene', function (sc) { scenes.push(sc); });
+  r.start();
+  assertEqual(scenes.length, 1);
+  assertEqual([r.scene.kind, r.scene.backdrop, r.scene.options, r.scene.closable], ['collect', 'bedroom', ['red-cap', 'blue-cap', 'green-cap'], false]);
+  assertEqual(r.move('left').type, 'ignored');
+  assertEqual(r.closeScene(), false);
+});
+
+test('mission trail: a wrong pick costs time, the right one goes in the bag', function () {
+  const o = errand(), r = o.run;
+  r.start();
+  const before = r.remaining();
+  assertEqual(r.pick('blue-cap').type, 'wrong');
+  assertEqual(before - r.remaining(), o.FF.MissionTrail.Engine.WRONG_CHECK_MS);
+  assertEqual(r.pick('red-cap').type, 'picked');
+  assertEqual([r.inventory, r.scene, r.stepIndex], [['red-cap'], null, 1]);
+  assertEqual(r.move('left').type, 'moved');
+  assertEqual(r.result().mistakes.wrongPicks, 1);
+  assert(r.result().parts.obs < 1, 'a wrong pick lowers observation');
+});
+
+test('mission trail: giving opens the people at the right place only', function () {
+  const o = errand(), r = o.run;
+  let done = null;
+  r.on('complete', function (res) { done = res; });
+  r.start();
+  r.pick('red-cap');
+  r.move('left'); r.move('left');
+  assertEqual(r.check('shop').type, 'wrong');
+  assertEqual(r.check('lib').type, 'scene');
+  assertEqual([r.scene.kind, r.scene.closable, r.revealed.lib], ['give', true, 'Library']);
+  assertEqual(r.pick('teacher').type, 'wrong');
+  assertEqual(r.pick('librarian').type, 'given');
+  assertEqual([r.inventory, r.state, !!done], [[], 'complete', true]);
+});
+
+test('mission trail: stepping out of a place scene and back in', function () {
+  const o = errand(), r = o.run;
+  r.start();
+  r.pick('red-cap');
+  r.move('left'); r.move('left');
+  r.check('lib');
+  assertEqual(r.closeScene(), true);
+  assertEqual([r.scene, r.move('right').type], [null, 'moved']);
+  r.move('left');
+  assertEqual(r.check('lib').type, 'scene');
+});
+
+test('mission trail: get into the right car and drive', function () {
+  const o = errand({ start: { x: 5, y: 3, facing: 'down' }, steps: [{ do: 'enter', target: 'carG' }, { do: 'reach', target: 'lib' }] }), r = o.run;
+  const entered = [];
+  r.on('entered', function (e) { entered.push(e); });
+  r.start();
+  assertEqual(r.scene, null);
+  r.move('up'); r.move('up');
+  assertEqual(r.check('carR').type, 'wrong');
+  r.move('down'); r.move('down');
+  assertEqual(r.check('carG').type, 'entered');
+  assertEqual([r.vehicle, entered[0].look, o.map.walkable(6, 3)], ['carG', 'car-green', false]);
+  r.move('down'); r.move('down'); r.move('left');
+  assertEqual(r.check('lib').type, 'revealed');
+  assertEqual(r.state, 'complete');
+});
+
+test('mission trail: a stage asks for its cars, scenes, things and people', function () {
+  const FF = load(ASSETS), A = FF.MissionTrail.Assets;
+  const stage = JSON.parse(JSON.stringify(ERRAND));
+  const keys = A.forStage(stage, FF.MissionTrail.Rules.mapFor(JSON.parse(JSON.stringify(ERRAND_MAP)), stage))
+    .map(function (x) { return x.category + '/' + x.id; });
+  ['vehicles/car-green-down', 'vehicles/car-green-left', 'vehicles/car-green-up', 'vehicles/car-red-right',
+    'scenes/bedroom', 'scenes/library', 'objects/red-cap', 'objects/green-cap', 'characters/librarian', 'characters/doctor',
+    'buildings/hall-stone', 'props/fountain'].forEach(function (k) { assert(keys.indexOf(k) !== -1, k); });
+  assert(keys.indexOf('props/car-green-down') === -1, 'cars are not props');
+});
+
+function withErrand(stage) {
+  const FF = load(MORE.concat(['js/missiontrail/engine.js', 'js/data/assetManifest.js', 'js/assets.js', 'js/missiontrail/assets.js']));
+  FF.data.missionTrailMaps.push(JSON.parse(JSON.stringify(ERRAND_MAP)));
+  FF.data.missionTrail.stages = [Object.assign(JSON.parse(JSON.stringify(ERRAND)), { route: [{ go: 2 }] }, stage || {})];
+  return { FF: FF, report: checker.report(FF) };
+}
+
+test('mission trail: pictures still to come wait, unknown pictures are problems', function () {
+  const o = withErrand();
+  assertEqual(o.report.problems, []);
+  assert(o.report.waiting.some(function (w) { return /objects\/red-cap/.test(w); }), o.report.waiting.join('; '));
+  const bad = withErrand({ vehicles: [{ key: 'carG', look: 'car-pink', x: 6, y: 3, facing: 'down' }] });
+  assert(bad.report.problems.some(function (p) { return /car-pink/.test(p); }), bad.report.problems.join('; '));
+});
+
+test('mission trail: the validator checks scenes, the bag and cars', function () {
+  const steps = function (list) { return withErrand({ steps: list }).report.problems.join(' | '); };
+  const give = { do: 'give', target: 'lib', item: 'red-cap', to: 'librarian', scene: { backdrop: 'library', options: ['librarian', 'teacher', 'doctor'] } };
+  assert(/not carrying|carry/.test(steps([give])), 'give without the thing: ' + steps([give]));
+  const noAnswer = { do: 'collect', item: 'red-cap', scene: { backdrop: 'bedroom', options: ['blue-cap', 'green-cap', 'keys'] } };
+  assert(/red-cap/.test(steps([noAnswer, give])) && /not in its scene|scene/.test(steps([noAnswer, give])), steps([noAnswer, give]));
+  assert(/vehicle|car/.test(steps([{ do: 'enter', target: 'lib' }])), 'enter a building: ' + steps([{ do: 'enter', target: 'lib' }]));
+});
+
+test('mission trail: stages wait until their pictures exist', function () {
+  const FF = load(GAME);
+  const d = FF.data.missionTrail;
+  const maps = {};
+  FF.data.missionTrailMaps.forEach(function (m) { maps[m.id] = m; });
+  const G = FF.MissionTrail.Game;
+  const ready = G.availableStages(d.stages, maps).map(function (s) { return s.id; });
+  assertEqual(ready.slice(0, 5), [1, 2, 3, 4, 5]);
+  const extra = d.stages.concat([
+    { id: 99, map: 'town-1', steps: [{ do: 'collect', item: 'no-such-thing', scene: { backdrop: 'bedroom', options: ['no-such-thing'] } }] },
+    { id: 100, map: 'town-1', steps: [{ do: 'reach', target: 'a1' }] }
+  ]);
+  const shown = G.availableStages(extra, maps).map(function (s) { return s.id; });
+  assert(shown.indexOf(99) === -1 && shown.indexOf(100) === -1, 'a stage without pictures hides it and every stage after it: ' + shown);
+});
+
+test('mission trail: Check prefers the place ahead and never guesses between two', function () {
+  const FF = load(GAME), G = FF.MissionTrail.Game;
+  const m = FF.MissionTrail.Rules.buildMap(map('town-1'));
+  assertEqual(G.checkTarget(m, { x: 9, y: 9, facing: 'right' }, {}), 'c2');
+  assertEqual(G.checkTarget(m, { x: 9, y: 9, facing: 'left' }, {}), 'b2');
+  assertEqual(G.checkTarget(m, { x: 9, y: 8, facing: 'up' }, {}), null);
+  assertEqual(G.checkChoices(m, { x: 9, y: 8, facing: 'up' }, {}), 2);
+  assertEqual(G.checkTarget(m, { x: 9, y: 8, facing: 'right' }, {}), 'c2');
+});
+
+test('mission trail: results count wrong picks as mistakes', function () {
+  const FF = load(SCREENS), doc = document_of(FF);
+  const root = doc.createElement('div');
+  const res = { done: true, score: 80, stars: 2, ms: 9000, parts: { task: 1, nav: 1, obs: 0.5, seq: 1, time: 1 },
+    mistakes: { wrongTurns: 0, extraSteps: 0, bumps: 0, wrongChecks: 1, wrongPicks: 2 } };
+  FF.MissionTrail.Screens.results(root, ctxFor(FF, FF.MissionTrail.Progress.empty()), { stage: FF.data.missionTrail.stages[0], result: res, before: null, nextId: null, timeUp: false });
+  const all = texts(root);
+  const i = all.indexOf('Mistakes');
+  assert(i !== -1, 'a Mistakes stat');
+  assert(all.indexOf('3') !== -1, 'one wrong place and two wrong picks make 3: ' + all.join('|'));
 });
 
 module.exports = { load, map };

@@ -2,8 +2,8 @@
 
 Art for **Mission Trail**, the read-remember-explore game. **Batch 1** is everything the town needs,
 which is all Stage 1 uses and most of Stages 2 to 3: buildings, street things, the walker, ground
-textures, the letter's envelope and the cover. Batch 2 (people, objects, vehicles and room scenes for
-Stages 4 to 10) comes after Stage 1 has been played and the look is agreed.
+textures, the letter's envelope and the cover. Batch 2 (people, things to carry, cars and the
+rooms behind the pick scenes, for Stages 6 to 10) is in `missionTrail-batch2-prompts.md`.
 
 Batch 1 is 12 images:
 

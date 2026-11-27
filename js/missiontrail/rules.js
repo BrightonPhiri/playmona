@@ -32,15 +32,18 @@ window.FF = window.FF || {};
   }
 
   function thingFrom(def, kind) {
+    // A car's picture depends on which way it is parked: look 'car-green' + facing 'down'.
+    var vehicle = kind === 'vehicle';
     return {
       key: def.key,
       kind: kind,
-      look: def.look,
+      look: vehicle ? def.look + '-' + (def.facing || 'down') : def.look,
+      car: vehicle ? def.look : null,
       x: def.x,
       y: def.y,
       w: def.w || 1,
       h: def.h || 1,
-      check: kind === 'building' ? true : !!def.check,
+      check: kind === 'prop' ? !!def.check : true,
       sign: typeof def.sign === 'string' ? def.sign : null
     };
   }
@@ -51,7 +54,8 @@ window.FF = window.FF || {};
     var h = rows.length;
     var w = rows.reduce(function (n, r) { return Math.max(n, r.length); }, 0);
     var things = (def.buildings || []).map(function (b) { return thingFrom(b, 'building'); })
-      .concat((def.props || []).map(function (p) { return thingFrom(p, 'prop'); }));
+      .concat((def.props || []).map(function (p) { return thingFrom(p, 'prop'); }))
+      .concat((def.vehicles || []).map(function (v) { return thingFrom(v, 'vehicle'); }));
     var byKey = {};
     var cover = new Array(w * h);
     things.forEach(function (th) {
@@ -98,6 +102,14 @@ window.FF = window.FF || {};
         return g !== null && WALK.indexOf(g) !== -1 && !cover[y * w + x];
       }
     };
+  }
+
+  /* The map a stage plays on: the shared town plus the cars this stage parks on it. */
+  function mapFor(def, stage) {
+    var copy = {};
+    Object.keys(def || {}).forEach(function (k) { copy[k] = def[k]; });
+    copy.vehicles = (def.vehicles || []).concat((stage && stage.vehicles) || []);
+    return buildMap(copy);
   }
 
   /* One arrow press: face that way, then step if the cell ahead is free. */
@@ -231,6 +243,7 @@ window.FF = window.FF || {};
     WALK: WALK,
     turn: turn,
     buildMap: buildMap,
+    mapFor: mapFor,
     move: move,
     routeCells: routeCells,
     isJunction: isJunction,

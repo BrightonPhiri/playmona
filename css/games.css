@@ -6244,3 +6244,39 @@ button.imp-card:focus-visible { outline: 3px solid var(--focus-ring); outline-of
 }
 :root[data-reduce="1"] .mt-envelope, :root[data-reduce="1"] .mt-paper, :root[data-reduce="1"] .mt-stars--big .mt-star,
 :root[data-reduce="1"] .mt-clock.is-warn, :root[data-reduce="1"] .mt-clock.is-hit, :root[data-reduce="1"] .mt-check { animation: none; }
+
+/* Bag (things the player carries) */
+.mt-hud__end { display: inline-flex; align-items: center; gap: 8px; }
+.mt-bag { display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px; min-height: 30px; border-radius: 999px; background: color-mix(in srgb, var(--mt-hud-ink) 14%, transparent); }
+.mt-bag.is-empty { display: none; }
+.mt-bag__item { width: 26px; height: 26px; object-fit: contain; animation: mt-bag-in 0.35s var(--ease); }
+@keyframes mt-bag-in { from { transform: scale(0.2) translateY(12px); opacity: 0; } }
+
+/* Pick scenes: a room over the town with things or people to choose from */
+.mt-scene {
+  position: absolute; inset: 0; z-index: 4; display: flex; flex-direction: column; gap: 8px; padding: 10px;
+  background: color-mix(in srgb, var(--mt-sky-ink) 55%, transparent); animation: mt-scene-in 0.25s var(--ease);
+}
+@keyframes mt-scene-in { from { opacity: 0; transform: scale(0.97); } }
+.mt-scene__prompt { margin: 0; align-self: center; padding: 4px 16px; border-radius: 999px; background: var(--mt-paper); color: var(--mt-ink); font-weight: 800; text-align: center; }
+.mt-scene__room { position: relative; flex: 1; min-height: 0; border-radius: 18px; overflow: hidden; background: var(--mt-paper); box-shadow: 0 10px 28px color-mix(in srgb, var(--mt-ink) 35%, transparent); }
+.mt-scene__bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.mt-scene__back { align-self: center; min-height: 44px; }
+.mt-thing {
+  position: absolute; transform: translate(-50%, -100%); padding: 0; border: 0; background: none; cursor: pointer;
+  -webkit-tap-highlight-color: transparent; border-radius: 14px; transition: transform 0.12s var(--ease);
+}
+.mt-thing img { display: block; width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 4px 4px color-mix(in srgb, var(--mt-ink) 35%, transparent)); }
+.mt-thing--objects { width: 19%; height: 22%; }
+.mt-thing--characters { width: 21%; height: 46%; }
+.mt-thing:hover, .mt-thing:focus-visible { transform: translate(-50%, -100%) scale(1.08); }
+.mt-thing:focus-visible { outline: 3px solid var(--mt-gold); outline-offset: 2px; }
+.mt-thing.is-wrong { animation: mt-wrong 0.45s var(--ease); }
+.mt-thing.is-wrong img { filter: drop-shadow(0 0 6px var(--mt-bad)); }
+@keyframes mt-wrong { 20% { transform: translate(-56%, -100%); } 40% { transform: translate(-44%, -100%); } 60% { transform: translate(-53%, -100%); } }
+.mt-pad.is-off { opacity: 0.35; pointer-events: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .mt-scene, .mt-thing.is-wrong, .mt-bag__item { animation: none; }
+}
+:root[data-reduce="1"] .mt-scene, :root[data-reduce="1"] .mt-thing.is-wrong, :root[data-reduce="1"] .mt-bag__item { animation: none; }

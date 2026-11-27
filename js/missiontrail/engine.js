@@ -9,9 +9,15 @@
    or a slow phone never adds time. Every move and check first looks at
    the clock; after the deadline they are ignored and the mission fails.
 
-   Step types live in Engine.STEPS; a new mechanic is a new entry there
-   (onCheck(run, step, thing) -> 'done' | 'wrong'), never stage code.
-   Events: moved, bumped, revealed, wrong, stepDone, complete, failed.
+   Step types live in Engine.STEPS; a new mechanic is a new entry there,
+   never stage code. onCheck(run, step, thing) answers 'done', 'wrong' or
+   'scene' (open a pick scene: things to collect or people to choose
+   from); onPick(run, step, id) answers 'done' or 'wrong'; onDone applies
+   the step (into the bag, out of the bag, into the car).
+   A collect step with no `at` opens its scene as soon as it is reached
+   (the start of the mission, or right after the step before it).
+   Events: moved, bumped, revealed, wrong, scene, sceneClosed, picked,
+   entered, stepDone, complete, failed.
    ============================================================ */
 window.FF = window.FF || {};
 
@@ -27,9 +33,38 @@ window.FF = window.FF || {};
     return (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
   }
 
+  function atTarget(run, step, thing) { return thing.key === step.target ? 'scene' : 'wrong'; }
+  function pickIs(field) { return function (run, step, id) { return id === step[field] ? 'done' : 'wrong'; }; }
+
   var STEPS = {
     reach: {
       onCheck: function (run, step, thing) { return thing.key === step.target ? 'done' : 'wrong'; }
+    },
+    // Pick the thing from a scene: at the start (no `at`) or inside the place `at`.
+    collect: {
+      result: 'picked',
+      opensAtOnce: function (step) { return !step.at; },
+      onCheck: function (run, step, thing) { return step.at && thing.key === step.at ? 'scene' : 'wrong'; },
+      onPick: pickIs('item'),
+      onDone: function (run, step) { run.inventory.push(step.item); }
+    },
+    // Hand what you carry to the right person at the right place.
+    give: {
+      result: 'given',
+      onCheck: atTarget,
+      onPick: pickIs('to'),
+      onDone: function (run, step) {
+        var i = run.inventory.indexOf(step.item);
+        if (i !== -1) run.inventory.splice(i, 1);
+      }
+    },
+    // Find the right person at the right place.
+    meet: { result: 'met', onCheck: atTarget, onPick: pickIs('to') },
+    // Get into the right car; from then on the walker drives it.
+    enter: {
+      result: 'entered',
+      onCheck: function (run, step, thing) { return thing.key === step.target && thing.kind === 'vehicle' ? 'done' : 'wrong'; },
+      onDone: function (run, step, thing) { run.vehicle = thing.key; run.vehicleLook = thing.car; }
     }
   };
 
@@ -52,7 +87,7 @@ window.FF = window.FF || {};
     var deadline = null;
     var stepsTaken = 0;
     var onRoute = true;
-    var mistakes = { wrongTurns: 0, bumps: 0, wrongChecks: 0 };
+    var mistakes = { wrongTurns: 0, bumps: 0, wrongChecks: 0, wrongPicks: 0 };
 
     function emit(type, data) {
       (listeners[type] || []).slice().forEach(function (fn) { fn(data); });
@@ -72,6 +107,10 @@ window.FF = window.FF || {};
       stepIndex: 0,
       revealed: {},
       routeSteps: routeSteps,
+      inventory: [],
+      scene: null,
+      vehicle: null,
+      vehicleLook: null,
 
       on: function (type, fn) {
         (listeners[type] = listeners[type] || []).push(fn);
@@ -87,6 +126,7 @@ window.FF = window.FF || {};
         startedAt = now();
         deadline = startedAt + limitMs;
         run.state = 'playing';
+        openAtOnce();
       },
 
       remaining: function () {
@@ -105,7 +145,7 @@ window.FF = window.FF || {};
       },
 
       move: function (dir) {
-        if (run.tick() !== 'playing') return { type: 'ignored', pos: run.pos };
+        if (run.tick() !== 'playing' || run.scene) return { type: 'ignored', pos: run.pos };
         var next = R.move(map, run.pos, dir);
         run.pos = { x: next.x, y: next.y, facing: next.facing };
         if (!next.moved) {
@@ -122,31 +162,43 @@ window.FF = window.FF || {};
       },
 
       check: function (key) {
-        if (run.tick() !== 'playing') return { type: 'ignored' };
+        if (run.tick() !== 'playing' || run.scene) return { type: 'ignored' };
         var thing = map.thing(key);
-        if (!thing || !thing.check) return { type: 'ignored' };
+        if (!thing || !thing.check || thing.key === run.vehicle) return { type: 'ignored' };
         if (!R.inReach(run.pos, thing)) return { type: 'far' };
         var step = steps[run.stepIndex];
         var kind = step && STEPS[step.do];
         var res = kind ? kind.onCheck(run, step, thing) : 'wrong';
-        if (res === 'done') {
-          var name = nameOf(key);
-          run.revealed[key] = name;
-          emit('revealed', { key: key, name: name });
-          run.stepIndex += 1;
-          emit('stepDone', { index: run.stepIndex - 1, total: steps.length });
-          if (run.stepIndex >= steps.length) {
-            run.state = 'complete';
-            endedAt = now();
-            emit('complete', run.result());
-          }
-          return { type: 'revealed', name: name };
+        if (res === 'scene') {
+          reveal(key);
+          openScene(step, true);
+          return { type: 'scene', name: run.revealed[key] };
         }
-        mistakes.wrongChecks += 1;
-        deadline -= WRONG_CHECK_MS;
-        emit('wrong', { key: key });
-        run.tick();
-        return { type: 'wrong' };
+        if (res === 'done') {
+          if (thing.kind !== 'vehicle') reveal(key);
+          var type = finishStep(step, kind, thing);
+          return type === 'revealed' ? { type: 'revealed', name: run.revealed[key] } : { type: type };
+        }
+        return penalise('wrongChecks', { key: key });
+      },
+
+      /* Choose a thing or a person in the open scene. */
+      pick: function (id) {
+        if (run.tick() !== 'playing' || !run.scene) return { type: 'ignored' };
+        var step = steps[run.stepIndex];
+        var kind = step && STEPS[step.do];
+        var res = kind && kind.onPick ? kind.onPick(run, step, id) : 'wrong';
+        if (res !== 'done') return penalise('wrongPicks', { pick: id });
+        run.scene = null;
+        return { type: finishStep(step, kind, null, id) };
+      },
+
+      /* Step back out of a scene opened at a place (a start scene stays open). */
+      closeScene: function () {
+        if (!run.scene || !run.scene.closable) return false;
+        run.scene = null;
+        emit('sceneClosed', null);
+        return true;
       },
 
       result: function () {
@@ -156,12 +208,13 @@ window.FF = window.FF || {};
           wrongTurns: mistakes.wrongTurns,
           extraSteps: Math.max(0, stepsTaken - routeSteps),
           bumps: mistakes.bumps,
-          wrongChecks: mistakes.wrongChecks
+          wrongChecks: mistakes.wrongChecks,
+          wrongPicks: mistakes.wrongPicks
         };
         var parts = {
           task: done ? 1 : 0,
           nav: S.nav(m),
-          obs: S.obs(m.wrongChecks),
+          obs: S.obs(m.wrongChecks + m.wrongPicks),
           seq: steps.length > 1 ? 1 : null,
           time: S.time(ms, limitMs, S.parMs(routeSteps, steps.length))
         };
@@ -169,6 +222,57 @@ window.FF = window.FF || {};
         return { done: done, score: score, stars: done ? S.stars(score) : 0, ms: ms, parts: parts, mistakes: m };
       }
     };
+
+    function reveal(key) {
+      if (run.revealed[key]) return;
+      var name = nameOf(key);
+      run.revealed[key] = name;
+      emit('revealed', { key: key, name: name });
+    }
+
+    function openScene(step, closable) {
+      var sc = step.scene || {};
+      run.scene = {
+        step: run.stepIndex,
+        kind: step.do,
+        backdrop: sc.backdrop || null,
+        options: (sc.options || []).slice(),
+        closable: !!closable
+      };
+      emit('scene', run.scene);
+    }
+
+    function openAtOnce() {
+      var step = steps[run.stepIndex];
+      var kind = step && STEPS[step.do];
+      if (kind && kind.opensAtOnce && kind.opensAtOnce(step)) openScene(step, false);
+    }
+
+    function penalise(field, data) {
+      mistakes[field] += 1;
+      deadline -= WRONG_CHECK_MS;
+      emit('wrong', data);
+      run.tick();
+      return { type: 'wrong' };
+    }
+
+    /* The step is done: apply it, move on, then finish the mission or open the next scene. */
+    function finishStep(step, kind, thing, picked) {
+      if (kind.onDone) kind.onDone(run, step, thing, picked);
+      var type = kind.result || 'revealed';
+      if (type === 'entered') emit('entered', { key: thing.key, look: run.vehicleLook });
+      if (picked !== undefined) emit('picked', { kind: step.do, id: picked, inventory: run.inventory.slice() });
+      run.stepIndex += 1;
+      emit('stepDone', { index: run.stepIndex - 1, total: steps.length });
+      if (run.stepIndex >= steps.length) {
+        run.state = 'complete';
+        endedAt = now();
+        emit('complete', run.result());
+      } else {
+        openAtOnce();
+      }
+      return type;
+    }
     return run;
   }
 

@@ -34,6 +34,8 @@ Per-sheet options (Mission Trail; every one falls back to "cards"):
   textures       [{ from, to, size, max_kb }] seamless ground textures (cross-faded edges),
                  shown repeated 3 x 3 in textures-sheet.jpg
   singles        [{ from, to, size, max_kb }] one picture on a plain background, cut out
+  backdrops      [{ from, to, size: [w, h], max_kb }] a full-bleed picture (a room behind a
+                 Mission Trail pick scene): centre-cropped to w:h and resized, background kept
 Self-test: python tools/test/cut-sheets-selftest.py
 """
 import json
@@ -304,6 +306,20 @@ def card_from(rgba, box, size):
     return card
 
 
+def backdrop(img, size):
+    """Centre-crop a full-bleed picture to size's shape, then resize it to size (w, h)."""
+    img = img.convert('RGB')
+    w, h = size
+    sw, sh = img.size
+    if sw * h > sh * w:
+        cw = int(round(sh * w / h))
+        img = img.crop(((sw - cw) // 2, 0, (sw - cw) // 2 + cw, sh))
+    else:
+        ch = int(round(sw * h / w))
+        img = img.crop((0, (sh - ch) // 2, sw, (sh - ch) // 2 + ch))
+    return img.resize((w, h), Image.LANCZOS)
+
+
 def save_webp(img, dest, max_kb):
     os.makedirs(os.path.dirname(dest), exist_ok=True)
     for q in QUALITIES:
@@ -488,6 +504,17 @@ def main(argv):
         total_kb += kb
         count += 1
         print('  %-20s %5.1f KB  q%d  (single)' % (os.path.basename(sg['to']), kb, q))
+    for bd in spec.get('backdrops', []):
+        src = os.path.join(source, bd['from'])
+        if not os.path.exists(src):
+            missing.append(os.path.relpath(src, ROOT))
+            continue
+        if check_only or (only and os.path.splitext(os.path.basename(bd['from']))[0] not in only):
+            continue
+        kb, q = save_webp(backdrop(Image.open(src), bd['size']), path(bd['to']), bd['max_kb'])
+        total_kb += kb
+        count += 1
+        print('  %-20s %5.1f KB  q%d  (backdrop)' % (os.path.basename(bd['to']), kb, q))
 
     if not check_only and count and spec.get('textures'):
         texture_sheet(spec, os.path.join(source, 'textures-sheet.jpg'))
