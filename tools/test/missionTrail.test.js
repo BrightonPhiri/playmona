@@ -298,12 +298,13 @@ test('mission trail: the validator catches a missing target', function () {
 test('mission trail: the validator catches gaps in stage ids and unknown maps', function () {
   const FF = load(ENGINE);
   const copy = JSON.parse(JSON.stringify(FF.data.missionTrail.stages[0]));
-  copy.id = 3;
+  const n = FF.data.missionTrail.stages.length;
+  copy.id = n + 2;
   copy.map = 'atlantis';
   FF.data.missionTrail.stages.push(copy);
   const problems = checker.check(FF).join(' | ');
-  assert(problems.indexOf('Stage 3:') !== -1 && problems.indexOf('atlantis') !== -1, problems);
-  assert(problems.indexOf('expected stage 2') !== -1, problems);
+  assert(problems.indexOf('Stage ' + (n + 2) + ':') !== -1 && problems.indexOf('atlantis') !== -1, problems);
+  assert(problems.indexOf('expected stage ' + (n + 1)) !== -1, problems);
 });
 
 /* ---------------- Task 5: account sync merge ---------------- */
@@ -411,8 +412,10 @@ test('mission trail: the picker shows only stages that exist', function () {
   const prog = P.clean({ highest: 1 });
   FF.MissionTrail.Screens.picker(root, ctxFor(FF, prog), 0);
   const cards = nodes(root, function (n) { return n.dataset && n.dataset.stage; });
-  assertEqual(cards.map(function (c) { return c.dataset.stage; }), ['1']);
+  const ids = FF.data.missionTrail.stages.map(function (st) { return String(st.id); });
+  assertEqual(cards.map(function (c) { return c.dataset.stage; }), ids);
   assertEqual([cards[0].tagName, cards[0].disabled], ['BUTTON', false]);
+  assert(cards[1].tagName !== 'BUTTON', 'stage 2 stays locked until stage 1 is done');
 });
 
 test('mission trail: the letter is gone after I understand', function () {
@@ -595,6 +598,86 @@ test('mission trail: the low-time warning starts at 30% of a short limit', funct
   assertEqual(clock.classList.contains('is-warn'), false);
   h.setClock(6000);
   assertEqual(clock.classList.contains('is-warn'), true);
+});
+
+/* ---------------- Stages 2-5: landmarks, intersections, streets ---------------- */
+
+const SMALL = {
+  id: 'small', name: 'Test block',
+  rows: ['ggggggg', 'g=====g', 'g=ggg=g', 'g=====g', 'g=ggg=g', 'g=====g', 'ggggggg'],
+  buildings: [],
+  props: [
+    { key: 'f', look: 'fountain', x: 2, y: 2 },
+    { key: 'sign1', look: 'signpost', x: 0, y: 4, sign: 'Dave Street' },
+    { key: 'sign2', look: 'signpost', x: 4, y: 6, sign: 'Low Road' }
+  ],
+  streets: [{ name: 'Dave Street', from: [1, 1], to: [1, 5] }, { name: 'Low Road', from: [2, 5], to: [5, 5] }],
+  start: { x: 5, y: 5, facing: 'up' }
+};
+function small() { const R = load().MissionTrail.Rules; return { R: R, m: R.buildMap(JSON.parse(JSON.stringify(SMALL))) }; }
+
+test('mission trail: go straight until a landmark is in reach', function () {
+  const o = small();
+  const r = o.R.routeCells(o.m, { x: 1, y: 5, facing: 'up' }, [{ go: 'until', at: 'f' }]);
+  assert(r.ok, r.error);
+  assertEqual([r.end.x, r.end.y, r.cells.length], [1, 3, 3]);
+  assertEqual(o.R.routeCells(o.m, { x: 5, y: 5, facing: 'left' }, [{ turn: 'right' }, { turn: 'right' }, { go: 'until', at: 'f' }]).ok, false);
+});
+
+test('mission trail: continue to the nth intersection', function () {
+  const o = small();
+  const r = o.R.routeCells(o.m, { x: 5, y: 5, facing: 'up' }, [{ go: 'junction', n: 1 }]);
+  assertEqual([r.ok, r.end.x, r.end.y], [true, 5, 3]);
+  assertEqual(o.R.routeCells(o.m, { x: 5, y: 5, facing: 'up' }, [{ go: 'junction', n: 2 }]).ok, false);
+});
+
+test('mission trail: take a street turns onto it', function () {
+  const o = small();
+  const r = o.R.routeCells(o.m, { x: 5, y: 5, facing: 'up' }, [{ take: 'Low Road', turn: 'left' }, { go: 1 }]);
+  assertEqual([r.ok, r.end.x, r.end.y, r.end.facing], [true, 4, 5, 'left']);
+  assertEqual(o.R.routeCells(o.m, { x: 5, y: 5, facing: 'up' }, [{ take: 'Dave Street', turn: 'left' }]).ok, false);
+  assertEqual([o.m.streetAt(1, 2), o.m.streetAt(3, 5), o.m.streetAt(3, 3)], ['Dave Street', 'Low Road', null]);
+  assertEqual(o.m.thing('sign1').sign, 'Dave Street');
+});
+
+test('mission trail: the letter words landmarks, intersections and streets', function () {
+  const R = load().MissionTrail.Rules;
+  const lines = R.directions([{ go: 'until', at: 'f' }, { go: 'junction', n: 2 }, { take: 'Dave Street', turn: 'left' }, { go: 'junction', n: 1 }, { go: 'junction', n: 3 }],
+    { name: function (key) { return key === 'f' ? 'fountain' : key; } });
+  assertEqual(lines, ['Go straight until you reach the fountain.', 'Continue until the second intersection.', 'Take Dave Street.',
+    'Continue to the next intersection.', 'Continue until the third intersection.']);
+});
+
+function withSmall(stage) {
+  const FF = load(MORE);
+  FF.data.missionTrailMaps.push(JSON.parse(JSON.stringify(SMALL)));
+  FF.data.missionTrail.stages = [stage];
+  return checker.check(FF);
+}
+
+test('mission trail: the validator wants a signpost for every street the letter names', function () {
+  const base = { id: 1, title: 't', map: 'small', time: 30, route: [{ take: 'Low Road', turn: 'left' }, { go: 2 }], steps: [{ do: 'reach', target: 'f' }], identities: {} };
+  assertEqual(withSmall(JSON.parse(JSON.stringify(base))).filter(function (p) { return /signpost/.test(p); }), []);
+  const FF = load(MORE);
+  const m = JSON.parse(JSON.stringify(SMALL));
+  m.props = m.props.filter(function (p) { return p.key !== 'sign2'; });
+  FF.data.missionTrailMaps.push(m);
+  FF.data.missionTrail.stages = [base];
+  assert(checker.check(FF).some(function (p) { return /Low Road/.test(p) && /signpost/.test(p); }), 'missing signpost reported');
+});
+
+test('mission trail: the validator catches a landmark that is not on the map', function () {
+  const probs = withSmall({ id: 1, title: 't', map: 'small', time: 30, route: [{ go: 'until', at: 'nope' }], steps: [{ do: 'reach', target: 'f' }], identities: {} });
+  assert(probs.some(function (p) { return /nope/.test(p); }), probs.join('; '));
+});
+
+test('mission trail: stages 2 to 5 exist and play on the town map', function () {
+  const d = load().data.missionTrail;
+  assertEqual(d.stages.slice(0, 5).map(function (s) { return s.id; }), [1, 2, 3, 4, 5]);
+  assertEqual(d.stages[4].fog, true);
+  const R = load().MissionTrail.Rules;
+  const names = function (k) { return d.identityNames[d.stages[4].identities[k]] || k; };
+  assert(R.directions(d.stages[4].route, { name: names }).indexOf('Take Dave Street.') !== -1, 'stage 5 names Dave Street');
 });
 
 module.exports = { load, map };

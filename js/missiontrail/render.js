@@ -40,7 +40,10 @@ window.FF = window.FF || {};
     glow: 'rgba(255, 210, 80, 0.55)',
     label: 'rgba(255, 255, 255, 0.96)',
     labelText: '#1f2433',
-    labelEdge: 'rgba(31, 36, 51, 0.25)'
+    labelEdge: 'rgba(31, 36, 51, 0.25)',
+    sign: '#276b33',
+    signText: '#ffffff',
+    signEdge: 'rgba(255, 255, 255, 0.85)'
   };
   var GROUND = { g: 'grass', '=': 'asphalt', p: 'pavement', '-': 'park-path', '~': 'water', f: 'garden' };
 
@@ -217,9 +220,10 @@ window.FF = window.FF || {};
       ctx.fill();
     }
 
-    function drawLabel(text, cx, top) {
+    /* A revealed place gets a white pill; a street sign gets a green plate. */
+    function drawLabel(text, cx, top, sign) {
       var c = st.cell;
-      var size = Math.round(clamp(c * 0.3, 12, 18));
+      var size = Math.round(clamp(c * (sign ? 0.24 : 0.3), 11, sign ? 15 : 18));
       ctx.font = '700 ' + size + 'px system-ui, -apple-system, "Segoe UI", sans-serif';
       var tw = ctx.measureText(text).width;
       var padX = size * 0.6;
@@ -227,14 +231,15 @@ window.FF = window.FF || {};
       var w = tw + padX * 2;
       var x = clamp(cx - w / 2, st.cam.x - st.offX + 4, st.cam.x - st.offX + st.viewW - w - 4);
       var y = Math.max(top - h - 4, st.cam.y - st.offY + 4);
-      ctx.fillStyle = INK.label;
-      ctx.strokeStyle = INK.labelEdge;
-      ctx.lineWidth = 1;
+      ctx.fillStyle = sign ? INK.sign : INK.label;
+      ctx.strokeStyle = sign ? INK.signEdge : INK.labelEdge;
+      ctx.lineWidth = sign ? 1.5 : 1;
       ctx.beginPath();
-      if (ctx.roundRect) ctx.roundRect(x, y, w, h, h / 2); else ctx.rect(x, y, w, h);
+      var rad = sign ? h * 0.22 : h / 2;
+      if (ctx.roundRect) ctx.roundRect(x, y, w, h, rad); else ctx.rect(x, y, w, h);
       ctx.fill();
       ctx.stroke();
-      ctx.fillStyle = INK.labelText;
+      ctx.fillStyle = sign ? INK.signText : INK.labelText;
       ctx.textBaseline = 'middle';
       ctx.fillText(text, x + padX, y + h / 2 + 1);
     }
@@ -287,6 +292,7 @@ window.FF = window.FF || {};
           return;
         }
         var r = spriteRect(it.th);
+        if (it.th.sign) labels.push([it.th.sign, r.cx, r.y + c * 0.15, true]);
         if (st.revealed[it.th.key]) {
           ctx.fillStyle = INK.glow;
           ctx.beginPath();
@@ -301,7 +307,7 @@ window.FF = window.FF || {};
         ctx.imageSmoothingEnabled = true;
         ctx.drawImage(st.fogCanvas, 0, 0, map.w * c, map.h * c);
       }
-      labels.forEach(function (l) { drawLabel(l[0], l[1], l[2]); });
+      labels.forEach(function (l) { drawLabel(l[0], l[1], l[2], l[3]); });
 
       var moving = !!st.anim || !!st.shake || st.cam.x !== target.x || st.cam.y !== target.y;
       return moving;

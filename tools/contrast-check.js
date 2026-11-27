@@ -129,6 +129,10 @@ if (base['mt-meadow']) {
   check('mt warn on hud', base['mt-warn'], base['mt-hud'], 4.5);
   check('mt gold on hud', base['mt-gold'], base['mt-hud'], 3);
   check('mt gold-deep on paper', base['mt-gold-deep'], base['mt-paper'], 3);
+  ['mt-sky-1', 'mt-sky-2', 'mt-key-2'].forEach(function (bg) {
+    check('mt sky ink on ' + bg, base['mt-sky-ink'], base[bg], 4.5);
+  });
+  check('mt text on check-hi', base['mt-on-accent'], base['mt-check-hi'], 3);
 }
 if (base['cw-night']) {
   ['cw-night', 'cw-night-2', 'cw-walnut'].forEach(function (bg) {

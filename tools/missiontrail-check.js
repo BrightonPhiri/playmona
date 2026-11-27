@@ -56,6 +56,13 @@ function check(FF) {
       if (ways < 3) say('route item ' + (idx + 1) + ' turns at (' + at.x + ',' + at.y + '), which is not a junction');
     });
 
+    route.forEach(function (item) {
+      if (!item.take) return;
+      if (!map.things.some(function (th) { return th.sign === item.take; })) {
+        say('the letter names ' + item.take + ', but no signpost on map ' + map.id + ' shows it');
+      }
+    });
+
     const steps = stage.steps || [];
     if (!steps.length) say('has no steps');
     const reachable = reachableCells(map, start);
