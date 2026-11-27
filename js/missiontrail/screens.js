@@ -462,7 +462,9 @@ window.FF = window.FF || {};
         sceneEl = null;
         padEl.classList.remove('is-off');
       },
-      sceneOpen: function () { return !!sceneEl; }
+      sceneOpen: function () { return !!sceneEl; },
+      /* True while PlayMona's pause card, exit card or a dialog covers the game. */
+      covered: function () { return overlayOpen(); }
     };
   }
 

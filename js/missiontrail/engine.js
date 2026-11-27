@@ -85,6 +85,7 @@ window.FF = window.FF || {};
     var startedAt = null;
     var endedAt = null;
     var deadline = null;
+    var pausedAt = null;
     var stepsTaken = 0;
     var onRoute = true;
     var mistakes = { wrongTurns: 0, bumps: 0, wrongChecks: 0, wrongPicks: 0 };
@@ -129,8 +130,25 @@ window.FF = window.FF || {};
         openAtOnce();
       },
 
+      /* PlayMona's pause button: the clock stops and every input is ignored until resume.
+         The paused time moves the deadline and the start, so it never counts. */
+      pause: function () {
+        if (run.state !== 'playing' || run.tick() !== 'playing') return;
+        pausedAt = now();
+        run.state = 'paused';
+      },
+      resume: function () {
+        if (run.state !== 'paused') return;
+        var away = Math.max(0, now() - pausedAt);
+        deadline += away;
+        startedAt += away;
+        pausedAt = null;
+        run.state = 'playing';
+      },
+
       remaining: function () {
         if (run.state === 'ready') return limitMs;
+        if (run.state === 'paused') return Math.max(0, deadline - pausedAt);
         var at = run.state === 'playing' ? now() : endedAt;
         return Math.max(0, deadline - at);
       },

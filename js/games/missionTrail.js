@@ -305,13 +305,29 @@ window.FF = window.FF || {};
       a.off.push(run.on('complete', function (res) { finish(stage, res, false); }));
       a.off.push(run.on('failed', function (res) { finish(stage, res, true); }));
 
+      // PlayMona's pause button (and its exit card) stop this game's own clock: at once when
+      // the card is added to or taken off the game screen, and on every frame as a backstop.
+      function holdClock() {
+        if (attempt !== a) return;
+        var covered = handle.covered();
+        if (covered && run.state === 'playing') run.pause();
+        else if (!covered && run.state === 'paused') run.resume();
+      }
+      var gameScreen = document.getElementById && document.getElementById('game-screen');
+      if (gameScreen && window.MutationObserver) {
+        var watcher = new MutationObserver(holdClock);
+        watcher.observe(gameScreen, { childList: true });
+        a.off.push(function () { watcher.disconnect(); });
+      }
+
       function frame() {
         a.raf = null;
         if (attempt !== a) return;
         if (!handle.canvas.isConnected) { stop(); return; }
+        holdClock();
         run.tick();
         handle.setClock(run.remaining());
-        if (run.state === 'playing') a.raf = window.requestAnimationFrame(frame);
+        if (run.state === 'playing' || run.state === 'paused') a.raf = window.requestAnimationFrame(frame);
       }
       function onVisible() { if (attempt === a) { run.tick(); handle.setClock(run.remaining()); } }
       document.addEventListener('visibilitychange', onVisible);

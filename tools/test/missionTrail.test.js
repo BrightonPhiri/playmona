@@ -872,3 +872,24 @@ test('mission trail: Check looks only at cars while the next job is getting into
   assert(G.checkTarget(m, at, giveSkip) !== 'carBlue' && G.checkTarget(m, at, giveSkip) !== 'carRed', 'cars are not places');
   assertEqual(G.checkTarget(m, { x: 7, y: 5, facing: 'up' }, giveSkip), 'b1');
 });
+
+test('mission trail: pausing stops the clock and the walker', function () {
+  const o = newRun(), r = o.run;
+  r.start();
+  o.clock.t += 5000;
+  r.pause();
+  assertEqual(r.state, 'paused');
+  o.clock.t += 60000;                       // a long pause, past the deadline
+  assertEqual(r.remaining(), 15000);
+  assertEqual(r.tick(), 'paused');          // never fails while paused
+  assertEqual(r.move('up').type, 'ignored');
+  assertEqual(r.check('stopB').type, 'ignored');
+  r.resume();
+  assertEqual([r.state, r.remaining()], ['playing', 15000]);
+  r.pause(); r.pause(); r.resume(); r.resume();   // repeats are harmless
+  assertEqual(r.remaining(), 15000);
+  walk(r, 'UUUUURRR');
+  o.clock.t += 1000;
+  r.check('stopB');
+  assertEqual([r.state, r.result().ms], ['complete', 6000]);   // time taken leaves the pause out
+});
