@@ -270,4 +270,38 @@ test('mission trail: a slow perfect run loses only time points', function () {
   assertEqual([res.ms, res.parts.time, res.score], [39000, 0.5, 94]);
 });
 
+/* ---------------- Task 4: the stage validator ---------------- */
+
+const checker = require('../missiontrail-check');
+
+test('mission trail: every stage passes the validator', function () {
+  assertEqual(checker.check(load(ENGINE)), []);
+});
+
+test('mission trail: the validator catches a turn off a junction', function () {
+  const FF = load(ENGINE);
+  FF.data.missionTrail.stages[0].route = [{ go: 4 }, { turn: 'right' }, { go: 3 }];
+  const problems = checker.check(FF);
+  assert(problems.length > 0, 'expected problems');
+  assert(problems.every(function (p) { return p.indexOf('Stage 1:') === 0; }), problems.join(' | '));
+  assert(problems.some(function (p) { return p.indexOf('junction') !== -1; }), problems.join(' | '));
+});
+
+test('mission trail: the validator catches a missing target', function () {
+  const FF = load(ENGINE);
+  FF.data.missionTrail.stages[0].steps = [{ do: 'reach', target: 'nope' }];
+  assert(checker.check(FF).some(function (p) { return p.indexOf('nope') !== -1; }));
+});
+
+test('mission trail: the validator catches gaps in stage ids and unknown maps', function () {
+  const FF = load(ENGINE);
+  const copy = JSON.parse(JSON.stringify(FF.data.missionTrail.stages[0]));
+  copy.id = 3;
+  copy.map = 'atlantis';
+  FF.data.missionTrail.stages.push(copy);
+  const problems = checker.check(FF).join(' | ');
+  assert(problems.indexOf('Stage 3:') !== -1 && problems.indexOf('atlantis') !== -1, problems);
+  assert(problems.indexOf('expected stage 2') !== -1, problems);
+});
+
 module.exports = { load, map };
