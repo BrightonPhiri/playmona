@@ -789,15 +789,17 @@ test('mission trail: a stage asks for its cars, scenes, things and people', func
   assert(keys.indexOf('props/car-green-down') === -1, 'cars are not props');
 });
 
-function withErrand(stage) {
+function withErrand(stage, hide) {
   const FF = load(MORE.concat(['js/missiontrail/engine.js', 'js/data/assetManifest.js', 'js/assets.js', 'js/missiontrail/assets.js']));
+  (hide || []).forEach(function (h) { delete FF.AssetManifest[h[0]][h[1]]; });
   FF.data.missionTrailMaps.push(JSON.parse(JSON.stringify(ERRAND_MAP)));
   FF.data.missionTrail.stages = [Object.assign(JSON.parse(JSON.stringify(ERRAND)), { route: [{ go: 2 }] }, stage || {})];
   return { FF: FF, report: checker.report(FF) };
 }
 
 test('mission trail: pictures still to come wait, unknown pictures are problems', function () {
-  const o = withErrand();
+  // Pretend the red cap has not been cut yet: it is planned, so it waits.
+  const o = withErrand(null, [['games/missionTrail/objects', 'red-cap']]);
   assertEqual(o.report.problems, []);
   assert(o.report.waiting.some(function (w) { return /objects\/red-cap/.test(w); }), o.report.waiting.join('; '));
   const bad = withErrand({ vehicles: [{ key: 'carG', look: 'car-pink', x: 6, y: 3, facing: 'down' }] });
@@ -821,6 +823,7 @@ test('mission trail: stages wait until their pictures exist', function () {
   const G = FF.MissionTrail.Game;
   const ready = G.availableStages(d.stages, maps).map(function (s) { return s.id; });
   assertEqual(ready.slice(0, 5), [1, 2, 3, 4, 5]);
+  assertEqual(ready.length, d.stages.length, 'every shipped stage has its pictures');
   const extra = d.stages.concat([
     { id: 99, map: 'town-1', steps: [{ do: 'collect', item: 'no-such-thing', scene: { backdrop: 'bedroom', options: ['no-such-thing'] } }] },
     { id: 100, map: 'town-1', steps: [{ do: 'reach', target: 'a1' }] }
@@ -852,3 +855,20 @@ test('mission trail: results count wrong picks as mistakes', function () {
 });
 
 module.exports = { load, map };
+
+test('mission trail: Check looks only at cars while the next job is getting into one', function () {
+  const FF = load(GAME), G = FF.MissionTrail.Game;
+  const stage = FF.data.missionTrail.stages.filter(function (s) { return s.id === 10; })[0];
+  const m = FF.MissionTrail.Rules.mapFor(map('town-1'), stage);
+  const at = { x: 9, y: 13, facing: 'up' };
+  // Step 2 is "get into the red car": the school beside the start is not a choice,
+  // and the red and blue cars are equally near, so the player taps the one they mean.
+  const enterSkip = G.skipFor(m, stage.steps[1], {}, null);
+  assertEqual(G.checkTarget(m, at, enterSkip), null);
+  assertEqual(G.checkChoices(m, at, enterSkip), 2);
+  assertEqual(G.checkTarget(m, { x: 8, y: 13, facing: 'up' }, enterSkip), 'carRed');
+  // Any other step leaves the cars out.
+  const giveSkip = G.skipFor(m, stage.steps[2], {}, 'carRed');
+  assert(G.checkTarget(m, at, giveSkip) !== 'carBlue' && G.checkTarget(m, at, giveSkip) !== 'carRed', 'cars are not places');
+  assertEqual(G.checkTarget(m, { x: 7, y: 5, facing: 'up' }, giveSkip), 'b1');
+});

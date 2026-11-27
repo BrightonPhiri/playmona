@@ -6169,7 +6169,7 @@ button.imp-card:focus-visible { outline: 3px solid var(--focus-ring); outline-of
 .mt-dot.is-done { background: var(--mt-gold); border-color: var(--mt-gold); }
 .mt-view { position: relative; flex: 1; min-height: 260px; }
 .mt-map { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; background: var(--mt-grass-bg); cursor: pointer; }
-.mt-msg { min-height: 1.9em; margin: 6px auto 0; padding: 0 14px; text-align: center; font-weight: 800; color: var(--mt-ink); line-height: 1.9em; border-radius: 999px; }
+.mt-msg { position: relative; z-index: 2; min-height: 1.9em; max-width: calc(100% - 20px); margin: 6px auto 0; padding: 0.3em 14px; text-align: center; text-wrap: balance; font-weight: 800; color: var(--mt-ink); line-height: 1.3; border-radius: 18px; }
 .mt-msg:not(:empty) { background: var(--mt-paper); box-shadow: 0 2px 8px color-mix(in srgb, var(--mt-sky-ink) 18%, transparent); }
 .mt-msg.is-good { color: var(--mt-good); }
 .mt-msg.is-bad { color: var(--mt-bad); }
@@ -6267,8 +6267,8 @@ button.imp-card:focus-visible { outline: 3px solid var(--focus-ring); outline-of
   -webkit-tap-highlight-color: transparent; border-radius: 14px; transition: transform 0.12s var(--ease);
 }
 .mt-thing img { display: block; width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 4px 4px color-mix(in srgb, var(--mt-ink) 35%, transparent)); }
-.mt-thing--objects { width: 19%; height: 22%; }
-.mt-thing--characters { width: 21%; height: 46%; }
+.mt-thing--objects { width: 22%; height: 32%; }
+.mt-thing--characters { width: 16%; height: 82%; }
 .mt-thing:hover, .mt-thing:focus-visible { transform: translate(-50%, -100%) scale(1.08); }
 .mt-thing:focus-visible { outline: 3px solid var(--mt-gold); outline-offset: 2px; }
 .mt-thing.is-wrong { animation: mt-wrong 0.45s var(--ease); }

@@ -22,6 +22,20 @@ window.FF = window.FF || {};
     return map.things.filter(function (th) { return th.check && !skip[th.key] && R.inReach(pos, th); });
   }
 
+  /* What Check leaves out for the current step: places already found (except the one this
+     step still needs, since a give or meet place reopens its scene) and the car being driven.
+     While the step is getting into a car only cars count; otherwise cars never do, so Check
+     never spends the player's time on a kind of thing the step cannot want. */
+  function skipFor(map, step, revealed, vehicle) {
+    var skip = {};
+    Object.keys(revealed || {}).forEach(function (k) { skip[k] = true; });
+    var wantCar = !!(step && step.do === 'enter');
+    map.things.forEach(function (th) { if ((th.kind === 'vehicle') !== wantCar) skip[th.key] = true; });
+    if (step) { delete skip[step.target]; delete skip[step.at]; }
+    if (vehicle) skip[vehicle] = true;
+    return skip;
+  }
+
   /* How many places Check could mean from here. */
   function checkChoices(map, pos, skip) { return nearThings(map, pos, skip || {}).length; }
 
@@ -194,7 +208,10 @@ window.FF = window.FF || {};
         onCheck: function () {
           var key = checkTarget(map, run.pos, skipped());
           if (key) doCheck(key);
-          else if (checkChoices(map, run.pos, skipped()) > 1) handle.say(t('mtTapWhich', 'Tap the place you mean.'), 'info');
+          else if (checkChoices(map, run.pos, skipped()) > 1) {
+            var forCar = ((stage.steps || [])[run.stepIndex] || {}).do === 'enter';
+            handle.say(forCar ? t('mtTapWhichCar', 'Tap the car you mean.') : t('mtTapWhich', 'Tap the place you mean.'), 'info');
+          }
           else handle.say(t('mtWalkCloser', 'Walk closer to check it.'), 'info');
         },
         onTap: function (e) {
@@ -215,16 +232,7 @@ window.FF = window.FF || {};
         vis.forEach(function (i) { explored.add(i); });
         view.fog(vis, explored);
       }
-      // Places already found are not offered again, except the one the current step still needs
-      // (a give or meet place reopens its scene); the car being driven is never offered.
-      function skipped() {
-        var skip = {};
-        Object.keys(run.revealed).forEach(function (k) { skip[k] = true; });
-        var step = (stage.steps || [])[run.stepIndex];
-        if (step) { delete skip[step.target]; delete skip[step.at]; }
-        if (run.vehicle) skip[run.vehicle] = true;
-        return skip;
-      }
+      function skipped() { return skipFor(map, (stage.steps || [])[run.stepIndex], run.revealed, run.vehicle); }
       function sync() { handle.showCheck(run.state === 'playing' && !run.scene && checkChoices(map, run.pos, skipped()) > 0); }
       fog();
       sync();
@@ -362,7 +370,7 @@ window.FF = window.FF || {};
   }
 
   FF.MissionTrail = FF.MissionTrail || {};
-  FF.MissionTrail.Game = { checkTarget: checkTarget, checkChoices: checkChoices, visitSummary: visitSummary, createMover: createMover, availableStages: availableStages };
+  FF.MissionTrail.Game = { checkTarget: checkTarget, checkChoices: checkChoices, visitSummary: visitSummary, createMover: createMover, availableStages: availableStages, skipFor: skipFor };
 
   FF.registerGame({
     id: 'missionTrail',
