@@ -1,0 +1,101 @@
+{
+  "game": "missionTrail",
+  "prompts": "docs/art/missionTrail-prompts.md",
+  "source": "assets/playmona_assets/mission-trail",
+  "ids": [],
+  "sets": [],
+  "cover": {
+    "from": "cover.png",
+    "to": "assets/images/covers/missionTrail.webp",
+    "size": [1086, 1448],
+    "max_kb": 240,
+    "focus": [0.5, 0.5]
+  },
+  "cards": {
+    "to": "assets/images/games/missionTrail/props/{id}.webp",
+    "size": 256,
+    "max_kb": 24,
+    "cols": 4,
+    "rows": 3
+  },
+  "sheets": [
+    {
+      "file": "sheets/buildings-1.png",
+      "title": "Homes",
+      "cols": 3, "rows": 2, "fit": "trim", "size": 384, "max_kb": 40,
+      "to": "assets/images/games/missionTrail/buildings/{id}.webp",
+      "items": [
+        ["house-red", "small cottage, red tiled roof, cream walls"],
+        ["house-blue", "small house, blue slate roof, grey-blue walls"],
+        ["house-green", "two-storey house, green roof, yellow walls, porch"],
+        ["house-brown", "wooden cabin, brown shingle roof"],
+        ["house-purple", "narrow tall town house, purple roof"],
+        ["house-orange", "wide bungalow, orange roof, porch"]
+      ]
+    },
+    {
+      "file": "sheets/buildings-2.png",
+      "title": "Shops and town buildings",
+      "cols": 3, "rows": 2, "fit": "trim", "size": 384, "max_kb": 40,
+      "to": "assets/images/games/missionTrail/buildings/{id}.webp",
+      "items": [
+        ["shop-red", "corner shop, red striped awning"],
+        ["shop-green", "brick shop, green striped awning"],
+        ["shop-blue", "stone shop, blue awning, blinds"],
+        ["hall-stone", "wide stone building with columns"],
+        ["hall-brick", "wide red-brick building with a small tower"],
+        ["block-glass", "modern two-storey glass building"]
+      ]
+    },
+    {
+      "file": "sheets/props-1.png",
+      "title": "Street things",
+      "fit": "trim",
+      "items": [
+        ["bus-stop", "bus shelter with a bench and a plain round sign"],
+        ["fountain", "round stone fountain"],
+        ["tree-round", "leafy round tree"],
+        ["tree-pine", "tall pine tree"],
+        ["bench", "wooden park bench"],
+        ["street-lamp", "iron street lamp"],
+        ["traffic-light", "traffic light on a pole"],
+        ["signpost", "plain green street sign on a pole"],
+        ["bin", "green litter bin"],
+        ["flower-bed", "round raised flower bed"],
+        ["bush", "round flowering bush"],
+        ["postbox", "red pillar postbox"]
+      ]
+    },
+    {
+      "file": "sheets/walker.png",
+      "title": "The explorer (columns: down, left, right, up; rows: stand, step, step)",
+      "fit": "frames", "size": 192, "max_kb": 16,
+      "to": "assets/images/games/missionTrail/walker/{id}.webp",
+      "items": [
+        ["walker-down-0", "facing down, standing"],
+        ["walker-left-0", "facing left, standing"],
+        ["walker-right-0", "facing right, standing"],
+        ["walker-up-0", "facing up, standing"],
+        ["walker-down-1", "facing down, left foot forward"],
+        ["walker-left-1", "facing left, left foot forward"],
+        ["walker-right-1", "facing right, left foot forward"],
+        ["walker-up-1", "facing up, left foot forward"],
+        ["walker-down-2", "facing down, right foot forward"],
+        ["walker-left-2", "facing left, right foot forward"],
+        ["walker-right-2", "facing right, right foot forward"],
+        ["walker-up-2", "facing up, right foot forward"]
+      ]
+    }
+  ],
+  "textures": [
+    { "from": "textures/grass.png", "to": "assets/images/games/missionTrail/ground/grass.webp", "size": 256, "max_kb": 30 },
+    { "from": "textures/pavement.png", "to": "assets/images/games/missionTrail/ground/pavement.webp", "size": 256, "max_kb": 30 },
+    { "from": "textures/asphalt.png", "to": "assets/images/games/missionTrail/ground/asphalt.webp", "size": 256, "max_kb": 30 },
+    { "from": "textures/park-path.png", "to": "assets/images/games/missionTrail/ground/park-path.webp", "size": 256, "max_kb": 30 },
+    { "from": "textures/water.png", "to": "assets/images/games/missionTrail/ground/water.webp", "size": 256, "max_kb": 30 },
+    { "from": "textures/garden.png", "to": "assets/images/games/missionTrail/ground/garden.webp", "size": 256, "max_kb": 30 }
+  ],
+  "singles": [
+    { "from": "ui/envelope.png", "to": "assets/images/games/missionTrail/ui/envelope.webp", "size": 512, "max_kb": 40 }
+  ]
+}
