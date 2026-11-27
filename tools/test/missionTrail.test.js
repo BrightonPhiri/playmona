@@ -413,7 +413,8 @@ test('mission trail: the picker shows only stages that exist', function () {
   const prog = P.clean({ highest: 1 });
   FF.MissionTrail.Screens.picker(root, ctxFor(FF, prog), 0);
   const cards = nodes(root, function (n) { return n.dataset && n.dataset.stage; });
-  const ids = FF.data.missionTrail.stages.map(function (st) { return String(st.id); });
+  // The first page is the first group of ten (Beginner missions).
+  const ids = FF.data.missionTrail.stages.filter(function (st) { return st.id <= 10; }).map(function (st) { return String(st.id); });
   assertEqual(cards.map(function (c) { return c.dataset.stage; }), ids);
   assertEqual([cards[0].tagName, cards[0].disabled], ['BUTTON', false]);
   assert(cards[1].tagName !== 'BUTTON', 'stage 2 stays locked until stage 1 is done');
@@ -874,7 +875,10 @@ test('mission trail: stages wait until their pictures exist', function () {
   const G = FF.MissionTrail.Game;
   const ready = G.availableStages(d.stages, maps).map(function (s) { return s.id; });
   assertEqual(ready.slice(0, 5), [1, 2, 3, 4, 5]);
-  assertEqual(ready.length, d.stages.length, 'every shipped stage has its pictures');
+  // Every stage shows up to the first one still waiting for art the pack promises.
+  const waits = checker.report(FF).waiting.map(function (w) { return +w.match(/^Stage (\d+)/)[1]; });
+  const firstWaiting = waits.length ? Math.min.apply(null, waits) : d.stages.length + 1;
+  assertEqual(ready.length, firstWaiting - 1, 'every stage before the first waiting one has its pictures');
   const extra = d.stages.concat([
     { id: 99, map: 'town-1', steps: [{ do: 'collect', item: 'no-such-thing', scene: { backdrop: 'bedroom', options: ['no-such-thing'] } }] },
     { id: 100, map: 'town-1', steps: [{ do: 'reach', target: 'a1' }] }

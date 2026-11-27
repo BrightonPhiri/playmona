@@ -127,6 +127,26 @@
       ]
     },
     {
+      "file": "sheets/objects-2.png",
+      "title": "Batch 3: more things to carry",
+      "cols": 4, "rows": 3, "fit": "trim", "size": 256, "max_kb": 20,
+      "to": "assets/images/games/missionTrail/objects/{id}.webp",
+      "items": [
+        ["reading-glasses", "round reading glasses"],
+        ["red-scarf", "folded red scarf"],
+        ["yellow-mug", "yellow mug"],
+        ["toy-car", "small orange toy car"],
+        ["football", "black and white football"],
+        ["pink-slippers", "pair of pink slippers"],
+        ["phone", "phone, blank screen"],
+        ["wallet", "brown wallet"],
+        ["torch", "blue torch"],
+        ["sunglasses", "dark sunglasses"],
+        ["green-apple", "green apple"],
+        ["lunchbox", "purple lunchbox"]
+      ]
+    },
+    {
       "file": "sheets/cars-1.png",
       "title": "Batch 2: cars (rows: red, blue, green; columns: down, left, right, up)",
       "cols": 4, "rows": 3, "fit": "trim", "size": 320, "max_kb": 24,
@@ -166,6 +186,11 @@
     { "from": "rooms/classroom.png", "to": "assets/images/games/missionTrail/scenes/classroom.webp", "size": [960, 600], "max_kb": 90 },
     { "from": "rooms/hospital.png", "to": "assets/images/games/missionTrail/scenes/hospital.webp", "size": [960, 600], "max_kb": 90 },
     { "from": "rooms/post-office.png", "to": "assets/images/games/missionTrail/scenes/post-office.webp", "size": [960, 600], "max_kb": 90 },
-    { "from": "rooms/garage.png", "to": "assets/images/games/missionTrail/scenes/garage.webp", "size": [960, 600], "max_kb": 90 }
+    { "from": "rooms/garage.png", "to": "assets/images/games/missionTrail/scenes/garage.webp", "size": [960, 600], "max_kb": 90 },
+    { "from": "busy/bedroom-hidden.png", "to": "assets/images/games/missionTrail/rooms/bedroom.webp", "size": [1500, 1000], "max_kb": 260 },
+    { "from": "busy/hallway-hidden.png", "to": "assets/images/games/missionTrail/rooms/hallway.webp", "size": [1500, 1000], "max_kb": 260 },
+    { "from": "busy/kitchen-hidden.png", "to": "assets/images/games/missionTrail/rooms/kitchen.webp", "size": [1500, 1000], "max_kb": 260 },
+    { "from": "busy/library-hidden.png", "to": "assets/images/games/missionTrail/rooms/library.webp", "size": [1500, 1000], "max_kb": 260 },
+    { "from": "busy/living-room-hidden.png", "to": "assets/images/games/missionTrail/rooms/living-room.webp", "size": [1500, 1000], "max_kb": 260 }
   ]
 }
