@@ -379,4 +379,62 @@ test('mission trail: the validator reports a look with no picture', function () 
   assert(checker.check(FF).some(function (p) { return p.indexOf('rocket') !== -1; }));
 });
 
+/* ---------------- Task 9: screens and the game ---------------- */
+
+const SCREENS = ASSETS.concat(['js/i18n.js', 'js/ui-kit.js', 'js/missiontrail/render.js', 'js/missiontrail/screens.js']);
+
+function texts(node, out) {
+  out = out || [];
+  if (!node) return out;
+  if (node.nodeType === 3 || !node.children || !node.children.length) { if (node.textContent) out.push(String(node.textContent)); }
+  (node.children || []).forEach(function (c) { texts(c, out); });
+  return out;
+}
+function nodes(node, pred, out) {
+  out = out || [];
+  if (!node) return out;
+  if (pred(node)) out.push(node);
+  (node.children || []).forEach(function (c) { nodes(c, pred, out); });
+  return out;
+}
+function document_of(FF) { return FF.__sandbox.document; }
+function ctxFor(FF, progress) {
+  const d = FF.data.missionTrail;
+  return { api: null, progress: progress, stages: d.stages, groups: d.groups, open: function () {}, home: function () {}, done: function () {} };
+}
+
+test('mission trail: the picker shows only stages that exist', function () {
+  const FF = load(SCREENS), P = FF.MissionTrail.Progress;
+  const root = document_of(FF).createElement('div');
+  const prog = P.clean({ highest: 1 });
+  FF.MissionTrail.Screens.picker(root, ctxFor(FF, prog), 0);
+  const cards = nodes(root, function (n) { return n.dataset && n.dataset.stage; });
+  assertEqual(cards.map(function (c) { return c.dataset.stage; }), ['1']);
+  assertEqual([cards[0].tagName, cards[0].disabled], ['BUTTON', false]);
+});
+
+test('mission trail: the letter is gone after I understand', function () {
+  const FF = load(SCREENS), doc = document_of(FF);
+  const root = doc.createElement('div');
+  doc.body.appendChild(root);
+  let understood = 0;
+  FF.MissionTrail.Screens.letter(root, FF.data.missionTrail.stages[0], 'Sam', function () { understood++; });
+  assert(texts(root).some(function (s) { return s.indexOf('Go straight for 5 steps.') !== -1; }), 'the letter shows the directions');
+  assert(texts(root).some(function (s) { return s.indexOf('Dear Sam,') !== -1; }), 'the letter greets the player');
+  const ok = nodes(root, function (n) { return n.tagName === 'BUTTON' && /(^|\s)mt-understand(\s|$)/.test(n.className || n.getAttribute('class') || ''); })[0];
+  assert(ok, 'an I understand button');
+  ok.dispatch('click');
+  assertEqual(understood, 1);
+  assert(!texts(root).some(function (s) { return s.indexOf('Go straight for') !== -1; }), 'no directions left on the page');
+});
+
+test('mission trail: the game is registered, solo, no leaderboard', function () {
+  const FF = load(['js/storage.js', 'js/missiontrail/score.js', 'js/missiontrail/progress.js', 'js/missiontrail/engine.js',
+    'js/data/assetManifest.js', 'js/assets.js', 'js/missiontrail/assets.js', 'js/missiontrail/render.js', 'js/missiontrail/screens.js',
+    'js/registry.js', 'js/games/missionTrail.js']);
+  const def = FF.Games.get('missionTrail');
+  assert(def, 'registered');
+  assertEqual([def.id, def.leaderboard, def.modes], ['missionTrail', false, ['solo']]);
+});
+
 module.exports = { load, map };
