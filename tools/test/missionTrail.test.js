@@ -7,6 +7,7 @@ const FILES = [
   'js/core.js',
   'js/data/missionTrailMaps.js',
   'js/data/missionTrailStages.js',
+  'js/data/missionTrailRooms.js',
   'js/missiontrail/rules.js'
 ];
 
@@ -1019,4 +1020,121 @@ test('mission trail: every place a letter sends you to lies on its route', funct
   ];
   const rep = withErrand({ steps: off, route: [{ go: 1 }] }).report.problems.join(' | ');
   assert(/"shop" is not on the route/.test(rep), rep);
+});
+
+/* ---------------- busy rooms: search the picture for the thing ---------------- */
+
+const ROOM = { objects: [
+  { id: 'red-cap', b: [0.10, 0.10, 0.10, 0.10] }, { id: 'blue-cap', b: [0.50, 0.50, 0.10, 0.10] },
+  { id: 'keys', b: [0.80, 0.20, 0.05, 0.05] }, { id: 'watch', b: [0.30, 0.70, 0.05, 0.05] }
+] };
+function withRoom(FF, cut) {
+  FF.data.missionTrailRooms = { bedroom: JSON.parse(JSON.stringify(ROOM)) };
+  if (cut) FF.AssetManifest['games/missionTrail/rooms'] = { bedroom: 'abcd1234' };
+  else delete FF.AssetManifest['games/missionTrail/rooms'];
+  return FF;
+}
+const SEARCH = SCREENS.concat(['js/missiontrail/search.js']);
+
+test('mission trail: a busy room is searched once its picture and spots are in', function () {
+  const FF = load(ASSETS), A = FF.MissionTrail.Assets;
+  delete FF.AssetManifest['games/missionTrail/rooms'];
+  FF.data.missionTrailRooms = {};
+  const both = { room: 'bedroom', backdrop: 'bedroom', options: ['red-cap', 'blue-cap', 'green-cap'] };
+  assertEqual(A.sceneFor(both), { backdrop: 'bedroom', options: ['red-cap', 'blue-cap', 'green-cap'] }, 'no spots yet: the plain scene');
+  withRoom(FF, false);
+  assert(!A.known('rooms', 'bedroom'), 'spots without the picture are not enough');
+  assertEqual(A.sceneFor(both).search, undefined);
+  withRoom(FF, true);
+  assert(A.known('rooms', 'bedroom'), 'picture and spots');
+  const sc = A.sceneFor(both);
+  assertEqual([sc.search, sc.room, sc.options], [true, 'bedroom', ['red-cap', 'blue-cap', 'keys', 'watch']]);
+  assertEqual(sc.spots.keys, [0.80, 0.20, 0.05, 0.05]);
+  FF.data.missionTrailRooms = {};
+  assertEqual(A.sceneFor({ room: 'bedroom' }), { room: 'bedroom', options: [] }, 'a room-only scene waits');
+});
+
+test('mission trail: a room stage waits for its room, then asks for every thing in it', function () {
+  const FF = load(ASSETS), A = FF.MissionTrail.Assets;
+  const stage = JSON.parse(JSON.stringify(ERRAND));
+  stage.steps[0].scene = { room: 'bedroom' };
+  const map = FF.MissionTrail.Rules.mapFor(JSON.parse(JSON.stringify(ERRAND_MAP)), stage);
+  withRoom(FF, false);
+  const keysOf = function (list) { return list.map(function (x) { return x.category + '/' + x.id; }); };
+  assert(keysOf(A.missing(A.forStage(stage, map))).indexOf('rooms/bedroom') !== -1, 'the room is missing');
+  withRoom(FF, true);
+  const all = keysOf(A.forStage(stage, map));
+  ['rooms/bedroom', 'objects/keys', 'objects/watch', 'objects/blue-cap'].forEach(function (k) { assert(all.indexOf(k) !== -1, k); });
+  assertEqual(A.missing(A.forStage(stage, map)), []);
+  const ready = A.resolveStage(stage);
+  assertEqual([ready.steps[0].scene.search, stage.steps[0].scene.search], [true, undefined], 'resolving copies the stage');
+});
+
+test('mission trail: search taps find the nearest thing; the view stays on the picture', function () {
+  const S = load(SEARCH).MissionTrail.Search;
+  const objs = ROOM.objects;
+  assertEqual(S.hit(objs, 0.15, 0.15), 'red-cap');
+  assertEqual(S.hit(objs, 0.82, 0.22), 'keys');
+  assertEqual(S.hit(objs, 0.205, 0.15), 'red-cap', 'a little outside the box still counts');
+  assertEqual(S.hit(objs, 0.6, 0.9), null);
+  assertEqual(S.hit(objs, 0.15, 0.15, ['red-cap']), null, 'a thing already taken is not found again');
+  assertEqual(S.clampView({ z: 9, x: 5, y: -9 }), { z: 3, x: 0, y: -2 });
+  const v = S.zoomAt({ z: 1, x: 0, y: 0 }, 2, 0.5, 0.5);
+  assertEqual(v, { z: 2, x: -0.5, y: -0.5 });
+  assertEqual(S.toPicture(v, 0.5, 0.5), [0.5, 0.5]);
+  assert(S.isTap(3, 4) && !S.isTap(9, 0), 'a short move is still a tap');
+});
+
+test('mission trail: the engine opens a room search and anything found goes in the bag', function () {
+  const FF = withRoom(load(ENGINE.concat(['js/data/assetManifest.js', 'js/assets.js', 'js/missiontrail/assets.js'])), true);
+  const stage = JSON.parse(JSON.stringify(ERRAND));
+  stage.steps[0].scene = { room: 'bedroom' };
+  const ready = FF.MissionTrail.Assets.resolveStage(stage);
+  const m = FF.MissionTrail.Rules.mapFor(JSON.parse(JSON.stringify(ERRAND_MAP)), ready);
+  const r = FF.MissionTrail.Engine.create(ready, m, { now: function () { return 1000; } });
+  r.start();
+  assertEqual([r.scene.search, r.scene.room, r.scene.options.length], [true, 'bedroom', 4]);
+  assertEqual(r.pick('keys').type, 'picked');
+  assertEqual(r.inventory, ['keys']);
+});
+
+test('mission trail: the search view shows the room and taking a thing rings it', function () {
+  const FF = load(SEARCH), doc = document_of(FF);
+  const root = doc.createElement('div');
+  doc.body.appendChild(root);
+  const picks = [];
+  const h = FF.MissionTrail.Screens.play(root, { stage: FF.data.missionTrail.stages[0], total: 1,
+    onMove: function () {}, onCheck: function () {}, onTap: function () {}, onPick: function (id) { picks.push(id); } });
+  h.openScene({ kind: 'collect', category: 'objects', want: 2, closable: false,
+    search: { src: 'rooms/bedroom.webp', objects: ROOM.objects.map(function (o) { return { id: o.id, b: o.b, name: o.id }; }) } });
+  const img = nodes(root, function (n) { return n.tagName === 'IMG' && /mt-search__img/.test(n.className || ''); })[0];
+  assert(img && img.src === 'rooms/bedroom.webp', 'the room picture');
+  const btns = nodes(root, function (n) { return n.dataset && n.dataset.pick; });
+  assertEqual(btns.map(function (b) { return b.dataset.pick; }).sort(), ['blue-cap', 'keys', 'red-cap', 'watch']);
+  assert(texts(root).some(function (s) { return /Find the 2 things your letter asks for/.test(s); }), texts(root).join(' / '));
+  btns.filter(function (b) { return b.dataset.pick === 'keys'; })[0].dispatch('click');
+  assertEqual(picks, ['keys']);
+  h.sceneGathered('keys');
+  assert(nodes(root, function (n) { return /mt-search__ring/.test(n.className || ''); }).length === 1, 'a ring marks the keys');
+  h.closeScene();
+  assert(!nodes(root, function (n) { return /mt-search/.test(n.className || ''); }).length, 'closed');
+});
+
+test('mission trail: the validator checks the things are hidden in the room', function () {
+  const room = function (item, roomId) {
+    const steps = [
+      { do: 'collect', item: item, scene: { room: roomId } },
+      { do: 'give', target: 'lib', item: item, to: 'librarian', scene: { backdrop: 'library', options: ['librarian', 'teacher', 'doctor'] } }
+    ];
+    const FF = load(MORE.concat(['js/missiontrail/engine.js', 'js/data/assetManifest.js', 'js/assets.js', 'js/missiontrail/assets.js']));
+    withRoom(FF, false);
+    FF.data.missionTrailMaps.push(JSON.parse(JSON.stringify(ERRAND_MAP)));
+    FF.data.missionTrail.stages = [Object.assign(JSON.parse(JSON.stringify(ERRAND)), { route: [{ go: 2 }], steps: steps })];
+    return checker.report(FF);
+  };
+  const ok = room('red-cap', 'bedroom');
+  assertEqual(ok.problems, []);
+  assert(ok.waiting.some(function (w) { return /rooms\/bedroom/.test(w); }), 'waits for the room picture: ' + ok.waiting.join('; '));
+  assert(room('umbrella', 'bedroom').problems.some(function (p) { return /umbrella is not hidden in the bedroom/.test(p); }), room('umbrella', 'bedroom').problems.join('; '));
+  assert(room('red-cap', 'attic').problems.some(function (p) { return /rooms\/attic/.test(p); }), room('red-cap', 'attic').problems.join('; '));
 });

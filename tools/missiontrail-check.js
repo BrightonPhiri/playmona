@@ -12,7 +12,8 @@
    art pack promises, Assets.PLANNED, are listed as "waiting for art" and
    the stage stays hidden in the game until they arrive); the time limit
    leaves at least 6 s over par (FF.MissionTrail.Score.parMs); every pick
-   scene holds its answer among at least 3 choices; a give step hands over
+   scene holds its answer among at least 3 choices (a busy room hides it, see
+   FF.data.missionTrailRooms); a give step hands over
    something an earlier step collected; an enter step targets a car. */
 'use strict';
 
@@ -83,7 +84,20 @@ function report(FF) {
       }
       const things = FF.MissionTrail.Engine ? FF.MissionTrail.Engine.thingsOf(step) : [step.item];
       const answers = step.do === 'collect' ? things : ((step.do === 'give' || step.do === 'meet') ? [step.to] : null);
-      if (answers !== null) {
+      // A busy room's choices are everything hidden in it (FF.data.missionTrailRooms).
+      const roomId = step.scene && step.scene.room;
+      const room = roomId && Assets && Assets.roomData ? Assets.roomData(roomId) : null;
+      if (roomId && room && step.do === 'collect') {
+        const hidden = room.objects.map(function (o) { return o.id; });
+        things.forEach(function (a) { if (a && hidden.indexOf(a) === -1) say(n + ': ' + a + ' is not hidden in the ' + roomId); });
+        room.objects.forEach(function (o) {
+          const b = o.b || [];
+          if (b.length !== 4 || b.some(function (v) { return !(v >= 0 && v <= 1); }) || !(b[2] > 0 && b[3] > 0)) say('room ' + roomId + ': ' + o.id + ' has a bad box');
+          if (Assets.known && !Assets.known('objects', o.id) && !Assets.planned('objects', o.id)) say('room ' + roomId + ': ' + o.id + ' has no picture');
+        });
+      }
+      if (roomId && step.do !== 'collect') say(n + ': only a pick-up scene can be a busy room');
+      if (answers !== null && !(roomId && (room || !step.scene.options))) {
         const opts = (step.scene && step.scene.options) || [];
         if (!answers.length || answers.some(function (a) { return !a; })) say(n + ' (' + step.do + ') does not say who or what is right');
         answers.forEach(function (a) { if (a && opts.indexOf(a) === -1) say(n + ': ' + a + ' is not in its scene'); });
@@ -154,7 +168,7 @@ if (require.main === module) {
   const { loadFF } = require(path.join(__dirname, 'test', 'harness'));
   const FF = loadFF([
     'js/core.js', 'js/data/assetManifest.js', 'js/assets.js',
-    'js/data/missionTrailMaps.js', 'js/data/missionTrailStages.js',
+    'js/data/missionTrailMaps.js', 'js/data/missionTrailStages.js', 'js/data/missionTrailRooms.js',
     'js/missiontrail/rules.js', 'js/missiontrail/score.js', 'js/missiontrail/engine.js'
   ].concat(require('fs').existsSync(path.join(__dirname, '..', 'js', 'missiontrail', 'assets.js')) ? ['js/missiontrail/assets.js'] : []));
   const res = report(FF);

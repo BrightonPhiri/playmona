@@ -6262,6 +6262,40 @@ button.imp-card:focus-visible { outline: 3px solid var(--focus-ring); outline-of
 .mt-scene__room { position: relative; flex: 1; min-height: 0; border-radius: 18px; overflow: hidden; background: var(--mt-paper); box-shadow: 0 10px 28px color-mix(in srgb, var(--mt-ink) 35%, transparent); }
 .mt-scene__bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .mt-scene__back { align-self: center; min-height: 44px; }
+/* A busy room to search (missiontrail/search.js): the picture keeps its 3:2 shape inside the room box. */
+.mt-scene__room--search { display: grid; place-items: center; background: var(--mt-sky-ink); container-type: size; }
+.mt-search-wrap { position: relative; width: min(100cqw, 150cqh); height: min(100cqh, 66.667cqw); }
+.mt-search {
+  position: absolute; inset: 0; overflow: hidden; border-radius: 14px;
+  cursor: crosshair; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
+}
+.mt-search.is-zoomed { cursor: grab; }
+.mt-search.is-zoomed.is-dragging { cursor: grabbing; }
+.mt-search__layer { position: absolute; inset: 0; transform-origin: 0 0; will-change: transform; }
+.mt-search__img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; -webkit-user-drag: none; }
+.mt-search__marks { position: absolute; inset: 0; pointer-events: none; }
+/* Invisible, for the keyboard and screen readers; taps go through to the picture. */
+.mt-search__spot { position: absolute; padding: 0; border: 0; border-radius: 50%; background: transparent; pointer-events: none; }
+.mt-search__spot:focus-visible { outline: 3px solid var(--mt-paper); outline-offset: 2px; box-shadow: 0 0 0 6px var(--mt-ink); }
+.mt-search__ring {
+  position: absolute; border-radius: 50%; transform: scale(1.3);
+  border: 3px solid #22c55e; box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9), 0 0 14px rgba(34, 197, 94, 0.75);
+  animation: mt-ring-pop 320ms var(--ease);
+}
+@keyframes mt-ring-pop { from { transform: scale(2); opacity: 0; } to { transform: scale(1.3); opacity: 1; } }
+.mt-search__miss {
+  position: absolute; width: 26px; height: 26px; margin: -13px 0 0 -13px; border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.95); box-shadow: 0 0 0 2px color-mix(in srgb, var(--mt-ink) 50%, transparent);
+  animation: mt-miss 650ms ease-out forwards;
+}
+@keyframes mt-miss { from { opacity: 1; } to { opacity: 0; width: 44px; height: 44px; margin: -22px 0 0 -22px; } }
+.mt-search__zoom { position: absolute; right: 8px; bottom: 8px; display: flex; gap: 6px; }
+.mt-search__zbtn {
+  width: 44px; height: 44px; display: grid; place-items: center; padding: 0; cursor: pointer;
+  border: 2px solid var(--mt-ink); border-radius: 50%; background: var(--mt-paper); color: var(--mt-ink);
+}
+.mt-search__zbtn svg { width: 20px; height: 20px; }
+.mt-search__zbtn:disabled { opacity: 0.45; cursor: default; }
 .mt-thing {
   position: absolute; transform: translate(-50%, -100%); padding: 0; border: 0; background: none; cursor: pointer;
   -webkit-tap-highlight-color: transparent; border-radius: 14px; transition: transform 0.12s var(--ease);
@@ -6278,6 +6312,6 @@ button.imp-card:focus-visible { outline: 3px solid var(--focus-ring); outline-of
 .mt-pad.is-off { opacity: 0.35; pointer-events: none; }
 
 @media (prefers-reduced-motion: reduce) {
-  .mt-scene, .mt-thing.is-wrong, .mt-bag__item { animation: none; }
+  .mt-scene, .mt-thing.is-wrong, .mt-bag__item, .mt-search__ring, .mt-search__miss { animation: none; }
 }
 :root[data-reduce="1"] .mt-scene, :root[data-reduce="1"] .mt-thing.is-wrong, :root[data-reduce="1"] .mt-bag__item { animation: none; }

@@ -323,6 +323,7 @@ window.FF = window.FF || {};
     var view = div('mt-view', [canvas]);
     var sceneEl = null;
     var sceneButtons = [];
+    var searchView = null;   // the busy-room search, while one is open
     var wrap = div('mt-play', [
       div('mt-hud', [span('mt-pill', t('mtStageN', 'Stage {n}', { n: stage.id })), clockEl, div('mt-hud__end', [bag, dots])]),
       view,
@@ -415,14 +416,33 @@ window.FF = window.FF || {};
           : t('mtBagEmpty', 'Your bag is empty'));
       },
       /* A pick scene over the town. sc = { kind, backdrop: src, options: [{ id, src, name }],
-         closable, category: 'objects' | 'characters', want: how many to pick (default 1) }. */
+         closable, category: 'objects' | 'characters', want: how many to pick (default 1) },
+         or, for a busy room, search: { src, objects: [{ id, b, name }] } in place of
+         backdrop and options (see missiontrail/search.js). */
       openScene: function (sc) {
         if (sceneEl && sceneEl.parentNode) sceneEl.parentNode.removeChild(sceneEl);
+        if (searchView) searchView.destroy();
+        searchView = null;
         var spots = SPOTS[sc.category] || SPOTS.objects;
-        var room = div('mt-scene__room');
+        var room = div('mt-scene__room' + (sc.search ? ' mt-scene__room--search' : ''));
         if (sc.backdrop) room.appendChild(el('img', { class: 'mt-scene__bg', src: sc.backdrop, alt: '' }));
         var buttons = sceneButtons = [];
-        shuffled(sc.options).forEach(function (o, i) {
+        if (sc.search) {
+          searchView = FF.MissionTrail.Search.view({
+            src: sc.search.src,
+            objects: sc.search.objects,
+            onPick: function (id) { if (opts.onPick) opts.onPick(id); },
+            labels: {
+              picture: t('mtSearchPicture', 'A busy room. Look for what your letter asks for.'),
+              zoomIn: t('mtZoomIn', 'Zoom in'),
+              zoomOut: t('mtZoomOut', 'Zoom out'),
+              zoomReset: t('mtZoomReset', 'Whole room')
+            }
+          });
+          room.appendChild(searchView.el);
+          sceneButtons = buttons = searchView.buttons;
+        }
+        (sc.search ? [] : shuffled(sc.options)).forEach(function (o, i) {
           // Up to six people share one evenly spaced row.
           var oneRow = sc.category === 'characters' && sc.options.length <= 6;
           var spot = oneRow ? [(i + 0.5) * 100 / sc.options.length, i % 2 ? 94 : 97] : spots[i % spots.length];
@@ -437,9 +457,13 @@ window.FF = window.FF || {};
           room.appendChild(b);
         });
         var prompt = SCENE_PROMPT[sc.kind] || SCENE_PROMPT.collect;
-        var promptText = sc.want > 1
-          ? t('mtSceneCollectMany', 'Pick the {n} things your letter asks for.', { n: sc.want })
-          : t(prompt[0], prompt[1]);
+        var promptText = sc.search
+          ? (sc.want > 1
+            ? t('mtSceneFindMany', 'Find the {n} things your letter asks for.', { n: sc.want })
+            : t('mtSceneFind', 'Find what your letter asks for, then tap it.'))
+          : (sc.want > 1
+            ? t('mtSceneCollectMany', 'Pick the {n} things your letter asks for.', { n: sc.want })
+            : t(prompt[0], prompt[1]));
         var kids = [el('p', { class: 'mt-scene__prompt' }, promptText), room];
         if (sc.closable) {
           var back = button(t('mtSceneBack', 'Back to the street'), { variant: 'secondary', icon: 'arrow-left', onClick: function () { if (opts.onCloseScene) opts.onCloseScene(); } });
@@ -466,6 +490,7 @@ window.FF = window.FF || {};
       /* A right pick in a room that asks for several things: it leaves the room. */
       sceneGathered: function (id) {
         if (!sceneEl) return;
+        if (searchView) { searchView.mark(id); return; }
         var kids = sceneButtons;
         for (var k = 0; k < kids.length; k++) {
           if (kids[k].dataset.pick !== id) continue;
@@ -478,6 +503,8 @@ window.FF = window.FF || {};
         if (sceneEl && sceneEl.parentNode) sceneEl.parentNode.removeChild(sceneEl);
         sceneEl = null;
         sceneButtons = [];
+        if (searchView) searchView.destroy();
+        searchView = null;
         padEl.classList.remove('is-off');
       },
       sceneOpen: function () { return !!sceneEl; },

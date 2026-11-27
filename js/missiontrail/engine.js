@@ -290,6 +290,8 @@ window.FF = window.FF || {};
         step: run.stepIndex,
         kind: step.do,
         backdrop: sc.backdrop || null,
+        room: sc.room || null,           // a busy room to search (Assets.sceneFor)
+        search: !!sc.search,
         options: (sc.options || []).slice(),
         closable: !!closable,
         want: step.do === 'collect' ? thingsOf(step).length : 1,   // how many to pick

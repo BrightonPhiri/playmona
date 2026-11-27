@@ -16,7 +16,7 @@ window.FF = window.FF || {};
   FF.MissionTrail = FF.MissionTrail || {};
 
   var BASE = 'games/missionTrail/';
-  var CATS = ['buildings', 'props', 'walker', 'ground', 'ui', 'characters', 'objects', 'vehicles', 'scenes'];
+  var CATS = ['buildings', 'props', 'walker', 'ground', 'ui', 'characters', 'objects', 'vehicles', 'scenes', 'rooms'];
   // Art pack Batch 2 (docs/art/missionTrail-batch2-prompts.md, tools/art/missionTrail.json): pictures that are promised but
   // may not be cut yet. A stage that needs one stays hidden until it arrives; the validator
   // lists these as "waiting for art", not as mistakes.
@@ -28,8 +28,12 @@ window.FF = window.FF || {};
     vehicles: ['car-red-down', 'car-red-left', 'car-red-right', 'car-red-up',
       'car-blue-down', 'car-blue-left', 'car-blue-right', 'car-blue-up',
       'car-green-down', 'car-green-left', 'car-green-right', 'car-green-up'],
-    scenes: ['bedroom', 'hallway', 'kitchen', 'library', 'classroom', 'hospital', 'post-office', 'garage']
+    scenes: ['bedroom', 'hallway', 'kitchen', 'library', 'classroom', 'hospital', 'post-office', 'garage'],
+    // Batch 3 (docs/art/missionTrail-batch3-prompts.md): busy rooms to search, and more things.
+    rooms: ['bedroom', 'hallway', 'kitchen', 'library', 'living-room']
   };
+  PLANNED.objects = PLANNED.objects.concat(['reading-glasses', 'red-scarf', 'yellow-mug', 'toy-car', 'football',
+    'pink-slippers', 'phone', 'wallet', 'torch', 'sunglasses', 'green-apple', 'lunchbox']);
   // Which picture folder a step's scene options come from.
   var OPTION_CAT = { collect: 'objects', give: 'characters', meet: 'characters' };
   var CAR_DIRS = ['down', 'left', 'right', 'up'];
@@ -38,9 +42,38 @@ window.FF = window.FF || {};
   var WALKER_DIRS = ['down', 'left', 'right', 'up'];
   var cache = {};
 
+  function rooms() { return (FF.data && FF.data.missionTrailRooms) || {}; }
+  function roomData(id) {
+    var r = rooms()[id];
+    return r && r.objects && r.objects.length ? r : null;
+  }
+
+  /* A room counts as cut only once its hidden spots are written down too. */
   function known(category, id) {
     var m = FF.AssetManifest && FF.AssetManifest[BASE + category];
-    return !!(m && typeof m[id] === 'string');
+    if (!(m && typeof m[id] === 'string')) return false;
+    return category !== 'rooms' || !!roomData(id);
+  }
+
+  /* The scene a step really opens. One that names a busy room ({ room }) is searched in that
+     picture once it is cut: every thing hidden there is a choice, spots[id] its box. Until
+     then it is its plain backdrop and options, or, with none, it waits (options: []). */
+  function sceneFor(sc) {
+    if (!sc || !sc.room) return sc;
+    if (known('rooms', sc.room)) {
+      var spots = {};
+      var ids = roomData(sc.room).objects.map(function (o) { spots[o.id] = o.b.slice(); return o.id; });
+      return { room: sc.room, search: true, options: ids, spots: spots };
+    }
+    if (sc.backdrop && sc.options) return { backdrop: sc.backdrop, options: sc.options.slice() };
+    return { room: sc.room, options: [] };
+  }
+
+  /* A copy of the stage with every scene as it will open (see sceneFor). */
+  function resolveStage(stage) {
+    var copy = JSON.parse(JSON.stringify(stage));
+    (copy.steps || []).forEach(function (step) { if (step.scene) step.scene = sceneFor(step.scene); });
+    return copy;
   }
 
   function path(category, id) {
@@ -91,8 +124,9 @@ window.FF = window.FF || {};
   function forStage(stage, map) {
     var out = forMap(map);
     ((stage && stage.steps) || []).forEach(function (step) {
-      var sc = step.scene;
+      var sc = sceneFor(step.scene);
       if (!sc) return;
+      if (sc.room) out.add('rooms', sc.room);
       if (sc.backdrop) out.add('scenes', sc.backdrop);
       var cat = OPTION_CAT[step.do];
       if (cat) (sc.options || []).forEach(function (id) { out.add(cat, id); });
@@ -135,6 +169,9 @@ window.FF = window.FF || {};
     OPTION_CAT: OPTION_CAT,
     known: known,
     planned: planned,
+    roomData: roomData,
+    sceneFor: sceneFor,
+    resolveStage: resolveStage,
     catOf: catOf,
     path: path,
     forMap: forMap,
