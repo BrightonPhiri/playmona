@@ -215,6 +215,17 @@ window.FF = window.FF || {};
     },
 
     /* Primary action button with an icon (Next, Reveal, Start turn…). */
+    /* A game's own setup screen, or, for Play again, its saved setup straight away.
+       opts: { key, sanitize, show(play), play(cfg) }. The saved setup always goes through sanitize. */
+    setupOrReplay: function (api, opts) {
+      var saved = null;
+      if (api && api.config && api.config.replay && FF.Storage) {
+        try { saved = FF.Storage.get(opts.key, null); } catch (e) { saved = null; }
+      }
+      if (saved && typeof saved === 'object') { opts.play(opts.sanitize(saved)); return; }
+      opts.show(opts.play);
+    },
+
     action: function (label, onClick, opts) {
       opts = opts || {};
       return FF.UI.button(label, {

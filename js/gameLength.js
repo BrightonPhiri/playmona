@@ -123,6 +123,16 @@ window.FF = window.FF || {};
     manual: function () { if (clock) clock.manual = true; },
     secondsLeft: secondsLeft,
 
+    /* A game's own setup chose the length: { length, clock }. Rounds and the clock follow it. */
+    apply: function (api, choice) {
+      choice = choice || {};
+      var cfg = api.config;
+      if (choice.length) cfg.length = choice.length;
+      cfg.clock = Number(choice.clock) || 0;
+      this.stop();
+      if (this.timed(cfg) && FF.GameFlow && FF.GameFlow.current) this.start(FF.GameFlow.current);
+    },
+
     /* Start the clock for the game GameFlow just opened. */
     start: function (cur) {
       this.stop();

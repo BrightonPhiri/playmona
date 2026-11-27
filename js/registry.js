@@ -423,6 +423,14 @@ window.FF = window.FF || {};
         const meP = FF.Players.me() || FF.Players.get()[0];
         overrides = Object.assign({}, overrides, { mode: 'solo', difficulty: std.difficulty, length: std.length, timer: std.timer, clock: 0, variation: 'standard', soloPlayer: meP });
       }
+      // A game with its own setup screen (def.setup) asks for its own level, time and length,
+      // so the game page's hidden choices must not change how it plays or whether it is ranked.
+      // Rooms keep what the host chose in the lobby.
+      if (def.setup && !overrides.room) {
+        const d = FF.Settings.defaults;
+        const stdS = FF.Leaderboards ? FF.Leaderboards.standard() : { difficulty: d.difficulty, length: d.length, timer: d.timer, clock: 0 };
+        overrides = Object.assign({}, overrides, { difficulty: stdS.difficulty, length: stdS.length, timer: stdS.timer, clock: 0 });
+      }
       const players = overrides.soloPlayer ? [overrides.soloPlayer] : FF.Players.get();
       const teamsEnabled = FF.Teams.enabled();
       const teams = FF.Teams.get();
@@ -786,7 +794,14 @@ window.FF = window.FF || {};
         const optHint = optHintText();
         const optSection = disclosure('sliders', t('options', 'Options'), optHint, ui.optionsOpen, function (o) { ui.optionsOpen = o; }, optBox);
         optSummary = optSection.querySelector('.disclosure__hint');
-        body.appendChild(optSection);
+        // A game with its own setup screen asks there; the game page keeps only Sound effects.
+        if (flow._detailsSections(def, config).indexOf('options') !== -1) {
+          body.appendChild(optSection);
+        } else {
+          const soundBox = FF.ui.div('details__section');
+          soundBox.appendChild(FF.UI.switchRow({ label: t('soundEffects', 'Sound effects'), checked: !!config.sound, onChange: function (on) { config.sound = on; } }));
+          body.appendChild(soundBox);
+        }
 
         page.appendChild(body);
 
@@ -811,6 +826,11 @@ window.FF = window.FF || {};
 
       syncModeFromRoster();
       render();
+    },
+
+    /* What the game page shows. A game with its own setup screen keeps its settings there. */
+    _detailsSections: function (def) {
+      return def && def.setup ? ['howto', 'players', 'sound'] : ['howto', 'players', 'options'];
     },
 
     // Older entry points, now views of the details screen.

@@ -50,3 +50,16 @@ test('no game hard-codes its round count offline any more', function () {
     assert(!/FF\.Race \? FF\.Race\.plan\(/.test(src), f + ' still plans rounds only in rooms');
   });
 });
+
+test('gameLength: apply sets the config and starts the clock only when timed', function () {
+  const FF = loadFF(['js/core.js', 'js/i18n.js', 'js/gameLength.js']);
+  let starts = 0, stops = 0;
+  FF.GameLength.start = function () { starts++; };
+  FF.GameLength.stop = function () { stops++; };
+  FF.GameFlow = { current: { config: {} } };
+  const api = { config: { length: 'normal', clock: 0 } };
+  FF.GameLength.apply(api, { length: 'long', clock: 0 });
+  assertEqual([api.config.length, api.config.clock, starts], ['long', 0, 0]);
+  FF.GameLength.apply(api, { clock: 600 });
+  assertEqual([api.config.clock, starts, stops >= 2], [600, 1, true]);
+});

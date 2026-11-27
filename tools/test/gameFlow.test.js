@@ -141,3 +141,25 @@ test('end screen: XP gained is the difference recordResult made', function () {
   FF.GameFlow.end({ results: [{ id: 'me', name: 'Me', points: 32, isMe: true }] });
   assertEqual(seen.data.xp, { gained: 16, total: 116 });
 });
+
+/* ---------------- One settings screen ---------------- */
+
+test('details: setup games show no options, others do', function () {
+  const { FF } = endFlow();
+  assertEqual(FF.GameFlow._detailsSections({ setup: true, modes: ['solo'] }, {}), ['howto', 'players', 'sound']);
+  assertEqual(FF.GameFlow._detailsSections({ modes: ['solo'] }, {}), ['howto', 'players', 'options']);
+});
+
+test('details: a setup game gets the standard difficulty, length, timer and no clock', function () {
+  const { FF } = endFlow();
+  FF.Players = { get: function () { return [{ id: 'me', name: 'Me' }]; }, entities: function () { return [{ id: 'me', name: 'Me' }]; }, me: function () { return null; } };
+  FF.Teams = { enabled: function () { return false; }, get: function () { return { teams: [] }; }, entities: function () { return []; } };
+  FF.Settings.set('difficulty', 'hard');
+  FF.Settings.set('timer', 40);
+  FF.Settings.set('length', 'long');
+  const setupCfg = FF.GameFlow.buildConfig({ id: 'x', setup: true, modes: ['solo'] }, { clock: 1200 });
+  assertEqual([setupCfg.difficulty, setupCfg.length, setupCfg.timer, setupCfg.clock],
+    ['normal', FF.Settings.defaults.length, FF.Settings.defaults.timer, 0]);
+  const plain = FF.GameFlow.buildConfig({ id: 'y', modes: ['solo'] }, {});
+  assertEqual([plain.difficulty, plain.timer], ['hard', 40]);
+});
