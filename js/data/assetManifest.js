@@ -377,5 +377,9 @@ FF.AssetManifest = {
   },
   "games/missionTrail/ui": {
     "envelope": "3a23f6d6"
-  }
+  },
+  "games/missionTrail/characters": {},
+  "games/missionTrail/objects": {},
+  "games/missionTrail/vehicles": {},
+  "games/missionTrail/scenes": {}
 };

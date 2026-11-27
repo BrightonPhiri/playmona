@@ -22,6 +22,8 @@ window.FF = window.FF || {};
   FF.MissionTrail = FF.MissionTrail || {};
 
   var STEP_MS = 170;
+  var DRIVE_MS = 110;       // a car covers a cell faster than the walker
+  var CAR_LONG = 1.05;      // a car's length in cells (side view width, top view height)
   var BUMP_MS = 150;
   var KERB = 0.14;          // pavement strip along a road edge, as a share of a cell
   var WALKER_H = 1.2;       // the explorer's height in cells
@@ -58,7 +60,7 @@ window.FF = window.FF || {};
       cell: 48, dpr: 1, viewW: 0, viewH: 0, offX: 0, offY: 0,
       cam: { x: 0, y: 0 },
       walker: { x: map.start.x, y: map.start.y, facing: map.start.facing },
-      anim: null, shake: null, revealed: {},
+      anim: null, shake: null, revealed: {}, driving: null,
       visible: null, explored: null,
       ground: null, fogCanvas: null, raf: null, dead: false
     };
@@ -174,13 +176,27 @@ window.FF = window.FF || {};
 
     /* ---------- sprites ---------- */
 
+    function stepMs() { return st.driving ? DRIVE_MS : STEP_MS; }
+
+    /* A car seen from the side is CAR_LONG wide; seen from the front or back, CAR_LONG tall. */
+    function carSize(im, look, c) {
+      var aspect = im ? im.height / im.width : 0.6;
+      var side = /-(left|right)$/.test(look);
+      if (side) return { w: CAR_LONG * c, h: CAR_LONG * c * aspect };
+      return { w: CAR_LONG * c * 0.8 / Math.max(0.5, aspect), h: CAR_LONG * c * 0.8 };
+    }
+
     function spriteRect(th) {
       var c = st.cell;
-      var im = img(th.kind === 'building' ? 'buildings' : 'props', th.look);
+      var im = img(FF.MissionTrail.Assets ? FF.MissionTrail.Assets.catOf(th) : 'props', th.look);
       var aspect = im ? im.height / im.width : 1;
       var w;
       var h;
-      if (th.kind === 'building') {
+      if (th.kind === 'vehicle') {
+        var cs = carSize(im, th.look, c);
+        w = cs.w;
+        h = cs.h;
+      } else if (th.kind === 'building') {
         w = th.w * c * 1.02;
         h = w * aspect;
       } else {
@@ -198,7 +214,7 @@ window.FF = window.FF || {};
       var y = w.y;
       var frame = 0;
       if (st.anim) {
-        var p = clamp((t - st.anim.start) / STEP_MS, 0, 1);
+        var p = clamp((t - st.anim.start) / stepMs(), 0, 1);
         x = st.anim.fx + (st.anim.tx - st.anim.fx) * p;
         y = st.anim.fy + (st.anim.ty - st.anim.fy) * p;
         frame = p < 0.5 ? 1 : 2;
@@ -275,12 +291,23 @@ window.FF = window.FF || {};
       var list = [];
       map.things.forEach(function (th) {
         if (hiddenByFog(th)) return;
+        if (st.driving && th.key === st.driving.key) return;
         list.push({ bottom: th.y + th.h, th: th });
       });
       list.push({ bottom: wp.y + 1 + 0.01, walker: wp });
       list.sort(function (a, b) { return a.bottom - b.bottom; });
       var labels = [];
       list.forEach(function (it) {
+        if (it.walker && st.driving) {
+          var look = st.driving.look + '-' + st.walker.facing;
+          var car = img('vehicles', look);
+          var cs = carSize(car, look, c);
+          var ccx = (it.walker.x + 0.5) * c;
+          var cb = (it.walker.y + 0.92) * c;
+          shadow(ccx, cb, cs.w);
+          if (car) ctx.drawImage(car, ccx - cs.w / 2, cb - cs.h, cs.w, cs.h);
+          return;
+        }
         if (it.walker) {
           var im = img('walker', 'walker-' + st.walker.facing + '-' + it.walker.frame) || img('walker', 'walker-down-0');
           var h = WALKER_H * c;
@@ -319,7 +346,7 @@ window.FF = window.FF || {};
       if (st.dead) return;
       var dt = last == null ? null : t - last;
       last = t;
-      if (st.anim && t - st.anim.start >= STEP_MS) {
+      if (st.anim && t - st.anim.start >= stepMs()) {
         var a = st.anim;
         st.walker.x = a.tx;
         st.walker.y = a.ty;
@@ -381,6 +408,8 @@ window.FF = window.FF || {};
       face: function (dir) { st.walker.facing = dir; schedule(); },
       shake: function () { st.shake = { start: now() }; schedule(); },
       reveal: function (key, name) { st.revealed[key] = name; schedule(); },
+      /* From now on draw the walker as this car (look 'car-green'); its parked copy goes. */
+      drive: function (key, look) { st.driving = { key: key, look: look }; schedule(); },
       fog: function (visibleIdx, exploredSet) {
         st.visible = new Set(visibleIdx || []);
         st.explored = exploredSet || null;
@@ -393,7 +422,7 @@ window.FF = window.FF || {};
         var my = clientY - rect.top - st.offY + st.cam.y;
         var c = st.cell;
         var pad = 4;
-        var hits = map.things.filter(function (th) { return th.check && !hiddenByFog(th); })
+        var hits = map.things.filter(function (th) { return th.check && !hiddenByFog(th) && !(st.driving && th.key === st.driving.key); })
           .sort(function (a, b) { return (b.y + b.h) - (a.y + a.h); });
         for (var i = 0; i < hits.length; i++) {
           var th = hits[i];
@@ -416,5 +445,5 @@ window.FF = window.FF || {};
     return view;
   }
 
-  FF.MissionTrail.Render = { create: create, STEP_MS: STEP_MS };
+  FF.MissionTrail.Render = { create: create, STEP_MS: STEP_MS, DRIVE_MS: DRIVE_MS };
 })();

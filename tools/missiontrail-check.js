@@ -8,18 +8,26 @@
    walkable cells; every turn is at a junction (a cell with another way
    to go, so the instruction matters); the last target is in reach of the
    route's end and can be reached from the start; and, when the asset
-   registry is loaded, every look on the map is a known picture; and the
-   time limit leaves at least 6 s over par (FF.MissionTrail.Score.parMs). */
+   registry is loaded, every picture the stage needs is cut (pictures the
+   art pack promises, Assets.PLANNED, are listed as "waiting for art" and
+   the stage stays hidden in the game until they arrive); the time limit
+   leaves at least 6 s over par (FF.MissionTrail.Score.parMs); every pick
+   scene holds its answer among at least 3 choices; a give step hands over
+   something an earlier step collected; an enter step targets a car. */
 'use strict';
 
 const path = require('path');
 
-function check(FF) {
+function check(FF) { return report(FF).problems; }
+
+function report(FF) {
   const problems = [];
+  const waiting = [];
+  const out = { problems: problems, waiting: waiting };
   const R = FF.MissionTrail && FF.MissionTrail.Rules;
   const data = FF.data && FF.data.missionTrail;
-  if (!R) return ['FF.MissionTrail.Rules is not loaded'];
-  if (!data || !Array.isArray(data.stages)) return ['FF.data.missionTrail.stages is missing'];
+  if (!R) { problems.push('FF.MissionTrail.Rules is not loaded'); return out; }
+  if (!data || !Array.isArray(data.stages)) { problems.push('FF.data.missionTrail.stages is missing'); return out; }
   const maps = {};
   (FF.data.missionTrailMaps || []).forEach(function (m) { maps[m.id] = m; });
   const Assets = FF.MissionTrail.Assets;
@@ -30,12 +38,13 @@ function check(FF) {
     if (!(stage.time > 0)) say('time must be a positive number of seconds');
     const def = maps[stage.map];
     if (!def) { say('map "' + stage.map + '" does not exist'); return; }
-    const map = R.buildMap(def);
+    const map = R.mapFor ? R.mapFor(def, stage) : R.buildMap(def);
 
-    if (Assets && Assets.known) {
-      map.things.forEach(function (th) {
-        const cat = th.kind === 'building' ? 'buildings' : 'props';
-        if (!Assets.known(cat, th.look)) say('"' + th.key + '" uses the look "' + th.look + '", which is not in ' + cat);
+    if (Assets && Assets.forStage) {
+      Assets.missing(Assets.forStage(stage, map)).forEach(function (it) {
+        const id = it.category + '/' + it.id;
+        if (Assets.planned(it.category, it.id)) waiting.push('Stage ' + stage.id + ': ' + id);
+        else say('needs the picture ' + id + ', which is not cut and not in the art pack (Assets.PLANNED)');
       });
     }
 
@@ -66,16 +75,35 @@ function check(FF) {
     const steps = stage.steps || [];
     if (!steps.length) say('has no steps');
     const reachable = reachableCells(map, start);
+    const carrying = [];
     steps.forEach(function (step, idx) {
+      const n = 'step ' + (idx + 1);
       if (!FF.MissionTrail.Engine || !FF.MissionTrail.Engine.STEPS[step.do]) {
-        if (FF.MissionTrail.Engine) say('step ' + (idx + 1) + ' has the unknown type "' + step.do + '"');
+        if (FF.MissionTrail.Engine) say(n + ' has the unknown type "' + step.do + '"');
       }
-      if (!step.target) return;
-      const th = map.thing(step.target);
-      if (!th) { say('step ' + (idx + 1) + ' targets "' + step.target + '", which is not on map ' + map.id); return; }
-      if (!th.check) say('step ' + (idx + 1) + ' targets "' + step.target + '", which cannot be checked');
+      const answer = step.do === 'collect' ? step.item : ((step.do === 'give' || step.do === 'meet') ? step.to : null);
+      if (answer !== null) {
+        const opts = (step.scene && step.scene.options) || [];
+        if (!answer) say(n + ' (' + step.do + ') does not say who or what is right');
+        else if (opts.indexOf(answer) === -1) say(n + ': ' + answer + ' is not in its scene');
+        if (opts.length < 3) say(n + ': a scene needs at least 3 choices');
+        if (opts.some(function (o, i) { return opts.indexOf(o) !== i; })) say(n + ': its scene lists a choice twice');
+        if (!step.scene || !step.scene.backdrop) say(n + ': its scene has no backdrop');
+      }
+      if (step.do === 'collect') carrying.push(step.item);
+      if (step.do === 'give') {
+        const at = carrying.indexOf(step.item);
+        if (at === -1) say(n + ' gives ' + step.item + ', which the player is not carrying');
+        else carrying.splice(at, 1);
+      }
+      const key = step.target || step.at;
+      if (!key) return;
+      const th = map.thing(key);
+      if (!th) { say(n + ' targets "' + key + '", which is not on map ' + map.id); return; }
+      if (step.do === 'enter' && th.kind !== 'vehicle') say(n + ' enters "' + key + '", which is not a car');
+      if (!th.check) say(n + ' targets "' + key + '", which cannot be checked');
       if (!reachable.some(function (c) { return R.inReach({ x: c[0], y: c[1] }, th); })) {
-        say('step ' + (idx + 1) + ' target "' + step.target + '" cannot be reached from the start');
+        say(n + ' target "' + key + '" cannot be reached from the start');
       }
     });
     const Score = FF.MissionTrail.Score;
@@ -91,7 +119,7 @@ function check(FF) {
       say('the route ends at (' + r.end.x + ',' + r.end.y + '), out of reach of "' + last.target + '"');
     }
   });
-  return problems;
+  return out;
 }
 
 function reachableCells(map, start) {
@@ -114,19 +142,24 @@ function reachableCells(map, start) {
   return out;
 }
 
-module.exports = { check: check };
+module.exports = { check: check, report: report };
 
 if (require.main === module) {
   const { loadFF } = require(path.join(__dirname, 'test', 'harness'));
   const FF = loadFF([
-    'js/core.js', 'js/data/assetManifest.js',
+    'js/core.js', 'js/data/assetManifest.js', 'js/assets.js',
     'js/data/missionTrailMaps.js', 'js/data/missionTrailStages.js',
     'js/missiontrail/rules.js', 'js/missiontrail/score.js', 'js/missiontrail/engine.js'
   ].concat(require('fs').existsSync(path.join(__dirname, '..', 'js', 'missiontrail', 'assets.js')) ? ['js/missiontrail/assets.js'] : []));
-  const problems = check(FF);
-  if (problems.length) {
-    problems.forEach(function (p) { console.log(p); });
+  const res = report(FF);
+  if (res.problems.length) {
+    res.problems.forEach(function (p) { console.log(p); });
     process.exit(1);
+  }
+  if (res.waiting.length) {
+    const by = {};
+    res.waiting.forEach(function (w) { const m = w.split(': '); (by[m[0]] = by[m[0]] || []).push(m[1]); });
+    Object.keys(by).forEach(function (k) { console.log(k + ' waits for art: ' + by[k].join(', ')); });
   }
   console.log(FF.data.missionTrail.stages.length + ' stages OK');
 }

@@ -91,7 +91,7 @@ window.FF = window.FF || {};
         { key: 'c2', look: 'hall-stone', x: 10, y: 7, w: 2, h: 2 },
         { key: 'a3', look: 'house-orange', x: 2, y: 11, w: 2, h: 2 },
         { key: 'b3', look: 'hall-brick', x: 7, y: 11, w: 2, h: 2 },
-        { key: 'c3', look: 'house-brown', x: 11, y: 11, w: 2, h: 2 }
+        { key: 'c3', look: 'block-glass', x: 11, y: 11, w: 2, h: 2 }
       ],
       props: [
         { key: 'fountain1', look: 'fountain', x: 6, y: 4 },

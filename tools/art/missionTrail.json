@@ -85,6 +85,66 @@
         ["walker-right-2", "facing right, right foot forward"],
         ["walker-up-2", "facing up, right foot forward"]
       ]
+    },
+    {
+      "file": "sheets/people-1.png",
+      "title": "Batch 2: people",
+      "cols": 4, "rows": 3, "fit": "trim", "size": 384, "max_kb": 36,
+      "to": "assets/images/games/missionTrail/characters/{id}.webp",
+      "items": [
+        ["librarian", "older woman, grey hair in a bun, purple cardigan, a pile of books"],
+        ["teacher", "woman, glasses, yellow cardigan, holding a notebook"],
+        ["doctor", "man, long white coat drawn in light grey, stethoscope"],
+        ["nurse", "woman, light blue nurse uniform, small watch pinned on"],
+        ["mechanic", "man, orange overalls, spanner"],
+        ["postman", "man, blue postal uniform and cap, mail bag"],
+        ["shopkeeper", "woman, green apron over a white shirt"],
+        ["gardener", "man, straw hat, brown dungarees, watering can"],
+        ["grandma", "grandmother, flowery dress, walking stick"],
+        ["grandpa", "grandfather, flat cap, brown waistcoat"],
+        ["boy", "boy about 8, red T-shirt, shorts"],
+        ["girl", "girl about 8, pink dress, two puffs of hair"]
+      ]
+    },
+    {
+      "file": "sheets/objects-1.png",
+      "title": "Batch 2: things to carry",
+      "cols": 4, "rows": 3, "fit": "trim", "size": 256, "max_kb": 20,
+      "to": "assets/images/games/missionTrail/objects/{id}.webp",
+      "items": [
+        ["red-cap", "red baseball cap"],
+        ["blue-cap", "blue baseball cap"],
+        ["green-cap", "green baseball cap"],
+        ["medical-bag", "brown doctor's bag"],
+        ["newspaper", "folded newspaper, lines only"],
+        ["keys", "bunch of keys on a ring"],
+        ["book-blue", "closed blue book"],
+        ["book-red", "closed red book"],
+        ["umbrella", "closed yellow umbrella"],
+        ["teddy-bear", "brown teddy bear"],
+        ["water-bottle", "green water bottle"],
+        ["watch", "wristwatch, plain face"]
+      ]
+    },
+    {
+      "file": "sheets/cars-1.png",
+      "title": "Batch 2: cars (rows: red, blue, green; columns: down, left, right, up)",
+      "cols": 4, "rows": 3, "fit": "trim", "size": 320, "max_kb": 24,
+      "to": "assets/images/games/missionTrail/vehicles/{id}.webp",
+      "items": [
+        ["car-red-down", "red car, front view"],
+        ["car-red-left", "red car, driving left"],
+        ["car-red-right", "red car, driving right"],
+        ["car-red-up", "red car, back view"],
+        ["car-blue-down", "blue car, front view"],
+        ["car-blue-left", "blue car, driving left"],
+        ["car-blue-right", "blue car, driving right"],
+        ["car-blue-up", "blue car, back view"],
+        ["car-green-down", "green car, front view"],
+        ["car-green-left", "green car, driving left"],
+        ["car-green-right", "green car, driving right"],
+        ["car-green-up", "green car, back view"]
+      ]
     }
   ],
   "textures": [
@@ -97,5 +157,15 @@
   ],
   "singles": [
     { "from": "ui/envelope.png", "to": "assets/images/games/missionTrail/ui/envelope.webp", "size": 512, "max_kb": 40 }
+  ],
+  "backdrops": [
+    { "from": "rooms/bedroom.png", "to": "assets/images/games/missionTrail/scenes/bedroom.webp", "size": [960, 600], "max_kb": 90 },
+    { "from": "rooms/hallway.png", "to": "assets/images/games/missionTrail/scenes/hallway.webp", "size": [960, 600], "max_kb": 90 },
+    { "from": "rooms/kitchen.png", "to": "assets/images/games/missionTrail/scenes/kitchen.webp", "size": [960, 600], "max_kb": 90 },
+    { "from": "rooms/library.png", "to": "assets/images/games/missionTrail/scenes/library.webp", "size": [960, 600], "max_kb": 90 },
+    { "from": "rooms/classroom.png", "to": "assets/images/games/missionTrail/scenes/classroom.webp", "size": [960, 600], "max_kb": 90 },
+    { "from": "rooms/hospital.png", "to": "assets/images/games/missionTrail/scenes/hospital.webp", "size": [960, 600], "max_kb": 90 },
+    { "from": "rooms/post-office.png", "to": "assets/images/games/missionTrail/scenes/post-office.webp", "size": [960, 600], "max_kb": 90 },
+    { "from": "rooms/garage.png", "to": "assets/images/games/missionTrail/scenes/garage.webp", "size": [960, 600], "max_kb": 90 }
   ]
 }
