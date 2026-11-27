@@ -20,6 +20,7 @@ FF.AssetManifest = {
     "logoRush": "7215e088",
     "memoryMatch": "39b80ff8",
     "miniCrossword": "ca1c3143",
+    "missionTrail": "78d7dbbe",
     "numberChallenge": "de9368b5",
     "numberRush": "588554f9",
     "pictureRush": "259c2765",
