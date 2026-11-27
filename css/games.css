@@ -6272,6 +6272,7 @@ button.imp-card:focus-visible { outline: 3px solid var(--focus-ring); outline-of
 .mt-thing:hover, .mt-thing:focus-visible { transform: translate(-50%, -100%) scale(1.08); }
 .mt-thing:focus-visible { outline: 3px solid var(--mt-gold); outline-offset: 2px; }
 .mt-thing.is-wrong { animation: mt-wrong 0.45s var(--ease); }
+.mt-thing.is-taken { opacity: 0; transform: translate(-50%, -130%) scale(0.6); pointer-events: none; transition: opacity 0.3s var(--ease), transform 0.3s var(--ease); }
 .mt-thing.is-wrong img { filter: drop-shadow(0 0 6px var(--mt-bad)); }
 @keyframes mt-wrong { 20% { transform: translate(-56%, -100%); } 40% { transform: translate(-44%, -100%); } 60% { transform: translate(-53%, -100%); } }
 .mt-pad.is-off { opacity: 0.35; pointer-events: none; }

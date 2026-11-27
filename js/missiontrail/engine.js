@@ -33,6 +33,8 @@ window.FF = window.FF || {};
     return (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
   }
 
+  /* The things a collect or give step is about: `items`, or the one `item`. */
+  function thingsOf(step) { return step.items ? step.items.slice() : (step.item ? [step.item] : []); }
   function atTarget(run, step, thing) { return thing.key === step.target ? 'scene' : 'wrong'; }
   function pickIs(field) { return function (run, step, id) { return id === step[field] ? 'done' : 'wrong'; }; }
 
@@ -40,13 +42,21 @@ window.FF = window.FF || {};
     reach: {
       onCheck: function (run, step, thing) { return thing.key === step.target ? 'done' : 'wrong'; }
     },
-    // Pick the thing from a scene: at the start (no `at`) or inside the place `at`.
+    // Pick the thing (item) or things (items) from a scene: at the start (no `at`) or inside
+    // the place `at`. With several, each right pick goes in the bag ('gathered') and the
+    // scene stays open until the last one.
     collect: {
       result: 'picked',
       opensAtOnce: function (step) { return !step.at; },
       onCheck: function (run, step, thing) { return step.at && thing.key === step.at ? 'scene' : 'wrong'; },
-      onPick: pickIs('item'),
-      onDone: function (run, step) { run.inventory.push(step.item); }
+      onPick: function (run, step, id) {
+        var want = thingsOf(step);
+        if (want.indexOf(id) === -1) return 'wrong';
+        if (run.scene.have.indexOf(id) !== -1) return 'ignored';
+        run.scene.have.push(id);
+        run.inventory.push(id);
+        return run.scene.have.length < want.length ? 'gathered' : 'done';
+      }
     },
     // Hand what you carry to the right person at the right place.
     give: {
@@ -54,8 +64,10 @@ window.FF = window.FF || {};
       onCheck: atTarget,
       onPick: pickIs('to'),
       onDone: function (run, step) {
-        var i = run.inventory.indexOf(step.item);
-        if (i !== -1) run.inventory.splice(i, 1);
+        thingsOf(step).forEach(function (id) {
+          var i = run.inventory.indexOf(id);
+          if (i !== -1) run.inventory.splice(i, 1);
+        });
       }
     },
     // Find the right person at the right place.
@@ -206,6 +218,11 @@ window.FF = window.FF || {};
         var step = steps[run.stepIndex];
         var kind = step && STEPS[step.do];
         var res = kind && kind.onPick ? kind.onPick(run, step, id) : 'wrong';
+        if (res === 'ignored') return { type: 'ignored' };
+        if (res === 'gathered') {
+          emit('gathered', { id: id, inventory: run.inventory.slice() });
+          return { type: 'gathered' };
+        }
         if (res !== 'done') return penalise('wrongPicks', { pick: id });
         run.scene = null;
         return { type: finishStep(step, kind, null, id) };
@@ -255,7 +272,9 @@ window.FF = window.FF || {};
         kind: step.do,
         backdrop: sc.backdrop || null,
         options: (sc.options || []).slice(),
-        closable: !!closable
+        closable: !!closable,
+        want: step.do === 'collect' ? thingsOf(step).length : 1,   // how many to pick
+        have: []                                                    // picked so far
       };
       emit('scene', run.scene);
     }
@@ -294,5 +313,7 @@ window.FF = window.FF || {};
     return run;
   }
 
-  FF.MissionTrail.Engine = { create: create, STEPS: STEPS, WRONG_CHECK_MS: WRONG_CHECK_MS };
+  FF.MissionTrail.Engine = {
+    thingsOf: thingsOf, create: create, STEPS: STEPS, WRONG_CHECK_MS: WRONG_CHECK_MS
+  };
 })();

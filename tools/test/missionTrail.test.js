@@ -893,3 +893,81 @@ test('mission trail: pausing stops the clock and the walker', function () {
   r.check('stopB');
   assertEqual([r.state, r.result().ms], ['complete', 6000]);   // time taken leaves the pause out
 });
+
+test('mission trail: "Turn around" faces the other way, anywhere', function () {
+  const o = small();
+  const r = o.R.routeCells(o.m, { x: 5, y: 3, facing: 'up' }, [{ turn: 'around' }, { go: 2 }]);
+  assert(r.ok, r.error);
+  assertEqual([r.end.x, r.end.y, r.end.facing], [5, 5, 'down']);
+  assertEqual(o.R.directions([{ turn: 'around' }]), ['Turn around.']);
+  // Turning around is fine away from a junction (left and right turns still need one).
+  const rep = withErrand({ route: [{ go: 1 }, { turn: 'around' }, { go: 1 }] }).report.problems.join(' | ');
+  assert(!/junction/.test(rep), rep);
+});
+
+const TWO_THINGS = [
+  { do: 'collect', items: ['red-cap', 'keys'], scene: { backdrop: 'bedroom', options: ['red-cap', 'blue-cap', 'keys', 'watch'] } },
+  { do: 'give', target: 'lib', items: ['red-cap', 'keys'], to: 'librarian', scene: { backdrop: 'library', options: ['librarian', 'teacher', 'doctor'] } }
+];
+
+test('mission trail: one room can ask for several things', function () {
+  const o = errand({ steps: JSON.parse(JSON.stringify(TWO_THINGS)) }), r = o.run;
+  const gathered = [], picked = [];
+  r.on('gathered', function (e) { gathered.push(e); });
+  r.on('picked', function (e) { picked.push(e); });
+  r.start();
+  assertEqual([r.scene.want, r.scene.have], [2, []]);
+  assertEqual(r.pick('keys').type, 'gathered');
+  assertEqual([r.inventory, !!r.scene, r.stepIndex, r.scene.have], [['keys'], true, 0, ['keys']]);
+  assertEqual(gathered[0], { id: 'keys', inventory: ['keys'] });
+  assertEqual(r.pick('keys').type, 'ignored');          // already in the bag: no cost
+  assertEqual(r.result().mistakes.wrongPicks, 0);
+  assertEqual(r.pick('watch').type, 'wrong');
+  assertEqual(r.pick('red-cap').type, 'picked');
+  assertEqual([r.inventory, r.scene, r.stepIndex, picked.length], [['keys', 'red-cap'], null, 1, 1]);
+  r.move('left'); r.move('left');
+  assertEqual(r.check('lib').type, 'scene');
+  assertEqual(r.pick('librarian').type, 'given');
+  assertEqual([r.inventory, r.state], [[], 'complete']);
+});
+
+test('mission trail: the validator checks every thing a room asks for', function () {
+  const steps = function (list) { return withErrand({ steps: list }).report.problems.join(' | '); };
+  assertEqual(steps(JSON.parse(JSON.stringify(TWO_THINGS))), '');
+  const missing = JSON.parse(JSON.stringify(TWO_THINGS));
+  missing[0].scene.options = ['red-cap', 'blue-cap', 'watch'];
+  assert(/keys is not in its scene/.test(steps(missing)), steps(missing));
+  const tooFew = JSON.parse(JSON.stringify(TWO_THINGS));
+  tooFew[0].scene.options = ['red-cap', 'keys', 'watch'];
+  assert(/choices/.test(steps(tooFew)), 'two things need at least 4 choices: ' + steps(tooFew));
+  const notCarried = JSON.parse(JSON.stringify(TWO_THINGS));
+  notCarried[1].items = ['red-cap', 'umbrella'];
+  assert(/umbrella, which the player is not carrying/.test(steps(notCarried)), steps(notCarried));
+});
+
+test('mission trail: a room asking for two things says so and lets each one go', function () {
+  const FF = load(SCREENS), doc = document_of(FF);
+  const root = doc.createElement('div');
+  doc.body.appendChild(root);
+  const picks = [];
+  const h = FF.MissionTrail.Screens.play(root, { stage: FF.data.missionTrail.stages[0], total: 1,
+    onMove: function () {}, onCheck: function () {}, onTap: function () {}, onPick: function (id) { picks.push(id); } });
+  const opt = function (id) { return { id: id, src: id + '.webp', name: id }; };
+  h.openScene({ kind: 'collect', category: 'objects', want: 2, closable: false, backdrop: null, options: ['keys', 'watch', 'red-cap', 'umbrella'].map(opt) });
+  assert(texts(root).indexOf('Pick the 2 things your letter asks for.') !== -1, texts(root).join(' / '));
+  h.sceneGathered('keys');
+  const keys = nodes(root, function (n) { return n.dataset && n.dataset.pick === 'keys'; })[0];
+  assert(keys.classList.contains('is-taken') && keys.disabled, 'a gathered thing leaves the room');
+  h.openScene({ kind: 'collect', category: 'objects', want: 1, closable: false, backdrop: null, options: ['keys', 'watch', 'red-cap'].map(opt) });
+  assert(texts(root).indexOf('Pick what your letter asks for.') !== -1, 'one thing keeps the old prompt');
+});
+
+test('mission trail: every place a letter sends you to lies on its route', function () {
+  // The route walks one step left from (5,5): the shop at (2,4) is far off it.
+  const off = [
+    { do: 'collect', at: 'shop', item: 'keys', scene: { backdrop: 'kitchen', options: ['keys', 'watch', 'umbrella'] } },
+    { do: 'give', target: 'lib', item: 'keys', to: 'librarian', scene: { backdrop: 'library', options: ['librarian', 'teacher', 'doctor'] } }
+  ];
+  const rep = withErrand({ steps: off, route: [{ go: 1 }] }).report.problems.join(' | ');
+  assert(/"shop" is not on the route/.test(rep), rep);
+});

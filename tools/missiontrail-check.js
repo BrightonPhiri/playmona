@@ -58,7 +58,7 @@ function report(FF) {
     const r = R.routeCells(map, start, route);
     if (!r.ok) say('the route does not work: ' + r.error);
     route.forEach(function (item, idx) {
-      if (!item.turn) return;
+      if (!item.turn || item.turn === 'around') return;   // turning around works anywhere
       const at = R.routeCells(map, start, route.slice(0, idx)).end;
       const mask = R.roadMask(map, at.x, at.y);
       const ways = (mask & 1 ? 1 : 0) + (mask & 2 ? 1 : 0) + (mask & 4 ? 1 : 0) + (mask & 8 ? 1 : 0);
@@ -81,20 +81,24 @@ function report(FF) {
       if (!FF.MissionTrail.Engine || !FF.MissionTrail.Engine.STEPS[step.do]) {
         if (FF.MissionTrail.Engine) say(n + ' has the unknown type "' + step.do + '"');
       }
-      const answer = step.do === 'collect' ? step.item : ((step.do === 'give' || step.do === 'meet') ? step.to : null);
-      if (answer !== null) {
+      const things = FF.MissionTrail.Engine ? FF.MissionTrail.Engine.thingsOf(step) : [step.item];
+      const answers = step.do === 'collect' ? things : ((step.do === 'give' || step.do === 'meet') ? [step.to] : null);
+      if (answers !== null) {
         const opts = (step.scene && step.scene.options) || [];
-        if (!answer) say(n + ' (' + step.do + ') does not say who or what is right');
-        else if (opts.indexOf(answer) === -1) say(n + ': ' + answer + ' is not in its scene');
-        if (opts.length < 3) say(n + ': a scene needs at least 3 choices');
+        if (!answers.length || answers.some(function (a) { return !a; })) say(n + ' (' + step.do + ') does not say who or what is right');
+        answers.forEach(function (a) { if (a && opts.indexOf(a) === -1) say(n + ': ' + a + ' is not in its scene'); });
+        // Always at least two wrong choices beside the right ones.
+        if (opts.length < Math.max(3, answers.length + 2)) say(n + ': a scene needs at least ' + Math.max(3, answers.length + 2) + ' choices');
         if (opts.some(function (o, i) { return opts.indexOf(o) !== i; })) say(n + ': its scene lists a choice twice');
         if (!step.scene || !step.scene.backdrop) say(n + ': its scene has no backdrop');
       }
-      if (step.do === 'collect') carrying.push(step.item);
+      if (step.do === 'collect') things.forEach(function (id) { carrying.push(id); });
       if (step.do === 'give') {
-        const at = carrying.indexOf(step.item);
-        if (at === -1) say(n + ' gives ' + step.item + ', which the player is not carrying');
-        else carrying.splice(at, 1);
+        things.forEach(function (id) {
+          const at = carrying.indexOf(id);
+          if (at === -1) say(n + ' gives ' + id + ', which the player is not carrying');
+          else carrying.splice(at, 1);
+        });
       }
       const key = step.target || step.at;
       if (!key) return;
@@ -104,6 +108,8 @@ function report(FF) {
       if (!th.check) say(n + ' targets "' + key + '", which cannot be checked');
       if (!reachable.some(function (c) { return R.inReach({ x: c[0], y: c[1] }, th); })) {
         say(n + ' target "' + key + '" cannot be reached from the start');
+      } else if (r.ok && !r.cells.some(function (c) { return R.inReach({ x: c[0], y: c[1] }, th); })) {
+        say(n + ': "' + key + '" is not on the route, so the letter never takes the player there');
       }
     });
     const Score = FF.MissionTrail.Score;
