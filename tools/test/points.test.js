@@ -226,16 +226,16 @@ test('points: quick tap tiers are 10 / 8 / 6 / 4 / 2 and room places 10 / 8 / 6,
   assertEqual(QT.tierPoints(null), 0);
 });
 
-test('points: in survival whoever is still in places above anyone knocked out, whatever their points', function () {
-  const NR = loadGame(['js/core.js'], ['js/games/numberRush.js']).NumberRush;
+test('points: survival ranks by points on one phone, as rooms do, and says staying in earns +10', function () {
+  const FF = loadGame(['js/core.js'], ['js/games/numberRush.js']);
+  const NR = FF.NumberRush;
   const surv = { mode: 'survival', seconds: 60 };
   const standing = { st: { value: NR.points({ found: 5, elim: false }, surv), elim: false } };
   const out = { st: { value: NR.points({ found: 25, elim: true, used: 50000 }, surv), elim: true } };
-  assert(out.st.value > standing.st.value, 'the knocked-out player has more points');
-  const r = NR.rankRuns([out, standing], surv);
-  assertEqual([r[0] === standing, r[0].place, r[1].place], [true, 1, 2]);
-  const race = NR.rankRuns([{ st: { value: 5, elim: false } }, { st: { value: 9, elim: true } }], { mode: 'race' });
-  assertEqual(race[0].st.value, 9, 'other modes still rank by points');
+  const r = NR.rankRuns([standing, out], surv);
+  assertEqual([r[0] === out, r[0].place, r[1].place], [true, 1, 2], 'more points places first, as FF.Parallel ranks a room');
+  const note = NR.fields({ mode: 'survival' }).filter(function (f) { return f.note; })[0].note;
+  assert(/\+10/.test(note) && !/wins/.test(note), note);
 });
 
 /* ---------------- Task 7: Stacoend, Mini Crossword, WordShift, word games, Imposters ---------------- */

@@ -149,7 +149,7 @@ test('number rush: points rank finishers first, faster first, and survivors over
   const standing = NR.points({ found: 5, total: 31, mistakes: 2, elim: false, used: 60000 }, surv);
   const out = NR.points({ found: 25, total: 31, mistakes: 3, elim: true, used: 50000 }, surv);
   assert(out > standing, 'more numbers means more points');
-  assertEqual(NR.rankRuns([{ st: { value: out, elim: true } }, { st: { value: standing, elim: false } }], surv)[0].st.elim, false, 'but still in places first');
+  assertEqual(NR.rankRuns([{ st: { value: out, elim: true } }, { st: { value: standing, elim: false } }], surv)[0].st.elim, true, 'places go by points, as in rooms');
   const score = NR.sanitize({ mode: 'score' });
   assert(NR.points({ found: 10, combo: 50 }, score) > NR.points({ found: 10, combo: 0 }, score), 'combos count in Score mode');
   assertEqual(NR.comboBonus(500), 2);

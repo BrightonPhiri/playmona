@@ -272,7 +272,7 @@ window.FF = window.FF || {};
       { key: 'speed', label: t('nrSpeed', 'Ring speed'), options: SPEEDS.map(function (s) { return opt(speedLabel(s), s); }) },
       { key: 'order', label: t('nrOrder', 'Order'), options: ORDERS.map(function (o) { return opt(orderLabel(o), o); }) }
     ];
-    if (gs && gs.mode === 'survival') out.push({ note: t('nrSurvivalNote', 'Survival: run out of mistakes and you are out. Whoever is still in at the end wins.') });
+    if (gs && gs.mode === 'survival') out.push({ note: t('nrSurvivalNote2', 'Survival: run out of mistakes and you are out. Still in at the end earns +10.') });
     return out;
   }
 
@@ -1031,17 +1031,15 @@ window.FF = window.FF || {};
     next();
   }
 
-  /* Most points first. In Survival whoever is still in comes above anyone
-     knocked out, whatever their points ("whoever is still in at the end wins"). */
-  function rankRuns(runs, cfg) {
-    var surv = !!(cfg && cfg.mode === 'survival');
-    function out(r) { return surv && r.st.elim ? 1 : 0; }
+  /* Most points first, then the faster full board: the same order FF.Parallel
+     gives a room. (In Survival, staying in to the end is worth +10.) */
+  function rankRuns(runs) {
     var sorted = runs.slice().sort(function (a, b) {
-      return out(a) - out(b) || b.st.value - a.st.value || (a.st.full && b.st.full ? a.st.used - b.st.used : 0);
+      return b.st.value - a.st.value || (a.st.full && b.st.full ? a.st.used - b.st.used : 0);
     });
     var place = 0, prev = null;
     sorted.forEach(function (r, i) {
-      if (!prev || out(prev) !== out(r) || prev.st.value !== r.st.value || (r.st.full && prev.st.full && prev.st.used !== r.st.used)) place = i + 1;
+      if (!prev || prev.st.value !== r.st.value || (r.st.full && prev.st.full && prev.st.used !== r.st.used)) place = i + 1;
       r.place = place;
       prev = r;
     });
@@ -1058,7 +1056,7 @@ window.FF = window.FF || {};
     var root = api.shell.root;
     api.shell.hideTimer();
     FF.ui.clear(root);
-    var ranked = rankRuns(runs, cfg);
+    var ranked = rankRuns(runs);
     var top = ranked[0];
     var tie = ranked.length > 1 && ranked[1].place === 1;
     var solo = ranked.length === 1;
