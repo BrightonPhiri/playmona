@@ -263,11 +263,13 @@ window.FF = window.FF || {};
 
   /* ---------------- play ---------------- */
 
-  // Where choices stand in a pick scene, as % of the scene (centre x, bottom y). Things lie
-  // scattered around a room; people stand in two rows. Choices are shuffled onto these spots.
+  // Where choices stand in a pick scene, as % of the scene (centre x, bottom y), in the order
+  // they fill. Everything stands on the floor (the lower part of each room picture), never on
+  // the furniture: things in two rows of three, people in one row. The choices are shuffled,
+  // the spots are not, so any number of choices spreads evenly.
   var SPOTS = {
-    objects: [[14, 40], [39, 33], [63, 41], [86, 34], [26, 70], [51, 64], [75, 72], [10, 92], [40, 95], [66, 93], [90, 90], [88, 62]],
-    characters: [[14, 62], [38, 58], [62, 62], [86, 58], [26, 96], [50, 92], [74, 96], [8, 90], [92, 92]]
+    objects: [[20, 62], [50, 59], [80, 62], [20, 95], [50, 92], [80, 95], [35, 76], [65, 76], [50, 76]],
+    characters: [[9, 97], [25, 94], [42, 97], [58, 94], [75, 97], [91, 94], [17, 72], [50, 72], [83, 72]]
   };
   var SCENE_PROMPT = {
     collect: ['mtSceneCollect', 'Pick what your letter asks for.'],
@@ -413,12 +415,14 @@ window.FF = window.FF || {};
          closable, category: 'objects' | 'characters' }. */
       openScene: function (sc) {
         if (sceneEl && sceneEl.parentNode) sceneEl.parentNode.removeChild(sceneEl);
-        var spots = shuffled(SPOTS[sc.category] || SPOTS.objects);
+        var spots = SPOTS[sc.category] || SPOTS.objects;
         var room = div('mt-scene__room');
         if (sc.backdrop) room.appendChild(el('img', { class: 'mt-scene__bg', src: sc.backdrop, alt: '' }));
         var buttons = [];
         shuffled(sc.options).forEach(function (o, i) {
-          var spot = spots[i % spots.length];
+          // Up to six people share one evenly spaced row.
+          var oneRow = sc.category === 'characters' && sc.options.length <= 6;
+          var spot = oneRow ? [(i + 0.5) * 100 / sc.options.length, i % 2 ? 94 : 97] : spots[i % spots.length];
           var b = el('button', { class: 'mt-thing mt-thing--' + (sc.category || 'objects'), type: 'button' },
             [el('img', { src: o.src, alt: '' })]);
           b.setAttribute('aria-label', o.name || o.id);

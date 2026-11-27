@@ -378,8 +378,56 @@ FF.AssetManifest = {
   "games/missionTrail/ui": {
     "envelope": "3a23f6d6"
   },
-  "games/missionTrail/characters": {},
-  "games/missionTrail/objects": {},
-  "games/missionTrail/vehicles": {},
-  "games/missionTrail/scenes": {}
+  "games/missionTrail/characters": {
+    "boy": "26158ec3",
+    "doctor": "94b063aa",
+    "gardener": "0a37001f",
+    "girl": "5dd2ac6d",
+    "grandma": "85df4c2a",
+    "grandpa": "190771c7",
+    "librarian": "6a988b18",
+    "mechanic": "e00e1266",
+    "nurse": "a6bfc412",
+    "postman": "18820dda",
+    "shopkeeper": "5d009275",
+    "teacher": "798ebcbf"
+  },
+  "games/missionTrail/objects": {
+    "blue-cap": "d982202a",
+    "book-blue": "35430cfe",
+    "book-red": "0109f343",
+    "green-cap": "5a59cb2a",
+    "keys": "4ca5717f",
+    "medical-bag": "99756ecc",
+    "newspaper": "2ad8c7e9",
+    "red-cap": "2ccc6b51",
+    "teddy-bear": "a0ae8a77",
+    "umbrella": "95a9d8b8",
+    "watch": "14c0c833",
+    "water-bottle": "e638ec36"
+  },
+  "games/missionTrail/vehicles": {
+    "car-blue-down": "fe4b720a",
+    "car-blue-left": "3604c2bd",
+    "car-blue-right": "2cf49a59",
+    "car-blue-up": "c68b0692",
+    "car-green-down": "16b8ef47",
+    "car-green-left": "30a0f3d4",
+    "car-green-right": "a9034494",
+    "car-green-up": "1ac550d9",
+    "car-red-down": "0f208cf1",
+    "car-red-left": "a0d80695",
+    "car-red-right": "e13f2e6d",
+    "car-red-up": "022c38a5"
+  },
+  "games/missionTrail/scenes": {
+    "bedroom": "3a7aae5d",
+    "classroom": "9b326159",
+    "garage": "5825eeef",
+    "hallway": "9180b491",
+    "hospital": "189839f8",
+    "kitchen": "80aa754e",
+    "library": "60d46de2",
+    "post-office": "5fe6e6e3"
+  }
 };
