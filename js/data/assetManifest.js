@@ -397,15 +397,27 @@ FF.AssetManifest = {
     "blue-cap": "d982202a",
     "book-blue": "35430cfe",
     "book-red": "0109f343",
+    "football": "d43f1bd6",
+    "green-apple": "b382f1bd",
     "green-cap": "5a59cb2a",
     "keys": "4ca5717f",
+    "lunchbox": "4516d8ad",
     "medical-bag": "99756ecc",
     "newspaper": "2ad8c7e9",
+    "phone": "be8a4fe6",
+    "pink-slippers": "a6116ba3",
+    "reading-glasses": "49e3c38b",
     "red-cap": "2ccc6b51",
+    "red-scarf": "2219faab",
+    "sunglasses": "f3e722e8",
     "teddy-bear": "a0ae8a77",
+    "torch": "8c5ee65f",
+    "toy-car": "6f3b170f",
     "umbrella": "95a9d8b8",
+    "wallet": "7441b46d",
     "watch": "14c0c833",
-    "water-bottle": "e638ec36"
+    "water-bottle": "e638ec36",
+    "yellow-mug": "b00e3241"
   },
   "games/missionTrail/vehicles": {
     "car-blue-down": "fe4b720a",
@@ -430,5 +442,12 @@ FF.AssetManifest = {
     "kitchen": "80aa754e",
     "library": "60d46de2",
     "post-office": "5fe6e6e3"
+  },
+  "games/missionTrail/rooms": {
+    "bedroom": "a29fa64f",
+    "hallway": "ea63c770",
+    "kitchen": "ea7c7466",
+    "library": "93aabfbf",
+    "living-room": "3c6f6aa5"
   }
 };

@@ -316,8 +316,8 @@ window.FF = window.FF || {};
         handle.setBag(e.inventory.map(function (id) { return choice('objects', id); }));
         var left = run.scene ? run.scene.want - run.scene.have.length : 0;
         handle.say(left === 1
-          ? t('mtPickedOneMore', '{name} is in your bag. One more to find!', { name: choice('objects', e.id).name })
-          : t('mtPickedMore', '{name} is in your bag. {n} more to find!', { name: choice('objects', e.id).name, n: left }), 'good');
+          ? t('mtPickedOneMore', 'You put the {name} in your bag. One more to find!', { name: String(choice('objects', e.id).name).toLowerCase() })
+          : t('mtPickedMore', 'You put the {name} in your bag. {n} more to find!', { name: String(choice('objects', e.id).name).toLowerCase(), n: left }), 'good');
       }));
       a.off.push(run.on('picked', function (e) {
         sound('correct');
@@ -325,7 +325,7 @@ window.FF = window.FF || {};
         handle.setBag(e.inventory.map(function (id) { return choice('objects', id); }));
         var who = e.kind === 'collect' ? null : choice('characters', e.id).name;
         var thing = e.kind === 'collect' ? choice('objects', e.id).name : null;
-        if (e.kind === 'collect') handle.say(t('mtPickedUp', '{name} is in your bag.', { name: thing }), 'good');
+        if (e.kind === 'collect') handle.say(t('mtPickedUp', 'You put the {name} in your bag.', { name: String(thing).toLowerCase() }), 'good');
         else if (e.kind === 'give') {
           var several = MT.Engine.thingsOf((stage.steps || [])[run.stepIndex - 1] || {}).length > 1;
           handle.say(several
