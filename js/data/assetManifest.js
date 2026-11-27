@@ -324,5 +324,58 @@ FF.AssetManifest = {
     "moon-base": "afced97a",
     "pirate-ship": "70da29db",
     "wizard-library": "0cca3ec3"
+  },
+  "games/missionTrail/buildings": {
+    "block-glass": "bcf62b9e",
+    "hall-brick": "69d802cd",
+    "hall-stone": "3625b8c9",
+    "house-blue": "572f885e",
+    "house-brown": "6225d939",
+    "house-green": "6b4aca24",
+    "house-orange": "241a26c3",
+    "house-purple": "4ccec439",
+    "house-red": "f9f5dde6",
+    "shop-blue": "09bc944a",
+    "shop-green": "26841cb2",
+    "shop-red": "55d6cc79"
+  },
+  "games/missionTrail/props": {
+    "bench": "04620cff",
+    "bin": "cc91c323",
+    "bus-stop": "da69eb41",
+    "bush": "4ee79519",
+    "flower-bed": "3da67556",
+    "fountain": "c7e2534d",
+    "postbox": "12326c53",
+    "signpost": "90a2d1e0",
+    "street-lamp": "7173860b",
+    "traffic-light": "09faaf07",
+    "tree-pine": "72f13977",
+    "tree-round": "a6c77e6c"
+  },
+  "games/missionTrail/walker": {
+    "walker-down-0": "83e2345b",
+    "walker-down-1": "3d2990b7",
+    "walker-down-2": "17870c25",
+    "walker-left-0": "1da57c77",
+    "walker-left-1": "d046c751",
+    "walker-left-2": "55a24347",
+    "walker-right-0": "56c93993",
+    "walker-right-1": "7a4d2f37",
+    "walker-right-2": "90175e9f",
+    "walker-up-0": "f1933a76",
+    "walker-up-1": "858a3ee6",
+    "walker-up-2": "ac75f424"
+  },
+  "games/missionTrail/ground": {
+    "asphalt": "b4f65ba5",
+    "garden": "0740cbe1",
+    "grass": "1326dee8",
+    "park-path": "48d31cf7",
+    "pavement": "996a9d4b",
+    "water": "1002547e"
+  },
+  "games/missionTrail/ui": {
+    "envelope": "3a23f6d6"
   }
 };

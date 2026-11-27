@@ -12,7 +12,8 @@ const path = require('path');
 const crypto = require('crypto');
 
 const ROOT = path.join(__dirname, '..');
-const FOLDERS = ['covers', 'categories', 'ui', 'games/memoryMatch', 'games/pictureRush', 'games/spotDifference', 'games/hiddenObject'];
+const FOLDERS = ['covers', 'categories', 'ui', 'games/memoryMatch', 'games/pictureRush', 'games/spotDifference', 'games/hiddenObject',
+  'games/missionTrail/buildings', 'games/missionTrail/props', 'games/missionTrail/walker', 'games/missionTrail/ground', 'games/missionTrail/ui'];
 const out = {};
 
 FOLDERS.forEach(function (folder) {
