@@ -127,17 +127,17 @@ test('bible quiz: what this phone has seen is skipped while enough are fresh', f
   assertEqual(B.deal(ITEMS, B.STANDARD, B.rng(7), 10, almostAll).length, 10, 'too few fresh: play the whole pool');
 });
 
-test('bible quiz: points match the crew brain and double rounds are local', function () {
+test('bible quiz: points match the crew brain and bonus questions are local', function () {
   [0, 1500, 7000, 19999, 25000].forEach(function (ms) {
-    const crew = 100 + Math.max(0, Math.round((20 - ms / 1000) * 3));
+    const crew = 10 + Math.max(0, Math.round((20 - ms / 1000) * 0.25));
     assertEqual(B.points(true, ms, false), crew, 'same as the crew brain at ' + ms + ' ms');
-    assertEqual(B.points(true, ms, true), crew * 2, 'double round');
+    assertEqual(B.points(true, ms, true), crew + 5, 'bonus question');
     assertEqual(B.points(false, ms, true), 0);
   });
   assertEqual([0, 1, 2, 3, 4, 9].map(function (r) { return B.isDouble(r, false); }), [false, false, false, false, true, true]);
-  assert(!B.isDouble(4, true), 'no double rounds in a room');
+  assert(!B.isDouble(4, true), 'no bonus questions in a room');
   const brain = fs.readFileSync(path.join(ROOT, 'js/crew/brains/quiz.js'), 'utf8');
-  assert(/bibleQuiz'\) answer\.value = correct \? 100 \+ Math\.max\(0, Math\.round\(\(20 - ms \/ 1000\) \* 3\)\) : 0/.test(brain), 'the crew brain still scores Bible Quiz this way');
+  assert(/bibleQuiz'\) answer\.value = correct \? 10 \+ Math\.max\(0, Math\.round\(\(20 - ms \/ 1000\) \* 0\.25\)\) : 0/.test(brain), 'the crew brain still scores Bible Quiz this way');
 });
 
 test('bible quiz: registered once, with the daily and challenge on standard rules', function () {

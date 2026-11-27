@@ -26,13 +26,13 @@ window.FF = window.FF || {};
   var LEVELS = ['kids', 'family', 'scholar', 'expert'];
   // Expert plays the Family questions; "who said it" and "finish the verse"
   // questions with a short answer are spelled with letter tiles (js/spellTiles.js).
-  var SPELL_BONUS = 50;
+  var SPELL_BONUS = 5;
   var SPELL_EXTRA_SECS = 6;
   var SPELL_MAX_LETTERS = 14;
   var TYPES = ['choice', 'finish', 'said', 'tf', 'order'];
-  var DOUBLE_EVERY = 5;       // every 5th question is worth double (local play)
+  var DOUBLE_EVERY = 5;       // every 5th question is a bonus question, +5 (local play)
   var STREAK_EVERY = 3;       // 3 right in a row earns a bonus (local play)
-  var STREAK_BONUS = 50;
+  var STREAK_BONUS = 5;
   var MIN_LEVEL_POOL = 12;    // fewer than this at a level: use every level
   var MIN_POOL = 4;
   var ORDER_EXTRA_SECS = 10;  // ordering takes more taps
@@ -196,11 +196,13 @@ window.FF = window.FF || {};
     return FF.AnswerMatch.check(guess, accepted, others);
   }
 
-  /* 100 for a right answer plus up to 60 for speed; the crew brain uses the same sum. */
-  function points(correct, ms, double) {
+  /* 10 for a right answer plus up to 5 for speed, and 5 more on a bonus question;
+     the crew brain uses the same sum. */
+  var BONUS_Q = 5;
+  function points(correct, ms, bonusQ) {
     if (!correct) return 0;
-    var pts = 100 + Math.max(0, Math.round((20 - (ms || 0) / 1000) * 3));
-    return double ? pts * 2 : pts;
+    var pts = 10 + Math.max(0, Math.round((20 - (ms || 0) / 1000) * 0.25));
+    return bonusQ ? pts + BONUS_Q : pts;
   }
 
   function isDouble(round, racing) { return !racing && (round + 1) % DOUBLE_EVERY === 0; }
@@ -556,7 +558,7 @@ window.FF = window.FF || {};
       if (double) {
         var dbl = FF.ui.span('qm-double');
         dbl.appendChild(FF.Icons.icon('lightning'));
-        dbl.appendChild(FF.ui.span('', t('qmDouble', 'Double points')));
+        dbl.appendChild(FF.ui.span('', t('bqBonusQ', 'Bonus question: +5')));
         head.appendChild(dbl);
       }
       head.appendChild(levelDots(q.level));
@@ -704,7 +706,7 @@ window.FF = window.FF || {};
           if (streak) api.scoring.add(entity.id, STREAK_BONUS);
           api.audio.play(streak || double ? 'streak' : 'correct');
           after.appendChild(FF.GameUI.feedback('good', FF.GameUI.correctText(pts + (streak ? STREAK_BONUS : 0)) +
-            (double ? ' ' + t('qmDoubled', 'Doubled!') : '') + (streak ? ' ' + t('streakBonus', 'Streak bonus!') : '') + (spellLine ? ' ' + spellLine : '')));
+            (double ? ' ' + t('bqBonusGot', 'Bonus +5!') : '') + (streak ? ' ' + t('streakBonus', 'Streak bonus!') : '') + (spellLine ? ' ' + spellLine : '')));
         } else {
           api.scoring.add(entity.id, 0, { wrong: true });
           if (api.scoring.resetStreak) api.scoring.resetStreak(entity.id);

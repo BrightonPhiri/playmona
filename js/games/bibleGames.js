@@ -28,7 +28,7 @@ window.FF = window.FF || {};
   var LEVELS = ['kids', 'family', 'scholar', 'expert'];
   // Expert plays the Family people, verses and books, and has you spell
   // the names (letter tiles, js/spellTiles.js) instead of picking them.
-  var SPELL_BONUS = 50;
+  var SPELL_BONUS = 5;
   var SPELL_EXTRA_SECS = 6;
 
   function bible() {
@@ -150,8 +150,9 @@ window.FF = window.FF || {};
     });
   }
 
-  /* 300 on the first clue, then 225, 150 and 75 (the same in rooms). */
-  function whoPoints(clue) { return (5 - Math.max(1, Math.min(4, clue))) * 75; }
+  /* 10 on the first clue, then 8, 5 and 3 (the same in rooms). */
+  var WHO_POINTS = [10, 8, 5, 3];
+  function whoPoints(clue) { return WHO_POINTS[Math.max(1, Math.min(4, clue)) - 1]; }
 
   /* ---------- Verse Rush ---------- */
 
@@ -260,25 +261,25 @@ window.FF = window.FF || {};
     return n;
   }
 
-  /* Local points. Building: 100 plus up to 50 for speed, less 20 a wrong
-     try and 25 a hint, never under 25. Where is it: 100 plus up to 50. */
+  /* Local points. Building: 10 plus up to 5 for speed, less 1 a wrong
+     try and 2 a hint, never under 3. Where is it: 10 plus up to 5. */
   function buildPoints(ms, limitMs, mistakes, hints) {
-    var speed = limitMs > 0 ? Math.round(50 * Math.max(0, 1 - ms / limitMs)) : Math.max(0, Math.round(50 - (ms / 1000) * 2));
-    return Math.max(25, 100 + speed - 20 * (mistakes || 0) - 25 * (hints || 0));
+    var speed = limitMs > 0 ? Math.round(5 * Math.max(0, 1 - ms / limitMs)) : Math.max(0, Math.round(5 - (ms / 1000) * 0.2));
+    return Math.max(3, 10 + speed - (mistakes || 0) - 2 * (hints || 0));
   }
   function wherePoints(correct, ms) {
-    return correct ? 100 + Math.max(0, Math.round((20 - (ms || 0) / 1000) * 2.5)) : 0;
+    return correct ? 10 + Math.max(0, Math.round((20 - (ms || 0) / 1000) * 0.25)) : 0;
   }
   // Online, every finished verse scores; the quickest two earn more.
   function versePlacePoints(place) {
-    return 150 + Math.max(0, 3 - (place || 1)) * 50;
+    return 10 + ([5, 3][(place || 1) - 1] || 0);
   }
 
   /* ---------- Books of the Bible ---------- */
 
   var BOOK_KINDS = ['testament', 'division', 'next', 'order'];
   var BOOKS_STANDARD = { level: 'family', kinds: [] };
-  var BOOK_BASE = { testament: 80, division: 100, next: 100, order: 120 };
+  var BOOK_BASE = { testament: 6, division: 8, next: 8, order: 10 };
   // Parts whose names could fairly fit each other's books are never offered together.
   var DIV_CLASH = { prophecy: ['major', 'minor'], major: ['prophecy'], minor: ['prophecy'], acts: ['history'], history: ['acts'] };
 
@@ -385,9 +386,9 @@ window.FF = window.FF || {};
     return true;
   }
 
-  /* Local points: by kind, plus 10 a streak step (up to 50). */
+  /* Local points: by kind, plus 1 a streak step (up to 5). */
   function bookPoints(kind, streak) {
-    return (BOOK_BASE[kind] || 80) + Math.min(5, Math.max(0, streak || 0)) * 10;
+    return (BOOK_BASE[kind] || 6) + Math.min(5, Math.max(0, streak || 0));
   }
 
   /* ---------- Expert: spelled names ---------- */
@@ -808,7 +809,7 @@ window.FF = window.FF || {};
   var BOOKS_PER_SPRINT = 6;
 
   function booksPoints(st, ms, limitMs) {
-    var speed = st.total ? FF.Parallel.speedBonus(ms, limitMs, 100) * st.right / st.total : 0;
+    var speed = st.total ? FF.Parallel.speedBonus(ms, limitMs, 5) * st.right / st.total : 0;
     return Math.round(st.points + speed);
   }
 
@@ -867,7 +868,7 @@ window.FF = window.FF || {};
             if (right) {
               streak++;
               st.right++;
-              st.points += 80 + streak * 10;
+              st.points += 6 + Math.min(5, streak);
               api.audio.play('correct');
             } else {
               streak = 0;
@@ -906,7 +907,7 @@ window.FF = window.FF || {};
   var WHO_ONLINE_MIN_SECS = 40;
   var WHO_SEEN = 'bibleWhoSeen';
   var STREAK_EVERY = 3;
-  var STREAK_BONUS = 50;
+  var STREAK_BONUS = 5;
 
   function levelOptions() { return LEVELS.map(function (l) { return { value: l, label: levelName(l) }; }); }
 
@@ -1213,8 +1214,8 @@ window.FF = window.FF || {};
     defaultMode: 'turn',
     howToPlay: [
       'Pick a level (Kids, Family, Bible scholar or Expert), a testament, and whether clues come by themselves.',
-      'Clues appear one at a time, hardest first. Pick the person from four names, or on Expert spell the name with letter tiles (50 bonus points).',
-      'The first clue is worth 300 points, then 225, 150 and 75. Three right in a row earns a bonus.',
+      'Clues appear one at a time, hardest first. Pick the person from four names, or on Expert spell the name with letter tiles (5 bonus points).',
+      'The first clue is worth 10 points, then 8, 5 and 3. Three right in a row earns a bonus.',
       'A wrong name ends that person. After each answer, read a verse about them and where their story is.'
     ],
     start: function (api) {
@@ -1653,7 +1654,7 @@ window.FF = window.FF || {};
     howToPlay: [
       'Pick a level and the kinds of round: build the verse, where is it, or both.',
       'Build: tap the pieces in order. A wrong try keeps the right start and sends the rest back.',
-      'Where is it: read the verse and pick its reference from four, or on Expert spell the book with letter tiles (50 bonus points).',
+      'Where is it: read the verse and pick its reference from four, or on Expert spell the book with letter tiles (5 bonus points).',
       'Faster scores more; mistakes and hints cost a little. Read each verse in full after every round.'
     ],
     start: function (api) {
@@ -1895,7 +1896,7 @@ window.FF = window.FF || {};
     defaultMode: 'turn',
     howToPlay: [
       'Pick a level and the kinds of round you want.',
-      'Say which testament a book is in, which part of the Bible it belongs to, or which book comes next (on Expert, spell it with letter tiles for 50 bonus points).',
+      'Say which testament a book is in, which part of the Bible it belongs to, or which book comes next (on Expert, spell it with letter tiles for 5 bonus points).',
       'Put three or four books in Bible order by tapping them into the slots.',
       'Answer streaks add points. After each answer, see the book’s place, its chapters and a key verse.'
     ],

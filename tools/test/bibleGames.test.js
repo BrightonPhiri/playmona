@@ -244,17 +244,17 @@ test('books: a seed deals the same rounds, the kinds take turns, every answer is
 /* ---------------- points ---------------- */
 
 test('points: who am I by clue, verse building, and the room points are unchanged', function () {
-  assertEqual([1, 2, 3, 4].map(G.who.points), [300, 225, 150, 75]);
+  assertEqual([1, 2, 3, 4].map(G.who.points), [10, 8, 5, 3]);
   assert(/race\.submit\(chosenName, isCorrect, null, \{ value: isCorrect \? whoPoints\(clueLevel\) : 0 \}\)/.test(SRC), 'a room guess sends its clue value');
-  assertEqual([1, 2, 3, 4].map(G.verse.placePoints), [250, 200, 150, 150], 'verse rush rooms score by place');
-  assertEqual(G.verse.buildPoints(0, 30000, 0, 0), 150, 'instant and clean');
-  assertEqual(G.verse.buildPoints(15000, 30000, 0, 0), 125, 'half the time');
-  assertEqual(G.verse.buildPoints(30000, 30000, 1, 1), 55, 'a mistake and a hint cost');
-  assertEqual(G.verse.buildPoints(30000, 30000, 9, 9), 25, 'never under 25');
-  assertEqual(G.verse.wherePoints(true, 0), 150);
+  assertEqual([1, 2, 3, 4].map(G.verse.placePoints), [15, 13, 10, 10], 'verse rush rooms score by place');
+  assertEqual(G.verse.buildPoints(0, 30000, 0, 0), 15, 'instant and clean');
+  assertEqual(G.verse.buildPoints(15000, 30000, 0, 0), 13, 'half the time');
+  assertEqual(G.verse.buildPoints(30000, 30000, 1, 1), 7, 'a mistake and a hint cost');
+  assertEqual(G.verse.buildPoints(30000, 30000, 9, 9), 3, 'never under 3');
+  assertEqual(G.verse.wherePoints(true, 0), 15);
   assertEqual(G.verse.wherePoints(false, 0), 0);
-  assertEqual([G.books.points('testament', 1), G.books.points('order', 2), G.books.points('next', 9)], [90, 140, 150]);
-  assert(/st\.points \+= 80 \+ streak \* 10;/.test(SRC), 'books rooms still score 80 plus 10 a streak');
+  assertEqual([G.books.points('testament', 1), G.books.points('order', 2), G.books.points('next', 9)], [7, 12, 13]);
+  assert(/st\.points \+= 6 \+ Math\.min\(5, streak\);/.test(SRC), 'books rooms score 6 plus 1 a streak (up to 5)');
 });
 
 /* ---------------- registration and a headless round ---------------- */
@@ -319,7 +319,7 @@ test('who am I: a daily run deals the same people every time and scores a first-
   assert(person, 'the clue belongs to a person');
   const right = all(a.root, function (c) { return c.tagName === 'BUTTON' && c.dataset && c.dataset.answer === person.answer; })[0];
   right.dispatch('click');
-  assertEqual(a.log.added[0].pts, 300, 'first clue is worth 300');
+  assertEqual(a.log.added[0].pts, 10, 'first clue is worth 10');
   assert(all(a.root, function (c) { return cls(c, 'bq-verse'); }).length === 1, 'the verse card shows');
   assertEqual(all(a.root, function (c) { return cls(c, 'bw-clue'); }).length, 4, 'four clue rows');
   assertEqual(all(a.root, function (c) { return cls(c, 'bw-clue--locked'); }).length, 0, 'every clue is shown after the answer');
@@ -341,7 +341,7 @@ test('verse rush: a daily run builds a verse piece by piece', function () {
     chip.dispatch('click');
   });
   assertEqual(d.log.added.length, 1, 'scored once');
-  assert(d.log.added[0].pts >= 100 && d.log.added[0].pts <= 150, 'a clean build scores 100 to 150');
+  assert(d.log.added[0].pts >= 10 && d.log.added[0].pts <= 15, 'a clean build scores 10 to 15');
   assert(all(d.root, function (c) { return cls(c, 'bq-verse'); }).length === 1, 'the verse card shows');
 });
 
