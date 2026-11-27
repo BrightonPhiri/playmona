@@ -33,11 +33,16 @@ window.FF = window.FF || {};
   var SIZES = { easy: [5], normal: [5, 7], hard: [7, 9] };
   var RACE_MS = { easy: 360000, normal: 480000, hard: 720000 };
 
-  var BASE = { easy: 100, normal: 200, hard: 300 };
+  // Points: 10 to finish, up to 10 more for speed, less what help cost. No award is above 10.
+  var FINISH = 10;
+  var SPEED = 10;
   var PAR_S = { easy: 180, normal: 300, hard: 480 };
-  var COST = { letter: 10, word: 30, check: 15 };
+  var COST = { letter: 1, word: 3, check: 1 };
   var WEIGHT = { letter: 1, word: 3, check: 1 };
-  var FLOOR = 10;
+  var FLOOR = 1;
+
+  /* A word solved in take turns or a room race: 1 for up to 4 letters, 2 for up to 7, 3 for longer. */
+  function wordPoints(len) { return len <= 4 ? 1 : len <= 7 ? 2 : 3; }
 
   function rowsOf(p) {
     if (p.rows && p.rows.length) return p.rows;
@@ -164,8 +169,8 @@ window.FF = window.FF || {};
   function score(o) {
     var level = oneOf(o.level, LEVELS, 'normal');
     var help = o.help || {};
-    var base = BASE[level] * (o.expert ? 1.5 : 1);
-    var bonus = Math.max(0, PAR_S[level] - Math.floor((o.ms || 0) / 1000));
+    var base = FINISH;
+    var bonus = Math.round(SPEED * Math.max(0, 1 - Math.floor((o.ms || 0) / 1000) / PAR_S[level]));
     var cost = 0, weight = 0;
     Object.keys(COST).forEach(function (k) { var n = help[k] || 0; cost += n * COST[k]; weight += n * WEIGHT[k]; });
     return {
@@ -175,6 +180,7 @@ window.FF = window.FF || {};
   }
 
   FF.CrosswordRules = {
+    wordPoints: wordPoints, COST: COST,
     LEVELS: LEVELS, PACKS: PACKS, CHECKING: CHECKING, PLAYS: PLAYS, STANDARD: STANDARD,
     SIZES: SIZES, RACE_MS: RACE_MS, MIN_PLAYERS: 2, MAX_PLAYERS: 8,
     build: build, shape: shape, answer: answer, checkWord: checkWord, wrongCells: wrongCells,

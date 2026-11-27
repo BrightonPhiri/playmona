@@ -44,7 +44,6 @@ window.FF = window.FF || {};
   var BRIEF_MS = 5000;             // after the room's countdown: read how to play
   var GRACE_MS = 600;              // a command sent this soon after the clock still counts
   var WRONG_MS = 20000;            // Expert race: each wrong grid check adds this to your time
-  var WORD_PTS = { easy: 10, normal: 15, hard: 20 };   // per letter, as one-device take turns
 
   function list(v) {
     if (Array.isArray(v)) return v.filter(function (x) { return x != null; });
@@ -87,7 +86,7 @@ window.FF = window.FF || {};
       for (var i = 0; i < built.words.length; i++) if (built.words[i].id === id) return built.words[i];
       return null;
     }
-    function wordPoints(w) { return Math.round(w.len * WORD_PTS[state.settings.level] * (expert() ? 1.5 : 1)); }
+    function wordPoints(w) { return R.wordPoints(w.len); }
     function deal() {
       puzzle = R.pick(FF.data.crosswords, Object.assign({}, state.settings, { sharedDeal: true }), state.seed);
       if (!puzzle) throw new Error('No crossword for ' + state.settings.level + ' / ' + state.settings.pack + '.');
@@ -448,5 +447,5 @@ window.FF = window.FF || {};
     };
   }
 
-  FF.CrosswordReferee = { create: create, BRIEF_MS: BRIEF_MS, GRACE_MS: GRACE_MS, WRONG_MS: WRONG_MS, WORD_PTS: WORD_PTS };
+  FF.CrosswordReferee = { create: create, BRIEF_MS: BRIEF_MS, GRACE_MS: GRACE_MS, WRONG_MS: WRONG_MS };
 })();

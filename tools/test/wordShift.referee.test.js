@@ -164,7 +164,7 @@ test('wordShift referee: a refused real try counts as a move, is not applied, an
   assertEqual(m.mine('p1').word, p.s, 'and the word goes back');
 });
 
-test('wordShift referee: first to the target gets 100, second 70, plus efficiency; round ends when all are done', async function () {
+test('wordShift referee: first to the target gets 10, second 7, plus efficiency; round ends when all are done', async function () {
   const m = await match();
   await m.open();
   const id = m.ws().puzzle.id;
@@ -177,8 +177,8 @@ test('wordShift referee: first to the target gets 100, second 70, plus efficienc
   await m.walk('p2', route);
   const g = m.ws();
   assertEqual(g.phase, 'reveal');
-  assertEqual(g.last.results.p1.points, 100 + 100 - 15 * Math.max(0, route.length - n));
-  assertEqual(g.last.results.p2.points, 70 + 100 - 15 * Math.max(0, route.length - n));
+  assertEqual(g.last.results.p1.points, 10 + Math.max(0, 5 - Math.max(0, route.length - n)));
+  assertEqual(g.last.results.p2.points, 7 + Math.max(0, 5 - Math.max(0, route.length - n)));
   assertEqual(g.last.n, n, 'the shortest length shows at the reveal');
 });
 

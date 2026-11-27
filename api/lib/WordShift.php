@@ -21,8 +21,8 @@ class WordShift
     public const MODES = ['classic', 'timed'];
     public const CLOCKS = [60, 90, 120, 180];
     public const SCORING = [
-        'finish' => 100, 'efficiency' => 100, 'perExtra' => 15, 'perSecond' => 2, 'perInvalid' => 5,
-        'race' => [100, 70, 50, 30],
+        'finish' => 10, 'efficiency' => 5, 'perExtra' => 1, 'timeEvery' => 10, 'timeMax' => 10, 'perInvalid' => 1,
+        'race' => [10, 7, 5, 3],
     ];
     public const MAX_MOVES = 200;
     private const GRACE_MS = 5_000;               // a Time Challenge finish this late still counts
@@ -104,7 +104,7 @@ class WordShift
     {
         $s = self::SCORING;
         $pts = $s['finish'] + max(0, $s['efficiency'] - $s['perExtra'] * max(0, $moves - $shortest));
-        if ($timed) $pts += $s['perSecond'] * max(0, $secondsLeft);
+        if ($timed) $pts += min($s['timeMax'], intdiv(max(0, $secondsLeft), $s['timeEvery']));
         $pts -= $s['perInvalid'] * max(0, $invalid);
         return min(self::MAX_SCORE, max(0, $pts));
     }

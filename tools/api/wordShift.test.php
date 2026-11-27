@@ -69,7 +69,7 @@ test('wordshift: a finished run is replayed, scored and put on the boards', func
     eq(count($route) + 1, $r['moves']);
     eq(true, $r['ok']);
     eq(true, $r['ranked']);
-    eq(100 + max(0, 100 - 15 * $extra) - 5, $r['score']);
+    eq(10 + max(0, 5 - $extra) - 1, $r['score']);
     eq(42_000, $r['ms']);
     eq($p['n'], $r['shortest']);
     $all = $w['rtdb']->get('leaderboards/wordShift/all/ann');
@@ -137,7 +137,7 @@ test('wordshift: late finish in Time Challenge is not ranked; time left adds poi
     $b = $w['ws']->begin(ann(), ['puzzleId' => 'n2', 'mode' => 'timed', 'seconds' => 60], WS_T0);
     $r = $w['ws']->finish(ann(), ['ticket' => $b['ticket'], 'moves' => $route, 'invalid' => 0], WS_T0 + 20_000);
     $extra = max(0, count($route) - $p['n']);
-    eq(100 + max(0, 100 - 15 * $extra) + 2 * 40, $r['score']);
+    eq(10 + max(0, 5 - $extra) + 4, $r['score']);   // 40 seconds left: 1 for each 10
 });
 
 test('wordshift: a lower score does not replace the best', function () {

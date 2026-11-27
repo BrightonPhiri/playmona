@@ -119,21 +119,21 @@ test('crossword pick avoids recent ids unless the deal is shared', function () {
 
 /* ---------- score ---------- */
 
-test('crossword score rewards speed, no help and Expert', function () {
+test('crossword score rewards speed and no help; Expert scores the same', function () {
   const R = app().CrosswordRules;
   const none = { letter: 0, word: 0, check: 0 };
   const a = R.score({ level: 'normal', ms: 120000, help: none, expert: false });
-  assertEqual(a, { points: 200 + 180, stars: 3 });
+  assertEqual(a, { points: 10 + 6, stars: 3 });
   const slow = R.score({ level: 'normal', ms: 400000, help: none, expert: false });
-  assertEqual(slow.points, 200);
+  assertEqual(slow.points, 10);
   const helped = R.score({ level: 'normal', ms: 120000, help: { letter: 1, word: 0, check: 0 }, expert: false });
   assert(helped.points < a.points, 'help costs');
   assertEqual(helped.stars, 2);
   assertEqual(R.score({ level: 'normal', ms: 120000, help: { letter: 0, word: 1, check: 0 }, expert: false }).stars, 2);
   assertEqual(R.score({ level: 'normal', ms: 120000, help: { letter: 1, word: 1, check: 0 }, expert: false }).stars, 1);
-  assertEqual(R.score({ level: 'normal', ms: 120000, help: none, expert: true }).points, 300 + 180);
-  assertEqual(R.score({ level: 'easy', ms: 999999, help: { letter: 0, word: 9, check: 0 }, expert: false }).points, 10, 'floor');
-  assertEqual(R.score({ level: 'hard', ms: 0, help: none, expert: false }).points, 300 + 480);
+  assertEqual(R.score({ level: 'normal', ms: 120000, help: none, expert: true }).points, 10 + 6);
+  assertEqual(R.score({ level: 'easy', ms: 999999, help: { letter: 0, word: 9, check: 0 }, expert: false }).points, 1, 'floor');
+  assertEqual(R.score({ level: 'hard', ms: 0, help: none, expert: false }).points, 10 + 10);
 });
 
 /* ---------- cursor (js/crossword/cursor.js) ---------- */

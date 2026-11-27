@@ -172,9 +172,9 @@ test('imposters: the other word goes to random players, not by seat or join orde
 });
 
 test('imposters: points reward the winning side, correct votes and surviving', function () {
-  assertEqual(R.points({ won: true, correctVotes: 2 }), 150);
-  assertEqual(R.points({ won: true, minority: true, survived: true }), 150);
-  assertEqual(R.points({ won: false, correctVotes: 1 }), 25);
+  assertEqual(R.points({ won: true, correctVotes: 2 }), 16);
+  assertEqual(R.points({ won: true, minority: true, survived: true }), 15);
+  assertEqual(R.points({ won: false, correctVotes: 1 }), 3);
 });
 
 test('imposters: every word pair is valid, and no hint gives its own word away', function () {

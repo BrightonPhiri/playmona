@@ -238,4 +238,51 @@ test('points: in survival whoever is still in places above anyone knocked out, w
   assertEqual(race[0].st.value, 9, 'other modes still rank by points');
 });
 
+/* ---------------- Task 7: Stacoend, Mini Crossword, WordShift, word games, Imposters ---------------- */
+
+test('points: stacoend is 1 a letter up to 10, long +3, rare +2', function () {
+  const ST = loadGame(['js/core.js', 'js/data/words.js', 'js/data/wordlist.js', 'js/words.js', 'js/data/lexicon.js'], ['js/games/stacoend.js']).Stacoend;
+  assertEqual(ST.wordPoints('cat', 1).points, 3);
+  assertEqual(ST.wordPoints('elephant', 1).points, 11, '8 + long 3');
+  assertEqual(ST.wordPoints('extraordinary', ST.SCORING.rareTier).points, 15, '10 cap + long 3 + rare 2');
+  assertEqual(ST.wordPoints('at', 1).points, 0);
+});
+
+test('points: mini crossword is 10 to finish, speed up to 10, help costs 1 / 3 / 1, never below 1', function () {
+  const CW = loadFF(['js/core.js', 'js/crossword/rules.js']).CrosswordRules;
+  assertEqual(CW.score({ level: 'hard', ms: 0, help: {} }).points, 20);
+  assertEqual(CW.score({ level: 'hard', ms: 0, help: {}, expert: true }).points, 20, 'no Expert multiplier');
+  assertEqual(CW.score({ level: 'hard', ms: 0, help: { letter: 2, word: 1 } }).points, 15);
+  assertEqual(CW.score({ level: 'easy', ms: 9e9, help: { word: 40 } }).points, 1, 'the floor');
+  assertEqual([CW.wordPoints(3), CW.wordPoints(4), CW.wordPoints(6), CW.wordPoints(7), CW.wordPoints(9)], [1, 1, 2, 2, 3]);
+});
+
+test('points: wordshift is 10 to finish, up to 5 for a short path, up to 10 for time, places 10 / 7 / 5 / 3', function () {
+  const WS = loadFF(['js/core.js', 'js/wordshift/rules.js']).WordShiftRules;
+  assertEqual(WS.score({ finished: true, moves: 5, shortest: 5, invalid: 0, timed: true, secondsLeft: 180 }), 25);
+  assertEqual(WS.score({ finished: true, moves: 5, shortest: 5, invalid: 0, timed: true, secondsLeft: 45 }), 19);
+  assertEqual(WS.score({ finished: true, moves: 7, shortest: 5, invalid: 3, timed: false }), 10);
+  assertEqual(WS.score({ finished: true, moves: 50, shortest: 5, invalid: 50, timed: false }), 0);
+  assertEqual([1, 2, 3, 4, 9].map(WS.racePoints).join(), '10,7,5,3,3');
+});
+
+test('points: imposters is 10 a win, 3 a right vote, 5 for a minority player still in', function () {
+  const IM = loadFF(['js/core.js', 'js/imposters/rules.js']).ImpostersRules;
+  assertEqual(IM.points({ won: true, correctVotes: 2, minority: true, survived: true }), 21);
+  assertEqual(IM.points({ won: false, correctVotes: 1 }), 3);
+});
+
+test('points: word games are 10 a scramble word (hint -3), 5 a chain link, letters capped at 10', function () {
+  const WG = loadGame(['js/core.js'], ['js/games/wordGames.js']).WordGamesPoints;
+  assert(WG, 'FF.WordGamesPoints exists');
+  assertEqual([WG.wordLengthScore(2), WG.wordLengthScore(5), WG.wordLengthScore(14)], [0, 5, 10]);
+  assertEqual([WG.SCRAMBLE, WG.HINT_COST, WG.CHAIN], [10, 3, 5]);
+});
+
+test('points: letter rush is unchanged', function () {
+  const LR = loadGame(['js/core.js'], ['js/games/letterRush.js']).LetterRush;
+  assertEqual(LR.points('cat', 7), 3);
+  assertEqual(LR.points('abcdefg', 7), 14);
+});
+
 module.exports = { loadGame: loadGame, within: within, UI: UI };

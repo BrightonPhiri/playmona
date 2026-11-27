@@ -42,13 +42,13 @@ window.FF = window.FF || {};
   /* Points. Change these to retune the game; the rules screen and the
      results read them, so nothing else needs editing. */
   var SCORING = {
-    base: 10,           // every accepted word
-    perLetter: 5,       // each letter past minLength
+    perLetter: 1,       // each letter of an accepted word...
+    maxLetters: 10,     // ...counted up to this many
     minLength: 3,       // shortest word accepted
     longAt: 8,          // a word this long or longer...
-    longBonus: 15,      // ...earns this on top
+    longBonus: 3,       // ...earns this on top
     rareTier: 3,        // a word from the bank's "known" or "rare" tiers...
-    rareBonus: 10       // ...earns this on top
+    rareBonus: 2        // ...earns this on top
   };
 
   /* A round must have at least this many common words that fit, so it is
@@ -241,7 +241,7 @@ window.FF = window.FF || {};
     if (len < SCORING.minLength) return { points: 0, long: false, rare: false };
     var long = len >= SCORING.longAt;
     var rare = tier >= SCORING.rareTier;
-    var pts = SCORING.base + SCORING.perLetter * (len - SCORING.minLength) + (long ? SCORING.longBonus : 0) + (rare ? SCORING.rareBonus : 0);
+    var pts = SCORING.perLetter * Math.min(len, SCORING.maxLetters) + (long ? SCORING.longBonus : 0) + (rare ? SCORING.rareBonus : 0);
     return { points: pts, long: long, rare: rare };
   }
 
@@ -340,7 +340,7 @@ window.FF = window.FF || {};
 
   function scoringLines() {
     return [
-      t('scRuleBase', '{b} points a word, +{p} for each letter past {m}.', { b: SCORING.base, p: SCORING.perLetter, m: SCORING.minLength }),
+      t('scRuleLetters', '{p} point a letter, up to {max} a word (at least {m} letters).', { p: SCORING.perLetter, max: SCORING.perLetter * SCORING.maxLetters, m: SCORING.minLength }),
       t('scRuleLong', '+{n} for a word of {l} letters or more.', { n: SCORING.longBonus, l: SCORING.longAt }),
       t('scRuleRare', '+{n} for a rare word.', { n: SCORING.rareBonus })
     ];

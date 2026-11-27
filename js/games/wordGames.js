@@ -67,25 +67,18 @@ window.FF = window.FF || {};
     return (e && e.name ? e.name : FF.t('playerLabel', 'Player'));
   }
 
-  function bonusMult(api) {
-    var d = api.config.difficulty;
-    if (d === 'easy') return 1;
-    if (d === 'hard') return 2;
-    return 1.5;
-  }
+  // Points: no award is above 10, whatever the difficulty (difficulty
+  // shapes the words and the clock, not the points).
+  var SCRAMBLE = 10;     // a Word Scramble word
+  var HINT_COST = 3;     // the first-letter hint
+  var CHAIN = 5;         // a Word Chain link
 
-  function applyBonus(api, base) {
-    return Math.round(base * bonusMult(api));
-  }
-
-  // One point per letter, so longer words are always worth more and there
-  // is no cap - the old tiers scored every word of 7+ letters the same.
-  // Deliberately NOT passed through applyBonus: the difficulty multiplier
-  // would make a 3-letter word worth 5 on Normal. Difficulty still shapes
-  // the letter pool and the clock in these games.
+  // One point per letter, up to 10.
   function wordLengthScore(len) {
-    return len < 3 ? 0 : len;
+    return len < 3 ? 0 : Math.min(10, len);
   }
+
+  FF.WordGamesPoints = { SCRAMBLE: SCRAMBLE, HINT_COST: HINT_COST, CHAIN: CHAIN, wordLengthScore: wordLengthScore };
 
   // Returns api.config.timer when set (may be 0 = off), else fallback.
   var BUILDER_CLOCK = { quick: 60, short: 75, normal: 90, long: 120 };
@@ -266,8 +259,8 @@ window.FF = window.FF || {};
     defaultMode: 'turn',
     howToPlay: [
       'Each round shows a jumbled word and a clue.',
-      'Type the correct word to earn 100 points.',
-      'Use a Hint to reveal the first letter (costs 30 points).',
+      'Type the correct word to earn 10 points.',
+      'Use a Hint to reveal the first letter (costs 3 points).',
       'Skip if you are stuck — there are 6 rounds in total!'
     ],
     display: true,
@@ -435,7 +428,7 @@ window.FF = window.FF || {};
           onkeydown: function (e) { if (e.key === 'Enter') { e.preventDefault(); check(); } }
         });
         var checkBtn = FF.UI.button('Check', { icon: 'check',  primary: true, class: 'btn ws-play', onClick: check });
-        var hintBtn = FF.UI.button('Hint (-30)', { icon: 'lightbulb',  class: 'btn ws-play', onClick: hint });
+        var hintBtn = FF.UI.button('Hint (-' + HINT_COST + ')', { icon: 'lightbulb',  class: 'btn ws-play', onClick: hint });
         var skipBtn = FF.UI.button('Skip', { icon: 'chevron-right',  class: 'btn ws-play', onClick: function () { resolve(false, 'skip'); } });
         // In a room nobody can type before the round opens for everyone.
         if (race) [input, checkBtn, hintBtn, skipBtn].forEach(function (c) { c.disabled = true; });
@@ -454,7 +447,7 @@ window.FF = window.FF || {};
           // In a room scores come from the race, so the hint lowers what
           // this answer is worth instead.
           if (!race) {
-            api.scoring.subtract(entity.id, 30);
+            api.scoring.subtract(entity.id, HINT_COST);
             api.shell.updateScores(entity.id);
           }
           api.audio.play('tap');
@@ -489,7 +482,7 @@ window.FF = window.FF || {};
               [input, checkBtn, hintBtn, skipBtn].forEach(function (c) { c.disabled = true; });
               return;
             }
-            race.submit(correct ? word : null, correct, null, { value: correct ? Math.max(0, applyBonus(api, 100) - (hinted ? 30 : 0)) : 0 });
+            race.submit(correct ? word : null, correct, null, { value: correct ? Math.max(0, SCRAMBLE - (hinted ? HINT_COST : 0)) : 0 });
             if (correct) [input, checkBtn, hintBtn, skipBtn].forEach(function (c) { c.disabled = true; });
             return;
           }
@@ -498,7 +491,7 @@ window.FF = window.FF || {};
           FF.ui.clear(root2);
           var box = FF.ui.div('panel panel--center wg-wrap wg-result');
           if (correct) {
-            var pts = applyBonus(api, 100);
+            var pts = SCRAMBLE;
             api.scoring.add(entity.id, pts, { correct: true });
             api.shell.updateScores(entity.id);
             api.audio.play('correct');
@@ -692,7 +685,7 @@ window.FF = window.FF || {};
           state.busy = true;
           api.shell.hideTimer();
           var e = state.order[state.idx];
-          var pts = applyBonus(api, 50);
+          var pts = CHAIN;
           state.chain.push(word);
           state.used[word] = true;
           api.scoring.add(e.id, pts, { correct: true });

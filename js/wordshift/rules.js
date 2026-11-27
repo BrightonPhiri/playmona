@@ -24,12 +24,13 @@ window.FF = window.FF || {};
 
   // Points. PHP keeps the same numbers (WordShift::SCORING).
   var SCORING = {
-    finish: 100,       // reaching the target
-    efficiency: 100,   // most for matching the shortest path...
-    perExtra: 15,      // ...less this for each move over it
-    perSecond: 2,      // Time Challenge: per second left
-    perInvalid: 5,     // taken off for each refused word
-    race: [100, 70, 50, 30]  // online: by finishing place (30 for 4th and later)
+    finish: 10,        // reaching the target
+    efficiency: 5,     // most for matching the shortest path...
+    perExtra: 1,       // ...less this for each move over it
+    timeEvery: 10,     // Time Challenge: 1 for every this many seconds left...
+    timeMax: 10,       // ...up to this many
+    perInvalid: 1,     // taken off for each refused word
+    race: [10, 7, 5, 3]  // online: by finishing place (3 for 4th and later)
   };
   var STANDARD = { mode: 'classic', level: 'normal', seconds: DEFAULT_CLOCK };
 
@@ -107,7 +108,7 @@ window.FF = window.FF || {};
     if (!r || !r.finished) return 0;
     var extra = Math.max(0, (r.moves | 0) - (r.shortest | 0));
     var pts = SCORING.finish + Math.max(0, SCORING.efficiency - SCORING.perExtra * extra);
-    if (r.timed) pts += SCORING.perSecond * Math.max(0, Math.floor(r.secondsLeft || 0));
+    if (r.timed) pts += Math.min(SCORING.timeMax, Math.floor(Math.max(0, r.secondsLeft || 0) / SCORING.timeEvery));
     pts -= SCORING.perInvalid * Math.max(0, r.invalid | 0);
     return Math.max(0, Math.round(pts));
   }

@@ -79,14 +79,14 @@ test('stacoend: a word counts only once a round', function () {
 test('stacoend: longer and rarer words score more, from the scoring table', function () {
   const S = load().Stacoend;
   const C = S.SCORING;
-  assertEqual(S.wordPoints('cat', 1).points, C.base, 'a 3-letter word scores the base');
-  assertEqual(S.wordPoints('bread', 1).points, C.base + 2 * C.perLetter);
+  assertEqual(S.wordPoints('cat', 1).points, 3 * C.perLetter, 'a 3-letter word scores 3');
+  assertEqual(S.wordPoints('bread', 1).points, 5 * C.perLetter);
   assert(S.wordPoints('bridges', 1).points > S.wordPoints('bridge', 1).points, 'each letter adds');
   const long = S.wordPoints('brightly'.length >= C.longAt ? 'brightly' : 'brightness', 1);
   assert(long.long, 'a long word');
-  assertEqual(long.points, C.base + C.perLetter * (8 - C.minLength) + C.longBonus);
+  assertEqual(long.points, C.perLetter * 8 + C.longBonus);
   const rare = S.wordPoints('brig', C.rareTier);
-  assert(rare.rare && rare.points === C.base + C.perLetter + C.rareBonus, 'a rare word earns its bonus');
+  assert(rare.rare && rare.points === C.perLetter * 4 + C.rareBonus, 'a rare word earns its bonus');
   assertEqual(S.wordPoints('ab', 1).points, 0, 'too short scores nothing');
   const t = S.tally(['bread', 'bright', 'breakfasts'], 3, function (w) { return w === 'bright' ? 4 : 1; });
   assertEqual(t.words, 3);

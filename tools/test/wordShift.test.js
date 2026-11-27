@@ -51,15 +51,15 @@ test('wordShift rules: greens follow the word', function () {
 
 test('wordShift rules: score rewards efficient finishes', function () {
   const R = rules();
-  assertEqual(R.score({ finished: true, moves: 6, shortest: 6, invalid: 0 }), 200);
-  assertEqual(R.score({ finished: true, moves: 8, shortest: 6, invalid: 0 }), 170);
-  assertEqual(R.score({ finished: true, moves: 20, shortest: 6, invalid: 0 }), 100);
+  assertEqual(R.score({ finished: true, moves: 6, shortest: 6, invalid: 0 }), 15);
+  assertEqual(R.score({ finished: true, moves: 8, shortest: 6, invalid: 0 }), 13);
+  assertEqual(R.score({ finished: true, moves: 20, shortest: 6, invalid: 0 }), 10);
 });
 
 test('wordShift rules: score adds time left and takes off refused words', function () {
   const R = rules();
-  assertEqual(R.score({ finished: true, moves: 6, shortest: 6, invalid: 0, timed: true, secondsLeft: 30 }), 260);
-  assertEqual(R.score({ finished: true, moves: 6, shortest: 6, invalid: 3 }), 185);
+  assertEqual(R.score({ finished: true, moves: 6, shortest: 6, invalid: 0, timed: true, secondsLeft: 30 }), 18);
+  assertEqual(R.score({ finished: true, moves: 6, shortest: 6, invalid: 3 }), 12);
   assertEqual(R.score({ finished: true, moves: 30, shortest: 4, invalid: 40 }), 0);
   assertEqual(R.score({ finished: false, moves: 3, shortest: 6, invalid: 0 }), 0);
 });

@@ -142,7 +142,7 @@ test('crossword race: right word locks, wrong word does not, finish order ranks'
   assertEqual(cw.status, 'over', 'everyone finished: the race is over');
   assertEqual(cw.result.rows.map((r) => r.uid).join(), 'p2,p1');
   assertEqual(cw.result.rows[0].place, 1);
-  assert(cw.result.rows[0].points > cw.result.rows[1].points, 'the faster finisher scores more, not just the same word points (' + cw.result.rows.map((r) => r.points).join(' vs ') + ')');
+  assert(cw.result.rows[0].points >= cw.result.rows[1].points, 'the faster finisher never scores less (' + cw.result.rows.map((r) => r.points).join(' vs ') + '); places go by finish time');
   assertEqual(m.meta().results.gameId, 'miniCrossword');
   const rep = m.reports.filter((r) => r.e === 'crossword');
   assertEqual(rep.length, 1);

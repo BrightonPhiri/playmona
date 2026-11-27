@@ -211,13 +211,13 @@ window.FF = window.FF || {};
 
   /* ---------- points ---------- */
 
-  /* 100 for the winning side, 25 for each vote that found a minority
-     player, 50 for a minority player still in at the end. */
+  /* 10 for the winning side, 3 for each vote that found a minority
+     player, 5 for a minority player still in at the end. */
   function points(opts) {
     var p = 0;
-    if (opts.won) p += 100;
-    p += 25 * (opts.correctVotes || 0);
-    if (opts.minority && opts.survived) p += 50;
+    if (opts.won) p += 10;
+    p += 3 * (opts.correctVotes || 0);
+    if (opts.minority && opts.survived) p += 5;
     return p;
   }
 

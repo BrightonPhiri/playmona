@@ -26,7 +26,6 @@ window.FF = window.FF || {};
   var SEEN_KEY = 'crossword:seen';
   var KB_KEY = 'crossword:keyboard';
   var SEEN_MAX = 500;
-  var WORD_PTS = { easy: 10, normal: 15, hard: 20 };   // per letter, take turns
 
   function t(key, fallback, vars) { return FF.t ? FF.t(key, fallback, vars) : String(fallback).replace(/\{(\w+)\}/g, function (m, k) { return vars && vars[k] != null ? vars[k] : m; }); }
   function store() { return FF.Storage || { get: function (k, d) { return d; }, set: function () {} }; }
@@ -757,7 +756,7 @@ window.FF = window.FF || {};
     function allFilled() { return Object.keys(B.cells).every(function (k) { return filled[k]; }); }
 
     /* ---- take turns ---- */
-    function wordPoints(w) { return w.len * WORD_PTS[cfg.level] * (expert ? 1.5 : 1); }
+    function wordPoints(w) { return R.wordPoints(w.len); }
     function endTurn(w) {
       var who = entity();
       if (w && !expert) {
@@ -817,10 +816,10 @@ window.FF = window.FF || {};
     function starsNow() { return R.score({ level: cfg.level, ms: 0, help: help, expert: expert }).stars; }
     function drawHelp() {
       var list = [
-        { label: t('cwRevealLetter', 'Letter'), icon: 'letter', cost: '-10', aria: t('cwRevealLetterAria', 'Reveal this letter (costs 10 points)'), fn: revealLetter },
-        { label: t('cwRevealWord', 'Word'), icon: 'word', cost: '-30', aria: t('cwRevealWordAria', 'Reveal this word (costs 30 points)'), fn: revealWord }
+        { label: t('cwRevealLetter', 'Letter'), icon: 'letter', cost: '-1', aria: t('cwRevealLetterAria1', 'Reveal this letter (costs 1 point)'), fn: revealLetter },
+        { label: t('cwRevealWord', 'Word'), icon: 'word', cost: '-3', aria: t('cwRevealWordAria3', 'Reveal this word (costs 3 points)'), fn: revealWord }
       ];
-      if (expert) list.push({ label: t('cwCheckGrid', 'Check grid'), icon: 'check', cls: 'cw-helpbtn--check' + (allFilled() ? ' is-ready' : ''), cost: allFilled() ? '' : '-15', aria: t('cwCheckGridAria', 'Check the whole grid'), fn: checkGrid });
+      if (expert) list.push({ label: t('cwCheckGrid', 'Check grid'), icon: 'check', cls: 'cw-helpbtn--check' + (allFilled() ? ' is-ready' : ''), cost: allFilled() ? '' : '-1', aria: t('cwCheckGridAria', 'Check the whole grid'), fn: checkGrid });
       else list.push({ label: t('cwClearWrong', 'Clear wrong'), icon: 'eraser', aria: t('cwClearWrongAria', 'Clear the red letters'), fn: clearWrong, disabled: !Object.keys(wrong).length });
       B.setHelp(list);
       stars.set(starsNow());
