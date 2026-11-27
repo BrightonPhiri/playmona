@@ -271,7 +271,8 @@ window.FF = window.FF || {};
       const meId = data.meId || 'me';
       const me = ranked.filter(function (r) { return r && r.id === meId; })[0];
       if (me) {
-        s.xp = (s.xp || 0) + Math.min(100, Math.floor((me.points || 0) / 50));
+        // Half the game's points, rounded up, up to 50 (points are small now: no award is above 10).
+        s.xp = (s.xp || 0) + Math.min(50, Math.ceil(Math.max(0, me.points || 0) / 2));
         const top = ranked[0];
         const tie = ranked.length > 1 && ranked[1].points === top.points;
         if (ranked.length > 1 && top.id === meId && top.points > 0 && !tie) {

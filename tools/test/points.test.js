@@ -285,4 +285,20 @@ test('points: letter rush is unchanged', function () {
   assertEqual(LR.points('abcdefg', 7), 14);
 });
 
+/* ---------------- Task 9: XP ---------------- */
+
+test('points: xp is half the points (up to 50), plus 25 for beating others', function () {
+  const FF = loadFF(['js/core.js', 'js/storage.js', 'js/scoring.js']);
+  function xpAfter(points, others) {
+    FF.Stats.save(FF.Stats.defaultStats());
+    FF.Stats.recordResult({ results: [{ id: 'me', points: points }].concat(others || []), meId: 'me' });
+    return FF.Stats.get().xp;
+  }
+  assertEqual(xpAfter(30), 15);
+  assertEqual(xpAfter(7), 4, 'rounded up');
+  assertEqual(xpAfter(400), 50, 'at most 50');
+  assertEqual(xpAfter(0), 0);
+  assertEqual(xpAfter(30, [{ id: 'b', points: 10 }]), 15 + 25);
+});
+
 module.exports = { loadGame: loadGame, within: within, UI: UI };
