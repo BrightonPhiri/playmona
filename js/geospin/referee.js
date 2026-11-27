@@ -249,7 +249,7 @@ window.FF = window.FF || {};
       var pts = R.points({ level: state.settings.level, ok: res.ok, ms: ms, secs: rd.seconds, streak: streak });
       state.answers[uid] = {
         k: state.k, ok: !!res.ok, text: text, near: res.near || '', ms: ms, pts: pts.total,
-        base: pts.base, speed: pts.speed, mult: pts.mult, streak: streak
+        base: pts.base, speed: pts.speed, streakPts: pts.streak, streak: streak
       };
       return true;
     }

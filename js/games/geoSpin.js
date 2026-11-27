@@ -627,7 +627,7 @@ window.FF = window.FF || {};
       var b = info.breakdown;
       var bits = [t('gsBase', '{n} for the country', { n: b.base })];
       if (b.speed) bits.push(t('gsSpeed', '+{n} speed', { n: b.speed }));
-      if (b.mult > 1) bits.push(t('gsStreakX', '×{m} streak', { m: b.mult }));
+      if (b.streak) bits.push(t('gsStreakPlus', '+{n} streak', { n: b.streak }));
       if (b.cost) bits.push(t('gsHintCost', '−{n} hints', { n: b.cost }));
       card.appendChild(FF.ui.el('p', { class: 'gs-reveal__break' }, bits.join(' · ')));
     }
@@ -834,8 +834,8 @@ window.FF = window.FF || {};
       var st = stats[activeId] || { streak: 0, best: 0 };
       var meta = FF.ui.div('gs-streak');
       meta.appendChild(FF.ui.span('gs-streak__flame' + (st.streak >= 3 ? ' is-hot' : ''), t('gsStreakN', 'Streak {n}', { n: st.streak })));
-      var mult = R.streakMult(st.streak + 1);
-      if (mult > 1) meta.appendChild(FF.ui.span('gs-streak__mult', t('gsNextX', 'Next ×{m}', { m: mult })));
+      var next = R.streakBonus(st.streak + 1);
+      if (next) meta.appendChild(FF.ui.span('gs-streak__mult', t('gsNextPlus', 'Next +{n}', { n: next })));
       scoreBox.appendChild(meta);
     }
 
@@ -934,7 +934,7 @@ window.FF = window.FF || {};
           st.best = Math.max(st.best, streak);
           if (st.fastest == null || ms < st.fastest) st.fastest = ms;
           api.scoring.add(entity.id, pts.total, { correct: true, fastest: ms / 1000 });
-          api.audio.play(R.streakMult(streak) > R.streakMult(streak - 1) ? 'streak' : 'correct');
+          api.audio.play(R.streakBonus(streak) > R.streakBonus(streak - 1) ? 'streak' : 'correct');
           if (animationsOn() && FF.Confetti) FF.Confetti.burst(streak >= 3 ? 70 : 40);
         } else {
           st.streak = 0;
@@ -1244,7 +1244,7 @@ window.FF = window.FF || {};
       var text = mine.text != null ? mine.text : sentText;
       after.appendChild(revealCard({
         state: mine.ok ? 'good' : (mine.text || sentText) ? 'bad' : 'late', code: rv.code, name: rv.name, points: mine.pts || 0,
-        breakdown: mine.ok ? { base: mine.base || 0, speed: mine.speed || 0, mult: mine.mult || 1, cost: 0 } : null,
+        breakdown: mine.ok ? { base: mine.base || 0, speed: mine.speed || 0, streak: mine.streakPts || 0, cost: 0 } : null,
         said: mine.ok ? '' : saidLine(text, mine.near ? { near: mine.near } : null)
       }));
       var nextIn = FF.ui.el('p', { class: 'gs-note gs-nextin' }, gs.k + 1 >= gs.total ? t('gsFinalSoon', 'Final results coming up…') : t('gsNextSoon', 'Next spin in a moment…'));

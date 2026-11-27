@@ -24,16 +24,16 @@ window.FF = window.FF || {};
   var STANDARD = { topic: 'mix', level: 'normal', time: 8, twist: 'none' };
   var OPTIONS = { easy: 4, normal: 4, hard: 6 };     // Expert spells instead
   var LOOKALIKES = { easy: 0, normal: 2, hard: 5 };  // most same-group wrong answers
-  var LEVEL_MULT = { easy: 1, normal: 1.5, hard: 2, expert: 2 };
-  var SPEED_BONUS = 50;
+  var LEVEL_BASE = { easy: 6, normal: 8, hard: 10, expert: 10 };
+  var SPEED_BONUS = 5;
   var STREAK_EVERY = 3;
-  var STREAK_BONUS = 50;
-  var FLASH_BONUS = 25;
-  var TYPE_BONUS = 50;
+  var STREAK_BONUS = 5;
+  var FLASH_BONUS = 3;
+  var TYPE_BONUS = 5;
   var TYPE_EXTRA_SECS = 6;
   var FLASH_MS = 1500;
   var ROOM_FAST_MS = 3000;
-  var ROOM_FAST_BONUS = 50;
+  var ROOM_FAST_BONUS = 3;
   var LONG_NAME = 16;                                // longer names spell a shorter accepted name
   var ANIMAL_ART = 'assets/images/games/guessAnimal/';
   var PHOTO_ART = 'assets/images/games/guessIt/';
@@ -164,7 +164,7 @@ window.FF = window.FF || {};
 
   function points(p) {
     if (!p || !p.correct) return 0;
-    var pts = Math.round(100 * (LEVEL_MULT[p.level] || LEVEL_MULT.normal));
+    var pts = LEVEL_BASE[p.level] || LEVEL_BASE.normal;
     if (p.secs > 0) pts += Math.round(SPEED_BONUS * Math.max(0, Math.min(1, (p.msLeft || 0) / (p.secs * 1000))));
     if (p.streak > 0 && p.streak % STREAK_EVERY === 0) pts += STREAK_BONUS;
     if (p.flash) pts += FLASH_BONUS;
@@ -174,7 +174,7 @@ window.FF = window.FF || {};
 
   // Rooms keep the old picture games' race points.
   function roomPoints(ms, difficulty) {
-    var pts = Math.round(100 * (LEVEL_MULT[difficulty] || LEVEL_MULT.normal));
+    var pts = LEVEL_BASE[difficulty] || LEVEL_BASE.normal;
     if (ms != null && ms <= ROOM_FAST_MS) pts += ROOM_FAST_BONUS;
     return pts;
   }

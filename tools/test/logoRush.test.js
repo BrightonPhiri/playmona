@@ -298,12 +298,12 @@ test('rules: points reward level, speed, typing and twists', function () {
   const p = (o) => r.points(Object.assign({ ok: true, ms: 2000, secs: 20, mode: 'tiles', twist: 'none', level: 'normal' }, o)).total;
   assertEqual(r.points({ ok: false, level: 'hard', ms: 0, secs: 20 }).total, 0);
   assert(p({ level: 'hard' }) > p({ level: 'normal' }) && p({ level: 'normal' }) > p({ level: 'easy' }), 'level order');
-  assertEqual(p({ ms: 0 }), 250);
-  assertEqual(p({ ms: 20000 }), 200);
-  assertEqual(p({ mode: 'type', ms: 20000 }) - p({ ms: 20000 }), 50);
-  assertEqual(p({ twist: 'flash', ms: 20000 }) - p({ ms: 20000 }), 25);
-  assertEqual(p({ twist: 'grey', ms: 20000 }) - p({ ms: 20000 }), 25);
-  assertEqual(p({ twist: 'zoom', ms: 0 }), 300);
+  assertEqual(p({ ms: 0 }), 13);
+  assertEqual(p({ ms: 20000 }), 8);
+  assertEqual(p({ mode: 'type', ms: 20000 }) - p({ ms: 20000 }), 5);
+  assertEqual(p({ twist: 'flash', ms: 20000 }) - p({ ms: 20000 }), 3);
+  assertEqual(p({ twist: 'grey', ms: 20000 }) - p({ ms: 20000 }), 3);
+  assertEqual(p({ twist: 'zoom', ms: 0 }), 18);
   assertEqual(r.points({ ok: true, level: 'normal', ms: 5000, secs: null }).speed, 0);
 });
 

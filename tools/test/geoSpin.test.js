@@ -125,19 +125,19 @@ test('geospin hints: removable tiles are never needed letters; costs add up', fu
   const need = count(b.letters);
   const have = count(left);
   Object.keys(need).forEach((ch) => assert(have[ch] >= need[ch], 'still has ' + ch));
-  assertEqual(R.hintCost({ letter: 2, remove: true, continent: true }), 30 * 2 + 20 + 15);
+  assertEqual(R.hintCost({ letter: 2, remove: true, continent: true }), 3 * 2 + 2 + 1);
 });
 
-test('geospin points: base by level, speed bonus, streak multiplier, hints off, nothing for wrong', function () {
+test('geospin points: base by level, speed bonus, flat streak bonus, hints off, nothing for wrong', function () {
   const R = app().GeoSpinRules;
   assertEqual(R.points({ level: 'normal', ok: false, ms: 0 }).total, 0);
   const fast = R.points({ level: 'normal', ok: true, ms: 0, streak: 1 });
-  assertEqual(fast.base, 150);
-  assertEqual(fast.speed, 75);
-  assertEqual(fast.total, 225);
-  assertEqual(R.points({ level: 'expert', ok: true, ms: 15000 }).total, 300, 'no speed bonus at the buzzer');
-  assertEqual([R.streakMult(2), R.streakMult(3), R.streakMult(5), R.streakMult(10)].join(), '1,1.1,1.2,1.3');
-  assertEqual(R.points({ level: 'easy', ok: true, ms: 30000, streak: 10 }).total, 130);
+  assertEqual(fast.base, 8);
+  assertEqual(fast.speed, 5);
+  assertEqual(fast.total, 13);
+  assertEqual(R.points({ level: 'expert', ok: true, ms: 15000 }).total, 10, 'no speed bonus at the buzzer');
+  assertEqual([R.streakBonus(2), R.streakBonus(3), R.streakBonus(5), R.streakBonus(10)].join(), '0,2,3,5');
+  assertEqual(R.points({ level: 'easy', ok: true, ms: 30000, streak: 10 }).total, 11);
   assertEqual(R.points({ level: 'easy', ok: true, ms: 30000, hints: { letter: 5 } }).total, 0, 'never below zero');
 });
 
@@ -308,7 +308,7 @@ test('geospin referee: time runs out, a late answer scores nothing, then the nex
   assert(m.gs().round.code !== first, 'a new country');
 });
 
-test('geospin referee: streaks multiply, the match ends ranked and reports the result', async function () {
+test('geospin referee: streaks add a bonus, the match ends ranked and reports the result', async function () {
   const m = await match({ settings: { rounds: 5, level: 'easy' } });
   for (let k = 0; k < 5; k++) {
     await m.open();
@@ -322,7 +322,7 @@ test('geospin referee: streaks multiply, the match ends ranked and reports the r
   assertEqual(g.p.p1.right, 5);
   assertEqual(g.p.p2.best, 2);
   assertEqual(g.result.winners.join(), 'p1');
-  assert(g.p.p1.score > 5 * 100 * 1.4, 'streak bonus on the later rounds');
+  assert(g.p.p1.score >= 5 * 6 + 2 + 2 + 3, 'streak bonus on the later rounds');
   const meta = m.meta();
   assertEqual(meta.status, 'ended');
   assertEqual(meta.results.gameId, 'geoSpin');

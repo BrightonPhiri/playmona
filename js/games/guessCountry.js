@@ -31,13 +31,13 @@ window.FF = window.FF || {};
   var LOOKS = ['wave', 'flat'];
   var OPTIONS = { easy: 4, normal: 6, hard: 8, expert: 1 };   // answers to choose from (Expert types it)
   var TYPE_EXTRA_SECS = 6;               // Expert: extra seconds to type
-  var TYPE_BONUS = 50;                   // Expert: points for typing it
+  var TYPE_BONUS = 5;                    // Expert: points for typing it
   var FLAG_WAIT_MS = 3000;               // longest a round waits for its flag to load
   var STANDARD = { regions: [], level: 'normal', time: 8, flash: false };   // empty list = whole world
   var FLASH_MS = 1500;                   // Flash: how long the flag shows
-  var FLASH_BONUS = 25;
+  var FLASH_BONUS = 3;
   var STREAK_EVERY = 3;
-  var STREAK_BONUS = 50;
+  var STREAK_BONUS = 5;
   var MIN_LEVEL_POOL = 8;                // fewer than this at a level: widen it
   var MIN_POOL = 4;
   var SEEN_KEY = 'guessCountrySeen';
@@ -234,14 +234,14 @@ window.FF = window.FF || {};
     return out;
   }
 
-  /* Local points: 100 for a right answer plus up to 100 for the time
-     left (no limit: 50 inside 3 seconds), 25 more in Flash and 50 more
+  /* Local points: 10 for a right answer plus up to 5 for the time
+     left (no limit: 3 inside 3 seconds), 3 more in Flash and 5 more
      when it was spelled (Expert). */
   function points(correct, ms, secs, flash, typed) {
     if (!correct) return 0;
-    var pts = 100;
-    if (secs > 0) pts += Math.round(100 * Math.max(0, 1 - (ms || 0) / (secs * 1000)));
-    else if ((ms || 0) <= (typed ? 6000 : 3000)) pts += 50;
+    var pts = 10;
+    if (secs > 0) pts += Math.round(5 * Math.max(0, 1 - (ms || 0) / (secs * 1000)));
+    else if ((ms || 0) <= (typed ? 6000 : 3000)) pts += 3;
     return pts + (flash ? FLASH_BONUS : 0) + (typed ? TYPE_BONUS : 0);
   }
 
@@ -251,11 +251,10 @@ window.FF = window.FF || {};
     return c.time ? c.time + (isTyped(c.level) ? TYPE_EXTRA_SECS : 0) : 0;
   }
 
-  /* Room points, unchanged from before the rebuild (the crew brain relies on them). */
+  /* Room points: 6 / 8 / 10 by difficulty, 3 more inside 3 seconds. */
   function roomPoints(ms, difficulty) {
-    var mult = difficulty === 'easy' ? 1 : difficulty === 'hard' ? 2 : 1.5;
-    var pts = Math.round(100 * mult);
-    if (ms != null && ms <= 3000) pts += 50;
+    var pts = difficulty === 'easy' ? 6 : difficulty === 'hard' ? 10 : 8;
+    if (ms != null && ms <= 3000) pts += 3;
     return pts;
   }
 
@@ -896,7 +895,7 @@ window.FF = window.FF || {};
   FF.GuessCountry = {
     LEVELS: LEVELS, TIMES: TIMES, OPTIONS: OPTIONS, STANDARD: STANDARD, optionCount: optionCount,
     TYPE_EXTRA_SECS: TYPE_EXTRA_SECS, TYPE_BONUS: TYPE_BONUS, isTyped: isTyped, checkTyped: checkTyped, secondsFor: secondsFor,
-    aliasesOf: aliasesOf, layout: layout, spelled: spelled, targetName: targetName, tileSet: tileSet, relatedNames: relatedNames, MIN_POOL: MIN_POOL, FLASH_BONUS: FLASH_BONUS,
+    aliasesOf: aliasesOf, layout: layout, spelled: spelled, targetName: targetName, tileSet: tileSet, relatedNames: relatedNames, MIN_POOL: MIN_POOL, FLASH_BONUS: FLASH_BONUS, STREAK_BONUS: STREAK_BONUS,
     sanitize: sanitize, isStandard: isStandard, pool: pool, rng: rng, decoys: decoys, alikeOf: alikeOf,
     prepare: prepare, deal: deal, points: points, roomPoints: roomPoints, summary: summary
   };

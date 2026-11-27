@@ -68,4 +68,47 @@ test('points: room defaults are 10 a right answer, 13 when quick', function () {
   assert(/\(answer\.ms != null && answer\.ms <= 2500\) \? 13 : 10/.test(src), 'quick race default is 13');
 });
 
+/* ---------------- Task 3: Guess the Country, Guess It!, GeoSpin, Logo Rush ---------------- */
+
+test('points: guess the country scores 10, speed up to 5, Flash +3, typed +5, streak +5', function () {
+  const C = loadGame(['js/core.js', 'js/data/worldFlags.js'], ['js/games/guessCountry.js']).GuessCountry;
+  assertEqual(C.points(true, 0, 10, false, false), 15);
+  assertEqual(C.points(true, 0, 10, true, true), 23);
+  assertEqual(C.points(true, 10000, 10, false, false), 10);
+  assertEqual(C.points(true, 1000, 0, false, false), 13, 'no clock: quick answer +3');
+  assertEqual(C.points(false, 0, 10, true, true), 0);
+  assertEqual(C.roomPoints(1000, 'hard'), 13);
+  assertEqual(C.roomPoints(5000, 'easy'), 6);
+  assertEqual([C.FLASH_BONUS, C.TYPE_BONUS, C.STREAK_BONUS], [3, 5, 5]);
+});
+
+test('points: guess it scores 6 / 8 / 10 by level plus small bonuses', function () {
+  const I = loadGame(['js/core.js', 'js/i18n.js', 'js/data/animals.js', 'js/data/guessIt.js', 'js/answerMatch.js', 'js/spellTiles.js'], ['js/games/guessIt.js']).GuessIt;
+  assertEqual(I.points({ correct: true, level: 'hard', secs: 10, msLeft: 10000, streak: 3, flash: true, typed: true }), 10 + 5 + 5 + 3 + 5);
+  assertEqual(I.points({ correct: true, level: 'easy', secs: 10, msLeft: 0, streak: 1 }), 6);
+  assertEqual(I.roomPoints(500, 'normal'), 11);
+  assertEqual(I.roomPoints(9000, 'hard'), 10);
+});
+
+test('points: geospin scores 6 / 8 / 10, speed up to 5, a flat streak bonus up to 5, hints 1 to 3', function () {
+  const GS = loadFF(['js/core.js', 'js/answerMatch.js', 'js/data/worldFlags.js', 'js/data/countryAliases.js', 'js/geospin/places.js', 'js/geospin/rules.js']).GeoSpinRules;
+  const p = GS.points({ ok: true, level: 'expert', ms: 0, streak: 12 });
+  assertEqual([p.base, p.speed, p.streak, p.cost, p.total], [10, 5, 5, 0, 20]);
+  assertEqual(GS.points({ ok: true, level: 'easy', ms: 0, streak: 3 }).streak, 2);
+  assertEqual(GS.points({ ok: true, level: 'normal', ms: 25000, streak: 5 }).total, 11);
+  assertEqual(GS.points({ ok: true, level: 'easy', ms: 30000, hints: { letter: 5 } }).total, 0, 'never below zero');
+  assertEqual([GS.streakBonus(2), GS.streakBonus(3), GS.streakBonus(5), GS.streakBonus(10)], [0, 2, 3, 5]);
+  Object.keys(GS.HINTS).forEach(function (k) { assert(GS.HINTS[k] >= 1 && GS.HINTS[k] <= 3, 'hint ' + k + ' costs 1 to 3'); });
+  assertEqual(GS.points({ ok: false, level: 'hard', ms: 0 }).total, 0);
+});
+
+test('points: logo rush scores 6 / 8 / 10, speed up to 5 (10 zoomed), bonuses up to 5', function () {
+  const LR = loadFF(['js/core.js', 'js/answerMatch.js', 'js/data/logos.js', 'js/spellTiles.js', 'js/logorush/rules.js']).LogoRushRules;
+  const z = LR.points({ ok: true, level: 'hard', secs: 10, ms: 0, twist: 'zoom', mode: 'type' });
+  assertEqual([z.base, z.speed, z.bonus, z.total], [10, 10, 5, 25]);
+  assertEqual(LR.points({ ok: true, level: 'easy', secs: 10, ms: 0, mode: 'tiles', twist: 'none' }).speed, 5);
+  assertEqual(LR.points({ ok: true, level: 'normal', secs: 10, ms: 0, mode: 'tiles', twist: 'flash' }).total, 16);
+  Object.keys(LR.BONUS).forEach(function (k) { within('logo bonus ' + k, LR.BONUS[k], 5); });
+});
+
 module.exports = { loadGame: loadGame, within: within, UI: UI };

@@ -24,10 +24,10 @@ window.FF = window.FF || {};
   var CHOICES = { easy: 4, normal: 6, hard: 8, expert: 10 };      // answers to pick from
   var MULT = { easy: 1.5, normal: 1.75, hard: 2, expert: 2 };     // tiles per letter of the answer
   var SECONDS = { easy: 30, normal: 25, hard: 20, expert: 15 };
-  var BASE = { easy: 100, normal: 150, hard: 200, expert: 300 };
-  var SPEED_SHARE = 0.5;          // an instant answer earns half the base again
-  var STREAKS = [[10, 1.3], [5, 1.2], [3, 1.1]];
-  var HINTS = { letter: 30, remove: 20, continent: 15 };
+  var BASE = { easy: 6, normal: 8, hard: 10, expert: 10 };
+  var SPEED_MAX = 5;              // an instant answer earns this much more
+  var STREAKS = [[10, 5], [5, 3], [3, 2]];   // [answers in a row, flat bonus]
+  var HINTS = { letter: 3, remove: 2, continent: 1 };
   var REMOVE_N = 2;               // letters the "remove" hint takes away
   var MAX_TILES = 36;             // very long names cap here, so the tray still fits a phone
   var LONG_NAME = 16;             // longer names are spelled by a shorter accepted name
@@ -396,9 +396,9 @@ window.FF = window.FF || {};
 
   /* ---------- points ---------- */
 
-  function streakMult(streak) {
+  function streakBonus(streak) {
     for (var i = 0; i < STREAKS.length; i++) if (streak >= STREAKS[i][0]) return STREAKS[i][1];
-    return 1;
+    return 0;
   }
 
   /* A round's points. streak counts this answer too. Wrong or too late: nothing.
@@ -406,15 +406,15 @@ window.FF = window.FF || {};
   function points(o) {
     o = o || {};
     var level = LEVELS.indexOf(o.level) !== -1 ? o.level : 'normal';
-    var out = { base: 0, speed: 0, mult: 1, cost: 0, total: 0 };
+    var out = { base: 0, speed: 0, streak: 0, cost: 0, total: 0 };
     if (!o.ok) return out;
     var secs = o.secs || secondsFor(level);
     var left = Math.max(0, Math.min(1, 1 - (o.ms || 0) / (secs * 1000)));
     out.base = BASE[level];
-    out.speed = Math.round(out.base * SPEED_SHARE * left);
-    out.mult = streakMult(o.streak || 0);
+    out.speed = Math.round(SPEED_MAX * left);
+    out.streak = streakBonus(o.streak || 0);
     out.cost = hintCost(o.hints);
-    out.total = Math.max(0, Math.round((out.base + out.speed) * out.mult) - out.cost);
+    out.total = Math.max(0, out.base + out.speed + out.streak - out.cost);
     return out;
   }
 
@@ -426,6 +426,6 @@ window.FF = window.FF || {};
     shuffle: shuffle, deal: deal, layout: layout, spelled: spelled, lettersOf: lettersOf, formats: formats,
     pickFormat: pickFormat, relatedNames: relatedNames, bank: bank, roundAt: roundAt, continentOf: continentOf,
     countryOf: countryOf, check: check, choices: choices, checkChoice: checkChoice, spareTiles: spareTiles, removable: removable, hintCost: hintCost,
-    streakMult: streakMult, points: points
+    streakBonus: streakBonus, points: points
   };
 })();

@@ -142,14 +142,14 @@ test('guess it: Expert accepts other names and small slips, never another pictur
 });
 
 test('guess it: points follow the design', function () {
-  assertEqual(G.points({ level: 'normal', correct: true, msLeft: 4000, secs: 8, streak: 3 }), 225, '150 + 25 speed + 50 streak');
-  assertEqual(G.points({ level: 'easy', correct: true, msLeft: 8000, secs: 8, streak: 1 }), 150);
-  assertEqual(G.points({ level: 'hard', correct: true, msLeft: 0, secs: 8, streak: 2, flash: true }), 225, '200 + flash 25');
-  assertEqual(G.points({ level: 'expert', correct: true, msLeft: 7000, secs: 14, streak: 1, typed: true }), 275, '200 + 25 + typed 50');
-  assertEqual(G.points({ level: 'normal', correct: true, msLeft: 0, secs: 0, streak: 1 }), 150, 'no limit, no speed points');
+  assertEqual(G.points({ level: 'normal', correct: true, msLeft: 4000, secs: 8, streak: 3 }), 16, '8 + 3 speed + 5 streak');
+  assertEqual(G.points({ level: 'easy', correct: true, msLeft: 8000, secs: 8, streak: 1 }), 11);
+  assertEqual(G.points({ level: 'hard', correct: true, msLeft: 0, secs: 8, streak: 2, flash: true }), 13, '10 + flash 3');
+  assertEqual(G.points({ level: 'expert', correct: true, msLeft: 7000, secs: 14, streak: 1, typed: true }), 18, '10 + 3 + typed 5');
+  assertEqual(G.points({ level: 'normal', correct: true, msLeft: 0, secs: 0, streak: 1 }), 8, 'no limit, no speed points');
   assertEqual(G.points({ level: 'hard', correct: false, msLeft: 8000, secs: 8, streak: 3 }), 0);
-  assertEqual(G.roomPoints(2500, 'hard'), 250);
-  assertEqual(G.roomPoints(4000, 'normal'), 150);
+  assertEqual(G.roomPoints(2500, 'hard'), 13);
+  assertEqual(G.roomPoints(4000, 'normal'), 8);
 });
 
 test('guess it: picture files and close-ups', function () {

@@ -139,14 +139,14 @@ test('guess the country: harder levels offer flags that look alike', function ()
 
 test('guess the country: points', function () {
   assertEqual(G.points(false, 100, 8, false), 0, 'wrong scores nothing');
-  assertEqual(G.points(true, 0, 8, false), 200, 'instant answer');
-  assertEqual(G.points(true, 4000, 8, false), 150, 'half the time left');
-  assertEqual(G.points(true, 8000, 8, false), 100, 'last moment');
-  assertEqual(G.points(true, 4000, 8, true), 175, 'Flash adds 25');
-  assertEqual(G.points(true, 2000, 0, false), 150, 'no limit: quick bonus');
-  assertEqual(G.points(true, 5000, 0, false), 100, 'no limit: slow');
-  // Rooms keep the old sums, which the crew brain plays from.
-  assertEqual([G.roomPoints(1000, 'easy'), G.roomPoints(5000, 'normal'), G.roomPoints(2000, 'hard')], [150, 150, 250]);
+  assertEqual(G.points(true, 0, 8, false), 15, 'instant answer');
+  assertEqual(G.points(true, 4000, 8, false), 13, 'half the time left');
+  assertEqual(G.points(true, 8000, 8, false), 10, 'last moment');
+  assertEqual(G.points(true, 4000, 8, true), 16, 'Flash adds 3');
+  assertEqual(G.points(true, 2000, 0, false), 13, 'no limit: quick bonus');
+  assertEqual(G.points(true, 5000, 0, false), 10, 'no limit: slow');
+  // Rooms: 6 / 8 / 10 by difficulty, 3 more inside 3 seconds.
+  assertEqual([G.roomPoints(1000, 'easy'), G.roomPoints(5000, 'normal'), G.roomPoints(2000, 'hard')], [9, 8, 13]);
 });
 
 test('guess the country: the Flags engine of Guess It!, not a game of its own', function () {
