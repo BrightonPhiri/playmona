@@ -151,4 +151,123 @@ test('mission trail: progress saves and loads on the device', function () {
   assertEqual(P.load(), P.empty());
 });
 
+/* ---------------- Task 3: the mission engine ---------------- */
+
+const ENGINE = MORE.concat(['js/missiontrail/engine.js']);
+const KEYS = { U: 'up', D: 'down', L: 'left', R: 'right' };
+
+function newRun() {
+  const FF = load(ENGINE);
+  const clock = { t: 1000 };
+  const stage = FF.data.missionTrail.stages[0];
+  const m = FF.MissionTrail.Rules.buildMap(map(stage.map));
+  const run = FF.MissionTrail.Engine.create(stage, m, { now: function () { return clock.t; } });
+  return { FF: FF, clock: clock, run: run };
+}
+
+function walk(run, keys) {
+  return keys.split('').map(function (k) { return run.move(KEYS[k]).type; });
+}
+
+test('mission trail: a perfect stage 1 scores 100', function () {
+  const r = newRun().run;
+  let completes = 0;
+  r.on('complete', function () { completes++; });
+  r.start();
+  assertEqual(walk(r, 'UUUUURRR'), ['moved', 'moved', 'moved', 'moved', 'moved', 'moved', 'moved', 'moved']);
+  assertEqual(r.check('stopB'), { type: 'revealed', name: 'Bus stop' });
+  const res = r.result();
+  assertEqual([r.state, res.done, res.score, res.stars, completes], ['complete', true, 100, 3, 1]);
+  assertEqual(res.mistakes, { wrongTurns: 0, extraSteps: 0, bumps: 0, wrongChecks: 0 });
+});
+
+test('mission trail: the clock waits for the letter', function () {
+  const o = newRun();
+  o.clock.t = 99999;
+  assertEqual(o.run.remaining(), 60000);
+  assertEqual(o.run.move('up').type, 'ignored');
+  o.run.start();
+  assertEqual(o.run.remaining(), 60000);
+  o.clock.t += 1000;
+  assertEqual(o.run.remaining(), 59000);
+});
+
+test('mission trail: ten bumps into a wall never move the walker', function () {
+  const r = newRun().run;
+  r.start();
+  const types = walk(r, 'LLLLLLLLLL');
+  assertEqual(types.filter(function (x) { return x === 'bumped'; }).length, 10);
+  assertEqual([r.pos.x, r.pos.y, r.pos.facing], [5, 10, 'left']);
+  assertEqual(r.result().mistakes.bumps, 10);
+});
+
+test('mission trail: a wrong stop costs 5 seconds and observation', function () {
+  const r = newRun().run;
+  r.start();
+  walk(r, 'UUURRR');
+  assertEqual(r.check('stopC').type, 'wrong');
+  assertEqual([r.remaining(), r.state], [55000, 'playing']);
+  walk(r, 'LLLUURRR');
+  assertEqual(r.check('stopB').type, 'revealed');
+  const res = r.result();
+  assertEqual([res.parts.obs, res.mistakes.wrongChecks], [0.5, 1]);
+});
+
+test('mission trail: out of reach says walk closer, no penalty', function () {
+  const r = newRun().run;
+  r.start();
+  assertEqual(r.check('stopB').type, 'far');
+  assertEqual([r.remaining(), r.result().mistakes.wrongChecks], [60000, 0]);
+});
+
+test('mission trail: decorations and unknown keys cannot be checked', function () {
+  const r = newRun().run;
+  r.start();
+  walk(r, 'UUUUUR');
+  assertEqual(r.check('bench1').type, 'ignored');
+  assertEqual(r.check('nope').type, 'ignored');
+  assertEqual(r.result().mistakes.wrongChecks, 0);
+});
+
+test('mission trail: a wrong turn is counted once per departure', function () {
+  const r = newRun().run;
+  r.start();
+  walk(r, 'UUUUULRRRR');
+  assertEqual(r.check('stopB').type, 'revealed');
+  const m = r.result().mistakes;
+  assertEqual([m.wrongTurns, m.extraSteps], [1, 2]);
+});
+
+test('mission trail: a hidden tab earns no time', function () {
+  const o = newRun(), r = o.run;
+  let fails = 0;
+  r.on('failed', function () { fails++; });
+  r.start();
+  o.clock.t += 61000;
+  assertEqual(r.move('up').type, 'ignored');
+  r.tick();
+  assertEqual([r.state, fails, r.remaining()], ['failed', 1, 0]);
+  const res = r.result();
+  assertEqual([res.done, res.score, res.stars], [false, 0, 0]);
+});
+
+test('mission trail: a check after the deadline fails', function () {
+  const o = newRun(), r = o.run;
+  r.start();
+  walk(r, 'UUUUURRR');
+  o.clock.t += 60001;
+  assertEqual(r.check('stopB').type, 'ignored');
+  assertEqual(r.state, 'failed');
+});
+
+test('mission trail: a slow perfect run loses only time points', function () {
+  const o = newRun(), r = o.run;
+  r.start();
+  o.clock.t += 39000;
+  walk(r, 'UUUUURRR');
+  r.check('stopB');
+  const res = r.result();
+  assertEqual([res.ms, res.parts.time, res.score], [39000, 0.5, 94]);
+});
+
 module.exports = { load, map };
