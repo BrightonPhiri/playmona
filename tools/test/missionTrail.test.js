@@ -78,7 +78,7 @@ test('mission trail: fog radius and road mask', function () {
 
 test('mission trail: stage 1 data has the decoys and the groups', function () {
   const FF = load(), d = FF.data.missionTrail, s = d.stages[0];
-  assertEqual([s.id, s.time, s.fog, s.steps[0].do, s.steps[0].target], [1, 60, false, 'reach', 'stopB']);
+  assertEqual([s.id, s.time, s.fog, s.steps[0].do, s.steps[0].target], [1, 20, false, 'reach', 'stopB']);
   assertEqual([s.identities.stopA, s.identities.stopB, s.identities.stopC], ['busStop', 'busStop', 'busStop']);
   assertEqual(d.groups.length, 10);
   assertEqual([d.groups[0].from, d.groups[9].from], [1, 91]);
@@ -99,7 +99,9 @@ test('mission trail: scoring', function () {
   assertEqual(S.time(18000, 60000, 18000), 1);
   assertClose(S.time(39000, 60000, 18000), 0.5, 1e-9);
   assertEqual(S.time(60000, 60000, 18000), 0);
-  assertEqual(S.parMs(8), 18000);
+  assertEqual(S.parMs(8, 1), 8300);
+  assertEqual(S.parMs(8), 8300);
+  assertEqual(S.parMs(20, 3), 18500);
 });
 
 test('mission trail: a stage can change the weights', function () {
@@ -184,12 +186,12 @@ test('mission trail: a perfect stage 1 scores 100', function () {
 test('mission trail: the clock waits for the letter', function () {
   const o = newRun();
   o.clock.t = 99999;
-  assertEqual(o.run.remaining(), 60000);
+  assertEqual(o.run.remaining(), 20000);
   assertEqual(o.run.move('up').type, 'ignored');
   o.run.start();
-  assertEqual(o.run.remaining(), 60000);
+  assertEqual(o.run.remaining(), 20000);
   o.clock.t += 1000;
-  assertEqual(o.run.remaining(), 59000);
+  assertEqual(o.run.remaining(), 19000);
 });
 
 test('mission trail: ten bumps into a wall never move the walker', function () {
@@ -201,12 +203,12 @@ test('mission trail: ten bumps into a wall never move the walker', function () {
   assertEqual(r.result().mistakes.bumps, 10);
 });
 
-test('mission trail: a wrong stop costs 5 seconds and observation', function () {
+test('mission trail: a wrong stop costs 3 seconds and observation', function () {
   const r = newRun().run;
   r.start();
   walk(r, 'UUURRR');
   assertEqual(r.check('stopC').type, 'wrong');
-  assertEqual([r.remaining(), r.state], [55000, 'playing']);
+  assertEqual([r.remaining(), r.state], [17000, 'playing']);
   walk(r, 'LLLUURRR');
   assertEqual(r.check('stopB').type, 'revealed');
   const res = r.result();
@@ -217,7 +219,7 @@ test('mission trail: out of reach says walk closer, no penalty', function () {
   const r = newRun().run;
   r.start();
   assertEqual(r.check('stopB').type, 'far');
-  assertEqual([r.remaining(), r.result().mistakes.wrongChecks], [60000, 0]);
+  assertEqual([r.remaining(), r.result().mistakes.wrongChecks], [20000, 0]);
 });
 
 test('mission trail: decorations and unknown keys cannot be checked', function () {
@@ -243,7 +245,7 @@ test('mission trail: a hidden tab earns no time', function () {
   let fails = 0;
   r.on('failed', function () { fails++; });
   r.start();
-  o.clock.t += 61000;
+  o.clock.t += 21000;
   assertEqual(r.move('up').type, 'ignored');
   r.tick();
   assertEqual([r.state, fails, r.remaining()], ['failed', 1, 0]);
@@ -255,7 +257,7 @@ test('mission trail: a check after the deadline fails', function () {
   const o = newRun(), r = o.run;
   r.start();
   walk(r, 'UUUUURRR');
-  o.clock.t += 60001;
+  o.clock.t += 20001;
   assertEqual(r.check('stopB').type, 'ignored');
   assertEqual(r.state, 'failed');
 });
@@ -263,11 +265,11 @@ test('mission trail: a check after the deadline fails', function () {
 test('mission trail: a slow perfect run loses only time points', function () {
   const o = newRun(), r = o.run;
   r.start();
-  o.clock.t += 39000;
+  o.clock.t += 14150;
   walk(r, 'UUUUURRR');
   r.check('stopB');
   const res = r.result();
-  assertEqual([res.ms, res.parts.time, res.score], [39000, 0.5, 94]);
+  assertEqual([res.ms, res.parts.time, res.score], [14150, 0.5, 94]);
 });
 
 /* ---------------- Task 4: the stage validator ---------------- */
@@ -575,6 +577,24 @@ test('mission trail: a server copy that is behind is updated without a redraw', 
 test('mission trail: the game sits with the memory games', function () {
   const FF = load(GAME);
   assertEqual(FF.Games.get('missionTrail').category, 'memory');
+});
+
+test('mission trail: the validator catches a time too short for the route', function () {
+  const FF = load(MORE);
+  FF.data.missionTrail.stages[0].time = 10;
+  assert(checker.check(FF).some(function (p) { return p.indexOf('Stage 1:') === 0 && p.indexOf('too short') !== -1; }));
+});
+
+test('mission trail: the low-time warning starts at 30% of a short limit', function () {
+  const FF = load(SCREENS), doc = document_of(FF);
+  const root = doc.createElement('div');
+  doc.body.appendChild(root);
+  const h = FF.MissionTrail.Screens.play(root, { stage: FF.data.missionTrail.stages[0], total: 1, onMove: function () {}, onCheck: function () {}, onTap: function () {} });
+  const clock = nodes(root, function (n) { return n.className === 'mt-clock'; })[0];
+  h.setClock(7000);
+  assertEqual(clock.classList.contains('is-warn'), false);
+  h.setClock(6000);
+  assertEqual(clock.classList.contains('is-warn'), true);
 });
 
 module.exports = { load, map };

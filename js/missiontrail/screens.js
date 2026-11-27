@@ -326,6 +326,8 @@ window.FF = window.FF || {};
     function unbind() { if (bound) { bound = false; document.removeEventListener('keydown', onKey, true); } }
     var msgTimer = null;
     var warned = false;
+    // The low-time look starts at 10 s, or at 30% of a short limit.
+    var warnAt = Math.min(10000, Math.round((stage.time || 60) * 1000 * 0.3));
 
     return {
       canvas: canvas,
@@ -334,7 +336,7 @@ window.FF = window.FF || {};
       unbind: unbind,
       setClock: function (ms) {
         timeText.textContent = clock(ms);
-        var warn = ms <= 10000;
+        var warn = ms <= warnAt;
         clockEl.classList.toggle('is-warn', warn);
         if (warn && !warned && ms > 0) { warned = true; sound('warning'); }
       },

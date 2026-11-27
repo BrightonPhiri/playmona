@@ -195,7 +195,7 @@ window.FF = window.FF || {};
         if (r.type === 'far') handle.say(t('mtWalkCloser', 'Walk closer to check it.'), 'info');
         else if (r.type === 'wrong') {
           sound('wrong');
-          handle.say(t('mtNotThePlace', 'This isn’t the place from your letter. 5 seconds off!'), 'bad');
+          handle.say(t('mtNotThePlace', 'This isn’t the place from your letter. {n} seconds off!', { n: MT.Engine.WRONG_CHECK_MS / 1000 }), 'bad');
           handle.penalty();
           view.shake();
         } else if (r.type === 'revealed') {
@@ -293,7 +293,7 @@ window.FF = window.FF || {};
       'Read the mission letter carefully. You can read it only once.',
       'Walk the town with the arrows, following the directions from memory.',
       'When you are next to the right place, tap it or press Check.',
-      'A wrong place costs 5 seconds. Finish before the clock runs out to earn up to 3 stars.'
+      'A wrong place costs 3 seconds. Finish before the clock runs out to earn up to 3 stars.'
     ],
     start: start
   });
