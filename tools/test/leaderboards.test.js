@@ -294,3 +294,16 @@ test('rules: game boards take a higher score only, and the featured list is serv
   assertEqual(lb.$game.s1.week.$week['.indexOn'], ['score']);
   assert(rules.imposterSecrets, 'the hand-added Imposters rules are still there');
 });
+
+test('leaderboards: afterGame resolves the places without opening a dialog', async function () {
+  const FF = boot();
+  let dialogs = 0, remembered = 0;
+  FF.UI = Object.assign({}, FF.UI || {}, { dialog: function () { dialogs++; }, announce: function () {} });
+  FF.Leaderboards.ranked = function () { return true; };
+  FF.Leaderboards.submitGame = function () { return Promise.resolve([{ period: 'week', rank: 4 }, { period: 'all' }]); };
+  FF.Leaderboards.remember = function () { remembered++; };
+  const cur = { def: { id: 'stacoend' }, config: { mode: 'solo' } };
+  const lines = await FF.Leaderboards.afterGame(cur, { results: [{ id: 'me', points: 20, isMe: true }] });
+  assertEqual(lines, [{ period: 'week', rank: 4 }]);
+  assertEqual([dialogs, remembered], [0, 1]);
+});

@@ -410,14 +410,6 @@ window.FF = window.FF || {};
     b.appendChild(FF.Icons.icon(iconKey));
     return b;
   }
-  // Gold, silver, bronze medal for the top three places.
-  function rankMedal(i) {
-    if (i > 2) return String(i + 1);
-    const m = FF.ui.span('rank-medal rank-medal--' + (i + 1));
-    m.appendChild(FF.Icons.icon('medal'));
-    return m;
-  }
-
   /* ================= Game flow ================= */
   FF.GameFlow = {
     current: null,
@@ -477,6 +469,7 @@ window.FF = window.FF || {};
         celebration: overrides.celebration || null, // a celebration's run: { cid, runId, game, seed, uid, back } (FF.CelebrateLibraryRun)
         challengeSeed: null,                  // set in start() when this run can become a challenge
         standard: !!overrides.standard,       // started from the challenge picker
+        replay: !!overrides.replay,           // Play again: a game with its own setup replays the saved one
         onEnd: overrides.onEnd || null,
         room: inRoom,
         roomStartAt: inRoom ? (overrides.roomStartAt || null) : null
@@ -1082,9 +1075,11 @@ window.FF = window.FF || {};
       if (cur.config.room && FF.Room && FF.Room.current()) {
         if (cur.roomEnding) return;
         cur.roomEnding = true;
+        const xpBeforeRoom = this._xpNow();
         FF.Stats.recordGamePlayed(cur.def.id, cur.def.name, cur.def.category);
         FF.Recents.add(cur.def.id, cur.def.name);
         const flow = this;
+        const mySummary = results.summary || null;
         this._completeRoomResults(cur).then(function (snapshot) {
           if (!snapshot) {
             if (flow.current === cur) flow.close('online');
@@ -1095,12 +1090,12 @@ window.FF = window.FF || {};
           const myUid = FF.Room.current() && FF.Room.current().uid;
           FF.Stats.recordResult({ results: ranked, meId: myUid });
           if (typeof FF.App !== 'undefined' && FF.App.onGameEnded) FF.App.onGameEnded({ results: ranked });
-          flow.showResults({ results: ranked, room: true, title: FF.t('gameComplete', 'Game complete!') });
+          flow.showResults({ results: ranked, room: true, title: FF.t('gameComplete', 'Game complete!'), summary: mySummary, xp: flow._xpGained(xpBeforeRoom) });
         }).catch(function (err) {
           cur.roomEnding = false;
           if (window.console) console.error('[FF.Room results]', err);
           const ranked = flow._rankRoomScores();
-          flow.showResults({ results: ranked, room: true, title: FF.t('gameComplete', 'Game complete!') });
+          flow.showResults({ results: ranked, room: true, title: FF.t('gameComplete', 'Game complete!'), summary: mySummary });
         });
         return;
       }
@@ -1114,6 +1109,7 @@ window.FF = window.FF || {};
       const winner = results.results[0] || null;
 
       // persist stats
+      const xpBefore = this._xpNow();
       FF.Stats.recordGamePlayed(cur.def.id, cur.def.name, cur.def.category);
       FF.Recents.add(cur.def.id, cur.def.name);
       if (winner) {
@@ -1128,6 +1124,9 @@ window.FF = window.FF || {};
         });
       }
       if (results.achievements) results.achievements.forEach(function (a) { FF.Stats.unlock(a); });
+      results.xp = this._xpGained(xpBefore);
+      // A server-scored game (WordShift) sends its own leaderboard places.
+      if (results.summary && results.summary.places && typeof results.summary.places.then === 'function') results.places = results.summary.places;
 
       if (typeof FF.App !== 'undefined' && FF.App.onGameEnded) FF.App.onGameEnded(results);
 
@@ -1135,8 +1134,8 @@ window.FF = window.FF || {};
         if (FF.Random.unseed) FF.Random.unseed();
         const mineD = this._myResult(results.results);
         const gameId = cur.def.id;
-        FF.Daily.finish(cur.config.daily, gameId, mineD ? mineD.points : 0, results.quizCorrect).then(function (rank) {
-          if (rank && FF.Leaderboards) FF.Leaderboards.celebrate({ game: gameId, places: [{ period: 'daily', rank: rank }] });
+        results.places = Promise.resolve(FF.Daily.finish(cur.config.daily, gameId, mineD ? mineD.points : 0, results.quizCorrect)).then(function (rank) {
+          return rank ? [{ period: 'daily', rank: rank }] : [];
         });
         results.daily = true;
         this.showResults(results);
@@ -1158,7 +1157,7 @@ window.FF = window.FF || {};
         this.showResults(results);
         return;
       }
-      if (FF.Leaderboards) FF.Leaderboards.afterGame(cur, results);
+      if (FF.Leaderboards && !results.places) results.places = FF.Leaderboards.afterGame(cur, results);
       if (cur.config.challengeSeed) {
         results.challengeSeed = cur.config.challengeSeed;
         results.dealOptions = cur.config.dealOptions || null;   // e.g. Quiz Mix topics
@@ -1172,125 +1171,123 @@ window.FF = window.FF || {};
       this.showResults(results);
     },
 
+    // XP now, and what a game added: { gained, total } for the end screen, or null.
+    _xpNow: function () {
+      try { return FF.Stats && FF.Stats.get ? (FF.Stats.get().xp || 0) : null; } catch (e) { return null; }
+    },
+    _xpGained: function (before) {
+      const after = this._xpNow();
+      if (before == null || after == null) return null;
+      return { gained: Math.max(0, after - before), total: after };
+    },
+
     // The account holder's row in a solo result.
     _myResult: function (ranked) {
       ranked = ranked || [];
       return ranked.filter(function (r) { return r.isMe || r.id === 'me'; })[0] || ranked[0] || null;
     },
 
+    /* The buttons under the end screen, by kind of run. Every one is the same size (FF.EndScreen). */
+    _endActions: function (kind, ctx) {
+      ctx = ctx || {};
+      const t = FF.t;
+      const flow = this;
+      function gameId() { return flow.current && flow.current.def ? flow.current.def.id : null; }
+      const home = { id: 'home', label: t('navHome', 'Home'), icon: 'house', onClick: function () { FF.GameFlow.exitToHome(); } };
+      if (kind === 'room') {
+        const list = [];
+        if (ctx.isHost) list.push({ id: 'playAgain', label: t('playAgain', 'Play again'), icon: 'restart', primary: true, onClick: function () {
+          FF.Audio.play('click');
+          FF.Room.playAgain().catch(function (err) {
+            if (FF.RoomUI && FF.RoomUI.banner) FF.RoomUI.banner((err && err.message) || t('restartFailed', 'The room could not be restarted.'));
+          });
+        } });
+        list.push({ id: 'backToRoom', label: t('backToRoom', 'Back to the room'), icon: 'users', onClick: function () { FF.GameFlow.close('online'); } });
+        return list;
+      }
+      if (kind === 'daily') {
+        return [{ id: 'dailyBoard', label: t('dailyLeaderboard', 'Daily leaderboard'), icon: 'trophy', primary: true, onClick: function () {
+          FF.GameFlow.close('leaderboard', { tab: 'daily', highlight: true });
+        } }, home];
+      }
+      if (kind === 'challenge') {
+        return [{ id: 'seeWhoWon', label: t('chSeeWhoWon', 'See who won'), icon: 'trophy', primary: true, onClick: function () {
+          FF.GameFlow.close('challenge', { id: ctx.challengeId, reveal: true });
+        } }, home];
+      }
+      if (kind === 'celebration') {
+        return [{ id: 'backToParty', label: t('celBackToParty', 'Back to the party'), icon: 'confetti', primary: true, onClick: function () {
+          FF.CelebrateLibraryRun.back(ctx.celebration);
+        } }];
+      }
+      const list = [{ id: 'playAgain', label: t('playAgain', 'Play again'), icon: 'restart', primary: true, onClick: function () {
+        FF.Audio.play('roundStart');
+        FF.GameFlow.launch(gameId(), { skipIntro: true, replay: true });
+      } }];
+      if (ctx.hasSetup) list.push({ id: 'changeSettings', label: t('endChangeSettings', 'Change settings'), icon: 'sliders', onClick: function () {
+        FF.Audio.play('click');
+        FF.GameFlow.launch(gameId(), { skipIntro: true });
+      } });
+      if (ctx.canChallenge) list.push({ id: 'challenge', label: t('challengeFriend', 'Challenge a friend'), icon: 'swords', onClick: function () {
+        const cur = FF.GameFlow.current;
+        FF.Access.gate('challenge', function () {
+          const rec = FF.Challenge.fromRun(cur, ctx.results);
+          FF.GameFlow.close('challenge', { id: rec.id, fresh: true });
+        });
+      } });
+      list.push({ id: 'otherGame', label: t('anotherGame', 'Choose another game'), icon: 'game-controller', onClick: function () { FF.GameFlow.close('games'); } });
+      list.push(home);
+      return list;
+    },
+
+    /* The one end screen: FF.EndScreen draws it from this data. */
     showResults: function (results) {
       const screen = FF.ui.$('#game-screen');
       FF.ui.clear(screen);
       screen.className = 'game-screen';
       const t = FF.t;
-      const ranked = results.results || [];
-      const winner = ranked[0];
-      const top = winner ? (winner.points || 0) : 0;
-      const tied = ranked.filter(function (r) { return (r.points || 0) === top && top > 0; });
-      const isTie = tied.length > 1;
-      const solo = ranked.length === 1;
+      const cur = this.current;
+      const def = (cur && cur.def) || {};
+      const inRoom = !!(results.room && FF.Room && FF.Room.current());
+      const kind = inRoom ? 'room' : results.daily ? 'daily' : results.celebration ? 'celebration' : results.challenge ? 'challenge' : 'normal';
+      const isHost = inRoom && !!FF.Room.current().isHost;
 
-      const wrap = FF.ui.el('main', { class: 'results', 'aria-labelledby': 'results-title' });
-      wrap.appendChild(resultBadge(isTie ? 'users' : 'trophy', 'gold'));
-      const title = results.title || (isTie ? t('itsATie', 'It’s a tie!') : (solo ? t('wellPlayed', 'Well played!') : t('gameComplete', 'Game complete!')));
-      wrap.appendChild(FF.ui.el('h1', { class: 'results__title', id: 'results-title' }, title));
+      let note = null;
+      if (kind === 'daily') note = t('dailyResultHint', 'That was today’s daily challenge. A new game comes tomorrow.');
+      else if (kind === 'celebration') note = FF.CelebrateLibraryRun.status(results.celebration);
+      else if (kind === 'room' && !isHost) note = t('waitingHostAgain', 'Waiting for the host to start another round…');
 
-      if (winner && (top > 0 || solo)) {
-        const card = FF.ui.div('results__winner-card');
-        const ava = FF.ui.div('results__winner-avatar');
-        if (isTie) ava.appendChild(FF.Icons.icon('trophy'));
-        else ava.appendChild(FF.Players.avatarEl(winner, 'results__winner-face'));
-        card.appendChild(ava);
-        const names = (isTie ? tied : [winner]).map(function (x) { return x.name; }).join(' & ');
-        card.appendChild(FF.ui.el('div', { class: 'results__winner-name' }, names));
-        card.appendChild(FF.ui.el('div', { class: 'results__winner-sub' }, isTie ? t('sharedWin', 'Shared win') : (solo ? t('yourScore', 'Your score') : t('champion', 'Champion'))));
-        card.appendChild(FF.ui.el('div', { class: 'results__winner-points' }, t('pointsN', '{n} points', { n: FF.util.formatNumber(winner.points) })));
-        wrap.appendChild(card);
-        FF.UI.announce(isTie ? t('tieBetween', 'Tie between {names}', { names: names }) : t('winnerIs', '{name} wins with {n} points', { name: names, n: winner.points }));
+      const actions = this._endActions(kind, {
+        hasSetup: !!def.setup,
+        canChallenge: !!(results.challengeSeed && FF.Challenge),
+        isHost: isHost,
+        challengeId: results.challenge,
+        celebration: results.celebration,
+        results: results
+      });
+
+      const places = results.places && typeof results.places.then === 'function' ? results.places : null;
+      const view = FF.EndScreen.render(screen, {
+        kind: kind,
+        title: results.title || null,
+        ranked: results.results || [],
+        summary: results.summary || null,
+        xp: results.xp || null,
+        placesPending: !!places,
+        gameId: def.id,
+        note: note,
+        actions: actions
+      });
+      if (places) {
+        places.then(function (lines) { view.setPlaces(lines); }, function () { view.setPlaces(null); });
       }
 
-      if (ranked.length > 1) {
-        const lb = FF.ui.el('ol', { class: 'results__leaderboard', 'aria-label': t('leaderboard', 'Leaderboard'), style: { listStyle: 'none' } });
-        ranked.forEach(function (r, i) {
-          const row = FF.ui.el('li', { class: 'results__row' + (i === 0 && top > 0 ? ' results__row--winner' : '') });
-          row.appendChild(FF.ui.el('span', { class: 'results__rank', 'aria-label': t('place', 'Place {n}', { n: i + 1 }) }, rankMedal(i)));
-          row.appendChild(FF.Players.avatarEl(r, 'results__avatar'));
-          row.appendChild(FF.ui.el('span', { class: 'results__name' }, r.name));
-          row.appendChild(FF.ui.el('span', { class: 'results__pts' }, FF.util.formatNumber(r.points)));
-          lb.appendChild(row);
-        });
-        wrap.appendChild(lb);
-      }
-
-      const stats = FF.ui.div('results__stats');
-      function stat(iconKey, text) {
-        const s = FF.ui.span('results__stat');
-        s.appendChild(FF.Icons.icon(iconKey));
-        s.appendChild(document.createTextNode(text));
-        stats.appendChild(s);
-      }
-      if (results.bestStreak) stat('flame', t('streakN', 'Best streak {n}', { n: results.bestStreak }));
-      if (results.fastest != null) stat('lightning', t('fastestN', 'Fastest {n} s', { n: results.fastest.toFixed(2) }));
-      if (results.mostWords) stat('text-aa', t('wordsN', '{n} words', { n: results.mostWords }));
-      if (results.quizCorrect) stat('check-circle', t('correctN', '{n} correct', { n: results.quizCorrect }));
-      if (stats.childNodes.length) wrap.appendChild(stats);
-
-      const actions = FF.ui.div('results__actions');
-      if (results.room && FF.Room && FF.Room.current()) {
-        if (FF.Room.current().isHost) {
-          actions.appendChild(FF.UI.button(t('playAgain', 'Play again'), { class: 'btn-lg btn-primary', icon: 'restart', onClick: function () {
-            FF.Audio.play('click');
-            FF.Room.playAgain().catch(function (err) {
-              if (FF.RoomUI && FF.RoomUI.banner) {
-                FF.RoomUI.banner((err && err.message) || t('restartFailed', 'The room could not be restarted.'));
-              }
-            });
-          } }));
-        } else {
-          wrap.appendChild(FF.ui.div('hint', t('waitingHostAgain', 'Waiting for the host to start another round…')));
-        }
-        actions.appendChild(FF.UI.button(t('backToRoom', 'Back to the room'), { class: 'btn-lg', icon: 'users', onClick: function () { FF.GameFlow.close('online'); } }));
+      if (inRoom) {
         FF.Room.offAll();
         FF.Room.on('meta', function (meta) {
-          if (meta && (meta.status === 'lobby' || meta.status === 'playing')) {
-            FF.GameFlow.close('online');
-          }
+          if (meta && (meta.status === 'lobby' || meta.status === 'playing')) FF.GameFlow.close('online');
         });
-      } else if (results.daily) {
-        wrap.appendChild(FF.ui.div('hint', t('dailyResultHint', 'That was today’s daily challenge. A new game comes tomorrow.')));
-        actions.appendChild(FF.UI.button(t('dailyLeaderboard', 'Daily leaderboard'), { class: 'btn-lg btn-primary', icon: 'trophy', onClick: function () {
-          FF.GameFlow.close('leaderboard', { tab: 'daily', highlight: true });
-        } }));
-        actions.appendChild(FF.UI.button(t('navHome', 'Home'), { class: 'btn-lg btn-ghost', icon: 'house', onClick: function () { FF.GameFlow.exitToHome(); } }));
-      } else if (results.celebration) {
-        // A celebration's run: say whether the score reached the event, then back to the party.
-        wrap.appendChild(FF.CelebrateLibraryRun.status(results.celebration));
-        actions.appendChild(FF.UI.button(t('celBackToParty', 'Back to the party'), { class: 'btn-lg btn-primary', icon: 'confetti', onClick: function () {
-          FF.CelebrateLibraryRun.back(results.celebration);
-        } }));
-      } else if (results.challenge) {
-        // A friend's challenge: the reveal shows who won.
-        actions.appendChild(FF.UI.button(t('chSeeWhoWon', 'See who won'), { class: 'btn-lg btn-primary', icon: 'trophy', onClick: function () {
-          FF.GameFlow.close('challenge', { id: results.challenge, reveal: true });
-        } }));
-        actions.appendChild(FF.UI.button(t('navHome', 'Home'), { class: 'btn-lg btn-ghost', icon: 'house', onClick: function () { FF.GameFlow.exitToHome(); } }));
-      } else {
-        actions.appendChild(FF.UI.button(t('playAgain', 'Play again'), { class: 'btn-lg btn-primary', icon: 'restart', onClick: function () { FF.Audio.play('roundStart'); FF.GameFlow.launch(FF.GameFlow.current.def.id, { skipIntro: true }); } }));
-        if (results.challengeSeed && FF.Challenge) {
-          actions.appendChild(FF.UI.button(t('challengeFriend', 'Challenge a friend'), { class: 'btn-lg', icon: 'swords', onClick: function () {
-            const cur = FF.GameFlow.current;
-            FF.Access.gate('challenge', function () {
-              const rec = FF.Challenge.fromRun(cur, results);
-              FF.GameFlow.close('challenge', { id: rec.id, fresh: true });
-            });
-          } }));
-        }
-        actions.appendChild(FF.UI.button(t('anotherGame', 'Choose another game'), { class: 'btn-lg', icon: 'game-controller', onClick: function () { FF.GameFlow.close('games'); } }));
-        actions.appendChild(FF.UI.button(t('navHome', 'Home'), { class: 'btn-lg btn-ghost', icon: 'house', onClick: function () { FF.GameFlow.exitToHome(); } }));
       }
-      wrap.appendChild(actions);
-
-      screen.appendChild(wrap);
 
       FF.Audio.play('winner');
       if (FF.Settings.get('animations') && !FF.Settings.get('reduceMotion') && FF.Confetti) {

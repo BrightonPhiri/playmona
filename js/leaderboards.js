@@ -360,8 +360,8 @@ window.FF = window.FF || {};
       return this.submitGame(id, mine.points).then(function (places) {
         var lines = places.filter(function (p) { return p.rank; }).sort(function (a, b) { return a.period === 'all' ? -1 : b.period === 'all' ? 1 : 0; });
         lines.forEach(function (p) { self.remember(id + ':' + p.period, { rank: p.rank, game: id, period: p.period }); });
-        if (lines.length) self.celebrate({ game: id, places: lines });
-        return places;
+        // The end screen shows these (FF.EndScreen); no pop-up after a game.
+        return lines;
       });
     },
 
