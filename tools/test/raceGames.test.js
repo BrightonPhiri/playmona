@@ -141,7 +141,7 @@ test('verse rush: online points by finishing place', function () {
   const d = device('bibleVerseRush', 'u1', 's');
   d.start();
   const pts = d.log.opts.pointsFor;
-  assertEqual([pts({}, 1), pts({}, 2), pts({}, 3)], [250, 200, 150]);
+  assertEqual([pts({}, 1), pts({}, 2), pts({}, 3)], [15, 13, 10]);
 });
 
 test('word scramble and who am I send what the answer was worth', function () {

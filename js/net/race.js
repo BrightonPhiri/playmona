@@ -292,7 +292,7 @@ window.FF = window.FF || {};
         gameId: gameId,
         rounds: opts.rounds || 8,
         timerMs: opts.timerMs || 0,
-        pointsFor: opts.pointsFor || function () { return 100; },
+        pointsFor: opts.pointsFor || function () { return 10; },
         // 'first'    - first correct answer claims the winner slot
         // 'fastest'  - quickest correct answer wins once everyone has gone
         // 'ranked'   - like 'fastest', but every correct answer scores by
@@ -514,7 +514,7 @@ window.FF = window.FF || {};
         timerMs: opts.timerMs != null ? opts.timerMs : (api.config.timer || 0) * 1000,
         pointsFor: opts.pointsFor || function (answer) {
           if (answer.value != null) return answer.value;
-          return (answer.ms != null && answer.ms <= 2500) ? 150 : 100;
+          return (answer.ms != null && answer.ms <= 2500) ? 13 : 10;
         }
       });
 

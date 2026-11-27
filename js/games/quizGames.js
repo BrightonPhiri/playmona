@@ -13,13 +13,8 @@ window.FF = window.FF || {};
      Shared helpers
      ============================================================ */
 
-  // Difficulty multiplier for scoring: easy x1, normal x1.5, hard x2.
-  function bonusOf(config) {
-    const d = (config && config.difficulty) || 'normal';
-    if (d === 'hard') return 2;
-    if (d === 'normal') return 1.5;
-    return 1;
-  }
+  // Points come from FF.QuizPoints (js/games/quizMix.js): 6 / 8 / 10 by difficulty.
+  function levelBase(config) { return FF.QuizPoints.levelBase(config && config.difficulty); }
 
   // Entities that receive points (teams in team mode, else players).
   function scorerList(config) {
@@ -87,8 +82,8 @@ window.FF = window.FF || {};
         // A game may state what its answer was worth (Guess Who scores
         // by clues revealed, not by speed).
         if (answer.value != null) return answer.value;
-        var pts = Math.round(100 * bonusOf(api.config));
-        if (answer.ms != null && answer.ms < 3000) pts += 50;
+        var pts = levelBase(api.config);
+        if (answer.ms != null && answer.ms < 3000) pts += FF.QuizPoints.QUICK;
         return pts;
       }
     });
@@ -212,7 +207,7 @@ window.FF = window.FF || {};
       const items = data.guessWho.slice();
       const bag = new api.random.Bag(items);
       const TOTAL = FF.GameLength.rounds(api, Math.min(6, items.length), items.length);
-      const cluePoints = [0, 300, 200, 100, 50];
+      const cluePoints = [0].concat(FF.QuizPoints.CLUES);
 
       let round = 0;
       let correctTotal = 0;
@@ -255,7 +250,7 @@ window.FF = window.FF || {};
 
         api.shell.updateScores(entity ? entity.id : null);
 
-        function pointsNow() { return cluePoints[revealed] || 50; }
+        function pointsNow() { return cluePoints[revealed] || 3; }
 
         function render() {
           FF.ui.clear(api.shell.root);
@@ -313,7 +308,7 @@ window.FF = window.FF || {};
 
           function pick(idx) {
             const correct = opts[idx] === item.answer;
-            const value = Math.round(pointsNow() * bonusOf(api.config));
+            const value = pointsNow();
 
             if (race) {
               // Points depend on how many clues THIS device revealed, so

@@ -46,7 +46,7 @@ window.FF = window.FF || {};
     Technology: 'tech', Kids: 'everyday', Africa: 'africa', Zimbabwe: 'africa', 'Everyday Life': 'everyday'
   };
 
-  var DOUBLE_EVERY = 5;    // every 5th question is worth double
+  var DOUBLE_EVERY = 5;    // every 5th question is a bonus question (+5)
   var SEEN_KEY = 'quizSeen';
   var SEEN_MAX = 6000;
   var TOPICS_KEY = 'quizTopics';
@@ -197,10 +197,17 @@ window.FF = window.FF || {};
     return (config.players || []).slice();
   }
 
-  function bonusOf(config) {
-    var d = config.difficulty || 'normal';
-    return d === 'hard' ? 2 : (d === 'normal' ? 1.5 : 1);
-  }
+  /* Points for the quiz games (Quiz Mix here, Family Quiz and Guess Who in quizGames.js,
+     which loads after this file). Nothing is worth more than 10 on its own. */
+  FF.QuizPoints = {
+    levelBase: function (difficulty) { return difficulty === 'hard' ? 10 : (difficulty === 'easy' ? 6 : 8); },
+    SPEED: 5,      // a right answer: up to this for speed
+    QUICK: 3,      // rooms: a right answer inside 3 seconds
+    STREAK: 5,     // every third right answer in a row
+    BONUS_Q: 5,    // every fifth question is a bonus question
+    CLUES: [10, 8, 5, 3]   // Guess Who, by clues shown
+  };
+  var QP = FF.QuizPoints;
 
   function topicBadge(id) {
     var tp = TOPIC[id] || TOPIC.general;
@@ -362,8 +369,8 @@ window.FF = window.FF || {};
       optionSelector: '.qm-opt',
       pointsFor: function (answer) {
         if (answer.value != null) return answer.value;
-        var pts = Math.round(100 * bonusOf(config));
-        if (answer.ms != null && answer.ms < 3000) pts += 50;
+        var pts = QP.levelBase(config.difficulty);
+        if (answer.ms != null && answer.ms < 3000) pts += QP.QUICK;
         return pts;
       }
     }) : null;
@@ -439,7 +446,7 @@ window.FF = window.FF || {};
       if (double) {
         var dbl = FF.ui.span('qm-double');
         dbl.appendChild(FF.Icons.icon('lightning'));
-        dbl.appendChild(FF.ui.span('', t('qmDouble', 'Double points')));
+        dbl.appendChild(FF.ui.span('', t('qmBonusQ', 'Bonus question: +5')));
         head.appendChild(dbl);
       }
       head.appendChild(diffDots(q.difficulty));
@@ -523,17 +530,17 @@ window.FF = window.FF || {};
         tally(entity.id, q, correct, idx < 0 ? null : secs);
 
         if (correct) {
-          var pts = Math.round(100 * bonusOf(config));
+          var pts = QP.levelBase(config.difficulty);
           var left = seconds ? Math.max(0, 1 - secs / seconds) : (secs < 3 ? 1 : 0);
-          pts += Math.round(50 * left);            // speed bonus, up to +50
-          if (double) pts *= 2;
+          pts += Math.round(QP.SPEED * left);      // speed bonus, up to +5
+          if (double) pts += QP.BONUS_Q;
           api.scoring.add(entity.id, pts, { correct: true, fastest: secs });
           var r = api.scoring.record(entity.id);
           var streak = r && r.streak > 0 && r.streak % 3 === 0;
-          if (streak) api.scoring.add(entity.id, 100);
+          if (streak) api.scoring.add(entity.id, QP.STREAK);
           api.audio.play(streak || double ? 'streak' : 'correct');
-          after.appendChild(FF.GameUI.feedback('good', FF.GameUI.correctText(pts + (streak ? 100 : 0)) +
-            (double ? ' ' + t('qmDoubled', 'Doubled!') : '') + (streak ? ' ' + t('streakBonus', 'Streak bonus!') : '')));
+          after.appendChild(FF.GameUI.feedback('good', FF.GameUI.correctText(pts + (streak ? QP.STREAK : 0)) +
+            (double ? ' ' + t('qmBonusGot', 'Bonus +5!') : '') + (streak ? ' ' + t('streakBonus', 'Streak bonus!') : '')));
         } else {
           api.scoring.add(entity.id, 0, { wrong: true });
           api.scoring.resetStreak(entity.id);

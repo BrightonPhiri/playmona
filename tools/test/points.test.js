@@ -48,4 +48,24 @@ test('points: bible games (who am I, verse rush, books) score in small points', 
   assertEqual(G.SPELL_BONUS, 5);
 });
 
+/* ---------------- Task 2: Quiz Mix, Family Quiz, Guess Who, room defaults ---------------- */
+
+test('points: quiz games score 6 / 8 / 10 by level, quick +3, streak +5, Guess Who 10 / 8 / 5 / 3', function () {
+  const FF = loadFF(['js/core.js', 'js/i18n.js', 'js/registry.js', 'js/gameLength.js', 'js/data/quiz.js', 'js/games/quizMix.js', 'js/data/quizbank.js']);
+  const Q = FF.QuizPoints;
+  assert(Q, 'FF.QuizPoints exists');
+  assertEqual(['easy', 'normal', 'hard', undefined].map(Q.levelBase), [6, 8, 10, 8]);
+  assertEqual(Q.QUICK, 3);
+  assertEqual(Q.STREAK, 5);
+  assertEqual(Q.SPEED, 5);
+  assertEqual(Q.BONUS_Q, 5);
+  assertEqual(Q.CLUES, [10, 8, 5, 3]);
+});
+
+test('points: room defaults are 10 a right answer, 13 when quick', function () {
+  const src = fs.readFileSync(path.join(ROOT, 'js/net/race.js'), 'utf8');
+  assert(/pointsFor: opts\.pointsFor \|\| function \(\) \{ return 10; \}/.test(src), 'race default is 10');
+  assert(/\(answer\.ms != null && answer\.ms <= 2500\) \? 13 : 10/.test(src), 'quick race default is 13');
+});
+
 module.exports = { loadGame: loadGame, within: within, UI: UI };
