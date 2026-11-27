@@ -6262,9 +6262,9 @@ button.imp-card:focus-visible { outline: 3px solid var(--focus-ring); outline-of
 .mt-scene__room { position: relative; flex: 1; min-height: 0; border-radius: 18px; overflow: hidden; background: var(--mt-paper); box-shadow: 0 10px 28px color-mix(in srgb, var(--mt-ink) 35%, transparent); }
 .mt-scene__bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .mt-scene__back { align-self: center; min-height: 44px; }
-/* A busy room to search (missiontrail/search.js): the picture keeps its 3:2 shape inside the room box. */
+/* A busy room to search (missiontrail/search.js): the square picture stays square inside the room box. */
 .mt-scene__room--search { display: grid; place-items: center; background: var(--mt-sky-ink); container-type: size; }
-.mt-search-wrap { position: relative; width: min(100cqw, 150cqh); height: min(100cqh, 66.667cqw); }
+.mt-search-wrap { position: relative; width: min(100cqw, 100cqh); height: min(100cqw, 100cqh); }
 .mt-search {
   position: absolute; inset: 0; overflow: hidden; border-radius: 14px;
   cursor: crosshair; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
@@ -6310,6 +6310,7 @@ button.imp-card:focus-visible { outline: 3px solid var(--focus-ring); outline-of
 .mt-thing.is-wrong img { filter: drop-shadow(0 0 6px var(--mt-bad)); }
 @keyframes mt-wrong { 20% { transform: translate(-56%, -100%); } 40% { transform: translate(-44%, -100%); } 60% { transform: translate(-53%, -100%); } }
 .mt-pad.is-off { opacity: 0.35; pointer-events: none; }
+.mt-pad.is-gone { display: none; }   /* while searching a busy room: the room gets the space */
 
 @media (prefers-reduced-motion: reduce) {
   .mt-scene, .mt-thing.is-wrong, .mt-bag__item, .mt-search__ring, .mt-search__miss { animation: none; }

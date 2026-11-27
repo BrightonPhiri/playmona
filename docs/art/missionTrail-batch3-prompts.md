@@ -81,7 +81,7 @@ PART 2: FIVE BUSY ROOMS
 
 Every room picture:
 
-1. Landscape, exactly 1536 x 1024, full bleed (the room fills the whole picture), no border.
+1. Square, exactly 1024 x 1024, full bleed (the room fills the whole picture), no border. (Square, so the whole room fits on a phone held upright.)
 2. Seen from the front at about eye level, a little from above, like a stage set: a back wall, a floor, and side walls at the edges.
 3. Packed with separate, clearly drawn furniture and clutter everywhere, so there is plenty to search: shelves full of things, a rug, cushions, baskets, boxes, plants, pictures on the walls (simple landscapes, no people), toys or tools as suits the room. No large plain areas: walls and floor may cover at most a fifth of the picture and must carry detail.
 4. No people, no animals, no faces.
@@ -98,7 +98,7 @@ Rules for the 12 hidden things in every room:
 
 * Each thing looks like the same thing on the sheets (objects-1.png, or objects-2.png from Part 1): same design, same colours. The keys are always a bunch of three keys on a round ring with a small blank yellow tag; the blue and red books are always closed plain hardbacks; the caps are always the same baseball cap in red, blue or green.
 * Each thing is clearly that thing when you look at it, but tucked in: resting on a shelf among other things, half behind a cushion, lying in a basket, hanging from a hook. At least two thirds of each thing stays visible.
-* Size: each thing is between one eighteenth and one twelfth of the picture's width across (about 85 to 130 pixels). Not tiny specks, not big centrepieces.
+* Size: each thing is between one sixteenth and one tenth of the picture's width across (about 65 to 100 pixels). Not tiny specks, not big centrepieces.
 * No two things touch or overlap, none touches the edge of the picture, and each is the only one of its kind in the whole picture.
 * Nothing else changes: no shifted shadows, no recoloured walls, no moved or removed furniture apart from the 12 additions.
 * If a thing is impossible to place where listed, put it somewhere else in the same area and write down what you did.
@@ -216,7 +216,7 @@ WORKFLOW
 * Make Part 1 first, so the rooms can match the new things.
 * Generate each picture with its own request (one request = one sheet, one empty room or one edit).
 * Save the actual generated image files at the paths above.
-* Each empty and hidden pair must be exactly the same width and height (1536 x 1024).
+* Each empty and hidden pair must be exactly the same width and height (1024 x 1024).
 * Verify all 16 files exist, that every image is a valid PNG, and that each pair is the same size.
 * Write a short summary listing each file and anything you had to move.
 * Do not substitute placeholder graphics, SVG drawings, stock images or programmatically drawn images.

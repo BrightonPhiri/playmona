@@ -475,6 +475,7 @@ window.FF = window.FF || {};
         sceneEl.setAttribute('aria-label', promptText);
         view.appendChild(sceneEl);
         padEl.classList.add('is-off');
+        padEl.classList.toggle('is-gone', !!sc.search);
         if (buttons[0] && buttons[0].focus) buttons[0].focus();
       },
       sceneWrong: function (id) {
@@ -503,6 +504,7 @@ window.FF = window.FF || {};
         if (sceneEl && sceneEl.parentNode) sceneEl.parentNode.removeChild(sceneEl);
         sceneEl = null;
         sceneButtons = [];
+        padEl.classList.remove('is-gone');
         if (searchView) searchView.destroy();
         searchView = null;
         padEl.classList.remove('is-off');
