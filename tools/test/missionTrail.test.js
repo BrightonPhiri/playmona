@@ -348,4 +348,35 @@ test('mission trail: a newer device copy merges with the server', async function
   assertMerged(await syncWith(true));
 });
 
+/* ---------------- Task 7: the asset registry ---------------- */
+
+const ASSETS = ENGINE.concat(['js/data/assetManifest.js', 'js/assets.js', 'js/missiontrail/assets.js']);
+
+test('mission trail: the registry knows the cut pictures', function () {
+  const A = load(ASSETS).MissionTrail.Assets;
+  assert(A.known('props', 'bus-stop'), 'bus-stop');
+  assert(A.known('buildings', 'house-red'), 'house-red');
+  assert(A.known('walker', 'walker-up-2'), 'walker-up-2');
+  assert(!A.known('props', 'nope'), 'nope');
+  assert(!A.known('spaceships', 'bus-stop'), 'unknown category');
+  assert(/^assets\/images\/games\/missionTrail\/props\/bus-stop\.webp\?v=[0-9a-f]{8}$/.test(A.path('props', 'bus-stop')), A.path('props', 'bus-stop'));
+});
+
+test('mission trail: a map asks only for the pictures it uses', function () {
+  const FF = load(ASSETS), A = FF.MissionTrail.Assets;
+  const list = A.forMap(FF.MissionTrail.Rules.buildMap(map('village-1')));
+  const keys = list.map(function (x) { return x.category + '/' + x.id; });
+  assertEqual(keys.filter(function (k) { return k === 'props/bus-stop'; }).length, 1);
+  assertEqual(keys.filter(function (k) { return k.indexOf('walker/') === 0; }).length, 12);
+  assertEqual(keys.filter(function (k) { return k.indexOf('ground/') === 0; }).sort(), ['ground/asphalt', 'ground/grass', 'ground/pavement']);
+  assert(keys.indexOf('props/fountain') === -1, 'no fountain on this map');
+  assert(keys.indexOf('buildings/hall-stone') === -1, 'no hall on this map');
+});
+
+test('mission trail: the validator reports a look with no picture', function () {
+  const FF = load(ASSETS);
+  FF.data.missionTrailMaps[0].props[0].look = 'rocket';
+  assert(checker.check(FF).some(function (p) { return p.indexOf('rocket') !== -1; }));
+});
+
 module.exports = { load, map };
