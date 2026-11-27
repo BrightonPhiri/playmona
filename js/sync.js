@@ -26,8 +26,12 @@ window.FF = window.FF || {};
   // combined value, or null when its module is not loaded (then the
   // newer copy wins as usual).
   var MERGE = {
-    missionTrail: function (local, remote) {
-      return FF.MissionTrail && FF.MissionTrail.Progress ? FF.MissionTrail.Progress.merge(local, remote) : null;
+    // Mission Trail keeps each stage's best from both copies (js/missiontrail/progress.js).
+    missionTrail: {
+      merge: function (local, remote) {
+        return FF.MissionTrail && FF.MissionTrail.Progress ? FF.MissionTrail.Progress.merge(local, remote) : null;
+      },
+      same: function (a, b) { return FF.MissionTrail.Progress.same(a, b); }
     }
   };
   var PUSH_DELAY = 1500;
@@ -118,12 +122,21 @@ window.FF = window.FF || {};
           var hasLocal = FF.Storage.get(key, undefined) !== undefined;
           if (r && hasLocal && MERGE[key]) {
             try {
-              var merged = MERGE[key](FF.Storage.get(key, null), JSON.parse(r.v));
+              var mine = FF.Storage.get(key, null);
+              var theirs = JSON.parse(r.v);
+              var merged = MERGE[key].merge(mine, theirs);
               if (merged) {
-                FF.Storage.set(key, merged, { silent: true });
-                m[key] = Date.now();
-                state.dirty[key] = true;   // send the combined copy back
-                changed = true;
+                // Redraw only when this device's copy changed; write only when the server's did.
+                var toServer = !MERGE[key].same(merged, theirs);
+                if (!MERGE[key].same(merged, mine)) {
+                  FF.Storage.set(key, merged, { silent: true });
+                  changed = true;
+                  if (!toServer) m[key] = r.t;
+                }
+                if (toServer) {
+                  m[key] = Date.now();
+                  state.dirty[key] = true;   // send the combined copy back
+                }
                 return;
               }
             } catch (e) { /* a damaged copy: fall back to the newer one */ }

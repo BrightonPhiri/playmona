@@ -38,6 +38,41 @@ window.FF = window.FF || {};
     return near[0].key;
   }
 
+  /* Turns presses into engine moves and walker animations. Every press reaches the
+     engine at once (it is the truth for position, mistakes and the clock); the view
+     walks the same cells behind it and jumps ahead when more than two steps behind,
+     so fast taps are never lost. A held key's auto-repeat only counts when the walker
+     is standing still, so letting go stops it where it is.
+     view: { isMoving(), walk(pos, done), place(pos), face(dir), shake() }. */
+  function createMover(run, view, hooks) {
+    hooks = hooks || {};
+    var queue = [];
+    function next() {
+      if (!queue.length) return;
+      while (queue.length > 2) view.place(queue.shift());
+      view.walk(queue.shift(), next);
+    }
+    function busy() { return view.isMoving() || queue.length > 0; }
+    return {
+      busy: busy,
+      move: function (dir, repeat) {
+        if (run.state !== 'playing') return { type: 'ignored' };
+        var wasBusy = busy();
+        if (repeat && wasBusy) return { type: 'ignored' };
+        var r = run.move(dir);
+        if (r.type === 'moved') {
+          queue.push({ x: r.pos.x, y: r.pos.y, facing: r.pos.facing });
+          if (!view.isMoving()) next();
+          if (hooks.moved) hooks.moved(r.pos);
+        } else if (r.type === 'bumped') {
+          if (!wasBusy) { view.face(dir); view.shake(); }
+          if (hooks.bumped) hooks.bumped(dir);
+        }
+        return r;
+      }
+    };
+  }
+
   /* The summary PlayMona's end screen shows for one visit. */
   function visitSummary(visit) {
     return {
@@ -119,13 +154,13 @@ window.FF = window.FF || {};
 
     function play(stage, map, images) {
       var run = MT.Engine.create(stage, map, {});
-      var queued = null;
+      var mover = null;
       var a = { run: run, view: null, handle: null, raf: null, off: [] };
       attempt = a;
       var handle = MT.Screens.play(root, {
         stage: stage,
         total: (stage.steps || []).length,
-        onMove: onMove,
+        onMove: function (dir, repeat) { if (mover) mover.move(dir, repeat); },
         onCheck: function () {
           var key = checkTarget(map, run.pos, run.revealed);
           if (key) doCheck(key);
@@ -150,24 +185,10 @@ window.FF = window.FF || {};
       function sync() { handle.showCheck(run.state === 'playing' && !!checkTarget(map, run.pos, run.revealed)); }
       fog();
       sync();
-
-      function onMove(dir) {
-        if (run.state !== 'playing') return;
-        if (view.isMoving()) { queued = dir; return; }   // at most one press waits for the step
-        var r = run.move(dir);
-        if (r.type === 'moved') {
-          sound('tap');
-          view.walk(r.pos, afterStep);
-          fog();
-        } else if (r.type === 'bumped') {
-          view.face(dir);
-          view.shake();
-        }
-        sync();
-      }
-      function afterStep() {
-        if (queued && attempt === a) { var d = queued; queued = null; onMove(d); }
-      }
+      mover = createMover(run, view, {
+        moved: function () { sound('tap'); fog(); sync(); },
+        bumped: function () { sync(); }
+      });
       function doCheck(key) {
         if (run.state !== 'playing') return;
         var r = run.check(key);
@@ -253,13 +274,13 @@ window.FF = window.FF || {};
   }
 
   FF.MissionTrail = FF.MissionTrail || {};
-  FF.MissionTrail.Game = { checkTarget: checkTarget, visitSummary: visitSummary };
+  FF.MissionTrail.Game = { checkTarget: checkTarget, visitSummary: visitSummary, createMover: createMover };
 
   FF.registerGame({
     id: 'missionTrail',
     name: 'Mission Trail',
     description: 'Read a mission letter once, then find your way around town from memory before the clock runs out.',
-    category: 'visual',
+    category: 'memory',
     icon: '🗺️',
     players: [1, 1],
     difficulty: 'Normal',
