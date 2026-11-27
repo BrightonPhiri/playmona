@@ -55,7 +55,7 @@ window.FF = window.FF || {};
         { key: 'flowers1', look: 'flower-bed', x: 7, y: 6 },
         { key: 'lamp1', look: 'street-lamp', x: 4, y: 4 },
         { key: 'bush1', look: 'bush', x: 6, y: 6 },
-        { key: 'bin1', look: 'bin', x: 4, y: 8 }
+        { key: 'bin1', look: 'bin', x: 6, y: 8 }
       ],
       start: { x: 5, y: 10, facing: 'up' }
     }
