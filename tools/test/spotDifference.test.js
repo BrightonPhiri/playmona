@@ -116,3 +116,36 @@ test('spot difference: a painted-back patch shows picture A in place', function 
   const edge = S.patchStyle({ b: [0, 0.4, 0.1, 0.1], p: [0, 0.35, 0.15, 0.2] }, 'a.webp');
   assert(/to right, #000 0%/.test(edge.maskImage), 'no fade against the picture edge');
 });
+
+/* ---------------- One end screen, one settings screen ---------------- */
+
+function loadI18n() {
+  const FF = loadFF(['js/core.js', 'js/i18n.js'].concat(['js/data/spotDifference.js']));
+  FF.AssetManifest = typeof ALL === 'undefined' ? null : ALL;
+  FF.__defs = [];
+  FF.registerGame = function (def) { FF.__defs.push(def); };
+  vm.runInContext(fs.readFileSync(path.join(ROOT, 'js/games/spotDifference.js'), 'utf8'), FF.__sandbox, { filename: 'spotDifference.js' });
+  return FF;
+}
+
+test('spotDifference: endSummary carries what the old results screen showed', function () {
+  const FF = loadI18n();
+  const G = FF.SpotDifference;
+  const cfg = G.sanitize(G.STANDARD);
+  const one = function (id, name, n, total, pts, place) { return Object.assign({ who: { id: id, name: name }, place: place, points: pts }, { found: n, total: total }); };
+  const s = G.endSummary(cfg, [one('me', 'Ben', 3, 5, 40, 1)]);
+  assertEqual([s.kicker, s.headline], [G.summary(cfg), '3 of 5 spotted']);
+  assertEqual(s.stats.map(function (x) { return x.label + '=' + x.value; }), ['Spotted=3/5']);
+  assertEqual(G.endSummary(cfg, [one('me', 'Ben', 5, 5, 60, 1)]).headline, 'You spotted them all!');
+  const m = G.endSummary(cfg, [one('a', 'Amy', 5, 5, 60, 1), one('b', 'Ben', 3, 5, 40, 2)]);
+  assertEqual([m.headline, m.lines.b], ['Amy wins!', '3 of 5 spotted']);
+});
+
+test('spotDifference: has its own setup and replays the saved one', function () {
+  const FF = loadI18n();
+  assertEqual(FF.__defs[0].setup, true);
+  let seen = null;
+  FF.GameUI = Object.assign({}, FF.GameUI || {}, { setupOrReplay: function (a, o) { seen = o; } });
+  FF.__defs[0].start({ config: {}, shell: {} });
+  assertEqual([seen && seen.key, seen && seen.sanitize === FF.SpotDifference.sanitize], ['spotDifference:setup', true]);
+});

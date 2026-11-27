@@ -397,3 +397,37 @@ test('ballswap: the inbox rule, the lists that name online games, and the runner
   const runner = fs.readFileSync(path.join(ROOT, 'api/crew/runner.js'), 'utf8');
   assert(/ballswapRuns/.test(runner) && /BallSwapReferee/.test(runner), 'the runner referees ballswapRuns');
 });
+
+/* ---------------- One end screen, one settings screen ---------------- */
+
+function loadGameI18n() {
+  const FF = loadFF(['js/core.js', 'js/i18n.js', 'js/ballswap/rules.js']);
+  FF.__defs = [];
+  FF.registerGame = function (def) { FF.__defs.push(def); };
+  require('vm').runInContext(fs.readFileSync(path.join(ROOT, 'js/games/ballSwap.js'), 'utf8'), FF.__sandbox, { filename: 'ballSwap.js' });
+  return FF;
+}
+
+test('ballSwap: endSummary carries what the old results screens showed', function () {
+  const FF = loadGameI18n();
+  const G = FF.BallSwapGame;
+  const row = function (uid, name, o) { return Object.assign({ who: { id: uid, name: name }, uid: uid, place: 1, points: 30, swaps: 8, mistakes: 1, accuracy: 89, done: true, used: 42300 }, o || {}); };
+  const s = G.endSummary([row('me', 'Ben', { me: true })], { solo: true, kicker: 'Ball Swap · Normal', best: { isNew: true } });
+  assertEqual([s.kicker, s.headline], ['Ball Swap · Normal', 'All swapped!']);
+  assertEqual(s.stats.map(function (x) { return x.label + '=' + x.value; }), ['Balls moved=18', 'Mistakes=1', 'Accuracy=89%', 'Time=' + FF.BallSwapRules.exactTime(42300)]);
+  assertEqual(s.best, { isNew: true });
+  assertEqual(G.endSummary([row('me', 'Ben', { done: false, out: true })], { solo: true }).headline, 'Eliminated');
+  const m = G.endSummary([row('u1', 'Amy'), row('u2', 'Ben', { place: 2, done: false, placed: 5, me: true })], { solo: false, why: 'time' });
+  assertEqual(m.headline, 'Amy wins!');
+  assertEqual(m.lines.u2, 'Out of time · 18 balls moved · 89%');
+  assertEqual(m.note, 'Time ran out, so the most swaps counted.');
+});
+
+test('ballSwap: has its own setup and replays the saved one', function () {
+  const FF = loadGameI18n();
+  assertEqual(FF.__defs[0].setup, true);
+  let seen = null;
+  FF.GameUI = Object.assign({}, FF.GameUI || {}, { setupOrReplay: function (a, o) { seen = o; } });
+  FF.__defs[0].start({ config: {}, shell: {} });
+  assertEqual([seen && seen.key, seen && seen.sanitize === FF.BallSwapRules.sanitize], ['ballSwap:setup', true]);
+});

@@ -165,3 +165,36 @@ test('picture rush: listed for rooms, leaderboards and icons; Picture Puzzle is 
     assert(read(f).indexOf('picturePuzzle') === -1, f + ' no longer mentions picturePuzzle');
   });
 });
+
+/* ---------------- One end screen, one settings screen ---------------- */
+
+function loadI18n() {
+  const FF = loadFF(['js/core.js', 'js/i18n.js'].concat(['js/data/visual.js', 'js/data/visual2.js', 'js/data/pictureRush.js', 'js/celebrate/pictureRush/rules.js']));
+  FF.AssetManifest = typeof ALL === 'undefined' ? null : ALL;
+  FF.__defs = [];
+  FF.registerGame = function (def) { FF.__defs.push(def); };
+  vm.runInContext(fs.readFileSync(path.join(ROOT, 'js/games/pictureRush.js'), 'utf8'), FF.__sandbox, { filename: 'pictureRush.js' });
+  return FF;
+}
+
+test('pictureRush: endSummary carries what the old results screen showed', function () {
+  const FF = loadI18n();
+  const G = FF.PictureRush;
+  const cfg = G.sanitize(G.STANDARD);
+  const one = function (id, name, n, total, pts, place) { return Object.assign({ who: { id: id, name: name }, place: place, points: pts }, { solved: n, count: total }); };
+  const s = G.endSummary(cfg, [one('me', 'Ben', 3, 5, 40, 1)]);
+  assertEqual([s.kicker, s.headline], [G.summary(cfg), '3 of 5 rebuilt']);
+  assertEqual(s.stats.map(function (x) { return x.label + '=' + x.value; }), ['Rebuilt=3/5']);
+  assertEqual(G.endSummary(cfg, [one('me', 'Ben', 5, 5, 60, 1)]).headline, 'Every picture rebuilt!');
+  const m = G.endSummary(cfg, [one('a', 'Amy', 5, 5, 60, 1), one('b', 'Ben', 3, 5, 40, 2)]);
+  assertEqual([m.headline, m.lines.b], ['Amy wins!', '3 of 5 rebuilt']);
+});
+
+test('pictureRush: has its own setup and replays the saved one', function () {
+  const FF = loadI18n();
+  assertEqual(FF.__defs[0].setup, true);
+  let seen = null;
+  FF.GameUI = Object.assign({}, FF.GameUI || {}, { setupOrReplay: function (a, o) { seen = o; } });
+  FF.__defs[0].start({ config: {}, shell: {} });
+  assertEqual([seen && seen.key, seen && seen.sanitize === FF.PictureRush.sanitize], ['pictureRush:setup', true]);
+});

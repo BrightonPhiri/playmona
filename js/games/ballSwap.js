@@ -32,7 +32,6 @@ window.FF = window.FF || {};
   var NUDGE_MS = 8000;
   var RENUDGE_MS = 15000;
   var STUCK_MS = 30000;
-  var AUTO_SCORES_MS = 90000;
   var SWAP_MS = 460;
   var DRAG_PX = 8;
 
@@ -720,36 +719,6 @@ window.FF = window.FF || {};
 
   /* ================= results (solo and online) =================
      rows: [{ who: { id, name, avatar, color, photo }, place, points, swaps, mistakes, done, out, used, accuracy, me }] */
-  function resultsTable(rows) {
-    var table = FF.ui.el('ol', { class: 'bs-table' });
-    rows.forEach(function (r) {
-      var li = FF.ui.el('li', { class: 'bs-row' + (r.place === 1 && (r.done || r.placed) ? ' is-winner' : '') + (r.out ? ' is-out' : '') + (r.me ? ' is-me' : '') });
-      if (rows.length > 1) li.appendChild(FF.ui.span('bs-row__rank', String(r.place)));
-      li.appendChild(FF.Players.avatarEl(r.who, 'bs-row__ava'));
-      var who = FF.ui.span('bs-row__who');
-      who.appendChild(FF.ui.span('bs-row__name', r.who.name + (r.me && rows.length > 1 ? ' ' + t('youTag', '(you)') : '')));
-      var status = r.done ? t('bsStatusDone', 'Finished in {time}', { time: R.exactTime(r.used) })
-        : r.out ? t('bsStatusOut', 'Eliminated') : t('bsStatusTime', 'Out of time');
-      who.appendChild(FF.ui.span('bs-row__status', status));
-      li.appendChild(who);
-      var nums = FF.ui.span('bs-row__nums');
-      nums.appendChild(cell(t('bsBallsMoved', 'Balls moved'), String(((r.swaps || 0) + (r.mistakes || 0)) * 2)));
-      nums.appendChild(cell(t('bsMistakes', 'Mistakes'), String(r.mistakes)));
-      nums.appendChild(cell(t('bsAccuracy', 'Accuracy'), r.accuracy + '%'));
-      li.appendChild(nums);
-      li.appendChild(FF.ui.span('bs-row__pts', FF.util.formatNumber(r.points)));
-      table.appendChild(li);
-    });
-    return table;
-
-    function cell(lbl, value) {
-      var c = FF.ui.span('bs-cell');
-      c.appendChild(FF.ui.span('bs-cell__label', lbl));
-      c.appendChild(FF.ui.span('bs-cell__value', value));
-      return c;
-    }
-  }
-
   function headline(rows, solo) {
     if (solo) {
       var r = rows[0];
@@ -908,9 +877,40 @@ window.FF = window.FF || {};
     }
   }
 
+  function statusOf(r) {
+    return r.done ? t('bsStatusDone', 'Finished in {time}', { time: R.exactTime(r.used) })
+      : r.out ? t('bsStatusOut', 'Eliminated') : t('bsStatusTime', 'Out of time');
+  }
+  function ballsMoved(r) { return ((r.swaps || 0) + (r.mistakes || 0)) * 2; }
+
+  /* What the end screen shows (FF.EndScreen). Pure. rows as in resultsTable;
+     opts: { solo, kicker, best, why: 'time' | 'lastCall' | null }. */
+  function endSummary(rows, opts) {
+    opts = opts || {};
+    var s = { kicker: opts.kicker || t('bsName', 'Ball Swap'), headline: headline(rows, !!opts.solo) };
+    var why = opts.why === 'time' ? t('bsWhyTime', 'Time ran out, so the most swaps counted.')
+      : opts.why === 'lastCall' ? t('bsWhyLast', 'The last call ran out after the first finish.') : '';
+    if (why) s.note = why;
+    if (opts.solo) {
+      var r = rows[0];
+      if (opts.best) s.best = opts.best;
+      s.stats = [
+        { icon: 'arrows-left-right', label: t('bsBallsMoved', 'Balls moved'), value: String(ballsMoved(r)) },
+        { icon: 'x-circle', label: t('bsMistakes', 'Mistakes'), value: String(r.mistakes || 0) },
+        { icon: 'target', label: t('bsAccuracy', 'Accuracy'), value: r.accuracy + '%' }
+      ];
+      if (r.done) s.stats.push({ icon: 'timer', label: t('nrTimeTaken', 'Time'), value: R.exactTime(r.used) });
+    } else {
+      s.lines = {};
+      rows.forEach(function (r) {
+        s.lines[r.uid || r.who.id] = (r.done ? t('bsStatusDoneShort', 'Finished') : statusOf(r)) + ' · ' +
+          t('bsNBallsMoved', '{n} balls moved', { n: ballsMoved(r) }) + ' · ' + r.accuracy + '%';
+      });
+    }
+    return s;
+  }
+
   function soloResults(api, cfg, pz, me, st) {
-    var root = api.shell.root;
-    FF.ui.clear(root);
     var rows = R.ranked({ me: st }, ['me'], pz.need, cfg).map(function (r) {
       return Object.assign(r, { who: me, me: true });
     });
@@ -920,31 +920,13 @@ window.FF = window.FF || {};
     var had = bests[key];
     var isBest = !had || r.points > had;
     if (isBest) { bests[key] = r.points; try { FF.Storage.set('ballSwap:best', bests); } catch (e) { /* storage full */ } }
-
-    var stage = FF.GameUI.stage({ center: true, className: 'bs bs-results' });
-    stage.appendChild(FF.GameUI.kicker(t('bsName', 'Ball Swap') + ' · ' + levelLabel(cfg.level)));
-    stage.appendChild(FF.GameUI.prompt(headline(rows, true), 'xl'));
-    stage.appendChild(FF.ui.div('bs-results__score', FF.util.formatNumber(r.points)));
-    if (isBest && had != null) stage.appendChild(FF.GameUI.feedback('good', t('bsNewBest', 'New personal best!')));
-    else if (had != null && !isBest) stage.appendChild(FF.GameUI.note(t('bsYourBest', 'Your best on these settings: {n}', { n: FF.util.formatNumber(had) })));
-    stage.appendChild(resultsTable(rows));
-    var actions = FF.ui.div('bs-setup__actions');
-    actions.appendChild(FF.UI.button(t('bsPlayAgain', 'Play again'), {
-      class: 'btn-lg btn-ghost', icon: 'restart',
-      onClick: function () { api.audio.play('select'); playSolo(api, cfg); }
-    }));
-    actions.appendChild(FF.GameUI.action(t('seeResults', 'See results'), function () {
-      api.audio.play('select');
-      api.scoring.set(me.id, r.points);
-      api.end({
-        results: [{ id: me.id, name: me.name, avatar: me.avatar, color: me.color, photo: me.photo, points: r.points, correct: r.swaps }],
-        winnerId: me.id
-      });
-    }, { icon: 'trophy' }));
-    stage.appendChild(actions);
-    root.appendChild(stage);
-    if (r.done && !reduceMotion() && FF.Confetti) setTimeout(function () { if (stage.isConnected) FF.Confetti.rain(100); }, 300);
-    if (FF.Nav && FF.Nav.focusFirst) FF.Nav.focusFirst(stage);
+    var best = had == null ? null : isBest ? { isNew: true } : { value: had };
+    api.scoring.set(me.id, r.points);
+    api.end({
+      results: [{ id: me.id, name: me.name, avatar: me.avatar, color: me.color, photo: me.photo, points: r.points, correct: r.swaps }],
+      winnerId: me.id,
+      summary: endSummary(rows, { solo: true, kicker: t('bsName', 'Ball Swap') + ' · ' + levelLabel(cfg.level), best: best })
+    });
   }
 
   /* ================= online ================= */
@@ -961,7 +943,6 @@ window.FF = window.FF || {};
     var lastCount = null;
     var nudged = {};
     var stuck = false;
-    var autoScores = null;
     var pending = null;
     var rivalDone = {};
     var client = FF.BallSwapClient.create({ room: room, onChange: schedule });
@@ -984,16 +965,15 @@ window.FF = window.FF || {};
       ended = true;
       clearInterval(ticker);
       if (pending) clearTimeout(pending);
-      if (autoScores) clearTimeout(autoScores);
       if (view) view.destroy();
       client.stop();
       if (FF.Race && FF.Race.end) { try { FF.Race.end(); } catch (e) { /* not running */ } }
     }
 
-    function finish() {
+    function finish(summary) {
       if (ended) return;
       cleanup();
-      api.end({});
+      api.end(summary ? { summary: summary } : {});
     }
 
     function notHere(bs) { return !bs || (expectedMatch() && bs.matchId !== expectedMatch()); }
@@ -1188,29 +1168,9 @@ window.FF = window.FF || {};
 
     function showEnd(bs, v) {
       finishedShown = true;
-      if (view) { view.destroy(); view = null; }
-      FF.ui.clear(root);
       var res = bs.result || { rows: [] };
       var rows = (res.rows || []).map(function (r) { return Object.assign({}, r, { who: who(r.uid), me: r.uid === v.uid }); });
-      var stage = FF.GameUI.stage({ center: true, className: 'bs bs-results' });
-      stage.appendChild(FF.GameUI.kicker(t('bsName', 'Ball Swap') + ' · ' + summary(bs.settings)));
-      stage.appendChild(FF.GameUI.prompt(headline(rows, false), 'xl'));
-      var winners = rows.filter(function (r) { return r.place === 1 && (r.done || r.placed); });
-      var second = rows.filter(function (r) { return r.place === 2; })[0];
-      if (winners.length === 1 && second) stage.appendChild(FF.GameUI.sub(t('bsRunnerUp', 'Runner-up: {name}', { name: second.me ? t('you', 'You') : second.who.name })));
-      var why = res.why === 'time' ? t('bsWhyTime', 'Time ran out, so the most swaps counted.')
-        : res.why === 'lastCall' ? t('bsWhyLast', 'The last call ran out after the first finish.') : '';
-      if (why) stage.appendChild(FF.GameUI.note(why));
-      stage.appendChild(resultsTable(rows));
-      stage.appendChild(FF.GameUI.action(t('bsSeeScores', 'See scores'), function () { api.audio.play('click'); finish(); }, { icon: 'trophy' }));
-      root.appendChild(stage);
-      var mine = rows.filter(function (r) { return r.me; })[0];
-      var won = mine && winners.length === 1 && winners[0].me;
-      api.audio.play(won ? 'winner' : 'roundEnd');
-      if (won && !reduceMotion() && FF.Confetti) FF.Confetti.rain(140);
-      if (FF.UI.announce) FF.UI.announce(headline(rows, false));
-      if (FF.Nav && FF.Nav.focusFirst) FF.Nav.focusFirst(stage);
-      if (!autoScores) autoScores = setTimeout(finish, AUTO_SCORES_MS);
+      finish(endSummary(rows, { solo: false, kicker: t('bsName', 'Ball Swap') + ' · ' + summary(bs.settings), why: res.why }));
     }
 
     render();
@@ -1230,6 +1190,7 @@ window.FF = window.FF || {};
     tags: ['quick', 'reaction', 'puzzle', 'online'],
     modes: ['solo'],
     defaultMode: 'solo',
+    setup: true,
     // Not on the leaderboards yet: the server would need to list it too (Leaderboards::GAMES).
     leaderboard: false,
     howToPlay: [
@@ -1243,9 +1204,13 @@ window.FF = window.FF || {};
       var room = FF.Room && FF.Room.current();
       if (api.config.room && room) { online(api, room); return; }
       if (api.config.daily || api.config.challenge) { playSolo(api, R.sanitize(R.STANDARD)); return; }
-      setupScreen(api, function (cfg) { playSolo(api, cfg); });
+      FF.GameUI.setupOrReplay(api, {
+        key: 'ballSwap:setup', sanitize: R.sanitize,
+        show: function (play) { setupScreen(api, play); },
+        play: function (cfg) { playSolo(api, cfg); }
+      });
     }
   });
 
-  FF.BallSwapGame = { summary: summary, fields: fields, lineText: lineText };
+  FF.BallSwapGame = { summary: summary, fields: fields, lineText: lineText, endSummary: endSummary };
 })();

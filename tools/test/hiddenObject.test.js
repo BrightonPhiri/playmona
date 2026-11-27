@@ -120,3 +120,36 @@ test('hidden object: zoom keeps the picture under the finger', function () {
   assertEqual(H.zoomAt(w, 0.01, 0.5, 0.5), { z: 1, x: 0, y: 0 }, 'zooming right out resets');
   assert(H.isTap(3, 4) && !H.isTap(9, 0), 'a drag is not a tap');
 });
+
+/* ---------------- One end screen, one settings screen ---------------- */
+
+function loadI18n() {
+  const FF = loadFF(['js/core.js', 'js/i18n.js'].concat(['js/data/hiddenObject.js']));
+  FF.AssetManifest = typeof ALL === 'undefined' ? null : ALL;
+  FF.__defs = [];
+  FF.registerGame = function (def) { FF.__defs.push(def); };
+  vm.runInContext(fs.readFileSync(path.join(ROOT, 'js/games/hiddenObject.js'), 'utf8'), FF.__sandbox, { filename: 'hiddenObject.js' });
+  return FF;
+}
+
+test('hiddenObject: endSummary carries what the old results screen showed', function () {
+  const FF = loadI18n();
+  const G = FF.HiddenObject;
+  const cfg = G.sanitize(G.STANDARD);
+  const one = function (id, name, n, total, pts, place) { return Object.assign({ who: { id: id, name: name }, place: place, points: pts }, { found: n, total: total }); };
+  const s = G.endSummary(cfg, [one('me', 'Ben', 3, 5, 40, 1)]);
+  assertEqual([s.kicker, s.headline], [G.summary(cfg), '3 of 5 found']);
+  assertEqual(s.stats.map(function (x) { return x.label + '=' + x.value; }), ['Found=3/5']);
+  assertEqual(G.endSummary(cfg, [one('me', 'Ben', 5, 5, 60, 1)]).headline, 'You found them all!');
+  const m = G.endSummary(cfg, [one('a', 'Amy', 5, 5, 60, 1), one('b', 'Ben', 3, 5, 40, 2)]);
+  assertEqual([m.headline, m.lines.b], ['Amy wins!', '3 of 5 found']);
+});
+
+test('hiddenObject: has its own setup and replays the saved one', function () {
+  const FF = loadI18n();
+  assertEqual(FF.__defs[0].setup, true);
+  let seen = null;
+  FF.GameUI = Object.assign({}, FF.GameUI || {}, { setupOrReplay: function (a, o) { seen = o; } });
+  FF.__defs[0].start({ config: {}, shell: {} });
+  assertEqual([seen && seen.key, seen && seen.sanitize === FF.HiddenObject.sanitize], ['hiddenObject:setup', true]);
+});

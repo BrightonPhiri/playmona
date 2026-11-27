@@ -211,6 +211,7 @@
     if (s.kicker) root.appendChild(FF.ui.el('p', { class: 'end-kicker' }, String(s.kicker)));
     var title = s.headline || data.title || defaultTitle(ranked);
     root.appendChild(FF.ui.el('h1', { class: 'end-title', id: 'end-title' }, String(title)));
+    if (s.note) root.appendChild(FF.ui.el('p', { class: 'end-subnote' }, String(s.note)));
 
     if (ranked.length === 1) {
       root.appendChild(bigScore(top.points || 0));

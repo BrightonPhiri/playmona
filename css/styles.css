@@ -1169,6 +1169,7 @@ body.game-active .toast-host { bottom: calc(24px + env(safe-area-inset-bottom));
 .end-badge { align-self: center; animation: ff-bounce-in 600ms var(--ease); }
 .end-kicker { margin: 0; color: var(--muted); font-weight: 800; font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: 0.04em; }
 .end-title { margin: 0; font-size: var(--fs-3xl); overflow-wrap: anywhere; }
+.end-subnote { margin: 0; color: var(--muted); }
 
 .end-score {
   align-self: center; min-width: 220px;

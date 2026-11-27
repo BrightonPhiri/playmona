@@ -377,7 +377,7 @@ window.FF = window.FF || {};
     api.shell.hideTimer();
     FF.ui.clear(root);
     var saved = (FF.Storage && FF.Storage.get('pictureRush:setup', null)) || null;
-    var gs = sanitize(Object.assign({}, defaults(api.config.difficulty), saved || {}));
+    var gs = sanitize(Object.assign({}, defaults(), saved || {}));
     var stage = FF.GameUI.stage({ center: true, className: 'prx sq-setup' });
     stage.appendChild(FF.GameUI.kicker(t('prxName', 'Picture Rush')));
     stage.appendChild(FF.GameUI.prompt(t('prxSetupTitle', 'Swap the tiles to rebuild the picture'), 'md'));
@@ -489,46 +489,35 @@ window.FF = window.FF || {};
     return sorted;
   }
 
+  /* What the end screen shows (FF.EndScreen). Pure: ranked runs in. */
+  function endSummary(cfg, ranked) {
+    var top = ranked[0];
+    var solo = ranked.length === 1;
+    var tie = ranked.length > 1 && ranked[1].place === 1;
+    var s = { kicker: summary(cfg) };
+    if (solo) s.headline = top.solved >= top.count ? t('prxAllSolved', 'Every picture rebuilt!') : t('prxSoloN', '{n} of {total} rebuilt', { n: top.solved, total: top.count });
+    else if (tie) s.headline = t('nrTie', 'It’s a tie!');
+    else s.headline = t('nrWins', '{name} wins!', { name: top.who.name });
+    if (solo) {
+      s.stats = [{ icon: 'puzzle-piece', label: t('prxRebuilt', 'Rebuilt'), value: top.solved + '/' + top.count }];
+    } else {
+      s.lines = {};
+      ranked.forEach(function (r) { s.lines[r.who.id] = t('prxNSolved', '{n} of {total} rebuilt', { n: r.solved, total: r.count }); });
+    }
+    return s;
+  }
+
   function results(api, cfg, runs) {
-    var root = api.shell.root;
-    api.shell.hideTimer();
-    FF.ui.clear(root);
     var ranked = rankRuns(runs);
     var top = ranked[0];
     var tie = ranked.length > 1 && ranked[1].place === 1;
-    var solo = ranked.length === 1;
-    var stage = FF.GameUI.stage({ center: true, className: 'prx nr-results' });
-    var title;
-    if (solo) title = top.solved >= top.count ? t('prxAllSolved', 'Every picture rebuilt!') : t('prxSoloN', '{n} of {total} rebuilt', { n: top.solved, total: top.count });
-    else if (tie) title = t('nrTie', 'It’s a tie!');
-    else title = t('nrWins', '{name} wins!', { name: top.who.name });
-    stage.appendChild(FF.GameUI.kicker(summary(cfg)));
-    stage.appendChild(FF.GameUI.prompt(title, 'xl'));
-    if (solo) stage.appendChild(FF.ui.div('nr-results__score', FF.util.formatNumber(top.points)));
-    var table = FF.ui.el('ol', { class: 'nr-table' });
-    ranked.forEach(function (r) {
-      var li = FF.ui.el('li', { class: 'nr-row' + (r.place === 1 ? ' is-winner' : '') });
-      if (!solo) li.appendChild(FF.ui.span('nr-row__rank', String(r.place)));
-      li.appendChild(FF.Players.avatarEl(r.who, 'nr-row__ava'));
-      var who = FF.ui.span('nr-row__who');
-      who.appendChild(FF.ui.span('nr-row__name', r.who.name));
-      who.appendChild(FF.ui.span('nr-row__status', t('prxNSolved', '{n} of {total} rebuilt', { n: r.solved, total: r.count })));
-      li.appendChild(who);
-      li.appendChild(FF.ui.span('nr-row__pts', FF.util.formatNumber(r.points)));
-      table.appendChild(li);
+    api.end({
+      results: ranked.map(function (r) {
+        return { id: r.who.id, name: r.who.name, avatar: r.who.avatar, color: r.who.color, photo: r.who.photo, points: r.points, correct: r.solved };
+      }),
+      winnerId: tie ? null : top.who.id,
+      summary: endSummary(cfg, ranked)
     });
-    stage.appendChild(table);
-    stage.appendChild(FF.GameUI.action(t('seeResults', 'See results'), function () {
-      api.audio.play('select');
-      api.end({
-        results: ranked.map(function (r) {
-          return { id: r.who.id, name: r.who.name, avatar: r.who.avatar, color: r.who.color, photo: r.who.photo, points: r.points, correct: r.solved };
-        }),
-        winnerId: tie ? null : top.who.id
-      });
-    }, { icon: 'trophy' }));
-    root.appendChild(stage);
-    if (FF.Nav && FF.Nav.focusFirst) FF.Nav.focusFirst(stage);
   }
 
   /* ================= online room ================= */
@@ -587,7 +576,7 @@ window.FF = window.FF || {};
     SCORING: SCORING, STANDARD: STANDARD, ART: ART,
     defaults: defaults, sanitize: sanitize, isStandard: isStandard, key: key, secondsFor: secondsFor,
     photos: photos, drawings: drawings, readyThemes: readyThemes, pool: pool, deal: deal, points: points,
-    roomSeconds: roomSeconds, summary: summary, fields: fields, ROOM: ROOM
+    roomSeconds: roomSeconds, summary: summary, fields: fields, endSummary: endSummary, ROOM: ROOM
   };
 
   FF.registerGame({
@@ -601,6 +590,7 @@ window.FF = window.FF || {};
     duration: 5,
     tags: ['visual', 'puzzle', 'pictures'],
     modes: ['solo', 'turn'],
+    setup: true,
     defaultMode: 'solo',
     howToPlay: [
       'Look at the whole picture for a moment, then it breaks into scrambled tiles.',
@@ -613,9 +603,13 @@ window.FF = window.FF || {};
       if (FF.Parallel && FF.Parallel.active()) { playOnline(api); return; }
       // The daily challenge, a friend's challenge and a celebration play the standard rules on the shared deal.
       if (api.config.daily || api.config.challenge) { playLocal(api, sanitize(STANDARD)); return; }
-      setupScreen(api, function (cfg) {
-        if (!isStandard(cfg)) api.config.customRules = true;
-        playLocal(api, cfg);
+      FF.GameUI.setupOrReplay(api, {
+        key: 'pictureRush:setup', sanitize: sanitize,
+        show: function (play) { setupScreen(api, play); },
+        play: function (cfg) {
+          if (!isStandard(cfg)) api.config.customRules = true;
+          playLocal(api, cfg);
+        }
       });
     }
   });

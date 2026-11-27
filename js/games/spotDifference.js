@@ -368,7 +368,7 @@ window.FF = window.FF || {};
     api.shell.hideTimer();
     FF.ui.clear(root);
     var saved = (FF.Storage && FF.Storage.get('spotDifference:setup', null)) || null;
-    var gs = sanitize(Object.assign({}, defaults(api.config.difficulty), saved || {}));
+    var gs = sanitize(Object.assign({}, defaults(), saved || {}));
     var stage = FF.GameUI.stage({ center: true, className: 'sdx sq-setup' });
     stage.appendChild(FF.GameUI.kicker(t('sdxName', 'Spot the Difference')));
     stage.appendChild(FF.GameUI.prompt(t('sdxSetupTitle', 'Find what changed in the picture'), 'md'));
@@ -473,10 +473,25 @@ window.FF = window.FF || {};
     next();
   }
 
+  /* What the end screen shows (FF.EndScreen). Pure: ranked runs in. */
+  function endSummary(cfg, ranked) {
+    var top = ranked[0];
+    var solo = ranked.length === 1;
+    var tie = ranked.length > 1 && ranked[1].place === 1;
+    var s = { kicker: summary(cfg) };
+    if (solo) s.headline = top.found >= top.total ? t('sdxAllSpotted', 'You spotted them all!') : t('sdxSoloN', '{f} of {n} spotted', { f: top.found, n: top.total });
+    else if (tie) s.headline = t('nrTie', 'It’s a tie!');
+    else s.headline = t('nrWins', '{name} wins!', { name: top.who.name });
+    if (solo) {
+      s.stats = [{ icon: 'magnifying-glass', label: t('sdxSpotted', 'Spotted'), value: top.found + '/' + top.total }];
+    } else {
+      s.lines = {};
+      ranked.forEach(function (r) { s.lines[r.who.id] = t('sdxSoloN', '{f} of {n} spotted', { f: r.found, n: r.total }); });
+    }
+    return s;
+  }
+
   function results(api, cfg, runs) {
-    var root = api.shell.root;
-    api.shell.hideTimer();
-    FF.ui.clear(root);
     var ranked = runs.slice().sort(function (a, b) { return b.points - a.points || b.found - a.found; });
     var place = 0, prev = null;
     ranked.forEach(function (r, i) {
@@ -486,39 +501,13 @@ window.FF = window.FF || {};
     });
     var top = ranked[0];
     var tie = ranked.length > 1 && ranked[1].place === 1;
-    var solo = ranked.length === 1;
-    var stage = FF.GameUI.stage({ center: true, className: 'sdx nr-results' });
-    var title;
-    if (solo) title = top.found >= top.total ? t('sdxAllSpotted', 'You spotted them all!') : t('sdxSoloN', '{f} of {n} spotted', { f: top.found, n: top.total });
-    else if (tie) title = t('nrTie', 'It’s a tie!');
-    else title = t('nrWins', '{name} wins!', { name: top.who.name });
-    stage.appendChild(FF.GameUI.kicker(summary(cfg)));
-    stage.appendChild(FF.GameUI.prompt(title, 'xl'));
-    if (solo) stage.appendChild(FF.ui.div('nr-results__score', FF.util.formatNumber(top.points)));
-    var table = FF.ui.el('ol', { class: 'nr-table' });
-    ranked.forEach(function (r) {
-      var li = FF.ui.el('li', { class: 'nr-row' + (r.place === 1 ? ' is-winner' : '') });
-      if (!solo) li.appendChild(FF.ui.span('nr-row__rank', String(r.place)));
-      li.appendChild(FF.Players.avatarEl(r.who, 'nr-row__ava'));
-      var whoEl = FF.ui.span('nr-row__who');
-      whoEl.appendChild(FF.ui.span('nr-row__name', r.who.name));
-      whoEl.appendChild(FF.ui.span('nr-row__status', t('sdxSoloN', '{f} of {n} spotted', { f: r.found, n: r.total })));
-      li.appendChild(whoEl);
-      li.appendChild(FF.ui.span('nr-row__pts', FF.util.formatNumber(r.points)));
-      table.appendChild(li);
+    api.end({
+      results: ranked.map(function (r) {
+        return { id: r.who.id, name: r.who.name, avatar: r.who.avatar, color: r.who.color, photo: r.who.photo, points: r.points, correct: r.found };
+      }),
+      winnerId: tie ? null : top.who.id,
+      summary: endSummary(cfg, ranked)
     });
-    stage.appendChild(table);
-    stage.appendChild(FF.GameUI.action(t('seeResults', 'See results'), function () {
-      api.audio.play('select');
-      api.end({
-        results: ranked.map(function (r) {
-          return { id: r.who.id, name: r.who.name, avatar: r.who.avatar, color: r.who.color, photo: r.who.photo, points: r.points, correct: r.found };
-        }),
-        winnerId: tie ? null : top.who.id
-      });
-    }, { icon: 'trophy' }));
-    root.appendChild(stage);
-    if (FF.Nav && FF.Nav.focusFirst) FF.Nav.focusFirst(stage);
   }
 
   /* ================= online room ================= */
@@ -575,7 +564,7 @@ window.FF = window.FF || {};
     COUNTS: COUNTS, PICTURES: PICTURES, SECONDS: SECONDS, MARGIN: MARGIN, STANDARD: STANDARD, ART: ART,
     defaults: defaults, sanitize: sanitize, isStandard: isStandard, secondsFor: secondsFor,
     pairs: pairs, deal: deal, dealPair: dealPair, hit: hit, points: points, patchStyle: patchStyle,
-    summary: summary, fields: fields, ROOM: ROOM
+    summary: summary, fields: fields, endSummary: endSummary, ROOM: ROOM
   };
 
   FF.registerGame({
@@ -589,6 +578,7 @@ window.FF = window.FF || {};
     duration: 3,
     tags: ['visual', 'observation', 'pictures'],
     modes: ['solo', 'turn'],
+    setup: true,
     defaultMode: 'solo',
     howToPlay: [
       'Two pictures look the same, but the second has changes.',
@@ -604,9 +594,13 @@ window.FF = window.FF || {};
       }
       if (FF.Parallel && FF.Parallel.active()) { playOnline(api); return; }
       if (api.config.daily || api.config.challenge) { playLocal(api, sanitize(STANDARD)); return; }
-      setupScreen(api, function (cfg) {
-        if (!isStandard(cfg)) api.config.customRules = true;
-        playLocal(api, cfg);
+      FF.GameUI.setupOrReplay(api, {
+        key: 'spotDifference:setup', sanitize: sanitize,
+        show: function (play) { setupScreen(api, play); },
+        play: function (cfg) {
+          if (!isStandard(cfg)) api.config.customRules = true;
+          playLocal(api, cfg);
+        }
       });
     }
   });
