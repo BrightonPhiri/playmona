@@ -197,7 +197,9 @@ window.FF = window.FF || {};
     }
 
     function play(stage, map, images) {
-      var run = MT.Engine.create(stage, map, {});
+      // Scenes as they open: a busy room is searched once its picture is in (Assets.sceneFor).
+      var ready = MT.Assets.resolveStage(stage);
+      var run = MT.Engine.create(ready, map, {});
       var mover = null;
       var a = { run: run, view: null, handle: null, raf: null, off: [] };
       attempt = a;
@@ -283,6 +285,21 @@ window.FF = window.FF || {};
         // Fetching again puts the wrong thing back: the bag shows that.
         handle.setBag(run.inventory.map(function (id) { return choice('objects', id); }));
         var category = MT.Assets.OPTION_CAT[sc.kind] || 'objects';
+        if (sc.search) {
+          var spots = ready.steps[sc.step].scene.spots;
+          handle.openScene({
+            kind: sc.kind,
+            category: category,
+            closable: sc.closable,
+            want: sc.want,
+            search: {
+              src: MT.Assets.path('rooms', sc.room),
+              objects: sc.options.map(function (id) { return { id: id, b: spots[id], name: choice('objects', id).name }; })
+            }
+          });
+          sync();
+          return;
+        }
         handle.openScene({
           kind: sc.kind,
           category: category,
