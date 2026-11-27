@@ -45,7 +45,7 @@ window.FF = window.FF || {};
         title: 'The bus stop',
         map: 'village-1',
         letter: 'letter',
-        time: 60,
+        time: 20,
         fog: false,
         start: null,
         controls: 'arrows',

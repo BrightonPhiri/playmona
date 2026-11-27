@@ -16,7 +16,10 @@ window.FF = window.FF || {};
   var EXTRA_STEP = 0.03;
   var BUMP = 0.02;
   var WRONG_CHECK = 0.5;
-  var PAR_EXTRA_S = 10;
+  // Par: a quick, sure run. 0.6 s a step, 1.5 s a place checked, 2 s to get going.
+  var PAR_STEP_S = 0.6;
+  var PAR_ACTION_S = 1.5;
+  var PAR_START_S = 2;
 
   function clamp01(n) { return Math.max(0, Math.min(1, n)); }
 
@@ -33,7 +36,10 @@ window.FF = window.FF || {};
     return clamp01((limitMs - usedMs) / (limitMs - parMs));
   }
 
-  function parMs(routeSteps) { return (Math.max(0, routeSteps || 0) + PAR_EXTRA_S) * 1000; }
+  function parMs(routeSteps, actions) {
+    var a = actions === undefined ? 1 : Math.max(0, actions);
+    return Math.round((PAR_STEP_S * Math.max(0, routeSteps || 0) + PAR_ACTION_S * a + PAR_START_S) * 1000);
+  }
 
   function total(parts, weights) {
     var w = weights || WEIGHTS;

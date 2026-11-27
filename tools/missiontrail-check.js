@@ -8,7 +8,8 @@
    walkable cells; every turn is at a junction (a cell with another way
    to go, so the instruction matters); the last target is in reach of the
    route's end and can be reached from the start; and, when the asset
-   registry is loaded, every look on the map is a known picture. */
+   registry is loaded, every look on the map is a known picture; and the
+   time limit leaves at least 6 s over par (FF.MissionTrail.Score.parMs). */
 'use strict';
 
 const path = require('path');
@@ -70,6 +71,14 @@ function check(FF) {
         say('step ' + (idx + 1) + ' target "' + step.target + '" cannot be reached from the start');
       }
     });
+    const Score = FF.MissionTrail.Score;
+    if (r.ok && Score && stage.time > 0) {
+      // A sure player needs par; leave at least 6 s for remembering and a slip.
+      const par = Score.parMs(r.cells.length - 1, steps.length);
+      if (stage.time * 1000 < par + 6000) {
+        say('time ' + stage.time + ' s is too short: par is ' + (par / 1000) + ' s, allow at least ' + Math.ceil((par + 6000) / 1000) + ' s');
+      }
+    }
     const last = steps[steps.length - 1];
     if (r.ok && last && last.target && map.thing(last.target) && !R.inReach(r.end, map.thing(last.target))) {
       say('the route ends at (' + r.end.x + ',' + r.end.y + '), out of reach of "' + last.target + '"');

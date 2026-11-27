@@ -19,7 +19,7 @@ window.FF = window.FF || {};
   'use strict';
   FF.MissionTrail = FF.MissionTrail || {};
 
-  var WRONG_CHECK_MS = 5000;
+  var WRONG_CHECK_MS = 3000;
 
   function t(key, fallback) { return FF.t ? FF.t(key, fallback) : String(fallback); }
 
@@ -163,7 +163,7 @@ window.FF = window.FF || {};
           nav: S.nav(m),
           obs: S.obs(m.wrongChecks),
           seq: steps.length > 1 ? 1 : null,
-          time: S.time(ms, limitMs, S.parMs(routeSteps))
+          time: S.time(ms, limitMs, S.parMs(routeSteps, steps.length))
         };
         var score = done ? S.total(parts, stage.scoring || null) : 0;
         return { done: done, score: score, stars: done ? S.stars(score) : 0, ms: ms, parts: parts, mistakes: m };
