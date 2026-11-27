@@ -2,7 +2,7 @@
    PLAYMONA — quizMix.js
    Quiz Mix: multiple-choice and true-or-false questions from
    15 topics. Pick topics (or play everything), use a 50:50 once
-   per game, catch the double-points rounds, and see a recap of
+   per game, catch the bonus rounds, and see a recap of
    how everyone did by topic.
 
    Questions: the hand-written set in js/data/quiz.js (with
@@ -676,10 +676,10 @@ window.FF = window.FF || {};
     tags: ['quick', 'everyone'],
     modes: ['solo', 'turn', 'team'],
     defaultMode: 'turn',
-    description: 'Thousands of questions across 15 topics. Pick your favourites, use your 50:50, and catch the double-points rounds.',
+    description: 'Thousands of questions across 15 topics. Pick your favourites, use your 50:50, and catch the bonus rounds.',
     howToPlay: [
       'Pick the topics you like, or play Everything for a mix.',
-      'Take turns answering. Faster answers earn up to 50 bonus points.',
+      'Take turns answering. Faster answers earn up to 5 bonus points.',
       'Every fifth question is worth double, and 3 right in a row earns a streak bonus.',
       'Stuck? Use your 50:50 once a game to remove two wrong answers.',
       'Set a game length in Options, or play for 5, 10 or 20 minutes.'

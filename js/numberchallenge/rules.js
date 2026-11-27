@@ -11,7 +11,7 @@
      chain   keep a running total in your head
      target  merge number tiles to hit a target
    Levels Easy / Normal / Hard / Expert. Expert plays Hard's maths on
-   a number pad (+6 s, +50); in Make the target it pays +50 for using
+   a number pad (+6 s, +3); in Make the target it pays +3 for using
    every tile.
 
    Every answer is a whole number from 0 to 9999. Deals draw only from

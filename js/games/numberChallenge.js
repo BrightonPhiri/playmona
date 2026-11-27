@@ -9,7 +9,7 @@
    - Rules: js/numberchallenge/rules.js (FF.NumberChallengeRules),
      shared with the server's referee and the crew.
    - Levels Easy / Normal / Hard / Expert. Expert answers on a number
-     pad (+6 s, +50); in Make the target it pays +50 for every tile.
+     pad (+6 s, +3); in Make the target it pays +3 for every tile.
    - Looks: Neon arcade or Notebook, the player's own choice
      (numberChallenge:look), drawn by data-nc-look.
    - Solo and Turns on one phone. In Turns every player gets their own
@@ -60,7 +60,7 @@ window.FF = window.FF || {};
   function levelLine(l) {
     return l === 'easy' ? t('ncEasyNote', 'Adding and taking away to 20, the 2, 5 and 10 times tables.')
       : l === 'hard' ? t('ncHardNote', 'Up to 1000, tables to 12, order of operations, % and fractions.')
-        : l === 'expert' ? t('ncExpertNote', 'Hard maths, typed on a number pad. +50 for every right answer.')
+        : l === 'expert' ? t('ncExpertNote2', 'Hard maths, typed on a number pad. +3 for every right answer.')
           : t('ncNormalNote', 'Up to 100, tables to 10, dividing, doubles and halves.');
   }
   function timeName(x) { return x === 'quick' ? t('swQuick', 'Quick') : x === 'relaxed' ? t('swRelaxed', 'Relaxed') : x === 'none' ? t('swNoLimit', 'No limit') : t('normal', 'Normal'); }
@@ -449,7 +449,7 @@ window.FF = window.FF || {};
       api.audio.play('land');
       if (v === item.target) {
         if (expert && tiles.length > 1) {
-          say(t('ncHitSpare', 'You hit it! Use every tile for +50, or press Done.'));
+          say(t('ncHitSpare2', 'You hit it! Use every tile for +3, or press Done.'));
           draw();
           return;
         }
@@ -912,7 +912,7 @@ window.FF = window.FF || {};
         board.finish();
         card.reveal(res);
         var lines = [];
-        if (res.ok && cfg.level === 'expert') lines.push(res.usedAll ? t('ncAllTiles', 'Every tile used: +50!') : t('ncNotAll', 'Use every tile next time for +50.'));
+        if (res.ok && cfg.level === 'expert') lines.push(res.usedAll ? t('ncAllTiles2', 'Every tile used: +3!') : t('ncNotAll2', 'Use every tile next time for +3.'));
         if (!res.ok) lines.push(t('ncOneWay', 'One way: {w}', { w: stepLines(item.solution).join(' · ') }));
         settle(entity, item, res, text, timeout, lines, ms);
       }
@@ -1631,7 +1631,7 @@ window.FF = window.FF || {};
       'Sprint: as many as you can in 30, 60 or 90 seconds. A wrong answer costs 3 seconds.',
       'Chain: start with a number, follow each step in your head, then give the total.',
       'Make the target: join two tiles with a sign to make a new tile, and hit the target number.',
-      'Expert: type the exact answer on the number pad for +50. In Make the target, use every tile for +50.',
+      'Expert: type the exact answer on the number pad for +3. In Make the target, use every tile for +3.',
       'Pick a Neon arcade or Notebook look.'
     ],
     room: ROOM,

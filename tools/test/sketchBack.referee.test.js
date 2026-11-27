@@ -241,7 +241,7 @@ test('sketchback referee: the clock ends the naming; what was sent counts, silen
   const rows = g.result.rows;
   assertEqual(rows[0].uid, 'p1');
   assertEqual(rows[0].correct, 1);
-  assertEqual(rows[0].points, 100);
+  assertEqual(rows[0].points, 10);
   assertEqual(rows[1].points, 0);
   m.ref.stop();
 });
@@ -262,7 +262,7 @@ test('sketchback referee: ranked by right answers, then the faster naming; resul
   const rows = g.result.rows;
   assertEqual(rows.map((r) => r.uid).join(','), 'p3,p2,p1', 'p3 got all; p2 named as many as p1, faster');
   assertEqual(rows.map((r) => r.place).join(','), '1,2,3');
-  assertEqual(rows[0].points, 500);
+  assertEqual(rows[0].points, 50);
   assertEqual(g.result.deal.join(','), m.deal().join(','), 'the deal is shown at the end');
   assertEqual(g.result.answers.p2[0], names[0]);
   assertEqual(g.result.ok.p1.join(','), 'true,true,true,false,false');

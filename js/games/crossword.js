@@ -271,7 +271,7 @@ window.FF = window.FF || {};
       b.appendChild(glyph(c === 'expert' ? 'bulb' : 'check'));
       var txt = FF.ui.span('cw-choice__text');
       txt.appendChild(FF.ui.span('cw-choice__name', c === 'expert' ? t('cwExpert', 'Expert') : t('cwChecked', 'Letters checked')));
-      txt.appendChild(FF.ui.span('cw-choice__note', c === 'expert' ? t('cwExpertNote', 'No help as you type. Check the grid at the end. +50% points') : t('cwCheckedNote', 'Right words glow, wrong letters turn red')));
+      txt.appendChild(FF.ui.span('cw-choice__note', c === 'expert' ? t('cwExpertNote2', 'No help as you type. Check the grid at the end.') : t('cwCheckedNote', 'Right words glow, wrong letters turn red')));
       b.appendChild(txt);
       b.addEventListener('click', function () { checking = c; api.audio.play('select'); sync(); });
       ckGroup.appendChild(b);

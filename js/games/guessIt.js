@@ -439,7 +439,7 @@ window.FF = window.FF || {};
       label: t('giTwist', 'Twist'), value: twist,
       options: TWISTS.map(function (x) { return { label: twistName(x), value: x }; }),
       onChange: function (v) { twist = v; sync(); }
-    }), t('giTwistDesc', 'Flash hides the photo after a second and a half (+25). Zoom out starts close up and slowly shows the whole photo.')));
+    }), t('giTwistDesc2', 'Flash hides the photo after a second and a half (+3). Zoom out starts close up and slowly shows the whole photo.')));
     stage.appendChild(rows);
 
     var foot = FF.ui.div('qm-pick__foot gi-setup__foot');

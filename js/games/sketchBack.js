@@ -6,7 +6,7 @@
    the player copies it on the paper below. At zero the sketch
    vanishes and the paper locks. After every sketch comes the
    memory part: the player's own drawings, shuffled and without
-   names, and for each one "What did you draw?". 100 points for
+   names, and for each one "What did you draw?". 10 points for
    every drawing named right; nothing for drawing well.
 
    Solo here; online rooms in online() below, refereed by the
@@ -224,7 +224,7 @@ window.FF = window.FF || {};
     var how = el('ol', 'skb-how');
     [t('skbHow1', 'Copy each sketch before the clock runs out.'),
       t('skbHow2', 'It vanishes, and your paper locks.'),
-      t('skbHow3', 'Then name your own drawings. 100 points for each one you get right.')].forEach(function (x, i) {
+      t('skbHow3b', 'Then name your own drawings. 10 points for each one you get right.')].forEach(function (x, i) {
       var li = el('li', '');
       li.appendChild(FF.ui.span('skb-how__n', String(i + 1)));
       li.appendChild(FF.ui.span('', x));
@@ -1159,7 +1159,7 @@ window.FF = window.FF || {};
       'When time is up the sketch vanishes and your paper locks. You can Undo or Clear until then.',
       'After the last sketch, your drawings come back shuffled and without names. Tap each one and type what you drew.',
       'Small spelling slips and other names count (bike for bicycle, TV for television). Vague answers like “animal” do not.',
-      '100 points for every drawing you name right. Nothing for drawing well: it is all memory.',
+      '10 points for every drawing you name right. Nothing for drawing well: it is all memory.',
       'You have 3 minutes to name them all. Easy gives 7 seconds a sketch, Normal 5, Hard 4.'
     ],
     start: function (api) {

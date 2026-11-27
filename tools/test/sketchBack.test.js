@@ -61,7 +61,7 @@ test('sketchBack sanitize: the lists, the standard setup and fallbacks', functio
   assertEqual(JSON.stringify(r.SECONDS), JSON.stringify({ easy: 7, normal: 5, hard: 4 }));
   assertEqual(JSON.stringify(r.STANDARD), JSON.stringify({ count: 10, level: 'normal' }));
   assertEqual(r.RECALL_MS, 180000);
-  assertEqual(r.POINTS, 100);
+  assertEqual(r.POINTS, 10);
   assertEqual(JSON.stringify(r.sanitize({ count: 7, level: 'mega' })), JSON.stringify({ count: 10, level: 'normal' }));
   assertEqual(r.sanitize({ count: '15', level: 'hard' }).count, 15);
   assertEqual(JSON.stringify(r.sanitizeRoom(null)), JSON.stringify(r.STANDARD));
@@ -125,10 +125,10 @@ test('sketchBack check refuses plural vague words and everyday look-alikes, keep
   });
 });
 
-test('sketchBack score: 100 a right answer, accuracy as a whole percent', function () {
+test('sketchBack score: 10 a right answer, accuracy as a whole percent', function () {
   const r = R();
   const s = r.score([true, true, false, true, true, false, true, true, false, true]);
-  assertEqual(JSON.stringify(s), JSON.stringify({ correct: 7, wrong: 3, total: 10, accuracy: 70, points: 700 }));
+  assertEqual(JSON.stringify(s), JSON.stringify({ correct: 7, wrong: 3, total: 10, accuracy: 70, points: 70 }));
   assertEqual(r.score([]).accuracy, 0);
   assertEqual(r.score([true, false, false]).accuracy, 33);
 });

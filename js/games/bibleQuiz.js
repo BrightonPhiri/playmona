@@ -9,7 +9,7 @@
    - Local play: setup screen, then solo or pass and play.
    - Daily and friend challenges: the standard rules on a shared deal.
    - Online rooms: FF.Race, everyone answers the same question; a
-     round scores 100 + a speed bonus, as the crew brain plays it
+     round scores 10 + a speed bonus, as the crew brain plays it
      (js/crew/brains/quiz.js).
    Pure rules are FF.BibleQuiz (tests: tools/test/bibleQuiz.test.js).
    Classic script, ES5.
@@ -912,7 +912,7 @@ window.FF = window.FF || {};
     modes: ['solo', 'turn', 'team', 'everyone', 'host'],
     defaultMode: 'turn',
     howToPlay: [
-      'Pick a level (Kids, Family, Bible scholar or Expert), the topics and the kinds of question. On Expert, spell the answers to Who said it? and Finish the verse with letter tiles (50 bonus points).',
+      'Pick a level (Kids, Family, Bible scholar or Expert), the topics and the kinds of question. On Expert, spell the answers to Who said it? and Finish the verse with letter tiles (5 bonus points).',
       'Answer multiple choice, finish the verse, who said it, true or false, and put the story in order.',
       'Faster answers score more. Every fifth question is worth double, and 3 right in a row earns a bonus.',
       'Stuck? Use your 50:50 once a game. After each answer, read the verse it comes from.'

@@ -1155,8 +1155,8 @@ window.FF = window.FF || {};
         globe.idle();
         ring.idle();
         waiting(t('gsBrief', 'Spin the world. Spot the country.'), gs.settings.mode === 'choice'
-          ? t('gsBriefSubChoice', 'Pick each highlighted country from the answers. Faster right answers score more, and streaks multiply your points. No hints online.')
-          : t('gsBriefSub', 'Spell each highlighted country with the letter tiles. Faster right answers score more, and streaks multiply your points. No hints online.'));
+          ? t('gsBriefSubChoice2', 'Pick each highlighted country from the answers. Faster right answers score more, and streaks earn bonus points. No hints online.')
+          : t('gsBriefSub2', 'Spell each highlighted country with the letter tiles. Faster right answers score more, and streaks earn bonus points. No hints online.'));
         return;
       }
       if (!v.seated) {
@@ -1356,7 +1356,7 @@ window.FF = window.FF || {};
       'Spell the country’s name with the letter tiles: tap a tile to place it, tap a placed letter to send it back. Undo, Clear, then Submit.',
       'Prefer to pick? Choose Multiple choice: 4 answers on Easy, 6 on Normal, 8 on Hard and 10 on Expert.',
       'Small spelling mistakes are forgiven, and other recognised names count (USA, UK, Holland…).',
-      'Easy gives you 30 seconds and Expert only 15, with tricky decoy letters. Faster answers score more, and 3, 5 or 10 right in a row multiply your points.',
+      'Easy gives you 30 seconds and Expert only 15, with tricky decoy letters. Faster answers score more, and 3, 5 or 10 right in a row earn +2, +3 or +5.',
       'Stuck? Hints reveal a letter, remove two wrong ones or show the continent, for a few points.'
     ],
     room: ROOM,

@@ -32,7 +32,7 @@ window.FF = window.FF || {};
   var GRACE_MS = 5000;             // online answers stamped this soon after the naming clock still count (slow phones)
   /* Everyday words that are one slip from an object but are not it ("house" is not a horse). */
   var LOOKALIKES = ['house', 'mouth', 'hat', 'bat', 'cap'];
-  var POINTS = 100;
+  var POINTS = 10;                 // a drawing named right
   var MAX_POINTS = 1200;           // per drawing, so it fits one write
   var MIN_STEP = 4;                // units between kept points
   var LIST_MIN = 60;               // the game is listed once this many sketches exist

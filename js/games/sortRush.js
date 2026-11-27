@@ -864,7 +864,7 @@ window.FF = window.FF || {};
       t('srtHow3', 'It can go on an empty {holder} or on the same colour, if there is room.', { holder: holderThing(s.style) })
     ];
     lines.push(s.mode === 'score'
-      ? t('srtHowScore', 'Timed Score: 100 for each finished {holder}, 200 for each cleared puzzle, plus a bonus for few moves.', { holder: holderThing(s.style) })
+      ? t('srtHowScore2', 'Timed Score: 5 for each finished {holder}, 3 for each cleared puzzle, plus up to 5 for few moves.', { holder: holderThing(s.style) })
       : t('srtHowRace', 'Race: sort it before time runs out. Online, the first to finish wins.'));
     if (s.limit !== 'off') lines.push(t('srtHowLimit', 'Watch your moves: there is a limit.'));
     return lines;

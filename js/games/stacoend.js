@@ -1009,7 +1009,7 @@ window.FF = window.FF || {};
       'Each round shows letters and a rule: START (words that begin with them), CONTAIN (anywhere inside) or END (words that finish with them).',
       'Mixed plays all three, plus rounds like “starts with B and ends with T”.',
       'Type a word and press Enter. Only real English words that fit count, and each word only once.',
-      '10 points a word, +5 for each letter past 3, +15 for 8 letters or more, +10 for a rare word.',
+      '1 point a letter (up to 10), +3 for 8 letters or more, +2 for a rare word.',
       'Find as many as you can before the clock runs out. Play alone, pass the phone, or race friends online.'
     ],
     room: ROOM,

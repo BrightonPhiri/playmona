@@ -68,7 +68,7 @@ window.FF = window.FF || {};
   }
   function modeMeta(m) {
     return m === 'choice' ? t('lgoModeChoiceMeta', 'Choose the brand from a list')
-      : m === 'type' ? t('lgoModeTypeMeta', 'No tiles: type the name yourself, +50')
+      : m === 'type' ? t('lgoModeTypeMeta2', 'No tiles: type the name yourself, +5')
       : m === 'say' ? t('lgoModeSayMeta', 'Everyone shouts; tap who said it first')
       : t('lgoModeTilesMeta', 'Spell the name with letter tiles');
   }
@@ -80,8 +80,8 @@ window.FF = window.FF || {};
   }
   function twistMeta(x) {
     return x === 'zoom' ? t('lgoZoomMeta', 'Starts close up and pulls back. Early answers score double speed points')
-      : x === 'flash' ? t('lgoFlashMeta', 'The logo hides after 1.5 seconds, +25')
-      : x === 'grey' ? t('lgoGreyMeta', 'No colours to help you, +25')
+      : x === 'flash' ? t('lgoFlashMeta2', 'The logo hides after 1.5 seconds, +3')
+      : x === 'grey' ? t('lgoGreyMeta2', 'No colours to help you, +3')
       : t('lgoNoTwistMeta', 'The logo as it is');
   }
   function catName(id) {

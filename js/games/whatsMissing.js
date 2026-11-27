@@ -1040,7 +1040,7 @@ window.FF = window.FF || {};
       if (wm.phase === 'starting') {
         if (phaseShown !== 'starting') {
           phaseShown = 'starting';
-          waiting(t('wmBrief', 'Study the board. Spot what changed.'), t('wmBriefSub', 'Everyone studies the same board, then the tiles flip and something changes. Faster right answers score more, and streaks multiply your points.'));
+          waiting(t('wmBrief', 'Study the board. Spot what changed.'), t('wmBriefSub2', 'Everyone studies the same board, then the tiles flip and something changes. Faster right answers score more, and streaks earn bonus points.'));
         }
         return;
       }
@@ -1280,7 +1280,7 @@ window.FF = window.FF || {};
       'The tiles flip and one thing changes: a picture is gone, a new one sneaks in, two swap places, or on Hard several go at once.',
       'Pick what was in each gap, or tap the newcomer, or tap both pictures that swapped.',
       'Easy has 4 pictures, Normal 6, Hard 8. Expert starts at 10 and you spell the missing names. Endless grows by one picture until you miss.',
-      'Fast answers score more, and 3 or 5 right in a row multiply your points.'
+      'Fast answers score more, and 3 or 5 right in a row earn +2 or +5.'
     ],
     start: function (api) {
       var room = FF.Room && FF.Room.current();

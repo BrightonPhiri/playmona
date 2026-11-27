@@ -458,7 +458,7 @@ window.FF = window.FF || {};
       label: t('gcShow', 'Flag shows'), value: flash ? 'flash' : 'all',
       options: [{ label: t('gcShowAll', 'The whole time'), value: 'all' }, { label: t('gcShowFlash', 'Flash'), value: 'flash' }],
       onChange: function (v) { flash = v === 'flash'; sync(); }
-    }), t('gcShowDesc', 'Flash hides the flag after a second and a half. Worth 25 more points.')));
+    }), t('gcShowDesc2', 'Flash hides the flag after a second and a half. Worth 3 more points.')));
     rows.appendChild(FF.UI.settingRow(t('gcLook', 'Flag look'), FF.UI.segmented({
       label: t('gcLook', 'Flag look'), value: look,
       options: [{ label: t('gcLookWave', 'Waving'), value: 'wave' }, { label: t('gcLookFlat', 'Flat'), value: 'flat' }],
