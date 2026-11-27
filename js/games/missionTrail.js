@@ -222,13 +222,15 @@ window.FF = window.FF || {};
         onCloseScene: function () { if (run.closeScene()) { handle.closeScene(); sync(); } }
       });
       a.handle = handle;
+      // fog: true sees 3 cells around the walker, a number sets how far.
+      var fogRadius = typeof stage.fog === 'number' ? stage.fog : 3;
       var view = MT.Render.create(handle.canvas, map, images, { fog: !!stage.fog });
       a.view = view;
       view.place(run.pos);
       var explored = new Set();
       function fog() {
         if (!stage.fog) return;
-        var vis = MT.Rules.visibleCells(map, run.pos, 3);
+        var vis = MT.Rules.visibleCells(map, run.pos, fogRadius);
         vis.forEach(function (i) { explored.add(i); });
         view.fog(vis, explored);
       }
@@ -284,9 +286,19 @@ window.FF = window.FF || {};
           category: category,
           closable: sc.closable,
           backdrop: sc.backdrop ? MT.Assets.path('scenes', sc.backdrop) : null,
-          options: sc.options.map(function (id) { return choice(category, id); })
+          options: sc.options.map(function (id) { return choice(category, id); }),
+          want: sc.want
         });
         sync();
+      }));
+      a.off.push(run.on('gathered', function (e) {
+        sound('correct');
+        handle.sceneGathered(e.id);
+        handle.setBag(e.inventory.map(function (id) { return choice('objects', id); }));
+        var left = run.scene ? run.scene.want - run.scene.have.length : 0;
+        handle.say(left === 1
+          ? t('mtPickedOneMore', '{name} is in your bag. One more to find!', { name: choice('objects', e.id).name })
+          : t('mtPickedMore', '{name} is in your bag. {n} more to find!', { name: choice('objects', e.id).name, n: left }), 'good');
       }));
       a.off.push(run.on('picked', function (e) {
         sound('correct');
@@ -295,7 +307,12 @@ window.FF = window.FF || {};
         var who = e.kind === 'collect' ? null : choice('characters', e.id).name;
         var thing = e.kind === 'collect' ? choice('objects', e.id).name : null;
         if (e.kind === 'collect') handle.say(t('mtPickedUp', '{name} is in your bag.', { name: thing }), 'good');
-        else if (e.kind === 'give') handle.say(t('mtGaveTo', 'You gave it to the {name}.', { name: String(who).toLowerCase() }), 'good');
+        else if (e.kind === 'give') {
+          var several = MT.Engine.thingsOf((stage.steps || [])[run.stepIndex - 1] || {}).length > 1;
+          handle.say(several
+            ? t('mtGaveThemTo', 'You gave them to the {name}.', { name: String(who).toLowerCase() })
+            : t('mtGaveTo', 'You gave it to the {name}.', { name: String(who).toLowerCase() }), 'good');
+        }
         else handle.say(t('mtMet', 'You found the {name}!', { name: String(who).toLowerCase() }), 'good');
         sync();
       }));

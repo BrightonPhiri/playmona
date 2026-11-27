@@ -28,7 +28,7 @@ window.FF = window.FF || {};
   function turn(facing, side) {
     var i = CLOCKWISE.indexOf(facing);
     if (i === -1) i = 0;
-    return CLOCKWISE[(i + (side === 'left' ? 3 : 1)) % 4];
+    return CLOCKWISE[(i + (side === 'left' ? 3 : side === 'around' ? 2 : 1)) % 4];
   }
 
   function thingFrom(def, kind) {
@@ -129,7 +129,7 @@ window.FF = window.FF || {};
     return ((m & 1 ? 1 : 0) + (m & 2 ? 1 : 0) + (m & 4 ? 1 : 0) + (m & 8 ? 1 : 0)) >= 3;
   }
 
-  /* Route items: { go: n }, { turn: 'left'|'right' }, { go: 'until', at: key } (straight on
+  /* Route items: { go: n }, { turn: 'left'|'right'|'around' }, { go: 'until', at: key } (straight on
      until that landmark is in reach), { go: 'junction', n } (straight on to the nth
      intersection) and { take: street, turn } (face onto that named street). */
   function routeCells(map, start, route) {
@@ -203,6 +203,7 @@ window.FF = window.FF || {};
       }
       if (it.turn === 'left') return t('mtTurnLeft', 'Turn left.');
       if (it.turn === 'right') return t('mtTurnRight', 'Turn right.');
+      if (it.turn === 'around') return t('mtTurnAround', 'Turn around.');
       if (it.go === 1) return t('mtGoOne', 'Go straight for 1 step.');
       return t('mtGoMany', 'Go straight for {n} steps.', { n: it.go });
     });

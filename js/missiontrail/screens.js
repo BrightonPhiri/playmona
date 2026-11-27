@@ -322,6 +322,7 @@ window.FF = window.FF || {};
 
     var view = div('mt-view', [canvas]);
     var sceneEl = null;
+    var sceneButtons = [];
     var wrap = div('mt-play', [
       div('mt-hud', [span('mt-pill', t('mtStageN', 'Stage {n}', { n: stage.id })), clockEl, div('mt-hud__end', [bag, dots])]),
       view,
@@ -412,13 +413,13 @@ window.FF = window.FF || {};
           : t('mtBagEmpty', 'Your bag is empty'));
       },
       /* A pick scene over the town. sc = { kind, backdrop: src, options: [{ id, src, name }],
-         closable, category: 'objects' | 'characters' }. */
+         closable, category: 'objects' | 'characters', want: how many to pick (default 1) }. */
       openScene: function (sc) {
         if (sceneEl && sceneEl.parentNode) sceneEl.parentNode.removeChild(sceneEl);
         var spots = SPOTS[sc.category] || SPOTS.objects;
         var room = div('mt-scene__room');
         if (sc.backdrop) room.appendChild(el('img', { class: 'mt-scene__bg', src: sc.backdrop, alt: '' }));
-        var buttons = [];
+        var buttons = sceneButtons = [];
         shuffled(sc.options).forEach(function (o, i) {
           // Up to six people share one evenly spaced row.
           var oneRow = sc.category === 'characters' && sc.options.length <= 6;
@@ -434,7 +435,10 @@ window.FF = window.FF || {};
           room.appendChild(b);
         });
         var prompt = SCENE_PROMPT[sc.kind] || SCENE_PROMPT.collect;
-        var kids = [el('p', { class: 'mt-scene__prompt' }, t(prompt[0], prompt[1])), room];
+        var promptText = sc.want > 1
+          ? t('mtSceneCollectMany', 'Pick the {n} things your letter asks for.', { n: sc.want })
+          : t(prompt[0], prompt[1]);
+        var kids = [el('p', { class: 'mt-scene__prompt' }, promptText), room];
         if (sc.closable) {
           var back = button(t('mtSceneBack', 'Back to the street'), { variant: 'secondary', icon: 'arrow-left', onClick: function () { if (opts.onCloseScene) opts.onCloseScene(); } });
           if (back.classList) back.classList.add('mt-scene__back');
@@ -442,14 +446,14 @@ window.FF = window.FF || {};
         }
         sceneEl = div('mt-scene', kids);
         sceneEl.setAttribute('role', 'dialog');
-        sceneEl.setAttribute('aria-label', t(prompt[0], prompt[1]));
+        sceneEl.setAttribute('aria-label', promptText);
         view.appendChild(sceneEl);
         padEl.classList.add('is-off');
         if (buttons[0] && buttons[0].focus) buttons[0].focus();
       },
       sceneWrong: function (id) {
         if (!sceneEl) return;
-        var kids = sceneEl.querySelectorAll ? sceneEl.querySelectorAll('.mt-thing') : [];
+        var kids = sceneButtons;
         for (var k = 0; k < kids.length; k++) {
           if (kids[k].dataset.pick !== id) continue;
           kids[k].classList.remove('is-wrong');
@@ -457,9 +461,21 @@ window.FF = window.FF || {};
           kids[k].classList.add('is-wrong');
         }
       },
+      /* A right pick in a room that asks for several things: it leaves the room. */
+      sceneGathered: function (id) {
+        if (!sceneEl) return;
+        var kids = sceneButtons;
+        for (var k = 0; k < kids.length; k++) {
+          if (kids[k].dataset.pick !== id) continue;
+          kids[k].classList.add('is-taken');
+          kids[k].disabled = true;
+          kids[k].setAttribute('aria-hidden', 'true');
+        }
+      },
       closeScene: function () {
         if (sceneEl && sceneEl.parentNode) sceneEl.parentNode.removeChild(sceneEl);
         sceneEl = null;
+        sceneButtons = [];
         padEl.classList.remove('is-off');
       },
       sceneOpen: function () { return !!sceneEl; },
