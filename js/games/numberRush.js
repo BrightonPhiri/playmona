@@ -292,7 +292,7 @@ window.FF = window.FF || {};
     defaults: defaults, sanitize: sanitize, isStandard: isStandard, key: key,
     sequence: sequence, layout: layout, ringAngle: ringAngle, deal: deal,
     points: points, comboBonus: comboBonus, rankRuns: rankRuns, summary: summary, fields: fields, clock: clock,
-    ROOM: ROOM
+    endSummary: endSummary, ROOM: ROOM
   };
 
   /* ================= device helpers ================= */
@@ -918,7 +918,7 @@ window.FF = window.FF || {};
     api.shell.hideTimer();
     FF.ui.clear(root);
     var saved = (FF.Storage && FF.Storage.get('numberRush:setup', null)) || null;
-    var gs = sanitize(Object.assign({}, defaults(api.config.difficulty), saved || {}));
+    var gs = sanitize(Object.assign({}, defaults(), saved || {}));
     var stage = FF.GameUI.stage({ center: true, className: 'nr nr-setup' });
     stage.appendChild(FF.GameUI.kicker(t('nrSetupKicker', 'Number Rush')));
     stage.appendChild(FF.GameUI.prompt(t('nrSetupTitle', 'Set up your rush'), 'md'));
@@ -1052,76 +1052,57 @@ window.FF = window.FF || {};
     return t('nrStatusTime', 'Out of time');
   }
 
+  /* What the end screen shows (FF.EndScreen). Pure: ranked runs and each player's best in. */
+  function endSummary(cfg, ranked, bests) {
+    bests = bests || {};
+    var top = ranked[0];
+    var solo = ranked.length === 1;
+    var tie = ranked.length > 1 && ranked[1].place === 1;
+    var s = { kicker: modeLabel(cfg.mode) + ' · 0–' + cfg.range };
+    if (solo) s.headline = top.st.full ? t('nrSoloFull', 'Sequence complete!') : top.st.elim ? t('nrSoloOut', 'Eliminated') : t('timesUp', 'Time’s up!');
+    else if (tie) s.headline = t('nrTie', 'It’s a tie!');
+    else s.headline = t('nrWins', '{name} wins!', { name: top.who.name });
+    function found(st) { return st.found + '/' + st.total; }
+    if (solo) {
+      var st = top.st;
+      if (bests[top.who.id]) s.best = bests[top.who.id];
+      s.stats = [
+        { icon: 'target', label: t('nrFound', 'Found'), value: found(st) + ' · ' + Math.round(st.found / st.total * 100) + '%' },
+        { icon: 'timer', label: t('nrTimeTaken', 'Time'), value: clock(st.used) },
+        { icon: 'x-circle', label: t('nrMistakes', 'Mistakes'), value: String(st.mistakes) }
+      ];
+    } else {
+      s.lines = {};
+      ranked.forEach(function (r) {
+        s.lines[r.who.id] = statusText(r.st) + ' · ' + found(r.st) + ' · ' + clock(r.st.used) +
+          (bests[r.who.id] && bests[r.who.id].isNew ? ' · ' + t('nrBestShort', 'personal best') : '');
+      });
+    }
+    return s;
+  }
+
   function results(api, cfg, list, runs) {
-    var root = api.shell.root;
-    api.shell.hideTimer();
-    FF.ui.clear(root);
     var ranked = rankRuns(runs);
     var top = ranked[0];
     var tie = ranked.length > 1 && ranked[1].place === 1;
-    var solo = ranked.length === 1;
-    var newBest = {};
+    var bestsNow = {};
     ranked.forEach(function (r) {
       var had = bests()[r.who.id + '|' + key(cfg)];
-      if (!had || r.st.value > had.value) { newBest[r.who.id] = !!had; saveBest(r.who.id, cfg, r.st); }
-    });
-
-    var stage = FF.GameUI.stage({ center: true, className: 'nr nr-results' });
-    var title;
-    if (solo) title = top.st.full ? t('nrSoloFull', 'Sequence complete!') : top.st.elim ? t('nrSoloOut', 'Eliminated') : t('timesUp', 'Time’s up!');
-    else if (tie) title = t('nrTie', 'It’s a tie!');
-    else title = t('nrWins', '{name} wins!', { name: top.who.name });
-    stage.appendChild(FF.GameUI.kicker(modeLabel(cfg.mode) + ' · 0–' + cfg.range));
-    stage.appendChild(FF.GameUI.prompt(title, 'xl'));
-    if (solo) {
-      stage.appendChild(FF.ui.div('nr-results__score', FF.util.formatNumber(top.st.value)));
-      if (newBest[top.who.id] === true) stage.appendChild(FF.GameUI.feedback('good', t('nrNewBest', 'New personal best!')));
-      else {
-        var b = bests()[top.who.id + '|' + key(cfg)];
-        if (b && b.value > top.st.value) stage.appendChild(FF.GameUI.note(t('nrYourBest', 'Your best on these settings: {n}', { n: FF.util.formatNumber(b.value) })));
+      if (!had || r.st.value > had.value) {
+        saveBest(r.who.id, cfg, r.st);
+        if (had) bestsNow[r.who.id] = { isNew: true };
+      } else if (had.value > r.st.value) {
+        bestsNow[r.who.id] = { value: had.value };
       }
-    }
-    var table = FF.ui.el('ol', { class: 'nr-table' });
-    ranked.forEach(function (r) {
-      var st = r.st;
-      var li = FF.ui.el('li', { class: 'nr-row' + (r.place === 1 ? ' is-winner' : '') + (st.elim ? ' is-out' : '') });
-      if (!solo) li.appendChild(FF.ui.span('nr-row__rank', String(r.place)));
-      li.appendChild(FF.Players.avatarEl(r.who, 'nr-row__ava'));
-      var who = FF.ui.span('nr-row__who');
-      who.appendChild(FF.ui.span('nr-row__name', r.who.name));
-      who.appendChild(FF.ui.span('nr-row__status', statusText(st) + (newBest[r.who.id] === true && !solo ? ' · ' + t('nrBestShort', 'personal best') : '')));
-      li.appendChild(who);
-      var nums = FF.ui.span('nr-row__nums');
-      nums.appendChild(cell(t('nrFound', 'Found'), st.found + '/' + st.total + ' · ' + Math.round(st.found / st.total * 100) + '%'));
-      nums.appendChild(cell(t('nrTimeTaken', 'Time'), clock(st.used)));
-      nums.appendChild(cell(t('nrMistakes', 'Mistakes'), String(st.mistakes)));
-      li.appendChild(nums);
-      li.appendChild(FF.ui.span('nr-row__pts', FF.util.formatNumber(st.value)));
-      table.appendChild(li);
     });
-    stage.appendChild(table);
-    stage.appendChild(FF.GameUI.action(t('seeResults', 'See results'), function () {
-      api.audio.play('select');
-      api.end({
-        results: ranked.map(function (r) {
-          return { id: r.who.id, name: r.who.name, avatar: r.who.avatar, color: r.who.color, photo: r.who.photo, points: r.st.value, correct: r.st.found };
-        }),
-        winnerId: tie ? null : top.who.id
-      });
-    }, { icon: 'trophy' }));
-    root.appendChild(stage);
-    if (!calmNow() && FF.Confetti && (solo ? top.st.full : true)) setTimeout(function () { if (stage.isConnected) FF.Confetti.rain(100); }, 300);
-    api.audio.play(solo && !top.st.full ? 'roundEnd' : 'winner');
-    if (FF.Nav && FF.Nav.focusFirst) FF.Nav.focusFirst(stage);
-
-    function cell(label, value) {
-      var c = FF.ui.span('nr-cell');
-      c.appendChild(FF.ui.span('nr-cell__label', label));
-      c.appendChild(FF.ui.span('nr-cell__value', value));
-      return c;
-    }
+    api.end({
+      results: ranked.map(function (r) {
+        return { id: r.who.id, name: r.who.name, avatar: r.who.avatar, color: r.who.color, photo: r.who.photo, points: r.st.value, correct: r.st.found };
+      }),
+      winnerId: tie ? null : top.who.id,
+      summary: endSummary(cfg, ranked, bestsNow)
+    });
   }
-  function calmNow() { return reduceMotion(); }
 
   /* ================= online room ================= */
 
@@ -1176,6 +1157,7 @@ window.FF = window.FF || {};
     tags: ['quick', 'reaction', 'numbers'],
     modes: ['solo', 'turn'],
     defaultMode: 'solo',
+    setup: true,
     howToPlay: [
       'Numbers ride on rings that spin, some one way and some the other.',
       'Tap them in order: 0, then 1, then 2, all the way up. The middle shows the one to find.',
@@ -1192,7 +1174,11 @@ window.FF = window.FF || {};
         playLocal(api, sanitize(STANDARD));
         return;
       }
-      setupScreen(api, function (cfg) { playLocal(api, cfg); });
+      FF.GameUI.setupOrReplay(api, {
+        key: 'numberRush:setup', sanitize: sanitize,
+        show: function (play) { setupScreen(api, play); },
+        play: function (cfg) { playLocal(api, cfg); }
+      });
     }
   });
 })();

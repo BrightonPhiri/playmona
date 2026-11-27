@@ -215,6 +215,13 @@ window.FF = window.FF || {};
     },
 
     /* Primary action button with an icon (Next, Reveal, Start turn…). */
+    /* A seconds picker for a game's own setup (Off, or a time). null when the picker is not loaded. */
+    timerRow: function (label, seconds, onChange, hint) {
+      if (!FF.SettingsUI || !FF.SettingsUI.duration || !FF.UI || !FF.UI.settingRow) return null;
+      return FF.UI.settingRow(label, FF.SettingsUI.duration(seconds, onChange, { allowOff: true }),
+        hint === undefined ? FF.t('timeLimitDesc', 'Off means no countdown.') : hint);
+    },
+
     /* A game's own setup screen, or, for Play again, its saved setup straight away.
        opts: { key, sanitize, show(play), play(cfg) }. The saved setup always goes through sanitize. */
     setupOrReplay: function (api, opts) {

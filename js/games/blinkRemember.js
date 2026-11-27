@@ -37,7 +37,8 @@ window.FF = window.FF || {};
     return {
       boxes: difficulty === 'easy' ? 3 : difficulty === 'hard' ? 9 : 6,
       seconds: 2,
-      deck: 'surprise'
+      deck: 'surprise',
+      timer: FF.util.DEFAULT_TIMER   // seconds per box (0 = no countdown)
     };
   }
 
@@ -47,7 +48,8 @@ window.FF = window.FF || {};
     var out = {
       boxes: pickOf(BOXES, Number(s.boxes), d.boxes),
       seconds: pickOf(SECONDS, Number(s.seconds), d.seconds),
-      deck: pickOf(DECKS, s.deck, d.deck)
+      deck: pickOf(DECKS, s.deck, d.deck),
+      timer: FF.util.secondsOr(s.timer, d.timer)
     };
     if (s.difficulty) out.difficulty = String(s.difficulty);
     return out;
@@ -56,7 +58,7 @@ window.FF = window.FF || {};
   var STANDARD = defaults('normal');
   function isStandard(s) {
     var c = sanitize(s);
-    return c.boxes === STANDARD.boxes && c.seconds === STANDARD.seconds && c.deck === STANDARD.deck;
+    return c.boxes === STANDARD.boxes && c.seconds === STANDARD.seconds && c.deck === STANDARD.deck && c.timer === STANDARD.timer;
   }
   function key(s) { return [s.boxes, s.seconds, s.deck].join('|'); }
 
@@ -486,7 +488,7 @@ window.FF = window.FF || {};
     api.shell.hideTimer();
     FF.ui.clear(root);
     var saved = (FF.Storage && FF.Storage.get('blinkRemember:setup', null)) || null;
-    var gs = sanitize(Object.assign({}, defaults(api.config.difficulty), saved || {}));
+    var gs = sanitize(Object.assign({}, defaults(), saved || {}));
     var stage = FF.GameUI.stage({ center: true, className: 'bk sq-setup' });
     stage.appendChild(FF.GameUI.kicker(t('bkName', 'Blink & Remember')));
     stage.appendChild(FF.GameUI.prompt(t('bkSetupTitle', 'How many boxes can you remember?'), 'md'));
@@ -500,6 +502,8 @@ window.FF = window.FF || {};
           onChange: function (v) { gs[f.key] = v; renote(); }
         })));
       });
+      var timerRow = FF.GameUI.timerRow(t('bkTimePerBox', 'Time per box'), gs.timer, function (s) { gs.timer = s; renote(); });
+      if (timerRow) box.appendChild(timerRow);
       box.appendChild(FF.ui.el('p', { class: 'gm-note sq-setup__hint' }, t('bkHowNote', 'Each box opens once, in order. Then pick what was in each box from the pictures.')));
       renote();
     }
@@ -563,7 +567,7 @@ window.FF = window.FF || {};
       api.shell.updateScores(who.id);
       var h = play(api, {
         cfg: cfg, dealt: dealt, turnEntity: multi ? who : null, roundText: rt,
-        timer: api.config.timer > 0 ? api.config.timer * cfg.boxes : 0,
+        timer: cfg.timer > 0 ? cfg.timer * cfg.boxes : 0,
         nextLabel: multi && i + 1 < list.length ? t('bkNextPlayer', 'Next player') : t('seeResults', 'See results'),
         onDone: function (st) {
           runs.push({ who: who, st: st });
@@ -589,59 +593,53 @@ window.FF = window.FF || {};
     return sorted;
   }
 
+  function statusLine(st) {
+    return st.right >= st.boxes ? t('bkStatusAll', 'Every box right') : t('bkNRight', '{n} of {total} right', { n: st.right, total: st.boxes });
+  }
+
+  /* What the end screen shows (FF.EndScreen). Pure: ranked runs and each player's best in. */
+  function endSummary(cfg, ranked, bests) {
+    bests = bests || {};
+    var top = ranked[0];
+    var solo = ranked.length === 1;
+    var tie = ranked.length > 1 && ranked[1].place === 1;
+    var s = { kicker: summary(cfg) };
+    if (solo) s.headline = top.st.right >= top.st.boxes ? t('bkPerfect', 'Perfect recall!') : t('bkSoloN', '{n} of {total} right', { n: top.st.right, total: top.st.boxes });
+    else if (tie) s.headline = t('nrTie', 'It’s a tie!');
+    else s.headline = t('nrWins', '{name} wins!', { name: top.who.name });
+    if (solo) {
+      if (bests[top.who.id]) s.best = bests[top.who.id];
+      s.stats = [{ icon: 'check-circle', label: t('bkRight', 'Right'), value: top.st.right + '/' + top.st.boxes }];
+    } else {
+      s.lines = {};
+      ranked.forEach(function (r) {
+        s.lines[r.who.id] = statusLine(r.st) + (bests[r.who.id] && bests[r.who.id].isNew ? ' · ' + t('nrBestShort', 'personal best') : '');
+      });
+    }
+    return s;
+  }
+
   function results(api, cfg, runs) {
-    var root = api.shell.root;
-    api.shell.hideTimer();
-    FF.ui.clear(root);
     var ranked = rankRuns(runs);
     var top = ranked[0];
     var tie = ranked.length > 1 && ranked[1].place === 1;
-    var solo = ranked.length === 1;
-    var newBest = {};
+    var bestsNow = {};
     ranked.forEach(function (r) {
       var had = bestFor(r.who.id, cfg);
-      if (!had || r.st.points > had.points) { newBest[r.who.id] = !!had; saveBest(r.who.id, cfg, r.st); }
-    });
-    var stage = FF.GameUI.stage({ center: true, className: 'bk nr-results' });
-    var title;
-    if (solo) title = top.st.right >= top.st.boxes ? t('bkPerfect', 'Perfect recall!') : t('bkSoloN', '{n} of {total} right', { n: top.st.right, total: top.st.boxes });
-    else if (tie) title = t('nrTie', 'It’s a tie!');
-    else title = t('nrWins', '{name} wins!', { name: top.who.name });
-    stage.appendChild(FF.GameUI.kicker(summary(cfg)));
-    stage.appendChild(FF.GameUI.prompt(title, 'xl'));
-    if (solo) {
-      stage.appendChild(FF.ui.div('nr-results__score', FF.util.formatNumber(top.st.points)));
-      if (newBest[top.who.id] === true) stage.appendChild(FF.GameUI.feedback('good', t('nrNewBest', 'New personal best!')));
-      else {
-        var b = bestFor(top.who.id, cfg);
-        if (b && b.points > top.st.points) stage.appendChild(FF.GameUI.note(t('nrYourBest', 'Your best on these settings: {n}', { n: FF.util.formatNumber(b.points) })));
+      if (!had || r.st.points > had.points) {
+        saveBest(r.who.id, cfg, r.st);
+        if (had) bestsNow[r.who.id] = { isNew: true };
+      } else if (had.points > r.st.points) {
+        bestsNow[r.who.id] = { value: had.points };
       }
-    }
-    var table = FF.ui.el('ol', { class: 'nr-table' });
-    ranked.forEach(function (r) {
-      var li = FF.ui.el('li', { class: 'nr-row' + (r.place === 1 ? ' is-winner' : '') });
-      if (!solo) li.appendChild(FF.ui.span('nr-row__rank', String(r.place)));
-      li.appendChild(FF.Players.avatarEl(r.who, 'nr-row__ava'));
-      var who = FF.ui.span('nr-row__who');
-      who.appendChild(FF.ui.span('nr-row__name', r.who.name));
-      who.appendChild(FF.ui.span('nr-row__status', (r.st.right >= r.st.boxes ? t('bkStatusAll', 'Every box right') : t('bkNRight', '{n} of {total} right', { n: r.st.right, total: r.st.boxes })) +
-        (newBest[r.who.id] === true && !solo ? ' · ' + t('nrBestShort', 'personal best') : '')));
-      li.appendChild(who);
-      li.appendChild(FF.ui.span('nr-row__pts', FF.util.formatNumber(r.st.points)));
-      table.appendChild(li);
     });
-    stage.appendChild(table);
-    stage.appendChild(FF.GameUI.action(t('seeResults', 'See results'), function () {
-      api.audio.play('select');
-      api.end({
-        results: ranked.map(function (r) {
-          return { id: r.who.id, name: r.who.name, avatar: r.who.avatar, color: r.who.color, photo: r.who.photo, points: r.st.points, correct: r.st.right };
-        }),
-        winnerId: tie ? null : top.who.id
-      });
-    }, { icon: 'trophy' }));
-    root.appendChild(stage);
-    if (FF.Nav && FF.Nav.focusFirst) FF.Nav.focusFirst(stage);
+    api.end({
+      results: ranked.map(function (r) {
+        return { id: r.who.id, name: r.who.name, avatar: r.who.avatar, color: r.who.color, photo: r.who.photo, points: r.st.points, correct: r.st.right };
+      }),
+      winnerId: tie ? null : top.who.id,
+      summary: endSummary(cfg, ranked, bestsNow)
+    });
   }
 
   /* ================= online room ================= */
@@ -692,7 +690,7 @@ window.FF = window.FF || {};
     BOXES: BOXES, SECONDS: SECONDS, DECKS: DECKS, STANDARD: STANDARD, ROOM_ROUNDS: ROOM_ROUNDS,
     defaults: defaults, sanitize: sanitize, isStandard: isStandard, key: key,
     choicesFor: choicesFor, deal: deal, points: points, score: score, roomSeconds: roomSeconds,
-    fields: fields, summary: summary, ROOM: ROOM
+    fields: fields, summary: summary, endSummary: endSummary, ROOM: ROOM
   };
 
   FF.registerGame({
@@ -706,6 +704,7 @@ window.FF = window.FF || {};
     duration: 3,
     tags: ['pictures', 'memory', 'quick'],
     modes: ['solo', 'turn'],
+    setup: true,
     defaultMode: 'solo',
     howToPlay: [
       'Watch the boxes: each one opens in turn, shows a picture for a moment, then shuts for good.',
@@ -718,9 +717,13 @@ window.FF = window.FF || {};
       if (FF.Parallel && FF.Parallel.active()) { playOnline(api); return; }
       // The daily challenge and a friend's challenge play the standard rules on the shared deal.
       if (api.config.daily || api.config.challenge) { playLocal(api, sanitize(STANDARD)); return; }
-      setupScreen(api, function (cfg) {
-        if (!isStandard(cfg)) api.config.customRules = true;
-        playLocal(api, cfg);
+      FF.GameUI.setupOrReplay(api, {
+        key: 'blinkRemember:setup', sanitize: sanitize,
+        show: function (play) { setupScreen(api, play); },
+        play: function (cfg) {
+          if (!isStandard(cfg)) api.config.customRules = true;
+          playLocal(api, cfg);
+        }
       });
     }
   });

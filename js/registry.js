@@ -13,7 +13,7 @@ window.FF = window.FF || {};
     defaults: {
       difficulty: 'normal',
       length: 'normal',
-      timer: 20,
+      timer: FF.util.DEFAULT_TIMER,
       sound: true,
       music: true,
       volume: 0.7,

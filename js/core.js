@@ -160,6 +160,17 @@ window.FF = window.FF || {};
       return (m < 10 ? '0' + m : m) + ':' + (r < 10 ? '0' + r : r);
     },
 
+    // The game page's old Time per turn default; games with their own setup start their timer here.
+    DEFAULT_TIMER: 20,
+
+    // A whole number of seconds from 0 (off) to 600, or the fallback.
+    secondsOr: function (v, fallback) {
+      if (v == null || v === '') return fallback;
+      var n = Number(v);
+      if (!isFinite(n) || n < 0) return fallback;
+      return Math.min(600, Math.round(n));
+    },
+
     // Grouped for the current language (1,234 / 1.234 / 1 234).
     formatNumber: function (n) {
       n = n == null ? 0 : n;

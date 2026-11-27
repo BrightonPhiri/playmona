@@ -47,7 +47,8 @@ window.FF = window.FF || {};
       twist: 'fresh',
       pads: difficulty === 'easy' ? 4 : difficulty === 'hard' ? 9 : 6,
       lives: 1,
-      play: 'turns'
+      play: 'turns',
+      timer: FF.util.DEFAULT_TIMER   // seconds to repeat (0 = no countdown)
     };
   }
 
@@ -59,14 +60,15 @@ window.FF = window.FF || {};
       twist: pickOf(TWISTS, s.twist, d.twist),
       pads: pickOf(PADS, Number(s.pads), d.pads),
       lives: pickOf(LIVES, Number(s.lives), d.lives),
-      play: pickOf(PLAYS, s.play, d.play)
+      play: pickOf(PLAYS, s.play, d.play),
+      timer: FF.util.secondsOr(s.timer, d.timer)
     };
     if (s.difficulty) out.difficulty = String(s.difficulty);
     return out;
   }
 
   var STANDARD = defaults('normal');
-  var RULE_KEYS = ['set', 'twist', 'pads', 'lives', 'play'];
+  var RULE_KEYS = ['set', 'twist', 'pads', 'lives', 'play', 'timer'];
   function isStandard(s) {
     var c = sanitize(s);
     return RULE_KEYS.every(function (k) { return c[k] === STANDARD[k]; });
@@ -644,7 +646,7 @@ window.FF = window.FF || {};
       paint();
       current = attempt(api, {
         board: b, cfg: cfg, seq: round.seq, perm: round.perm, tm: timing(cfg.twist, r),
-        timer: api.config.timer || 0, intro: intro || o.faces.deckName,
+        timer: cfg.timer || 0, intro: intro || o.faces.deckName,
         onResult: function (res) {
           current = null;
           if (res.ok) {
@@ -724,7 +726,7 @@ window.FF = window.FF || {};
     api.shell.hideTimer();
     FF.ui.clear(root);
     var saved = (FF.Storage && FF.Storage.get('rememberSequence:setup', null)) || null;
-    var gs = sanitize(Object.assign({}, defaults(api.config.difficulty), saved || {}));
+    var gs = sanitize(Object.assign({}, defaults(), saved || {}));
     if (!multi) gs.play = 'turns';
     var stage = FF.GameUI.stage({ center: true, className: 'sq sq-setup' });
     stage.appendChild(FF.GameUI.kicker(t('rsSetupKicker', 'Remember the Sequence')));
@@ -741,6 +743,8 @@ window.FF = window.FF || {};
           onChange: function (v) { gs[f.key] = v; if (f.redraw) render(); else renote(); }
         })));
       });
+      var timerRow = FF.GameUI.timerRow(t('timePerTurn', 'Time per turn'), gs.timer, function (s) { gs.timer = s; renote(); });
+      if (timerRow) box.appendChild(timerRow);
       renote();
     }
     function renote() {
@@ -832,83 +836,60 @@ window.FF = window.FF || {};
     return sorted;
   }
 
+  function statusOf(st) {
+    return st.status || (st.complete ? t('rsStatusComplete', 'Went all the way') : t('rsStatusNoLives', 'Out of lives'));
+  }
+
+  /* What the end screen shows (FF.EndScreen). Pure: ranked runs and each player's best in. */
+  function endSummary(cfg, ranked, bests) {
+    bests = bests || {};
+    var top = ranked[0];
+    var solo = ranked.length === 1;
+    var tie = ranked.length > 1 && ranked[1].place === 1;
+    var s = { kicker: summary(cfg) };
+    if (solo) s.headline = top.st.complete ? t('rsSoloComplete', 'Perfect memory!') : t('rsSoloLongest', 'You remembered {n}!', { n: top.st.longest });
+    else if (tie) s.headline = t('nrTie', 'It’s a tie!');
+    else s.headline = t('nrWins', '{name} wins!', { name: top.who.name });
+    if (solo) {
+      if (bests[top.who.id]) s.best = bests[top.who.id];
+      s.stats = [{ icon: 'trophy', label: t('rsLongest', 'Longest'), value: String(top.st.longest) }];
+      if (top.st.rounds != null) s.stats.push({ icon: 'check-circle', label: t('rsRounds', 'Rounds'), value: String(top.st.rounds) });
+    } else {
+      s.lines = {};
+      ranked.forEach(function (r) {
+        s.lines[r.who.id] = statusOf(r.st) + ' · ' + t('rsLongestN', 'Longest {n}', { n: r.st.longest }) +
+          (bests[r.who.id] && bests[r.who.id].isNew ? ' · ' + t('nrBestShort', 'personal best') : '');
+      });
+    }
+    return s;
+  }
+
   function results(api, cfg, runs, opts) {
     opts = opts || {};
-    var root = api.shell.root;
-    api.shell.hideTimer();
-    FF.ui.clear(root);
     var ranked = opts.ranked || rankRuns(runs);
     var top = ranked[0];
     var tie = ranked.length > 1 && ranked[1].place === 1;
-    var solo = ranked.length === 1;
-    var newBest = {};
+    var bestsNow = {};
     if (!opts.noBests) {
       ranked.forEach(function (r) {
         var had = bestFor(r.who.id, cfg);
         if (!had || r.st.longest > had.longest || r.st.points > had.points) {
-          newBest[r.who.id] = !!had && r.st.longest > had.longest;
+          if (had && r.st.longest > had.longest) bestsNow[r.who.id] = { isNew: true };
           saveBest(r.who.id, cfg, r.st);
+        }
+        var now = bestFor(r.who.id, cfg);
+        if (!bestsNow[r.who.id] && now && now.longest > r.st.longest) {
+          bestsNow[r.who.id] = { text: t('rsYourBest', 'Your best on these settings: {n} long', { n: now.longest }) };
         }
       });
     }
-
-    var stage = FF.GameUI.stage({ center: true, className: 'sq nr-results' });
-    var title;
-    if (solo) title = top.st.complete ? t('rsSoloComplete', 'Perfect memory!') : t('rsSoloLongest', 'You remembered {n}!', { n: top.st.longest });
-    else if (tie) title = t('nrTie', 'It’s a tie!');
-    else title = t('nrWins', '{name} wins!', { name: top.who.name });
-    stage.appendChild(FF.GameUI.kicker(summary(cfg)));
-    stage.appendChild(FF.GameUI.prompt(title, 'xl'));
-    if (solo) {
-      stage.appendChild(FF.ui.div('nr-results__score', FF.util.formatNumber(top.st.points)));
-      if (newBest[top.who.id] === true) stage.appendChild(FF.GameUI.feedback('good', t('nrNewBest', 'New personal best!')));
-      else {
-        var bb = bestFor(top.who.id, cfg);
-        if (bb && bb.longest > top.st.longest) stage.appendChild(FF.GameUI.note(t('rsYourBest', 'Your best on these settings: {n} long', { n: bb.longest })));
-      }
-    }
-    var table = FF.ui.el('ol', { class: 'nr-table' });
-    ranked.forEach(function (r) {
-      var st = r.st;
-      var li = FF.ui.el('li', { class: 'nr-row' + (r.place === 1 ? ' is-winner' : '') + (st.out ? ' is-out' : '') });
-      if (!solo) li.appendChild(FF.ui.span('nr-row__rank', String(r.place)));
-      li.appendChild(FF.Players.avatarEl(r.who, 'nr-row__ava'));
-      var who = FF.ui.span('nr-row__who');
-      who.appendChild(FF.ui.span('nr-row__name', r.who.name));
-      var status = st.status || (st.complete ? t('rsStatusComplete', 'Went all the way') : t('rsStatusNoLives', 'Out of lives'));
-      who.appendChild(FF.ui.span('nr-row__status', status + (newBest[r.who.id] === true && !solo ? ' · ' + t('nrBestShort', 'personal best') : '')));
-      li.appendChild(who);
-      var nums = FF.ui.span('nr-row__nums');
-      nums.appendChild(cell(t('rsLongest', 'Longest'), String(st.longest)));
-      if (st.rounds != null) nums.appendChild(cell(t('rsRounds', 'Rounds'), String(st.rounds)));
-      li.appendChild(nums);
-      li.appendChild(FF.ui.span('nr-row__pts', FF.util.formatNumber(st.points)));
-      table.appendChild(li);
+    api.end({
+      results: ranked.map(function (r) {
+        return { id: r.who.id, name: r.who.name, avatar: r.who.avatar, color: r.who.color, photo: r.who.photo, points: r.st.points, correct: r.st.rounds || 0 };
+      }),
+      winnerId: tie ? null : top.who.id,
+      summary: endSummary(cfg, ranked, bestsNow)
     });
-    stage.appendChild(table);
-    stage.appendChild(FF.GameUI.action(t('seeResults', 'See results'), function () {
-      api.audio.play('select');
-      api.end({
-        results: ranked.map(function (r) {
-          return { id: r.who.id, name: r.who.name, avatar: r.who.avatar, color: r.who.color, photo: r.who.photo, points: r.st.points, correct: r.st.rounds || 0 };
-        }),
-        winnerId: tie ? null : top.who.id
-      });
-    }, { icon: 'trophy' }));
-    root.appendChild(stage);
-    var cheer = solo ? newBest[top.who.id] === true || top.st.complete : true;
-    if (!reduceMotion() && FF.Confetti && cheer && (!FF.Settings || FF.Settings.get('animations') !== false)) {
-      setTimeout(function () { if (stage.isConnected) FF.Confetti.rain(100); }, 300);
-    }
-    api.audio.play(cheer ? 'winner' : 'roundEnd');
-    if (FF.Nav && FF.Nav.focusFirst) FF.Nav.focusFirst(stage);
-
-    function cell(label, value) {
-      var c = FF.ui.span('nr-cell');
-      c.appendChild(FF.ui.span('nr-cell__label', label));
-      c.appendChild(FF.ui.span('nr-cell__value', value));
-      return c;
-    }
   }
 
   /* ================= Add one (party, one phone) =================
@@ -951,7 +932,7 @@ window.FF = window.FF || {};
       b.lock(false);
       if (phase === 'add') b.state('turn', t('rsAddFirst', 'Tap a pad to start the chain'));
       else b.state('turn', t('rsRepeatChain', 'Repeat the chain from memory'));
-      if (api.config.timer > 0) api.shell.setTimer(api.config.timer + chain.length, function () { miss(null, true); });
+      if (cfg.timer > 0) api.shell.setTimer(cfg.timer + chain.length, function () { miss(null, true); });
 
       function tap(i) {
         if (phase === 'done') return;
@@ -1118,7 +1099,7 @@ window.FF = window.FF || {};
     START_LEN: START_LEN, ONLINE_START: ONLINE_START, RS_MAX_LEN: RS_MAX_LEN, SOLO_MAX_LEN: SOLO_MAX_LEN,
     defaults: defaults, sanitize: sanitize, isStandard: isStandard, key: key,
     deal: deal, shuffleOrder: shuffleOrder, script: script, expected: expected, timing: timing,
-    faces: faces, fields: fields, summary: summary,
+    faces: faces, fields: fields, summary: summary, endSummary: endSummary,
     sequencePoints: sequencePoints, roundPoints: roundPoints, rsLength: rsLength, rsSeconds: rsSeconds,
     ROOM: ROOM
   };
@@ -1134,6 +1115,7 @@ window.FF = window.FF || {};
     duration: 4,
     tags: ['colours', 'sequence', 'music'],
     modes: ['solo', 'turn'],
+    setup: true,
     defaultMode: 'solo',
     howToPlay: [
       'Watch (and listen to) the pads light up one after another.',
@@ -1148,11 +1130,16 @@ window.FF = window.FF || {};
       // The daily challenge and a friend's challenge play the standard rules on the shared deal.
       if (api.config.daily || api.config.challenge) { playTurns(api, sanitize(STANDARD)); return; }
       var multi = (api.config.scorers || []).length > 1;
-      setupScreen(api, multi, function (cfg) {
-        // Rules that differ from the standard ones keep the run off the leaderboards.
-        if (!isStandard(cfg)) api.config.customRules = true;
-        if (multi && cfg.play === 'addone') playAddOne(api, cfg);
-        else playTurns(api, cfg);
+      FF.GameUI.setupOrReplay(api, {
+        key: 'rememberSequence:setup', sanitize: sanitize,
+        show: function (play) { setupScreen(api, multi, play); },
+        play: function (cfg) {
+          if (!multi) cfg.play = 'turns';
+          // Rules that differ from the standard ones keep the run off the leaderboards.
+          if (!isStandard(cfg)) api.config.customRules = true;
+          if (multi && cfg.play === 'addone') playAddOne(api, cfg);
+          else playTurns(api, cfg);
+        }
       });
     }
   });

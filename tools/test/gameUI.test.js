@@ -26,3 +26,10 @@ test('gameUI: setupOrReplay replays a sanitized saved setup, else shows setup', 
   FF.GameUI.setupOrReplay({ config: { replay: true } }, { key: 'game:setup', sanitize: sanitize, show: show, play: play });
   assertEqual([played, shown], [null, 2]);
 });
+
+test('util: secondsOr keeps a whole number of seconds from 0 to 600, else the fallback', function () {
+  const FF = boot();
+  assertEqual([FF.util.secondsOr(0, 20), FF.util.secondsOr('15', 20), FF.util.secondsOr(12.6, 20), FF.util.secondsOr(-1, 20),
+    FF.util.secondsOr('x', 20), FF.util.secondsOr(undefined, 20), FF.util.secondsOr(9999, 20)], [0, 15, 13, 20, 20, 20, 600]);
+  assertEqual(FF.util.DEFAULT_TIMER, 20);
+});

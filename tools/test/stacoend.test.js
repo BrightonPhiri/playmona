@@ -202,3 +202,48 @@ test('stacoend: registers for solo, pass and play, rooms and leaderboards', func
   });
   assert(/"stacoend"/.test(read('js/data/assetManifest.js')), 'has a cover');
 });
+
+/* ---------------- One end screen, one settings screen ---------------- */
+
+test('stacoend: endSummary carries what the old results screen showed', function () {
+  const FF = load();
+  const S = FF.Stacoend;
+  const cfg = S.sanitize(S.STANDARD);
+  const plan = [BR, ING];
+  const solo = [{ who: { id: 'me', name: 'Ben' }, place: 1, st: { points: 30, words: 5, accuracy: 83, rejected: 1, longest: 'bringing', rare: 2 },
+    rounds: [{ words: 3, points: 20 }, { words: 2, points: 10 }] }];
+  const s = S.endSummary(cfg, plan, solo, { me: { isNew: true } });
+  assertEqual(s.kicker, S.summary(cfg));
+  assertEqual(s.headline, '5 words found');
+  assertEqual(s.stats.map(function (x) { return x.label; }), ['Words', 'Accuracy', 'Rejected', 'Longest', 'Rare finds']);
+  assertEqual(s.stats.map(function (x) { return x.value; }), ['5', '83%', '1', 'BRINGING', '2']);
+  assertEqual(s.best, { isNew: true });
+  assertEqual(s.rounds.length, 2);
+  assertEqual([s.rounds[0].label, s.rounds[0].note, s.rounds[0].points], [S.shortText(BR), '3 words', 20]);
+  assertEqual(S.endSummary(cfg, plan, [Object.assign({}, solo[0], { st: Object.assign({}, solo[0].st, { words: 0 }) })], {}).headline, 'No words this time');
+  assertEqual(S.endSummary(cfg, plan, solo, { me: { value: 44 } }).best, { value: 44 });
+
+  const multi = [
+    { who: { id: 'b', name: 'Ben' }, place: 1, st: { points: 30, words: 5, accuracy: 83 }, rounds: [] },
+    { who: { id: 'a', name: 'Amy' }, place: 2, st: { points: 12, words: 2, accuracy: 50 }, rounds: [] }
+  ];
+  const m = S.endSummary(cfg, plan, multi, { a: { isNew: true } });
+  assertEqual(m.headline, 'Ben wins!');
+  assertEqual(m.lines.b, '5 words · 83%');
+  assertEqual(m.lines.a, '2 words · 50% · personal best');
+  assertEqual(m.stats, undefined);
+  multi[1].place = 1;
+  assertEqual(S.endSummary(cfg, plan, multi, {}).headline, 'It’s a tie!');
+});
+
+test('stacoend: has its own setup and replays the saved one', function () {
+  const FF = load(true);
+  const def = FF.__defs[0];
+  assertEqual(def.setup, true);
+  let seen = null;
+  FF.GameUI = Object.assign({}, FF.GameUI || {}, { setupOrReplay: function (a, o) { seen = o; } });
+  FF.Words.ready = function () { return true; };
+  def.start({ config: { scorers: [] }, shell: {} });
+  assertEqual(seen && seen.key, 'stacoend:setup');
+  assertEqual(seen.sanitize, FF.Stacoend.sanitize);
+});

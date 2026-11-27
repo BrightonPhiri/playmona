@@ -220,6 +220,7 @@
     }
     if (s.best) {
       if (s.best.isNew) root.appendChild(FF.ui.el('p', { class: 'end-best end-best--new' }, t('endNewBest', 'New personal best!')));
+      else if (s.best.text) root.appendChild(FF.ui.el('p', { class: 'end-best' }, String(s.best.text)));
       else if (s.best.value != null) root.appendChild(FF.ui.el('p', { class: 'end-best' }, t('endYourBest', 'Your best on these settings: {n}', { n: num(s.best.value) })));
     }
     if (s.stats || s.ring) root.appendChild(stats(s));

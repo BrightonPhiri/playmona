@@ -695,7 +695,7 @@ window.FF = window.FF || {};
     api.shell.hideTimer();
     FF.ui.clear(root);
     var saved = (FF.Storage && FF.Storage.get('stacoend:setup', null)) || null;
-    var gs = sanitize(Object.assign({}, defaults(api.config.difficulty), saved || {}));
+    var gs = sanitize(Object.assign({}, defaults(), saved || {}));
     var stage = FF.GameUI.stage({ center: true, className: 'sc sq-setup' });
     stage.appendChild(FF.GameUI.kicker(t('scName', 'Stacoend')));
     stage.appendChild(FF.GameUI.prompt(t('scSetupTitle', 'Start, contain or end?'), 'md'));
@@ -844,95 +844,62 @@ window.FF = window.FF || {};
     return sorted;
   }
 
-  function cell(label, value) {
-    var c = FF.ui.span('nr-cell');
-    c.appendChild(FF.ui.span('nr-cell__label', label));
-    c.appendChild(FF.ui.span('nr-cell__value', String(value)));
-    return c;
-  }
-
-  function results(api, cfg, plan, runs) {
-    var root = api.shell.root;
-    api.shell.hideTimer();
-    FF.ui.clear(root);
-    var ranked = rankRuns(runs);
+  /* What the end screen shows (FF.EndScreen). Pure: ranked runs and each player's best in. */
+  function endSummary(cfg, plan, ranked, bests) {
+    bests = bests || {};
     var top = ranked[0];
-    var tie = ranked.length > 1 && ranked[1].place === 1;
     var solo = ranked.length === 1;
-    var newBest = {};
-    ranked.forEach(function (r) {
-      var had = bestFor(r.who.id, cfg);
-      if (!had || r.st.points > had.points) { newBest[r.who.id] = !!had; saveBest(r.who.id, cfg, r.st); }
-    });
-    var stage = FF.GameUI.stage({ center: true, className: 'sc nr-results' });
-    var title;
-    if (solo) title = top.st.words ? t('scSoloN', '{n} words found', { n: top.st.words }) : t('scSoloNone', 'No words this time');
-    else if (tie) title = t('nrTie', 'It’s a tie!');
-    else title = t('nrWins', '{name} wins!', { name: top.who.name });
-    stage.appendChild(FF.GameUI.kicker(summary(cfg)));
-    stage.appendChild(FF.GameUI.prompt(title, 'xl'));
+    var tie = ranked.length > 1 && ranked[1].place === 1;
+    var s = { kicker: summary(cfg) };
+    if (solo) s.headline = top.st.words ? t('scSoloN', '{n} words found', { n: top.st.words }) : t('scSoloNone', 'No words this time');
+    else if (tie) s.headline = t('nrTie', 'It’s a tie!');
+    else s.headline = t('nrWins', '{name} wins!', { name: top.who.name });
     if (solo) {
-      stage.appendChild(FF.ui.div('nr-results__score', FF.util.formatNumber(top.st.points)));
-      if (newBest[top.who.id] === true) stage.appendChild(FF.GameUI.feedback('good', t('nrNewBest', 'New personal best!')));
-      else {
-        var b = bestFor(top.who.id, cfg);
-        if (b && b.points > top.st.points) stage.appendChild(FF.GameUI.note(t('nrYourBest', 'Your best on these settings: {n}', { n: FF.util.formatNumber(b.points) })));
-      }
-      var nums = FF.ui.div('sc-nums');
-      [[t('scWords', 'Words'), top.st.words], [t('scAccuracy', 'Accuracy'), top.st.accuracy + '%'], [t('scRejected', 'Rejected'), top.st.rejected],
-        [t('scLongest', 'Longest'), top.st.longest ? up(top.st.longest) : '–'], [t('scRare', 'Rare finds'), top.st.rare]].forEach(function (r) {
-        var c = FF.ui.div('sc-num');
-        c.appendChild(FF.ui.span('sc-num__value', String(r[1])));
-        c.appendChild(FF.ui.span('sc-num__label', r[0]));
-        nums.appendChild(c);
-      });
-      stage.appendChild(nums);
-      // Round by round: the challenge and what it earned.
-      var rl = FF.ui.el('ol', { class: 'sc-rounds' });
+      if (bests[top.who.id]) s.best = bests[top.who.id];
+      s.stats = [
+        { icon: 'text-aa', label: t('scWords', 'Words'), value: String(top.st.words) },
+        { icon: 'target', label: t('scAccuracy', 'Accuracy'), value: top.st.accuracy + '%' },
+        { icon: 'x-circle', label: t('scRejected', 'Rejected'), value: String(top.st.rejected) },
+        { icon: 'trophy', label: t('scLongest', 'Longest'), value: top.st.longest ? up(top.st.longest) : '–' },
+        { icon: 'sparkle', label: t('scRare', 'Rare finds'), value: String(top.st.rare) }
+      ];
+      s.rounds = [];
       plan.forEach(function (ch, i) {
         var r = top.rounds[i];
         if (!r) return;
-        var li = FF.ui.el('li', { class: 'sc-round' });
-        li.appendChild(FF.ui.span('sc-badge sc-badge--' + ch.kind, shortText(ch)));
-        li.appendChild(FF.ui.span('sc-round__words', t('scNWords', '{n} words', { n: r.words })));
-        li.appendChild(FF.ui.span('sc-round__pts', FF.util.formatNumber(r.points)));
-        rl.appendChild(li);
+        s.rounds.push({ label: shortText(ch), note: t('scNWords', '{n} words', { n: r.words }), points: r.points, mark: r.words ? 'right' : 'wrong' });
       });
-      stage.appendChild(rl);
     } else {
-      var table = FF.ui.el('ol', { class: 'nr-table' });
+      s.lines = {};
       ranked.forEach(function (r) {
-        var li = FF.ui.el('li', { class: 'nr-row' + (r.place === 1 ? ' is-winner' : '') });
-        li.appendChild(FF.ui.span('nr-row__rank', String(r.place)));
-        li.appendChild(FF.Players.avatarEl(r.who, 'nr-row__ava'));
-        var who = FF.ui.span('nr-row__who');
-        who.appendChild(FF.ui.span('nr-row__name', r.who.name));
-        who.appendChild(FF.ui.span('nr-row__status', t('scNWords', '{n} words', { n: r.st.words }) +
-          (newBest[r.who.id] === true ? ' · ' + t('nrBestShort', 'personal best') : '')));
-        li.appendChild(who);
-        li.appendChild(FF.ui.span('nr-row__pts', FF.util.formatNumber(r.st.points)));
-        var cells = FF.ui.span('nr-row__nums');
-        cells.appendChild(cell(t('scAccuracy', 'Accuracy'), r.st.accuracy + '%'));
-        if (r.st.longest) cells.appendChild(cell(t('scLongest', 'Longest'), up(r.st.longest)));
-        li.appendChild(cells);
-        table.appendChild(li);
+        s.lines[r.who.id] = t('scNWords', '{n} words', { n: r.st.words }) + ' · ' + r.st.accuracy + '%' +
+          (bests[r.who.id] && bests[r.who.id].isNew ? ' · ' + t('nrBestShort', 'personal best') : '');
       });
-      stage.appendChild(table);
     }
-    stage.appendChild(FF.GameUI.action(t('seeResults', 'See results'), function () {
-      api.audio.play('select');
-      api.end({
-        results: ranked.map(function (r) {
-          return { id: r.who.id, name: r.who.name, avatar: r.who.avatar, color: r.who.color, photo: r.who.photo, points: r.st.points, correct: r.st.words };
-        }),
-        winnerId: tie ? null : top.who.id
-      });
-    }, { icon: 'trophy' }));
-    root.appendChild(stage);
-    if (!solo || top.st.words) {
-      if (!reduceMotion() && FF.Confetti && (!FF.Settings || FF.Settings.get('animations') !== false) && (newBest[top.who.id] === true || !solo)) FF.Confetti.rain(60);
-    }
-    if (FF.Nav && FF.Nav.focusFirst) FF.Nav.focusFirst(stage);
+    return s;
+  }
+
+  function results(api, cfg, plan, runs) {
+    var ranked = rankRuns(runs);
+    var top = ranked[0];
+    var tie = ranked.length > 1 && ranked[1].place === 1;
+    var bestsNow = {};
+    ranked.forEach(function (r) {
+      var had = bestFor(r.who.id, cfg);
+      if (!had || r.st.points > had.points) {
+        saveBest(r.who.id, cfg, r.st);
+        if (had) bestsNow[r.who.id] = { isNew: true };
+      } else if (had.points > r.st.points) {
+        bestsNow[r.who.id] = { value: had.points };
+      }
+    });
+    api.end({
+      results: ranked.map(function (r) {
+        return { id: r.who.id, name: r.who.name, avatar: r.who.avatar, color: r.who.color, photo: r.who.photo, points: r.st.points, correct: r.st.words };
+      }),
+      winnerId: tie ? null : top.who.id,
+      summary: endSummary(cfg, plan, ranked, bestsNow)
+    });
   }
 
   /* ================= online room ================= */
@@ -990,7 +957,7 @@ window.FF = window.FF || {};
     fits: fits, normalize: normalize, check: check, wordPoints: wordPoints, tally: tally, gameTotals: gameTotals,
     challenge: challenge, kindFor: kindFor, deal: deal, answers: answers, playable: playable,
     sentence: sentence, shortText: shortText, summary: summary, fields: fields, reasonText: reasonText,
-    roomSeconds: roomSeconds, ROOM: ROOM
+    roomSeconds: roomSeconds, ROOM: ROOM, endSummary: endSummary
   };
 
   FF.registerGame({
@@ -1005,6 +972,7 @@ window.FF = window.FF || {};
     tags: ['spelling', 'quick', 'vocabulary'],
     modes: ['solo', 'turn'],
     defaultMode: 'solo',
+    setup: true,
     howToPlay: [
       'Each round shows letters and a rule: START (words that begin with them), CONTAIN (anywhere inside) or END (words that finish with them).',
       'Mixed plays all three, plus rounds like “starts with B and ends with T”.',
@@ -1018,9 +986,13 @@ window.FF = window.FF || {};
         if (FF.Parallel && FF.Parallel.active()) { playOnline(api); return; }
         // The daily challenge and a friend's challenge play the standard rules on the shared deal.
         if (api.config.daily || api.config.challenge) { playLocal(api, sanitize(STANDARD)); return; }
-        setupScreen(api, function (cfg) {
-          if (!isStandard(cfg)) api.config.customRules = true;
-          playLocal(api, cfg);
+        FF.GameUI.setupOrReplay(api, {
+          key: 'stacoend:setup', sanitize: sanitize,
+          show: function (play) { setupScreen(api, play); },
+          play: function (cfg) {
+            if (!isStandard(cfg)) api.config.customRules = true;
+            playLocal(api, cfg);
+          }
         });
       });
     }

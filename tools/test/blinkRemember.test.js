@@ -114,3 +114,40 @@ test('blink & remember: registers for solo, pass and play, rooms and leaderboard
   });
   assert(/"blinkRemember"/.test(read('js/data/assetManifest.js')), 'has a cover');
 });
+
+/* ---------------- One end screen, one settings screen ---------------- */
+
+function loadI18n() {
+  const FF = loadFF(['js/core.js', 'js/i18n.js', 'js/data/memoryDecks.js']);
+  FF.__defs = [];
+  FF.registerGame = function (def) { FF.__defs.push(def); };
+  vm.runInContext(fs.readFileSync(path.join(ROOT, 'js/games/blinkRemember.js'), 'utf8'), FF.__sandbox, { filename: 'blinkRemember.js' });
+  return FF;
+}
+
+test('blinkRemember: endSummary carries what the old results screen showed', function () {
+  const FF = loadI18n();
+  const B = FF.BlinkRemember;
+  const cfg = B.sanitize(B.STANDARD);
+  const run = function (id, name, right, place) { return { who: { id: id, name: name }, place: place, st: { points: right * 5, right: right, boxes: 6 } }; };
+  const s = B.endSummary(cfg, [run('me', 'Ben', 4, 1)], { me: { value: 40 } });
+  assertEqual([s.kicker, s.headline], [B.summary(cfg), '4 of 6 right']);
+  assertEqual(s.stats, [{ icon: 'check-circle', label: 'Right', value: '4/6' }]);
+  assertEqual(s.best, { value: 40 });
+  assertEqual(B.endSummary(cfg, [run('me', 'Ben', 6, 1)], {}).headline, 'Perfect recall!');
+  const m = B.endSummary(cfg, [run('a', 'Amy', 6, 1), run('b', 'Ben', 4, 2)], { b: { isNew: true } });
+  assertEqual([m.headline, m.lines.a, m.lines.b], ['Amy wins!', 'Every box right', '4 of 6 right · personal best']);
+});
+
+test('blinkRemember: the time per box lives in its own setup', function () {
+  const FF = load();
+  const B = FF.BlinkRemember;
+  assertEqual([B.sanitize({}).timer, B.sanitize({ timer: 0 }).timer, B.STANDARD.timer], [20, 0, 20]);
+  assertEqual(B.isStandard(Object.assign({}, B.STANDARD, { timer: 0 })), false);
+  assertEqual(B.isStandard(B.STANDARD), true);
+  assertEqual(FF.__defs[0].setup, true);
+  let seen = null;
+  FF.GameUI = Object.assign({}, FF.GameUI || {}, { setupOrReplay: function (a, o) { seen = o; } });
+  FF.__defs[0].start({ config: {}, shell: {} });
+  assertEqual([seen && seen.key, seen && seen.sanitize === B.sanitize], ['blinkRemember:setup', true]);
+});

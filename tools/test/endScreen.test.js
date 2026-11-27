@@ -145,3 +145,9 @@ test('endScreen: actions are one size, and the first primary is marked', functio
   btns[0].dispatch('click');
   assertEqual(clicked, 1);
 });
+
+test('endScreen: a game can word its own best (a length, not points)', function () {
+  const { FF, root } = setup();
+  FF.EndScreen.render(root, { kind: 'normal', ranked: [ME], summary: { best: { text: 'Your best on these settings: 9 long' } }, actions: [] });
+  assert(textOf(root).indexOf('Your best on these settings: 9 long') !== -1, 'own best text');
+});

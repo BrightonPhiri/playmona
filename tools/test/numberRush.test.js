@@ -196,3 +196,44 @@ test('number rush: players may only write their own live progress', function () 
   const gen = fs.readFileSync(path.join(ROOT, 'tools/gen-rules.js'), 'utf8');
   assert(/live: \{/.test(gen), 'gen-rules.js writes the same rule');
 });
+
+/* ---------------- One end screen, one settings screen ---------------- */
+
+function loadI18n() {
+  const FF = loadFF(['js/core.js', 'js/i18n.js']);
+  FF.__defs = [];
+  FF.registerGame = function (def) { FF.__defs.push(def); };
+  vm.runInContext(fs.readFileSync(path.join(ROOT, 'js/games/numberRush.js'), 'utf8'), FF.__sandbox, { filename: 'numberRush.js' });
+  return FF;
+}
+
+test('numberRush: endSummary carries what the old results screen showed', function () {
+  const FF = loadI18n();
+  const NR = FF.NumberRush;
+  const cfg = NR.sanitize(NR.STANDARD);
+  const st = { value: 31, found: 21, total: 31, used: 65000, mistakes: 2, full: false, elim: false };
+  const s = NR.endSummary(cfg, [{ who: { id: 'me', name: 'Ben' }, place: 1, st: st }], { me: { isNew: true } });
+  assertEqual(s.headline, 'Time’s up!');
+  assert(s.kicker.indexOf('0–' + cfg.range) !== -1, s.kicker);
+  assertEqual(s.stats.map(function (x) { return x.label; }), ['Found', 'Time', 'Mistakes']);
+  assertEqual(s.stats.map(function (x) { return x.value; }), ['21/31 · 68%', '1:05', '2']);
+  assertEqual(s.best, { isNew: true });
+  assertEqual(NR.endSummary(cfg, [{ who: { id: 'me' }, place: 1, st: Object.assign({}, st, { full: true }) }], {}).headline, 'Sequence complete!');
+  assertEqual(NR.endSummary(cfg, [{ who: { id: 'me' }, place: 1, st: Object.assign({}, st, { elim: true }) }], {}).headline, 'Eliminated');
+  const m = NR.endSummary(cfg, [
+    { who: { id: 'a', name: 'Amy' }, place: 1, st: Object.assign({}, st, { full: true }) },
+    { who: { id: 'b', name: 'Ben' }, place: 2, st: st }
+  ], { b: { isNew: true } });
+  assertEqual(m.headline, 'Amy wins!');
+  assertEqual(m.lines.a, 'Completed · 21/31 · 1:05');
+  assertEqual(m.lines.b, 'Out of time · 21/31 · 1:05 · personal best');
+});
+
+test('numberRush: has its own setup and replays the saved one', function () {
+  const FF = load();
+  assertEqual(FF.__defs[0].setup, true);
+  let seen = null;
+  FF.GameUI = Object.assign({}, FF.GameUI || {}, { setupOrReplay: function (a, o) { seen = o; } });
+  FF.__defs[0].start({ config: {}, shell: {} });
+  assertEqual([seen && seen.key, seen && seen.sanitize === FF.NumberRush.sanitize], ['numberRush:setup', true]);
+});

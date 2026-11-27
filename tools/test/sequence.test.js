@@ -162,3 +162,42 @@ test('sequence: every pad has its own note', function () {
   assertEqual(new Set(list).size, list.length, 'all different');
   assert(/note: function \(i, dur\)/.test(src), 'FF.Audio.note');
 });
+
+/* ---------------- One end screen, one settings screen ---------------- */
+
+function loadI18n() {
+  const FF = loadFF(['js/core.js', 'js/i18n.js', 'js/data/memoryDecks.js']);
+  FF.__defs = [];
+  FF.registerGame = function (def) { FF.__defs.push(def); };
+  vm.runInContext(fs.readFileSync(path.join(ROOT, 'js/games/sequence.js'), 'utf8'), FF.__sandbox, { filename: 'sequence.js' });
+  return FF;
+}
+
+test('sequence: endSummary carries what the old results screen showed', function () {
+  const FF = loadI18n();
+  const S = FF.Sequence;
+  const cfg = S.sanitize(S.STANDARD);
+  const solo = [{ who: { id: 'me', name: 'Ben' }, place: 1, st: { points: 30, longest: 7, rounds: 5, complete: false } }];
+  const s = S.endSummary(cfg, solo, { me: { text: 'Your best on these settings: 9 long' } });
+  assertEqual([s.kicker, s.headline], [S.summary(cfg), 'You remembered 7!']);
+  assertEqual(s.stats.map(function (x) { return x.label + '=' + x.value; }), ['Longest=7', 'Rounds=5']);
+  assertEqual(s.best, { text: 'Your best on these settings: 9 long' });
+  assertEqual(S.endSummary(cfg, [{ who: { id: 'me' }, place: 1, st: { points: 9, longest: 9, rounds: 6, complete: true } }], {}).headline, 'Perfect memory!');
+  const m = S.endSummary(cfg, [
+    { who: { id: 'a', name: 'Amy' }, place: 1, st: { points: 20, longest: 6, rounds: null, status: 'Still in' } },
+    { who: { id: 'b', name: 'Ben' }, place: 2, st: { points: 9, longest: 4, rounds: 3, complete: false } }
+  ], { b: { isNew: true } });
+  assertEqual([m.headline, m.lines.a, m.lines.b], ['Amy wins!', 'Still in · Longest 6', 'Out of lives · Longest 4 · personal best']);
+});
+
+test('sequence: the time limit lives in its own setup', function () {
+  const FF = load();
+  const S = FF.Sequence;
+  assertEqual([S.sanitize({}).timer, S.sanitize({ timer: 0 }).timer, S.STANDARD.timer], [20, 0, 20]);
+  assertEqual(S.isStandard(Object.assign({}, S.STANDARD, { timer: 5 })), false);
+  assertEqual(FF.__defs[0].setup, true);
+  let seen = null;
+  FF.GameUI = Object.assign({}, FF.GameUI || {}, { setupOrReplay: function (a, o) { seen = o; } });
+  FF.__defs[0].start({ config: {}, shell: {} });
+  assertEqual([seen && seen.key, seen && seen.sanitize === S.sanitize], ['rememberSequence:setup', true]);
+});
