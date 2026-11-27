@@ -31,6 +31,7 @@ const ORDER = [
   'js/registry.js',
   'js/navigation.js',
   'js/gameUI.js',
+  'js/endScreen.js',
   'js/answerMatch.js',
   'js/spellTiles.js',
   'js/gameLength.js',
