@@ -722,17 +722,67 @@ test('mission trail: a pick scene opens when the letter closes and holds the wal
   assertEqual(r.closeScene(), false);
 });
 
-test('mission trail: a wrong pick costs time, the right one goes in the bag', function () {
+test('mission trail: whatever you pick goes in the bag, for free', function () {
   const o = errand(), r = o.run;
   r.start();
   const before = r.remaining();
-  assertEqual(r.pick('blue-cap').type, 'wrong');
-  assertEqual(before - r.remaining(), o.FF.MissionTrail.Engine.WRONG_CHECK_MS);
-  assertEqual(r.pick('red-cap').type, 'picked');
-  assertEqual([r.inventory, r.scene, r.stepIndex], [['red-cap'], null, 1]);
+  assertEqual(r.pick('blue-cap').type, 'picked');
+  assertEqual(r.remaining(), before);
+  assertEqual([r.inventory, r.scene, r.stepIndex, r.result().mistakes.wrongPicks], [['blue-cap'], null, 1, 0]);
   assertEqual(r.move('left').type, 'moved');
-  assertEqual(r.result().mistakes.wrongPicks, 1);
-  assert(r.result().parts.obs < 1, 'a wrong pick lowers observation');
+});
+
+test('mission trail: the wrong thing is refused, fetched again from the start', function () {
+  const o = errand(), r = o.run;
+  const refused = [], scenes = [];
+  r.on('refused', function (e) { refused.push(e); });
+  r.on('scene', function (sc) { scenes.push(sc.kind); });
+  r.start();
+  r.pick('blue-cap');
+  r.move('left'); r.move('left');
+  assertEqual(r.check('lib').type, 'scene');
+  const before = r.remaining();
+  assertEqual(r.pick('teacher').type, 'wrong');                 // the wrong person still costs time
+  assert(r.remaining() < before, 'a wrong person costs time');
+  assertEqual(r.pick('librarian').type, 'refused');
+  assertEqual(refused[0], { missing: ['red-cap'], wrong: ['blue-cap'], back: null });
+  assertEqual([r.scene, r.stepIndex, r.inventory, r.result().mistakes.wrongPicks], [null, 0, ['blue-cap'], 2]);
+  r.move('right');
+  assertEqual(r.scene, null);                                    // not there yet
+  r.move('right');                                               // back where the walk began
+  assertEqual([r.scene && r.scene.kind, r.inventory, scenes.length], ['collect', [], 3]);
+  assertEqual(r.pick('red-cap').type, 'picked');
+  r.move('left'); r.move('left');
+  r.check('lib');
+  assertEqual(r.pick('librarian').type, 'given');
+  assertEqual(r.state, 'complete');
+});
+
+test('mission trail: steps already done stay done after fetching again', function () {
+  const steps = [
+    { do: 'collect', item: 'red-cap', scene: { backdrop: 'bedroom', options: ['red-cap', 'blue-cap', 'green-cap'] } },
+    { do: 'enter', target: 'carG' },
+    { do: 'give', target: 'lib', item: 'red-cap', to: 'librarian', scene: { backdrop: 'library', options: ['librarian', 'teacher', 'doctor'] } }
+  ];
+  const o = errand({ steps: steps }), r = o.run;
+  const done = [];
+  r.on('stepDone', function (e) { done.push(e.done); });
+  r.on('stepUndone', function (e) { done.push(e.done); });
+  r.start();
+  r.pick('green-cap');
+  r.move('up');
+  assertEqual(r.check('carG').type, 'entered');
+  r.move('down'); r.move('left');
+  r.check('lib');
+  assertEqual(r.pick('librarian').type, 'refused');
+  assertEqual(r.stepIndex, 0);
+  r.move('right');                                               // drive back to the start
+  assertEqual(r.pick('red-cap').type, 'picked');
+  assertEqual([r.stepIndex, r.vehicle], [2, 'carG']);           // still in the car: no need to get in again
+  r.move('left');
+  r.check('lib');
+  assertEqual(r.pick('librarian').type, 'given');
+  assertEqual([r.state, done], ['complete', [1, 2, 1, 2, 3]]);
 });
 
 test('mission trail: giving opens the people at the right place only', function () {
@@ -922,7 +972,6 @@ test('mission trail: one room can ask for several things', function () {
   assertEqual(gathered[0], { id: 'keys', inventory: ['keys'] });
   assertEqual(r.pick('keys').type, 'ignored');          // already in the bag: no cost
   assertEqual(r.result().mistakes.wrongPicks, 0);
-  assertEqual(r.pick('watch').type, 'wrong');
   assertEqual(r.pick('red-cap').type, 'picked');
   assertEqual([r.inventory, r.scene, r.stepIndex, picked.length], [['keys', 'red-cap'], null, 1, 1]);
   r.move('left'); r.move('left');

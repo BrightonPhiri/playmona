@@ -43,26 +43,30 @@ window.FF = window.FF || {};
       onCheck: function (run, step, thing) { return thing.key === step.target ? 'done' : 'wrong'; }
     },
     // Pick the thing (item) or things (items) from a scene: at the start (no `at`) or inside
-    // the place `at`. With several, each right pick goes in the bag ('gathered') and the
-    // scene stays open until the last one.
+    // the place `at`. Whatever the player picks goes in the bag, right or wrong: a wrong thing
+    // is only found out when the person refuses it (give). With several, each pick goes in
+    // the bag ('gathered') and the scene stays open until the last one.
     collect: {
       result: 'picked',
       opensAtOnce: function (step) { return !step.at; },
       onCheck: function (run, step, thing) { return step.at && thing.key === step.at ? 'scene' : 'wrong'; },
       onPick: function (run, step, id) {
-        var want = thingsOf(step);
-        if (want.indexOf(id) === -1) return 'wrong';
+        if (run.scene.options.indexOf(id) === -1) return 'wrong';
         if (run.scene.have.indexOf(id) !== -1) return 'ignored';
         run.scene.have.push(id);
         run.inventory.push(id);
-        return run.scene.have.length < want.length ? 'gathered' : 'done';
+        return run.scene.have.length < thingsOf(step).length ? 'gathered' : 'done';
       }
     },
-    // Hand what you carry to the right person at the right place.
+    // Hand what you carry to the right person at the right place. The right person refuses
+    // a wrong thing ('refused'): the player goes back to fetch the right one.
     give: {
       result: 'given',
       onCheck: atTarget,
-      onPick: pickIs('to'),
+      onPick: function (run, step, id) {
+        if (id !== step.to) return 'wrong';
+        return thingsOf(step).every(function (it) { return run.inventory.indexOf(it) !== -1; }) ? 'done' : 'refused';
+      },
       onDone: function (run, step) {
         thingsOf(step).forEach(function (id) {
           var i = run.inventory.indexOf(id);
@@ -101,6 +105,9 @@ window.FF = window.FF || {};
     var stepsTaken = 0;
     var onRoute = true;
     var mistakes = { wrongTurns: 0, bumps: 0, wrongChecks: 0, wrongPicks: 0 };
+    var done = [];        // done[i]: step i is finished
+    var got = [];         // got[i]: what the player took in collect step i (right or wrong)
+    var pickupAt = [];    // pickupAt[i]: where a start scene (collect without `at`) opened
 
     function emit(type, data) {
       (listeners[type] || []).slice().forEach(function (fn) { fn(data); });
@@ -188,6 +195,7 @@ window.FF = window.FF || {};
         if (onRoute && !on) mistakes.wrongTurns += 1;
         onRoute = on;
         emit('moved', run.pos);
+        reopenPickup();
         return { type: 'moved', pos: run.pos };
       },
 
@@ -219,11 +227,13 @@ window.FF = window.FF || {};
         var kind = step && STEPS[step.do];
         var res = kind && kind.onPick ? kind.onPick(run, step, id) : 'wrong';
         if (res === 'ignored') return { type: 'ignored' };
+        if (res === 'refused') return refuse(step);
         if (res === 'gathered') {
           emit('gathered', { id: id, inventory: run.inventory.slice() });
           return { type: 'gathered' };
         }
         if (res !== 'done') return penalise('wrongPicks', { pick: id });
+        if (step.do === 'collect') got[run.stepIndex] = run.scene.have.slice();
         run.scene = null;
         return { type: finishStep(step, kind, null, id) };
       },
@@ -267,6 +277,15 @@ window.FF = window.FF || {};
 
     function openScene(step, closable) {
       var sc = step.scene || {};
+      // Fetching again: what was taken last time goes back first.
+      if (step.do === 'collect' && got[run.stepIndex]) {
+        got[run.stepIndex].forEach(function (id) {
+          var i = run.inventory.indexOf(id);
+          if (i !== -1) run.inventory.splice(i, 1);
+        });
+        got[run.stepIndex] = null;
+      }
+      if (step.do === 'collect' && !step.at && !pickupAt[run.stepIndex]) pickupAt[run.stepIndex] = { x: run.pos.x, y: run.pos.y };
       run.scene = {
         step: run.stepIndex,
         kind: step.do,
@@ -285,6 +304,35 @@ window.FF = window.FF || {};
       if (kind && kind.opensAtOnce && kind.opensAtOnce(step)) openScene(step, false);
     }
 
+    /* Back where a start scene opened, with that step to do again: it opens again. */
+    function reopenPickup() {
+      var step = steps[run.stepIndex];
+      var at = pickupAt[run.stepIndex];
+      if (!step || step.do !== 'collect' || step.at || !at || run.scene) return;
+      if (run.pos.x === at.x && run.pos.y === at.y) openScene(step, false);
+    }
+
+    /* The right person, the wrong thing: back to the collect step that should have brought it.
+       Steps done since stay done (the walker keeps its car). */
+    function refuse(step) {
+      mistakes.wrongPicks += 1;
+      run.scene = null;
+      var missing = thingsOf(step).filter(function (it) { return run.inventory.indexOf(it) === -1; });
+      var j = 0;
+      for (var i = 0; i < run.stepIndex; i++) {
+        if (steps[i].do === 'collect' && thingsOf(steps[i]).some(function (it) { return missing.indexOf(it) !== -1; })) { j = i; break; }
+      }
+      var wrong = (got[j] || []).filter(function (it) { return thingsOf(steps[j]).indexOf(it) === -1; });
+      done[j] = false;
+      run.stepIndex = j;
+      emit('refused', { missing: missing, wrong: wrong, back: steps[j].at || null });
+      emit('stepUndone', { index: j, total: steps.length, done: doneCount() });
+      reopenPickup();
+      return { type: 'refused' };
+    }
+
+    function doneCount() { return done.filter(Boolean).length; }
+
     function penalise(field, data) {
       mistakes[field] += 1;
       deadline -= WRONG_CHECK_MS;
@@ -299,8 +347,13 @@ window.FF = window.FF || {};
       var type = kind.result || 'revealed';
       if (type === 'entered') emit('entered', { key: thing.key, look: run.vehicleLook });
       if (picked !== undefined) emit('picked', { kind: step.do, id: picked, inventory: run.inventory.slice() });
-      run.stepIndex += 1;
-      emit('stepDone', { index: run.stepIndex - 1, total: steps.length });
+      var at = run.stepIndex;
+      done[at] = true;
+      // On to the first step not done yet (after fetching again, steps done since are skipped).
+      var next = 0;
+      while (next < steps.length && done[next]) next++;
+      run.stepIndex = next;
+      emit('stepDone', { index: at, total: steps.length, done: doneCount() });
       if (run.stepIndex >= steps.length) {
         run.state = 'complete';
         endedAt = now();
