@@ -604,3 +604,40 @@ test('sortrush: the inbox rule, the lists that name online games, and the runner
   const lb = fs.readFileSync(path.join(ROOT, 'api/lib/Leaderboards.php'), 'utf8');
   assert(/'sortRush'/.test(lb), 'Leaderboards::GAMES');
 });
+
+/* ---------- one end screen, one settings screen ---------- */
+
+function loadGameI18n() {
+  const FF = loadFF(['js/core.js', 'js/i18n.js', 'js/sortrush/rules.js']);
+  FF.__defs = [];
+  FF.registerGame = function (def) { FF.__defs.push(def); };
+  require('vm').runInContext(fs.readFileSync(path.join(ROOT, 'js/games/sortRush.js'), 'utf8'), FF.__sandbox, { filename: 'sortRush.js' });
+  return FF;
+}
+
+test('sortRush: endSummary carries what the old results screens showed', function () {
+  const FF = loadGameI18n();
+  const G = FF.SortRushGame;
+  const row = function (uid, name, o) { return Object.assign({ who: { id: uid, name: name }, uid: uid, place: 1, points: 20, moves: 14, done: true, used: 31200, completed: 4, cleared: 0 }, o || {}); };
+  const race = { mode: 'race', level: 'easy', colours: 4 };
+  const s = G.endSummary([row('me', 'Ben', { me: true })], race, { solo: true, best: { value: 25 } });
+  assertEqual([s.kicker, s.headline], ['SortRush · Race · Easy', 'All sorted!']);
+  assertEqual(s.stats.map(function (x) { return x.label + '=' + x.value; }), ['Moves=14', 'Holders=4/4', 'Time=' + FF.SortRushRules.exactTime(31200)]);
+  assertEqual(s.best, { value: 25 });
+  const sc = G.endSummary([row('me', 'Ben', { me: true, done: false, cleared: 3, points: 40 })], { mode: 'score', level: 'easy', colours: 4 }, { solo: true });
+  assertEqual(sc.headline, 'Time’s up! 40 points');
+  assertEqual(sc.stats.map(function (x) { return x.label + '=' + x.value; }), ['Moves=14', 'Cleared=3']);
+  const m = G.endSummary([row('a', 'Amy'), row('b', 'Ben', { place: 2, done: false, out: true, moves: 30, completed: 2 })], race, { why: 'time' });
+  assertEqual(m.headline, 'Amy wins!');
+  assertEqual(m.lines.b, 'Out of moves · 30 moves');
+  assertEqual(m.note, 'Time ran out, so the most sorted holders counted.');
+});
+
+test('sortRush: has its own setup and replays the saved one', function () {
+  const FF = loadGameI18n();
+  assertEqual(FF.__defs[0].setup, true);
+  let seen = null;
+  FF.GameUI = Object.assign({}, FF.GameUI || {}, { setupOrReplay: function (a, o) { seen = o; } });
+  FF.__defs[0].start({ config: {}, shell: {} });
+  assertEqual([seen && seen.key, seen && seen.sanitize === FF.SortRushRules.sanitize], ['sortRush:setup', true]);
+});

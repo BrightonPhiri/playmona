@@ -297,3 +297,33 @@ test('sketchBack recall order: shuffled per player, the same on a reload', funct
   assertEqual(a.join(','), r.recallOrder(10, 'seed1', 'p1').join(','));
   assert(a.join(',') !== r.recallOrder(10, 'seed1', 'p2').join(','), 'differs per player');
 });
+
+/* ---------- one end screen, one settings screen ---------- */
+
+function loadGameI18n() {
+  const FF = loadFF(['js/core.js', 'js/i18n.js', 'js/answerMatch.js', 'js/data/sketches.js', 'js/sketchback/rules.js']);
+  FF.__defs = [];
+  FF.registerGame = function (def) { FF.__defs.push(def); };
+  FF.SketchFiles = { ids: FF.SketchData.LIST.map(function (o) { return o.id; }) };
+  require('vm').runInContext(read('js/games/sketchBack.js'), FF.__sandbox, { filename: 'sketchBack.js' });
+  return FF;
+}
+
+test('sketchBack: endSummary carries the old stats and the drawings as the panel', function () {
+  const FF = loadGameI18n();
+  const s = FF.SketchBackGame.endSummary({ deal: ['a', 'b', 'c', 'd'], drawings: [], answers: [], ok: [true, true, true, false], timeMs: 65000 });
+  assertEqual([s.kicker, s.headline], ['Your results', 'Nicely remembered.']);
+  assertEqual(s.stats.map(function (x) { return x.label + '=' + x.value; }), ['Sketches=4', 'Correct=3', 'Wrong=1', 'Accuracy=75%', 'Time to name=1:05']);
+  assertEqual(s.panel.title, 'Your drawings');
+  assertEqual(typeof s.panel.draw, 'function');
+  assertEqual(FF.SketchBackGame.endSummary({ deal: ['a'], drawings: [], answers: [], ok: [true], timeMs: 0, title: 'You came 1st of 3' }).kicker, 'You came 1st of 3');
+});
+
+test('sketchBack: has its own setup and replays the saved one', function () {
+  const FF = loadGameI18n();
+  assertEqual(FF.__defs[0].setup, true);
+  let seen = null;
+  FF.GameUI = Object.assign({}, FF.GameUI || {}, { setupOrReplay: function (a, o) { seen = o; } });
+  FF.__defs[0].start({ config: {}, shell: {} });
+  assertEqual([seen && seen.key, seen && seen.sanitize === FF.SketchBackRules.sanitize], ['sketchBack:setup', true]);
+});

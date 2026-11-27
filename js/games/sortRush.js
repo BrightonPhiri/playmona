@@ -34,7 +34,7 @@ window.FF = window.FF || {};
   var NUDGE_MS = 8000;
   var RENUDGE_MS = 15000;
   var STUCK_MS = 30000;
-  var AUTO_SCORES_MS = 90000;
+
   var DRAG_PX = 8;
   var FLY_MS = 430;
   var LAND_MS = 260;
@@ -881,35 +881,35 @@ window.FF = window.FF || {};
 
   /* ================= results (solo, pass and play, online) =================
      rows: [{ who, place, points, moves, done, out, used, score, cleared, completed (peakC), me }] */
-  function resultsTable(rows, cfg) {
-    var table = FF.ui.el('ol', { class: 'srt-table' });
-    var score = cfg.mode === 'score';
-    rows.forEach(function (r) {
-      var li = FF.ui.el('li', { class: 'srt-row' + (r.place === 1 && r.moves ? ' is-winner' : '') + (r.out ? ' is-out' : '') + (r.me ? ' is-me' : '') });
-      if (rows.length > 1) li.appendChild(FF.ui.span('srt-row__rank', String(r.place)));
-      li.appendChild(FF.Players.avatarEl(r.who, 'srt-row__ava'));
-      var who = FF.ui.span('srt-row__who');
-      who.appendChild(FF.ui.span('srt-row__name', r.who.name + (r.me && rows.length > 1 ? ' ' + t('youTag', '(you)') : '')));
-      var status = score ? t('srtStatusCleared', '{n} puzzles cleared', { n: r.cleared || 0 })
-        : r.done ? t('srtStatusDone', 'Sorted in {time}', { time: R.exactTime(r.used) })
-          : r.out ? t('srtStatusOut', 'Out of moves') : t('srtStatusTime', 'Out of time');
-      who.appendChild(FF.ui.span('srt-row__status', status));
-      li.appendChild(who);
-      var nums = FF.ui.span('srt-row__nums');
-      nums.appendChild(cell(t('srtMoves', 'Moves'), String(r.moves || 0)));
-      if (!score) nums.appendChild(cell(t('srtHolders', 'Holders'), (r.done ? cfg.colours : (r.completed || 0)) + '/' + cfg.colours));
-      li.appendChild(nums);
-      li.appendChild(FF.ui.span('srt-row__pts', FF.util.formatNumber(r.points)));
-      table.appendChild(li);
-    });
-    return table;
+  function statusOf(r, cfg) {
+    return cfg.mode === 'score' ? t('srtStatusCleared', '{n} puzzles cleared', { n: r.cleared || 0 })
+      : r.done ? t('srtStatusDone', 'Sorted in {time}', { time: R.exactTime(r.used) })
+        : r.out ? t('srtStatusOut', 'Out of moves') : t('srtStatusTime', 'Out of time');
+  }
 
-    function cell(lbl, value) {
-      var c = FF.ui.span('srt-cell');
-      c.appendChild(FF.ui.span('srt-cell__label', lbl));
-      c.appendChild(FF.ui.span('srt-cell__value', value));
-      return c;
+  /* What the end screen shows (FF.EndScreen). Pure. opts: { solo, best, why: 'time' | 'lastCall' | null }. */
+  function endSummary(rows, cfg, opts) {
+    opts = opts || {};
+    var solo = !!opts.solo;
+    var s = { kicker: t('srtName', 'SortRush') + ' · ' + modeLabel(cfg.mode) + ' · ' + levelLabel(cfg.level), headline: headline(rows, cfg, solo) };
+    var why = solo ? '' : cfg.mode === 'score' ? t('srtWhyScore', 'The most points when time ran out wins.')
+      : opts.why === 'time' ? t('srtWhyTime', 'Time ran out, so the most sorted holders counted.')
+        : opts.why === 'lastCall' ? t('srtWhyLast', 'The last call ran out after the first finish.') : '';
+    if (why) s.note = why;
+    if (solo) {
+      var r = rows[0];
+      if (opts.best) s.best = opts.best;
+      s.stats = [{ icon: 'arrows-left-right', label: t('srtMoves', 'Moves'), value: String(r.moves || 0) }];
+      if (cfg.mode === 'score') s.stats.push({ icon: 'check-circle', label: t('srtCleared', 'Cleared'), value: String(r.cleared || 0) });
+      else s.stats.push({ icon: 'check-circle', label: t('srtHolders', 'Holders'), value: (r.done ? cfg.colours : (r.completed || 0)) + '/' + cfg.colours });
+      if (r.done && cfg.mode !== 'score') s.stats.push({ icon: 'timer', label: t('nrTimeTaken', 'Time'), value: R.exactTime(r.used) });
+    } else {
+      s.lines = {};
+      rows.forEach(function (r) {
+        s.lines[r.who.id] = statusOf(r, cfg) + ' · ' + t('srtNMoves', '{n} moves', { n: r.moves || 0 });
+      });
     }
+    return s;
   }
 
   function headline(rows, cfg, solo) {
@@ -1058,44 +1058,24 @@ window.FF = window.FF || {};
       var rows = ranked.map(function (r) {
         return Object.assign({}, r, { who: byId[r.uid], completed: r.peakC, me: runs.length === 1 });
       });
-      var root = api.shell.root;
-      FF.ui.clear(root);
       var solo = runs.length === 1;
-      var stage = FF.GameUI.stage({ center: true, className: 'srt srt-results' });
-      stage.setAttribute('data-srt-theme', theme());
-      stage.appendChild(FF.GameUI.kicker(t('srtName', 'SortRush') + ' · ' + modeLabel(cfg.mode) + ' · ' + levelLabel(cfg.level)));
-      stage.appendChild(FF.GameUI.prompt(headline(rows, cfg, solo), 'xl'));
+      var best = null;
       if (solo) {
         var r0 = rows[0];
-        stage.appendChild(FF.ui.div('srt-results__score', FF.util.formatNumber(r0.points)));
         var key = (r0.who.id || 'me') + '|' + R.key(cfg);
         var bests = pref('best', {}) || {};
         var had = bests[key];
         var isBest = had == null || r0.points > had;
         if (isBest) { bests[key] = r0.points; setPref('best', bests); }
-        if (isBest && had != null) stage.appendChild(FF.GameUI.feedback('good', t('srtNewBest', 'New personal best!')));
-        else if (had != null && !isBest) stage.appendChild(FF.GameUI.note(t('srtYourBest', 'Your best on these settings: {n}', { n: FF.util.formatNumber(had) })));
+        best = had == null ? null : isBest ? { isNew: true } : { value: had };
       }
-      stage.appendChild(resultsTable(rows, cfg));
-      var actions = FF.ui.div('srt-setup__actions');
-      actions.appendChild(FF.UI.button(t('srtPlayAgain', 'Play again'), {
-        class: 'btn-lg btn-ghost',
-        onClick: function () { api.audio.play('select'); playAll(api, cfg); }
-      }));
-      actions.appendChild(FF.GameUI.action(t('seeResults', 'See results'), function () {
-        api.audio.play('select');
-        rows.forEach(function (r) { api.scoring.set(r.who.id, r.points); if (api.shell.updateScores) api.shell.updateScores(r.who.id); });
-        var win = rows.filter(function (r) { return r.place === 1 && r.moves; });
-        api.end({
-          results: rows.map(function (r) { return { id: r.who.id, name: r.who.name, avatar: r.who.avatar, color: r.who.color, photo: r.who.photo, points: r.points, correct: r.peakC }; }),
-          winnerId: win.length === 1 ? win[0].who.id : (solo ? rows[0].who.id : null)
-        });
-      }, { icon: 'trophy' }));
-      stage.appendChild(actions);
-      root.appendChild(stage);
-      var good = solo ? (rows[0].done || (cfg.mode === 'score' && rows[0].points > 0)) : true;
-      if (good && animationsOn() && FF.Confetti) setTimeout(function () { if (stage.isConnected) FF.Confetti.burst(80); }, 250);
-      if (FF.Nav && FF.Nav.focusFirst) FF.Nav.focusFirst(stage);
+      rows.forEach(function (r) { api.scoring.set(r.who.id, r.points); });
+      var win = rows.filter(function (r) { return r.place === 1 && r.moves; });
+      api.end({
+        results: rows.map(function (r) { return { id: r.who.id, name: r.who.name, avatar: r.who.avatar, color: r.who.color, photo: r.who.photo, points: r.points, correct: r.peakC }; }),
+        winnerId: win.length === 1 ? win[0].who.id : (solo ? rows[0].who.id : null),
+        summary: endSummary(rows, cfg, { solo: solo, best: best })
+      });
     }
 
     nextPlayer();
@@ -1232,7 +1212,6 @@ window.FF = window.FF || {};
     var lastCount = null;
     var nudged = {};
     var stuck = false;
-    var autoScores = null;
     var pending = null;
     var rivalDone = {};
     var lastResets = -1;
@@ -1256,16 +1235,15 @@ window.FF = window.FF || {};
       ended = true;
       clearInterval(ticker);
       if (pending) clearTimeout(pending);
-      if (autoScores) clearTimeout(autoScores);
       if (view) view.destroy();
       client.stop();
       if (FF.Race && FF.Race.end) { try { FF.Race.end(); } catch (e) { /* not running */ } }
     }
 
-    function finish() {
+    function finish(summary) {
       if (ended) return;
       cleanup();
-      api.end({});
+      api.end(summary ? { summary: summary } : {});
     }
 
     function notHere(sr) { return !sr || (expectedMatch() && sr.matchId !== expectedMatch()); }
@@ -1495,32 +1473,9 @@ window.FF = window.FF || {};
 
     function showEnd(sr, v) {
       finishedShown = true;
-      if (view) { view.destroy(); view = null; }
-      FF.ui.clear(root);
       var res = sr.result || { rows: [] };
-      var cfg = sr.settings;
       var rows = (res.rows || []).map(function (r) { return Object.assign({}, r, { who: who(r.uid), me: r.uid === v.uid }); });
-      var stage = FF.GameUI.stage({ center: true, className: 'srt srt-results' });
-      stage.setAttribute('data-srt-theme', theme());
-      stage.appendChild(FF.GameUI.kicker(t('srtName', 'SortRush') + ' · ' + modeLabel(cfg.mode)));
-      stage.appendChild(FF.GameUI.prompt(headline(rows, cfg, false), 'xl'));
-      var winners = rows.filter(function (r) { return r.place === 1 && r.moves; });
-      var second = rows.filter(function (r) { return r.place === 2; })[0];
-      if (winners.length === 1 && second) stage.appendChild(FF.GameUI.sub(t('srtRunnerUp', 'Runner-up: {name}', { name: second.me ? t('you', 'You') : second.who.name })));
-      var why = cfg.mode === 'score' ? t('srtWhyScore', 'The most points when time ran out wins.')
-        : res.why === 'time' ? t('srtWhyTime', 'Time ran out, so the most sorted holders counted.')
-          : res.why === 'lastCall' ? t('srtWhyLast', 'The last call ran out after the first finish.') : '';
-      if (why) stage.appendChild(FF.GameUI.note(why));
-      stage.appendChild(resultsTable(rows, cfg));
-      stage.appendChild(FF.GameUI.action(t('srtSeeScores', 'See scores'), function () { api.audio.play('click'); finish(); }, { icon: 'trophy' }));
-      root.appendChild(stage);
-      var mine = rows.filter(function (r) { return r.me; })[0];
-      var won = mine && winners.length === 1 && winners[0].me;
-      api.audio.play(won ? 'winner' : 'roundEnd');
-      if (won && animationsOn() && FF.Confetti) FF.Confetti.burst(90);
-      if (FF.UI.announce) FF.UI.announce(headline(rows, cfg, false));
-      if (FF.Nav && FF.Nav.focusFirst) FF.Nav.focusFirst(stage);
-      if (!autoScores) autoScores = setTimeout(finish, AUTO_SCORES_MS);
+      finish(endSummary(rows, sr.settings, { why: res.why }));
     }
 
     render();
@@ -1540,6 +1495,7 @@ window.FF = window.FF || {};
     tags: ['puzzle', 'colours', 'online', 'race'],
     modes: ['solo', 'turn'],
     defaultMode: 'solo',
+    setup: true,
     leaderboard: true,
     howToPlay: [
       'Holders are filled with mixed colours. Move them until every holder holds just one colour.',
@@ -1557,9 +1513,13 @@ window.FF = window.FF || {};
         playAll(api, R.sanitize(Object.assign({}, R.STANDARD, { style: saved.style || R.STANDARD.style })));
         return;
       }
-      setupScreen(api, function (cfg) { playAll(api, cfg); });
+      FF.GameUI.setupOrReplay(api, {
+        key: 'sortRush:setup', sanitize: R.sanitize,
+        show: function (play) { setupScreen(api, play); },
+        play: function (cfg) { playAll(api, cfg); }
+      });
     }
   });
 
-  FF.SortRushGame = { summary: summary, fields: fields, howLines: howLines, STYLE: STYLE };
+  FF.SortRushGame = { summary: summary, fields: fields, howLines: howLines, STYLE: STYLE, endSummary: endSummary };
 })();

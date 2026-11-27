@@ -125,17 +125,6 @@ window.FF = window.FF || {};
     sync();
     return b;
   }
-  function countUp(node, to, ms, fmt) {
-    fmt = fmt || function (v) { return FF.util && FF.util.formatNumber ? FF.util.formatNumber(v) : String(v); };
-    if (!animationsOn() || !to) { node.textContent = fmt(to); return; }
-    var start = Date.now();
-    var iv = setInterval(function () {
-      var p = Math.min(1, (Date.now() - start) / ms);
-      node.textContent = fmt(Math.round(to * (1 - Math.pow(1 - p, 3))));
-      if (p >= 1 || !node.isConnected) clearInterval(iv);
-    }, 30);
-  }
-
   /* The countdown ring: an SVG circle that empties as the sketch's time runs out. */
   function timerRing() {
     var wrap = el('div', 'skb-ring');
@@ -563,45 +552,8 @@ window.FF = window.FF || {};
 
   /* ================= results ================= */
 
-  /* opts: { deal, drawings, answers, ok: [bool], timeMs, title?, onDone, doneLabel, extra? (an element) } */
-  function resultsScreen(api, f, opts) {
-    FF.ui.clear(f.main);
-    FF.ui.clear(f.chips);
-    var s = R.score(opts.ok);
-    var wrap = el('section', 'skb-results' + (animationsOn() ? ' is-animated' : ''));
-    var head = el('div', 'skb-card skb-results__head');
-    head.appendChild(el('p', 'skb-results__kicker', opts.title || t('skbResults', 'Your results')));
-    var big = el('div', 'skb-results__score');
-    var pts = el('span', 'skb-results__pts', '0');
-    big.appendChild(pts);
-    big.appendChild(el('span', 'skb-results__unit', t('points', 'points')));
-    head.appendChild(big);
-    head.appendChild(el('p', 'skb-results__line', s.accuracy >= 80 ? t('skbGreatMemory', 'What a memory!')
-      : s.accuracy >= 50 ? t('skbGoodMemory', 'Nicely remembered.') : t('skbTryAgain', 'Tricky! Try again and draw the shape that stands out.')));
-    var stats = el('div', 'skb-stats');
-    [
-      [t('skbStatSketches', 'Sketches'), s.total],
-      [t('skbStatCorrect', 'Correct'), s.correct, 'is-good'],
-      [t('skbStatWrong', 'Wrong'), s.wrong, 'is-bad'],
-      [t('skbStatAccuracy', 'Accuracy'), s.accuracy, '', function (v) { return v + '%'; }],
-      [t('skbStatTime', 'Time to name'), opts.timeMs, '', clockText]
-    ].forEach(function (row) {
-      var tile = el('div', 'skb-stat ' + (row[2] || ''));
-      var v = el('span', 'skb-stat__v', '');
-      tile.appendChild(v);
-      tile.appendChild(el('span', 'skb-stat__k', row[0]));
-      stats.appendChild(tile);
-      if (row[4] === clockText) v.textContent = clockText(row[1]);
-      else countUp(v, row[1], 700, row[3]);
-    });
-    head.appendChild(stats);
-    var done = button('skb-btn--go skb-btn--big', 'trophy', opts.doneLabel || t('skbFinish', 'Finish'), function () { opts.onDone(); });
-    head.appendChild(done);
-    wrap.appendChild(head);
-    countUp(pts, s.points, 900);
-    if (opts.extra) wrap.appendChild(opts.extra);
-
-    wrap.appendChild(el('h3', 'skb-h skb-results__h', t('skbYourDrawings', 'Your drawings')));
+  /* Each drawing next to the original, with what was said. opts as endSummary's. */
+  function drawReview(holder, opts) {
     var list = el('ol', 'skb-review');
     opts.deal.forEach(function (id, k) {
       var good = !!opts.ok[k];
@@ -631,13 +583,32 @@ window.FF = window.FF || {};
       list.appendChild(li);
       setTimeout(function () { FF.SketchPad.paint(cv, R.decode(opts.drawings[k])); }, 0);
     });
-    wrap.appendChild(list);
-    f.main.appendChild(wrap);
+    holder.appendChild(list);
+  }
 
-    api.audio.play(s.accuracy >= 50 ? 'winner' : 'roundEnd');
-    if (s.accuracy >= 80 && animationsOn() && FF.Confetti) FF.Confetti.burst(90);
-    if (FF.Nav && FF.Nav.focusFirst) FF.Nav.focusFirst(head);
-    return s;
+  /* What the end screen shows (FF.EndScreen). Pure apart from the panel's draw.
+     opts: { deal, drawings, answers, ok: [bool], timeMs, title?, extra? (elements to add under the drawings) } */
+  function endSummary(opts) {
+    var sc = R.score(opts.ok);
+    return {
+      kicker: opts.title || t('skbResults', 'Your results'),
+      headline: sc.accuracy >= 80 ? t('skbGreatMemory', 'What a memory!')
+        : sc.accuracy >= 50 ? t('skbGoodMemory', 'Nicely remembered.') : t('skbTryAgain', 'Tricky! Try again and draw the shape that stands out.'),
+      stats: [
+        { icon: 'puzzle-piece', label: t('skbStatSketches', 'Sketches'), value: String(sc.total) },
+        { icon: 'check-circle', label: t('skbStatCorrect', 'Correct'), value: String(sc.correct) },
+        { icon: 'x-circle', label: t('skbStatWrong', 'Wrong'), value: String(sc.wrong) },
+        { icon: 'target', label: t('skbStatAccuracy', 'Accuracy'), value: sc.accuracy + '%' },
+        { icon: 'timer', label: t('skbStatTime', 'Time to name'), value: clockText(opts.timeMs || 0) }
+      ],
+      panel: {
+        title: t('skbYourDrawings', 'Your drawings'),
+        draw: function (holder) {
+          if (opts.deal.length) drawReview(holder, opts);
+          (opts.extra || []).forEach(function (x) { if (x) holder.appendChild(x); });
+        }
+      }
+    };
   }
 
   /* ================= solo ================= */
@@ -723,14 +694,11 @@ window.FF = window.FF || {};
         });
       }
       if (ok.length) api.audio.play(ok.some(Boolean) ? 'correct' : 'wrong');
-      resultsScreen(api, f, {
-        deal: run.deal, drawings: run.drawings, answers: answers, ok: ok,
-        timeMs: (run.recall.endedAt || Date.now()) - run.recall.startedAt,
-        onDone: function () {
-          var res = api.scoring.results ? api.scoring.results() : null;
-          var correct = ok.filter(Boolean).length;
-          api.end({ results: (res && res.results) || [], winnerId: res ? res.winnerId : null, quizCorrect: correct, quizAnswered: ok.length });
-        }
+      var res = api.scoring.results ? api.scoring.results() : null;
+      api.end({
+        results: (res && res.results) || [], winnerId: res ? res.winnerId : null,
+        quizCorrect: ok.filter(Boolean).length, quizAnswered: ok.length,
+        summary: endSummary({ deal: run.deal, drawings: run.drawings, answers: answers, ok: ok, timeMs: (run.recall.endedAt || Date.now()) - run.recall.startedAt })
       });
     }
 
@@ -754,7 +722,6 @@ window.FF = window.FF || {};
   /* ================= online ================= */
 
   var NUDGE_MS = 8000;               // this late, ask the server to wake the referee
-  var AUTO_SCORES_MS = 180000;       // the end screen moves on by itself after 3 minutes
 
   /* A room match: the referee (js/sketchback/referee.js) deals the objects and keeps the clock;
      this phone draws, keeps its drawings on the device, and sends them and its answers once. */
@@ -764,7 +731,7 @@ window.FF = window.FF || {};
     if (api.shell.hideTimer) api.shell.hideTimer();
     if (FF.Race && FF.Race.begin) FF.Race.begin(api.def.id, { rounds: 1, mode: 'parallel' });
     var client = C.create({ room: room, onChange: schedule });
-    var ended = false, pending = null, nudged = {}, autoScores = null;
+    var ended = false, pending = null, nudged = {};
     var mem = null, memFor = null;
     var shown = null;       // what is on screen: 'deal', 'brief', 'draw', 'between', 'watch', 'recall', 'named', 'end'
     var drawing = null;     // { k, screen, done }
@@ -795,17 +762,16 @@ window.FF = window.FF || {};
       ended = true;
       clearInterval(ticker);
       if (pending) clearTimeout(pending);
-      if (autoScores) clearTimeout(autoScores);
       stopDrawing();
       stopRecall();
       client.stop();
       if (FF.Race && FF.Race.end) { try { FF.Race.end(); } catch (e) { /* not running */ } }
     }
-    function finish() {
+    function finish(summary) {
       if (ended) return;
       if (mem) mem.forget();
       cleanup();
-      api.end({});
+      api.end(summary ? { summary: summary } : {});
     }
     function dueOf(skb) {
       switch (skb.phase) {
@@ -1080,27 +1046,16 @@ window.FF = window.FF || {};
       var res = skb.result;
       var rank = ranking(skb);
       var mine = res.rows.filter(function (r) { return r.uid === v.uid; })[0];
+      var extra = [rank.el, everyone(skb)];
       if (mine && res.ok[v.uid]) {
         var art = res.art[v.uid] ? String(res.art[v.uid]).split('|') : memory(skb).drawings(res.deal.length);
-        resultsScreen(api, f, {
+        finish(endSummary({
           deal: res.deal, drawings: art, answers: res.answers[v.uid] || [], ok: res.ok[v.uid], timeMs: mine.ms,
-          title: t('skbYourPlace', 'You came {place} of {n}', { place: placeName(mine.place), n: res.rows.length }),
-          doneLabel: t('srtSeeScores', 'See scores'), onDone: finish, extra: rank.el
-        });
+          title: t('skbYourPlace', 'You came {place} of {n}', { place: placeName(mine.place), n: res.rows.length }), extra: extra
+        }));
       } else {
-        FF.ui.clear(f.main);
-        FF.ui.clear(f.chips);
-        var wrap = el('section', 'skb-results');
-        wrap.appendChild(rank.el);
-        wrap.appendChild(button('skb-btn--go skb-btn--big', 'trophy', t('srtSeeScores', 'See scores'), finish));
-        f.main.appendChild(wrap);
-        api.audio.play('roundEnd');
+        finish({ panel: { title: t('skbEveryone', 'Everyone'), draw: function (holder) { extra.forEach(function (x) { if (x) holder.appendChild(x); }); } } });
       }
-      var wrapEl = f.main.querySelector('.skb-results');
-      if (wrapEl) wrapEl.appendChild(everyone(skb));
-      // The results screen already throws confetti for 80% and up.
-      if (rank.meWon && mine && R.score(res.ok[v.uid] || []).accuracy < 80 && animationsOn() && FF.Confetti) FF.Confetti.burst(100);
-      if (!autoScores) autoScores = setTimeout(finish, AUTO_SCORES_MS);
     }
 
     render();
@@ -1134,7 +1089,7 @@ window.FF = window.FF || {};
 
   /* ================= registration ================= */
 
-  FF.SketchBackGame = { summary: summary, drawScreen: drawScreen, recallScreen: recallScreen, resultsScreen: resultsScreen, frame: frame, sketchEl: sketchEl, online: online, room: ROOM };
+  FF.SketchBackGame = { summary: summary, drawScreen: drawScreen, recallScreen: recallScreen, endSummary: endSummary, frame: frame, sketchEl: sketchEl, online: online, room: ROOM };
 
   var preview = false;
   try { preview = !!(window.localStorage && window.localStorage.getItem('playmona:sketchPreview') === '1'); } catch (e) { /* storage off */ }
@@ -1151,6 +1106,7 @@ window.FF = window.FF || {};
     duration: 4,
     tags: ['memory', 'drawing', 'sketch', 'online'],
     modes: ['solo'],
+    setup: true,
     defaultMode: 'solo',
     leaderboard: true,
     room: ROOM,
@@ -1171,15 +1127,21 @@ window.FF = window.FF || {};
         return;
       }
       var fresh = newRun(api, R.STANDARD);   // the seed is drawn before the setup, as other games do
-      setupScreen(api, savedRun(api), function (cfg) {
-        if (!stillShown(api)) return;
-        if (!R.isStandard(cfg)) api.config.customRules = true;
-        fresh.settings = R.sanitize(cfg);
-        fresh.deal = R.deal(fresh.settings, fresh.seed);
-        play(api, fresh);
-      }, function (resume) {
-        if (!R.isStandard(resume.settings)) api.config.customRules = true;
-        play(api, resume);
+      FF.GameUI.setupOrReplay(api, {
+        key: SETUP_KEY, sanitize: R.sanitize,
+        show: function (go) {
+          setupScreen(api, savedRun(api), go, function (resume) {
+            if (!R.isStandard(resume.settings)) api.config.customRules = true;
+            play(api, resume);
+          });
+        },
+        play: function (cfg) {
+          if (!stillShown(api)) return;
+          if (!R.isStandard(cfg)) api.config.customRules = true;
+          fresh.settings = R.sanitize(cfg);
+          fresh.deal = R.deal(fresh.settings, fresh.seed);
+          play(api, fresh);
+        }
       });
     }
   });
