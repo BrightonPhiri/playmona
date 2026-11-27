@@ -154,20 +154,20 @@ test('nc sums: check takes digits only', () => {
   assert(!R.check(q, '') && !R.check(q, '8') && !R.check(q, 'seven') && !R.check(q, null) && !R.check(q, '7.0') && !R.check(q, '-7'));
 });
 
-test('nc points: standard Quick sums score exactly as the old game; Sprint by tier', () => {
+test('nc points: Quick is 10 plus speed up to 5 (Expert +3); Sprint by tier', () => {
   const R = Rof();
-  assertEqual(R.points('quick', { level: 'normal', ms: 1500, right: true }), 225);
-  assertEqual(R.points('quick', { level: 'normal', ms: 8500, right: true }), 188);
-  assertEqual(R.points('quick', { level: 'normal', ms: 20000, right: true }), 150);
-  assertEqual(R.points('quick', { level: 'easy', ms: 2000, right: true }), 150);
-  assertEqual(R.points('quick', { level: 'expert', ms: 20000, right: true }), 250);
+  assertEqual(R.points('quick', { level: 'normal', ms: 1500, right: true }), 15);
+  assertEqual(R.points('quick', { level: 'normal', ms: 8500, right: true }), 13);
+  assertEqual(R.points('quick', { level: 'normal', ms: 20000, right: true }), 10);
+  assertEqual(R.points('quick', { level: 'easy', ms: 2000, right: true }), 15);
+  assertEqual(R.points('quick', { level: 'expert', ms: 20000, right: true }), 13);
   assertEqual(R.points('quick', { level: 'hard', ms: 0, right: false }), 0);
-  assertEqual(R.points('sprint', { level: 'normal', tier: 3, right: true }), 60);
-  assertEqual(R.points('sprint', { level: 'expert', tier: 5, right: true }), 125);
+  assertEqual(R.points('sprint', { level: 'normal', tier: 3, right: true }), 3);
+  assertEqual(R.points('sprint', { level: 'expert', tier: 5, right: true }), 5);
   assertEqual(R.points('sprint', { level: 'easy', tier: 1, right: false }), 0);
   assertEqual(R.tierAt(0), 1); assertEqual(R.tierAt(3), 1); assertEqual(R.tierAt(4), 2); assertEqual(R.tierAt(16), 5); assertEqual(R.tierAt(140), 5);
   assertEqual(R.penaltyMs('easy'), 2000); assertEqual(R.penaltyMs('expert'), 3000);
-  assertEqual(R.speedBonus(null), 0); assertEqual(R.speedBonus(15000), 0); assertEqual(R.speedBonus(2000), 50);
+  assertEqual(R.speedBonus(null), 0); assertEqual(R.speedBonus(15000), 0); assertEqual(R.speedBonus(2000), 5);
 });
 
 test('nc sums: a missing-number choice is never a number shown in the sum', () => {
@@ -236,11 +236,11 @@ test('nc chain: choices 4 distinct, one right, and chainText writes it out', () 
 
 test('nc chain: points', () => {
   const R = Rof();
-  assertEqual(R.points('chain', { level: 'normal', steps: 5, ms: 0, limitMs: 10000, right: true }), 300);
-  assertEqual(R.points('chain', { level: 'expert', steps: 7, ms: 16000, limitMs: 16000, right: true }), 390);
-  assertEqual(R.points('chain', { level: 'easy', steps: 3, ms: 5000, limitMs: 10000, right: true }), 155);
+  assertEqual(R.points('chain', { level: 'normal', steps: 5, ms: 0, limitMs: 10000, right: true }), 15);
+  assertEqual(R.points('chain', { level: 'expert', steps: 7, ms: 16000, limitMs: 16000, right: true }), 13);
+  assertEqual(R.points('chain', { level: 'easy', steps: 3, ms: 5000, limitMs: 10000, right: true }), 13);
   assertEqual(R.points('chain', { level: 'hard', steps: 7, ms: 1000, limitMs: 10000, right: false }), 0);
-  assertEqual(R.points('chain', { level: 'easy', steps: 3, ms: 1000, limitMs: 0, right: true }), 130);
+  assertEqual(R.points('chain', { level: 'easy', steps: 3, ms: 1000, limitMs: 0, right: true }), 10);
 });
 
 /* ---------- make the target ---------- */
@@ -321,16 +321,16 @@ test('nc target: the solver finds an exact way, and an all-tile way when asked',
 
 test('nc target: points bands', () => {
   const R = Rof();
-  assertEqual(R.points('target', { level: 'normal', off: 0, usedAll: false, ms: 0, limitMs: 60000 }), 225);
-  assertEqual(R.points('target', { level: 'easy', off: 2, ms: 0, limitMs: 45000 }), 50);
-  assertEqual(R.points('target', { level: 'easy', off: 4, ms: 0, limitMs: 45000 }), 25);
+  assertEqual(R.points('target', { level: 'normal', off: 0, usedAll: false, ms: 0, limitMs: 60000 }), 10);
+  assertEqual(R.points('target', { level: 'easy', off: 2, ms: 0, limitMs: 45000 }), 5);
+  assertEqual(R.points('target', { level: 'easy', off: 4, ms: 0, limitMs: 45000 }), 3);
   assertEqual(R.points('target', { level: 'easy', off: 6, ms: 0, limitMs: 45000 }), 0);
-  assertEqual(R.points('target', { level: 'hard', off: 5, ms: 0, limitMs: 90000 }), 100);
-  assertEqual(R.points('target', { level: 'hard', off: 7, ms: 0, limitMs: 90000 }), 50);
+  assertEqual(R.points('target', { level: 'hard', off: 5, ms: 0, limitMs: 90000 }), 5);
+  assertEqual(R.points('target', { level: 'hard', off: 7, ms: 0, limitMs: 90000 }), 3);
   assertEqual(R.points('target', { level: 'hard', off: 11, ms: 0, limitMs: 90000 }), 0);
-  assertEqual(R.points('target', { level: 'expert', off: 0, usedAll: true, ms: 120000, limitMs: 120000 }), 250);
-  assertEqual(R.points('target', { level: 'expert', off: 0, usedAll: false, ms: 120000, limitMs: 120000 }), 200);
-  assertEqual(R.points('target', { level: 'expert', off: 3, usedAll: true, ms: 0, limitMs: 120000 }), 100);
+  assertEqual(R.points('target', { level: 'expert', off: 0, usedAll: true, ms: 120000, limitMs: 120000 }), 13);
+  assertEqual(R.points('target', { level: 'expert', off: 0, usedAll: false, ms: 120000, limitMs: 120000 }), 10);
+  assertEqual(R.points('target', { level: 'expert', off: 3, usedAll: true, ms: 0, limitMs: 120000 }), 5);
   assertEqual(R.points('target', { level: 'normal', off: null }), 0);
 });
 
@@ -385,11 +385,11 @@ test('nc deal: player 2 is matched in kind and tier but has different numbers', 
 
 /* ---------- judging an answer, and the Sprint clock (shared by the screen and the referee) ---------- */
 
-test('nc judge: a standard run answered right at 1.5 s scores 10 x 225, as the old game', () => {
+test('nc judge: a standard run answered right at 1.5 s scores 10 x 15', () => {
   const R = Rof();
   const items = R.deal(R.STANDARD, 'old-game').items;
   const total = items.reduce((sum, it) => sum + R.judge(R.STANDARD, it, String(it.answer), 1500).points, 0);
-  assertEqual(total, 2250);
+  assertEqual(total, 150);
   assertEqual(R.judge(R.STANDARD, items[0], String(items[0].answer + 1), 1500), { ok: false, points: 0 });
   assertEqual(R.judge(R.STANDARD, items[0], null, 20000).ok, false);
 });
@@ -398,11 +398,11 @@ test('nc judge: chain and target answers', () => {
   const R = Rof();
   const cs = R.sanitize({ mode: 'chain', level: 'normal' });
   const c = R.deal(cs, 'j').items[0];
-  assertEqual(R.judge(cs, c, String(c.answer), 0).points, 300);
+  assertEqual(R.judge(cs, c, String(c.answer), 0).points, 15);
   const ts = R.sanitize({ mode: 'target', level: 'expert' });
   const tg = R.deal(ts, 'j').items[0];
   const exact = R.judge(ts, tg, R.submitText(tg.solution, tg.target), 120000);
-  assertEqual(exact, { ok: true, points: 250, off: 0, usedAll: true, value: tg.target });
+  assertEqual(exact, { ok: true, points: 13, off: 0, usedAll: true, value: tg.target });
   const one = R.judge(ts, tg, R.submitText('', tg.tiles[0]), 0);
   assertEqual(one.ok, false, 'ok means the target was hit');
   assertEqual(one.points, R.points('target', { level: 'expert', off: one.off, usedAll: false, ms: 0, limitMs: 120000 }));
@@ -416,7 +416,7 @@ test('nc sprint: a wrong answer takes the penalty off the end and moves on', () 
   const st = R.sprintCreate(s, 1000);
   assertEqual(R.sprintEndAt(st), 61000);
   const a = R.sprintAnswer(st, items, String(items[0].answer), 2000);
-  assertEqual([a.right, a.points, a.penaltyMs, st.i, st.score], [true, 30, 0, 1, 30]);
+  assertEqual([a.right, a.points, a.penaltyMs, st.i, st.score], [true, 1, 0, 1, 1]);
   const b = R.sprintAnswer(st, items, '99999', 3000);
   assertEqual([b.right, b.points, b.penaltyMs, st.i, st.wrong], [false, 0, 3000, 2, 1]);
   assertEqual(R.sprintEndAt(st), 58000);

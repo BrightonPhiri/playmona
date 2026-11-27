@@ -316,22 +316,22 @@ window.FF = window.FF || {};
 
   /* ---------- points ---------- */
 
-  var BASE = { gone: 100, added: 100, swapped: 150, several: 100 };   // several: per right gap
-  var SPEED_MAX = 50;
-  var EXPERT_BONUS = 50;                                               // per right answer or gap
-  var STREAKS = [[5, 1.5], [3, 1.2]];
+  var BASE = { gone: 10, added: 10, swapped: 10, several: 10 };      // several: per right gap
+  var SPEED_MAX = 5;
+  var EXPERT_BONUS = 5;                                                // per right answer or gap
+  var STREAKS = [[5, 5], [3, 2]];                                      // [answers in a row, flat bonus]
 
-  function streakMult(streak) {
+  function streakBonus(streak) {
     for (var i = 0; i < STREAKS.length; i++) if (streak >= STREAKS[i][0]) return STREAKS[i][1];
-    return 1;
+    return 0;
   }
 
   /* A round's points. streak counts this answer when it was right. Speed and the streak
-     multiplier only for a fully right answer; Several gone still scores its right gaps. */
+     bonus only for a fully right answer; Several gone still scores its right gaps. */
   function points(o) {
     o = o || {};
     var round = o.round, res = o.res || { ok: false, rightGaps: 0 };
-    var out = { base: 0, speed: 0, bonus: 0, mult: 1, total: 0 };
+    var out = { base: 0, speed: 0, bonus: 0, streak: 0, total: 0 };
     if (!round || !res.rightGaps) return out;
     out.base = round.twist === 'several' ? BASE.several * res.rightGaps : (res.ok ? BASE[round.twist] : 0);
     if (!out.base) return out;
@@ -340,9 +340,9 @@ window.FF = window.FF || {};
       var secs = o.secs || round.secs || ANSWER_SECS;
       var left = Math.max(0, Math.min(1, 1 - (o.ms || 0) / (secs * 1000)));
       out.speed = Math.round(SPEED_MAX * left);
-      out.mult = streakMult(o.streak || 0);
+      out.streak = streakBonus(o.streak || 0);
     }
-    out.total = Math.round((out.base + out.speed + out.bonus) * out.mult);
+    out.total = out.base + out.speed + out.bonus + out.streak;
     return out;
   }
 
@@ -355,6 +355,6 @@ window.FF = window.FF || {};
     cards: cards, cardOf: cardOf, spellable: spellable,
     picturesAt: picturesAt, grid: grid, twistsAllowed: twistsAllowed, twistPlan: twistPlan, deal: deal,
     BASE: BASE, SPEED_MAX: SPEED_MAX, EXPERT_BONUS: EXPERT_BONUS, STREAKS: STREAKS,
-    checkName: checkName, check: check, streakMult: streakMult, points: points
+    checkName: checkName, check: check, streakBonus: streakBonus, points: points
   };
 })();

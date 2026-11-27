@@ -262,12 +262,12 @@ test('rules: points and the streak table', function () {
   assertEqual(P({ level: 'hard', ok: false, ms: 1000, secs: 25, streak: 5 }).total, 0);
   const at = (level) => P({ level: level, ok: true, ms: 5000, secs: 25, streak: 1 }).total;
   assert(at('hard') > at('normal') && at('normal') > at('easy'), 'level weights');
-  assertEqual(P({ level: 'easy', ok: true, ms: 0, secs: 25, streak: 1 }).speed, 50);
+  assertEqual(P({ level: 'easy', ok: true, ms: 0, secs: 25, streak: 1 }).speed, 5);
   assertEqual(P({ level: 'easy', ok: true, ms: 25000, secs: 25, streak: 1 }).speed, 0);
   assertEqual(P({ level: 'easy', ok: true, ms: 1000, secs: null, streak: 1 }).speed, 0);
-  assertEqual(P({ level: 'easy', ok: true, ms: 1000, secs: null, streak: 1, two: true }).two, 50);
-  assertEqual(P({ level: 'easy', ok: true, ms: 1000, secs: null, streak: 1 }).base, 100);
-  assertEqual([1, 2, 3, 4, 5, 6, 9].map((n) => P({ level: 'easy', ok: true, ms: 0, secs: null, streak: n }).streak), [0, 0, 25, 50, 75, 100, 100]);
+  assertEqual(P({ level: 'easy', ok: true, ms: 1000, secs: null, streak: 1, two: true }).two, 5);
+  assertEqual(P({ level: 'easy', ok: true, ms: 1000, secs: null, streak: 1 }).base, 6);
+  assertEqual([1, 2, 3, 4, 5, 6, 9].map((n) => P({ level: 'easy', ok: true, ms: 0, secs: null, streak: n }).streak), [0, 0, 1, 2, 3, 4, 5]);
   assertEqual(R().secondsFor({ answer: 'choice', time: 'quick' }, { gaps: ['x'] }), 8);
   assertEqual(R().secondsFor({ answer: 'tiles', time: 'relaxed' }, { gaps: ['x'] }), 40);
   assertEqual(R().secondsFor({ answer: 'tiles', time: 'none' }, { gaps: ['x'] }), null);

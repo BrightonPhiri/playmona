@@ -31,6 +31,8 @@ window.FF = window.FF || {};
   var LEVELS = ['easy', 'normal', 'hard'];
   var LEVEL_ROWS = { easy: ['easy'], normal: ['easy', 'normal'], hard: ['normal', 'hard'] };
   var WEIGHT = { easy: 1, normal: 2, hard: 3 };
+  var BASE = { easy: 6, normal: 8, hard: 10 };   // a right answer, by level
+  var TWO_POINTS = 5;                            // a saying with two gaps
   var ANSWERS = ['tiles', 'choice'];
   var TIMES = ['quick', 'normal', 'relaxed', 'none'];
   var SECONDS = { tiles: { quick: 15, normal: 25, relaxed: 40 }, choice: { quick: 8, normal: 12, relaxed: 18 } };
@@ -290,17 +292,17 @@ window.FF = window.FF || {};
   function points(o) {
     var out = { base: 0, speed: 0, two: 0, streak: 0, total: 0 };
     if (!o || !o.ok) return out;
-    out.base = 100 * (WEIGHT[o.level] || 1);
-    if (o.secs) out.speed = Math.round(50 * Math.max(0, 1 - (o.ms || 0) / (o.secs * 1000)));
-    if (o.two) out.two = 50;
+    out.base = BASE[o.level] || BASE.easy;
+    if (o.secs) out.speed = Math.round(5 * Math.max(0, 1 - (o.ms || 0) / (o.secs * 1000)));
+    if (o.two) out.two = TWO_POINTS;
     var n = o.streak || 0;
-    out.streak = n < 3 ? 0 : Math.min(100, 25 * (n - 2));
+    out.streak = n < 3 ? 0 : Math.min(5, n - 2);
     out.total = out.base + out.speed + out.two + out.streak;
     return out;
   }
 
   FF.SayWhatRules = {
-    PACKS: PACKS, LEVELS: LEVELS, WEIGHT: WEIGHT, ANSWERS: ANSWERS, TIMES: TIMES, SECONDS: SECONDS,
+    PACKS: PACKS, LEVELS: LEVELS, WEIGHT: WEIGHT, BASE: BASE, TWO_POINTS: TWO_POINTS, ANSWERS: ANSWERS, TIMES: TIMES, SECONDS: SECONDS,
     TWO_EXTRA: TWO_EXTRA, ROUNDS: ROUNDS, STANDARD: STANDARD, MIN_PLAYERS: 2, MAX_PLAYERS: 8,
     REVEAL_MS: 5000, MAX_TILES: 30,
     hash: hash, rng: rng, shuffle: shuffle,

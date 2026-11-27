@@ -967,8 +967,8 @@ window.FF = window.FF || {};
     /* The referee sends the total and the streak bonus; the rest is worked out the same way it scored. */
     function breakdownOf(mine, sw) {
       var rd = sw.round || {};
-      var base = 100 * (R.WEIGHT[rd.level] || 1);
-      var two = rd.two ? 50 : 0;
+      var base = R.BASE[rd.level] || R.BASE.easy;
+      var two = rd.two ? R.TWO_POINTS : 0;
       var bonus = mine.bonus || 0;
       return { base: base, speed: Math.max(0, (mine.points || 0) - base - two - bonus), two: two, streak: bonus };
     }

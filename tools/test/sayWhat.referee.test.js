@@ -171,7 +171,7 @@ test('saywhat referee: a right answer scores by speed, a wrong one 0, results to
   assertEqual(g.last.results.p2.text, 'zebra', 'the results show what was sent');
 });
 
-test('saywhat referee: the streak bonus reaches +25 on the third right answer in a row', async function () {
+test('saywhat referee: the streak bonus starts at +1 on the third right answer in a row', async function () {
   const m = await match({ settings: { rounds: 10 } });
   const got = [];
   for (let k = 0; k < 3; k++) {
@@ -181,7 +181,7 @@ test('saywhat referee: the streak bonus reaches +25 on the third right answer in
     got.push(m.sw().last.results.p1.bonus);
     assertEqual(m.sw().p.p1.streak, k + 1);
   }
-  assertEqual(got.join(), '0,0,25');
+  assertEqual(got.join(), '0,0,1');
   assertEqual(m.sw().p.p2.streak, 0);
   await m.open();
   await m.answer('p1', 'wrong');
@@ -201,7 +201,7 @@ test('saywhat referee: a two-gap answer needs both words', async function () {
       const g = m.sw();
       assert(!g.last.results.p1.ok, 'one word of two is not right');
       assert(g.last.results.p2.ok, 'both words are');
-      assert(g.p.p2.score >= 100 * 3 + 50 || g.p.p2.score >= 100 * 2 + 50, 'two-gap bonus counted');
+      assert(g.p.p2.score >= 10 + 5 || g.p.p2.score >= 8 + 5, 'two-gap bonus counted');
       done = true;
     } else {
       await m.answer('p1', 'x');
@@ -275,7 +275,7 @@ test('saywhat referee: the match ends ranked by points, ties by total time, and 
   const g = m.sw();
   assertEqual(g.phase, 'ended');
   assertEqual(g.result.rows[0].uid, 'p2', 'same right answers, p2 faster: p2 ahead');
-  assert(g.result.rows[0].points > g.result.rows[1].points, 'speed points split them');
+  assert(g.result.rows[0].points >= g.result.rows[1].points, 'speed points never put the slower one ahead (equal points fall to total time)');
   assertEqual(g.result.rows[0].place, 1);
   assertEqual(g.result.rows[1].place, 2);
   assertEqual(g.result.rows[0].best, 10, 'best streak');

@@ -111,4 +111,42 @@ test('points: logo rush scores 6 / 8 / 10, speed up to 5 (10 zoomed), bonuses up
   Object.keys(LR.BONUS).forEach(function (k) { within('logo bonus ' + k, LR.BONUS[k], 5); });
 });
 
+/* ---------------- Task 4: Say What?, What's Missing?, Number Challenge ---------------- */
+
+test('points: say what scores 6 / 8 / 10, speed up to 5, two gaps +5, streak up to 5', function () {
+  const SW = loadFF(['js/core.js', 'js/answerMatch.js', 'js/spellTiles.js', 'js/data/sayings.js', 'js/saywhat/rules.js']).SayWhatRules;
+  const p = SW.points({ ok: true, level: 'hard', secs: 10, ms: 0, two: true, streak: 12 });
+  assertEqual([p.base, p.speed, p.two, p.streak, p.total], [10, 5, 5, 5, 25]);
+  assertEqual(SW.points({ ok: true, level: 'easy', streak: 3 }).streak, 1);
+  assertEqual(SW.points({ ok: true, level: 'normal', streak: 2 }).total, 8);
+  assertEqual(SW.BASE, { easy: 6, normal: 8, hard: 10 });
+  assertEqual(SW.TWO_POINTS, 5);
+});
+
+test('points: whats missing scores 10 a gap, speed up to 5, Expert +5 a gap, flat streak bonus', function () {
+  const WM = loadFF(['js/core.js', 'js/data/memoryDecks.js', 'js/answerMatch.js', 'js/data/memoryAliases.js', 'js/whatsmissing/rules.js']).WhatsMissingRules;
+  const p = WM.points({ round: { twist: 'several', spell: true, secs: 20 }, res: { ok: true, rightGaps: 3 }, ms: 0, streak: 6 });
+  assertEqual([p.base, p.bonus, p.speed, p.streak, p.total], [30, 15, 5, 5, 55]);
+  assertEqual(WM.points({ round: { twist: 'gone', secs: 20 }, res: { ok: true, rightGaps: 1 }, ms: 0, streak: 3 }).streak, 2);
+  assertEqual(WM.points({ round: { twist: 'swapped', secs: 20 }, res: { ok: true, rightGaps: 2 }, ms: 20000, streak: 1 }).total, 10);
+  assertEqual(WM.points({ round: { twist: 'several', secs: 20 }, res: { ok: false, rightGaps: 1 }, ms: 0, streak: 0 }).total, 10, 'a part-right Several still scores its gap');
+  Object.keys(WM.BASE).forEach(function (k) { within('wm base ' + k, WM.BASE[k], 10); });
+  assertEqual([WM.streakBonus(2), WM.streakBonus(3), WM.streakBonus(5)], [0, 2, 5]);
+});
+
+test('points: number challenge scores 10 plus small bonuses, sprint 1 to 5 by tier', function () {
+  const NC = loadFF(['js/core.js', 'js/numberchallenge/rules.js']).NumberChallengeRules;
+  assertEqual(NC.points('quick', { right: true, ms: 0, level: 'expert' }), 18);
+  assertEqual(NC.points('quick', { right: true, ms: 20000, level: 'easy' }), 10);
+  assertEqual([1, 2, 3, 4, 5].map(function (tier) { return NC.points('sprint', { right: true, tier: tier, level: 'hard' }); }), [1, 2, 3, 4, 5]);
+  assertEqual(NC.points('chain', { right: true, ms: 0, limitMs: 30000, steps: 4, level: 'normal' }), 15);
+  assertEqual(NC.points('chain', { right: true, ms: 0, limitMs: 30000, steps: 4, level: 'expert' }), 18);
+  assertEqual(NC.points('target', { off: 0, level: 'normal' }), 10);
+  assertEqual(NC.points('target', { off: 0, level: 'expert', usedAll: true }), 13);
+  assertEqual(NC.points('target', { off: 3, level: 'normal' }), 5);
+  assertEqual(NC.points('target', { off: 8, level: 'normal' }), 3);
+  assertEqual(NC.points('target', { off: 30, level: 'normal' }), 0);
+  assertEqual(NC.points('quick', { right: false, ms: 0, level: 'hard' }), 0);
+});
+
 module.exports = { loadGame: loadGame, within: within, UI: UI };

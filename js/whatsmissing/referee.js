@@ -291,7 +291,7 @@ window.FF = window.FF || {};
       var pts = R.points({ round: rd, res: res, ms: ms, secs: rd.secs, streak: streak });
       var a = {
         k: state.k, ok: !!res.ok, right: res.right, rightGaps: res.rightGaps, ms: ms, pts: pts.total,
-        base: pts.base, speed: pts.speed, bonus: pts.bonus, mult: pts.mult, streak: streak
+        base: pts.base, speed: pts.speed, bonus: pts.bonus, streakPts: pts.streak, streak: streak
       };
       // What they said, for the results (picks and text as lists, slots as numbers).
       if (ans.slots) a.slots = ans.slots.map(function (s) { return isNaN(s) ? -1 : s; });

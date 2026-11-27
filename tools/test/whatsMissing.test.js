@@ -316,17 +316,17 @@ test('wm points: base, speed, streaks, partial gaps and the Expert bonus', funct
   const sev = findRound(R, { level: 'expert' }, 'several', 3);
   const eg = findRound(R, { level: 'expert' }, 'gone');
   const ok1 = { ok: true, right: [true], rightGaps: 1 };
-  assertEqual(R.points({ round: gone, res: ok1, ms: 0, secs: 20, streak: 1 }).total, 150);
-  assertEqual(R.points({ round: gone, res: ok1, ms: 20000, secs: 20, streak: 1 }).total, 100);
-  assertEqual(R.points({ round: gone, res: ok1, ms: 10000, secs: 20, streak: 1 }).total, 125);
-  assertEqual(R.points({ round: sw, res: { ok: true, right: [true, true], rightGaps: 2 }, ms: 0, secs: 20, streak: 3 }).total, 240);
+  assertEqual(R.points({ round: gone, res: ok1, ms: 0, secs: 20, streak: 1 }).total, 15);
+  assertEqual(R.points({ round: gone, res: ok1, ms: 20000, secs: 20, streak: 1 }).total, 10);
+  assertEqual(R.points({ round: gone, res: ok1, ms: 10000, secs: 20, streak: 1 }).total, 13);
+  assertEqual(R.points({ round: sw, res: { ok: true, right: [true, true], rightGaps: 2 }, ms: 0, secs: 20, streak: 3 }).total, 17);
   const part = R.points({ round: findRound(R, { level: 'hard' }, 'several', 2), res: { ok: false, right: [true, false], rightGaps: 1 }, ms: 0, secs: 25, streak: 0 });
-  assertEqual(JSON.stringify([part.base, part.speed, part.mult, part.total]), '[100,0,1,100]');
+  assertEqual(JSON.stringify([part.base, part.speed, part.streak, part.total]), '[10,0,0,10]');
   const sevPart = R.points({ round: sev, res: { ok: false, right: [true, true, false], rightGaps: 2 }, ms: 0, secs: 36, streak: 0 });
-  assertEqual(JSON.stringify([sevPart.base, sevPart.bonus, sevPart.total]), '[200,100,300]', 'Expert bonus per right gap');
-  assertEqual(R.points({ round: eg, res: ok1, ms: 0, secs: 26, streak: 5 }).total, 300);
+  assertEqual(JSON.stringify([sevPart.base, sevPart.bonus, sevPart.total]), '[20,10,30]', 'Expert bonus per right gap');
+  assertEqual(R.points({ round: eg, res: ok1, ms: 0, secs: 26, streak: 5 }).total, 25);
   assertEqual(R.points({ round: gone, res: { ok: false, right: [false], rightGaps: 0 }, ms: 0, secs: 20, streak: 0 }).total, 0);
-  assertEqual([R.streakMult(1), R.streakMult(3), R.streakMult(4), R.streakMult(5), R.streakMult(9)].join(), '1,1.2,1.2,1.5,1.5');
+  assertEqual([R.streakBonus(1), R.streakBonus(3), R.streakBonus(4), R.streakBonus(5), R.streakBonus(9)].join(), '0,2,2,5,5');
 });
 
 test('wm deal: pass and play grows Expert boards by lap (opts.step), each turn its own board', function () {

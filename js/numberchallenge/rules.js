@@ -523,39 +523,36 @@ window.FF = window.FF || {};
 
   /* ---------- points ---------- */
 
-  /* The old game's speed bonus: +50 at 2 s or less, fading to 0 by 15 s. */
+  /* Speed bonus: +5 at 2 s or less, fading to 0 by 15 s. */
   function speedBonus(ms) {
     if (ms == null) return 0;
     var t = ms / 1000;
-    if (t <= 2) return 50;
-    return Math.max(0, Math.min(50, Math.round(50 * (1 - (t - 2) / 13))));
+    if (t <= 2) return 5;
+    return Math.max(0, Math.min(5, Math.round(5 * (1 - (t - 2) / 13))));
   }
   function tierAt(i) { return Math.min(5, 1 + Math.floor(i / 4)); }
   function penaltyMs(level) { return level === 'easy' ? 2000 : 3000; }
   function points(mode, o) {
     o = o || {};
-    var w = WEIGHT[o.level] || WEIGHT.normal, expert = o.level === 'expert';
-    if (mode === 'quick') return o.right ? Math.round((100 + speedBonus(o.ms)) * w) + (expert ? 50 : 0) : 0;
-    if (mode === 'sprint') return o.right ? Math.round((10 + 10 * (o.tier || 1)) * w) + (expert ? 5 : 0) : 0;
-    if (mode === 'chain') {
-      if (!o.right) return 0;
-      return Math.round((100 + 10 * (o.steps || 0) + linearSpeed(o.ms, o.limitMs)) * w) + (expert ? 50 : 0);
-    }
+    var expert = o.level === 'expert';
+    if (mode === 'quick') return o.right ? 10 + speedBonus(o.ms) + (expert ? 3 : 0) : 0;
+    if (mode === 'sprint') return o.right ? Math.max(1, Math.min(5, o.tier || 1)) : 0;
+    if (mode === 'chain') return o.right ? 10 + linearSpeed(o.ms, o.limitMs) + (expert ? 3 : 0) : 0;
     if (mode === 'target') {
       var off = o.off;
       if (typeof off !== 'number' || off < 0) return 0;
-      if (off === 0) return Math.round((100 + linearSpeed(o.ms, o.limitMs)) * w) + (expert && o.usedAll ? 50 : 0);
+      if (off === 0) return 10 + (expert && o.usedAll ? 3 : 0);
       var near = o.level === 'easy' ? [2, 5] : [5, 10];
-      if (off <= near[0]) return Math.round(50 * w);
-      if (off <= near[1]) return Math.round(25 * w);
+      if (off <= near[0]) return 5;
+      if (off <= near[1]) return 3;
       return 0;
     }
     return 0;
   }
-  /* Up to +50, falling evenly to 0 at the time limit; none without a limit. */
+  /* Up to +5, falling evenly to 0 at the time limit; none without a limit. */
   function linearSpeed(ms, limitMs) {
     if (!limitMs || limitMs <= 0) return 0;
-    return Math.round(50 * Math.max(0, 1 - (ms || 0) / limitMs));
+    return Math.round(5 * Math.max(0, 1 - (ms || 0) / limitMs));
   }
   /* ---------- deals ---------- */
 

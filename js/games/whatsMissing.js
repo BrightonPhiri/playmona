@@ -506,7 +506,7 @@ window.FF = window.FF || {};
     var bits = [t('wmPtsBase', '{n} points', { n: pts.base })];
     if (pts.speed) bits.push(t('wmPtsSpeed', 'speed +{n}', { n: pts.speed }));
     if (pts.bonus) bits.push(t('wmPtsExpert', 'Expert +{n}', { n: pts.bonus }));
-    if (pts.mult > 1) bits.push(t('wmPtsStreak', 'streak ×{m}', { m: pts.mult }));
+    if (pts.streak) bits.push(t('wmPtsStreakPlus', 'streak +{n}', { n: pts.streak }));
     return bits.join(' · ');
   }
 
@@ -672,8 +672,8 @@ window.FF = window.FF || {};
       box.appendChild(head);
       var flame = FF.ui.span('wm-streak' + (st.streak >= 3 ? ' is-hot' : ''), t('gsStreakN', 'Streak {n}', { n: st.streak }));
       box.appendChild(flame);
-      var mult = R.streakMult(st.streak + 1);
-      if (mult > 1) box.appendChild(FF.ui.span('wm-streak__mult', t('gsNextX', 'Next ×{m}', { m: mult })));
+      var next = R.streakBonus(st.streak + 1);
+      if (next) box.appendChild(FF.ui.span('wm-streak__mult', t('gsNextPlus', 'Next +{n}', { n: next })));
       return box;
     }
 
@@ -776,7 +776,7 @@ window.FF = window.FF || {};
           st.best = Math.max(st.best, streak);
           if (st.fastest == null || ms < st.fastest) st.fastest = ms;
           api.scoring.add(entity.id, pts.total, { correct: true, fastest: ms / 1000 });
-          api.audio.play(R.streakMult(streak) > R.streakMult(streak - 1) ? 'streak' : 'correct');
+          api.audio.play(R.streakBonus(streak) > R.streakBonus(streak - 1) ? 'streak' : 'correct');
           if (animationsOn() && FF.Confetti) FF.Confetti.burst(streak >= 3 ? 60 : 30);
         } else {
           st.streak = 0;
@@ -1181,7 +1181,7 @@ window.FF = window.FF || {};
       if (line) rc.appendChild(FF.ui.el('p', { class: 'wm-reveal__said' }, line));
       if (mine.pts) {
         rc.appendChild(FF.ui.el('p', { class: 'wm-reveal__pts' }, '+' + FF.util.formatNumber(mine.pts)));
-        rc.appendChild(FF.ui.el('p', { class: 'wm-reveal__why' }, pointsLine({ base: mine.base || 0, speed: mine.speed || 0, bonus: mine.bonus || 0, mult: mine.mult || 1 })));
+        rc.appendChild(FF.ui.el('p', { class: 'wm-reveal__why' }, pointsLine({ base: mine.base || 0, speed: mine.speed || 0, bonus: mine.bonus || 0, streak: mine.streakPts || 0 })));
       }
       after.appendChild(rc);
       after.appendChild(FF.ui.el('p', { class: 'wm-note wm-nextin' }, wm.k + 1 >= wm.total ? t('gsFinalSoon', 'Final results coming up…') : t('wmNextSoon', 'Next board in a moment…')));
