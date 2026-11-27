@@ -30,10 +30,9 @@ window.FF = window.FF || {};
   var COUNTS = [5, 7, 10];
   var PICTURES = [1, 3];
   var SECONDS = { 5: 90, 7: 120, 10: 150 };
-  var BONUS = { 5: 1, 7: 1.5, 10: 2 };
-  var FIND = 100;
-  var WRONG = 20;
-  var SPEED = 200;
+  var FIND = 5;                // a difference found
+  var WRONG = 1;               // a tap on no difference
+  var SPEED = 10;              // the most for finding them all quickly
   var MARGIN = 0.03;           // finger room round each spot, as a share of the picture
   var ART = 'games/spotDifference';
 
@@ -118,14 +117,14 @@ window.FF = window.FF || {};
     return best !== -1 ? best : again ? -2 : -1;
   }
 
-  /* st: { found, total, wrong, usedMs }. Finds score 100 x the level bonus;
-     finding them all adds up to 200 more for speed; wrong taps cost 20. */
+  /* st: { found, total, wrong, usedMs }. 5 a find on every level; finding
+     them all adds up to 10 more for speed; a wrong tap costs 1. Never below 0. */
   function points(st, limitMs) {
     var pts = (st.found || 0) * FIND;
     if (st.found >= st.total && limitMs > 0) {
       pts += Math.round(SPEED * Math.max(0, Math.min(1, 1 - (st.usedMs || 0) / limitMs)));
     }
-    return Math.max(0, Math.round((BONUS[st.total] || 1) * pts) - (st.wrong || 0) * WRONG);
+    return Math.max(0, pts - (st.wrong || 0) * WRONG);
   }
 
   function pct(v) { return (+(v * 100).toFixed(3)) + '%'; }
@@ -573,7 +572,7 @@ window.FF = window.FF || {};
   };
 
   FF.SpotDifference = {
-    COUNTS: COUNTS, PICTURES: PICTURES, SECONDS: SECONDS, BONUS: BONUS, MARGIN: MARGIN, STANDARD: STANDARD, ART: ART,
+    COUNTS: COUNTS, PICTURES: PICTURES, SECONDS: SECONDS, MARGIN: MARGIN, STANDARD: STANDARD, ART: ART,
     defaults: defaults, sanitize: sanitize, isStandard: isStandard, secondsFor: secondsFor,
     pairs: pairs, deal: deal, dealPair: dealPair, hit: hit, points: points, patchStyle: patchStyle,
     summary: summary, fields: fields, ROOM: ROOM
@@ -595,7 +594,7 @@ window.FF = window.FF || {};
       'Two pictures look the same, but the second has changes.',
       'Tap each change on either picture. Each find is circled on both.',
       'On a phone, swipe (or use Original / Changed) to flip between them.',
-      'Finds score points; wrong taps cost 20. Find them all quickly for a bonus.'
+      'Each find scores 5; a wrong tap costs 1. Find them all quickly for up to 10 more.'
     ],
     room: ROOM,
     start: function (api) {

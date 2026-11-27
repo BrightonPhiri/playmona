@@ -96,13 +96,13 @@ test('spot difference: taps count inside a live spot, with a finger margin', fun
 test('spot difference: points', function () {
   const S = load().SpotDifference;
   const limit = S.secondsFor(7) * 1000;
-  assertEqual(S.points({ found: 3, total: 7, wrong: 0, usedMs: 1000 }, limit), 450, '100 each, x1.5 on Normal');
-  assertEqual(S.points({ found: 3, total: 5, wrong: 2, usedMs: 1000 }, limit), 260, 'wrong taps cost 20');
+  assertEqual(S.points({ found: 3, total: 7, wrong: 0, usedMs: 1000 }, limit), 15, '5 each, on every level');
+  assertEqual(S.points({ found: 3, total: 5, wrong: 2, usedMs: 1000 }, limit), 13, 'wrong taps cost 1');
   assertEqual(S.points({ found: 0, total: 10, wrong: 9, usedMs: 1000 }, limit), 0, 'never below zero');
   const fast = S.points({ found: 7, total: 7, wrong: 0, usedMs: 0 }, limit);
   const slow = S.points({ found: 7, total: 7, wrong: 0, usedMs: limit }, limit);
-  assertEqual(slow, 1050);
-  assertEqual(fast, 1050 + 300, 'all found at once: +200 speed, x1.5');
+  assertEqual(slow, 35);
+  assertEqual(fast, 35 + 10, 'all found at once: +10 speed');
   assert(S.secondsFor(5) < S.secondsFor(7) && S.secondsFor(7) < S.secondsFor(10), 'more differences, more time');
 });
 

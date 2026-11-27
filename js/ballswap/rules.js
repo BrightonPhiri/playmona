@@ -35,7 +35,7 @@ window.FF = window.FF || {};
   var MIN_PLAYERS = 2;
   var MAX_PLAYERS = 8;
   var LAST_CALL_MS = 15000;                 // once someone finishes, the others get this long
-  var POINTS = { swap: 20, finish: 300, speed: 300, clean: 100, mistake: 10 };
+  var POINTS = { swap: 1, finish: 10, speed: 10, clean: 5, mistake: 1 };
 
   var STANDARD = { level: 'medium', colours: 2, seconds: 90, mistakes: 3, show: 'always' };
 

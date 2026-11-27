@@ -178,4 +178,64 @@ test('points: blink and remember is 5 a box, +10 all right, speed up to 5', func
   assertEqual(BR.points(0, 6, 0), 0);
 });
 
+/* ---------------- Task 6: picture, puzzle and reaction games ---------------- */
+
+test('points: picture rush is 10 a picture, speed up to 10, part-solved up to 5, hints -2, on every grid', function () {
+  const PR = loadGame(['js/core.js', 'js/data/visual.js', 'js/data/visual2.js', 'js/data/pictureRush.js', 'js/celebrate/pictureRush/rules.js'], ['js/games/pictureRush.js']).PictureRush;
+  [3, 4, 5, 6].forEach(function (g) { assertEqual(PR.points({ solved: true, usedMs: 0, hints: 0 }, g), 20, 'grid ' + g); });
+  assertEqual(PR.points({ solved: true, usedMs: 0, hints: 1 }, 4), 18);
+  assertEqual(PR.points({ solved: true, usedMs: 9e9, hints: 9 }, 4), 0, 'never below zero');
+  within('part-solved', PR.points({ solved: false, correct: 15, startCorrect: 2 }, 4), 5);
+  assertEqual(PR.SCORING, { base: 10, speed: 10, hintCost: 2, partial: 5 });
+});
+
+test('points: spot the difference and hidden object are 5 a find, speed up to 10, wrong taps -1', function () {
+  const SD = loadGame(['js/core.js', 'js/data/spotDifference.js'], ['js/games/spotDifference.js']).SpotDifference;
+  const HO = loadGame(['js/core.js', 'js/data/hiddenObject.js'], ['js/games/hiddenObject.js']).HiddenObject;
+  [[SD, 5], [SD, 10], [HO, 6], [HO, 12]].forEach(function (x) {
+    const G = x[0], n = x[1];
+    assertEqual(G.points({ found: n, total: n, wrong: 0, usedMs: 0 }, 90000), n * 5 + 10);
+    assertEqual(G.points({ found: n, total: n, wrong: 2, usedMs: 90000 }, 90000), n * 5 - 2);
+    assertEqual(G.points({ found: 0, total: n, wrong: 50, usedMs: 0 }, 90000), 0);
+  });
+});
+
+test('points: sort rush and ball swap use small points', function () {
+  const SR = loadFF(['js/core.js', 'js/sortrush/rules.js']).SortRushRules;
+  const BS = loadFF(['js/core.js', 'js/ballswap/rules.js']).BallSwapRules;
+  assertEqual(SR.POINTS, { holder: 5, clear: 3, efficiency: 5, finish: 10, speed: 10, sorted: 1 });
+  assertEqual(BS.POINTS, { swap: 1, finish: 10, speed: 10, clean: 5, mistake: 1 });
+});
+
+test('points: number rush is 1 a number with finish, speed, survive and clean bonuses up to 10', function () {
+  const NR = loadGame(['js/core.js'], ['js/games/numberRush.js']).NumberRush;
+  assertEqual(NR.points({ found: 30, total: 30, full: true, used: 0, mistakes: 0 }, { mode: 'race', seconds: 60 }), 30 + 10 + 10 + 5);
+  assertEqual(NR.points({ found: 30, total: 30, full: true, used: 60000, mistakes: 2 }, { mode: 'race', seconds: 60 }), 40);
+  assertEqual(NR.points({ found: 12, elim: false }, { mode: 'survival', seconds: 60 }), 22);
+  assertEqual(NR.points({ found: 12, elim: true, used: 35000 }, { mode: 'survival', seconds: 60 }), 15);
+  assertEqual(NR.points({ found: 12, elim: true, used: 600000 }, { mode: 'survival', seconds: 60 }), 17, 'survival extra stops at 5');
+  assertEqual(NR.points({ found: 10, combo: 6 }, { mode: 'score', seconds: 60 }), 16);
+  assertEqual([NR.comboBonus(500), NR.comboBonus(1200), NR.comboBonus(3000)], [2, 1, 0]);
+});
+
+test('points: quick tap tiers are 10 / 8 / 6 / 4 / 2 and room places 10 / 8 / 6, then 4', function () {
+  const QT = loadGame(['js/core.js'], ['js/games/reactionGames.js']).QuickTap;
+  assertEqual(QT.TIERS.map(function (t) { return t.points; }), [10, 8, 6, 4, 2]);
+  assertEqual([1, 2, 3, 4, 9].map(function (p) { return QT.placePoints(p); }), [10, 8, 6, 4, 4]);
+  assertEqual(QT.tierPoints(150), 10);
+  assertEqual(QT.tierPoints(null), 0);
+});
+
+test('points: in survival whoever is still in places above anyone knocked out, whatever their points', function () {
+  const NR = loadGame(['js/core.js'], ['js/games/numberRush.js']).NumberRush;
+  const surv = { mode: 'survival', seconds: 60 };
+  const standing = { st: { value: NR.points({ found: 5, elim: false }, surv), elim: false } };
+  const out = { st: { value: NR.points({ found: 25, elim: true, used: 50000 }, surv), elim: true } };
+  assert(out.st.value > standing.st.value, 'the knocked-out player has more points');
+  const r = NR.rankRuns([out, standing], surv);
+  assertEqual([r[0] === standing, r[0].place, r[1].place], [true, 1, 2]);
+  const race = NR.rankRuns([{ st: { value: 5, elim: false } }, { st: { value: 9, elim: true } }], { mode: 'race' });
+  assertEqual(race[0].st.value, 9, 'other modes still rank by points');
+});
+
 module.exports = { loadGame: loadGame, within: within, UI: UI };

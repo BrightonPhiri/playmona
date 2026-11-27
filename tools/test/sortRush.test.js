@@ -503,7 +503,7 @@ test('sortrush referee: Timed Score deals the same next puzzle to everyone and s
   await m.solve('p1');
   assertEqual(m.row('p1').k, 1, 'p1 moved on to puzzle 1');
   assertEqual(m.row('p1').b, m.R.deal(m.settings(), m.sr().seed, 1).b.join(','), 'puzzle 1 from the shared seed');
-  assert(m.row('p1').score >= 3 * 100 + 200, 'holders and the clear bonus');
+  assert(m.row('p1').score >= 3 * 5 + 3, 'holders and the clear bonus');
   await m.send('p2', 'skip');
   assertEqual(m.row('p2').k, 1, 'p2 skipped to the same puzzle 1');
   assertEqual(m.row('p2').b, m.row('p1').b);

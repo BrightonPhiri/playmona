@@ -19,11 +19,6 @@ window.FF = window.FF || {};
     if (FF.Games && typeof FF.Games.register === 'function') { FF.Games.register(def); }
   }
 
-  function difficultyBonus(difficulty) {
-    if (difficulty === 'easy') return 1;
-    if (difficulty === 'hard') return 2;
-    return 1.5; // normal
-  }
 
 
   function renderMissing(api, msg) {
@@ -82,23 +77,23 @@ window.FF = window.FF || {};
     METER_MAX: 600,
     ONLINE_TIMER_MS: 12000,
     TIERS: [
-      { max: 180, id: 'lightning', name: 'Lightning', points: 300 },
-      { max: 230, id: 'rocket', name: 'Rocket', points: 250 },
-      { max: 280, id: 'quick', name: 'Quick', points: 200 },
-      { max: 350, id: 'steady', name: 'Steady', points: 150 },
-      { max: Infinity, id: 'sleepy', name: 'Sleepy', points: 100 }
+      { max: 180, id: 'lightning', name: 'Lightning', points: 10 },
+      { max: 230, id: 'rocket', name: 'Rocket', points: 8 },
+      { max: 280, id: 'quick', name: 'Quick', points: 6 },
+      { max: 350, id: 'steady', name: 'Steady', points: 4 },
+      { max: Infinity, id: 'sleepy', name: 'Sleepy', points: 2 }
     ],
-    PLACE_POINTS: [300, 200, 150],
-    OTHER_POINTS: 100,
+    PLACE_POINTS: [10, 8, 6],
+    OTHER_POINTS: 4,
 
     tier: function (ms) {
       for (var i = 0; i < this.TIERS.length; i++) if (ms < this.TIERS[i].max) return this.TIERS[i];
       return this.TIERS[this.TIERS.length - 1];
     },
     // Offline: each valid try scores by its rating.
-    tierPoints: function (ms, bonus) { return ms == null ? 0 : Math.round(this.tier(ms).points * bonus); },
+    tierPoints: function (ms) { return ms == null ? 0 : this.tier(ms).points; },
     // Online: each valid tap scores by its place in the round.
-    placePoints: function (place, bonus) { return Math.round((this.PLACE_POINTS[place - 1] || this.OTHER_POINTS) * bonus); },
+    placePoints: function (place) { return this.PLACE_POINTS[place - 1] || this.OTHER_POINTS; },
 
     /* When the signal comes and which decoys flash first, in ms from the
        moment the round opens. rand is FF._rand, which a room seeds per
@@ -554,11 +549,10 @@ window.FF = window.FF || {};
 
   /* ---------- Quick Tap: offline (solo, pass and play) ---------- */
   function startQuickTap(api) {
-    var bonus = difficultyBonus(api.config.difficulty);
     var difficulty = api.config.difficulty || 'normal';
     var rounds = FF.GameLength.rounds(api, QT.ROUNDS, 0);
 
-    if (FF.Race && FF.Race.active && FF.Race.active()) { startQuickTapOnline(api, rounds, bonus, difficulty); return; }
+    if (FF.Race && FF.Race.active && FF.Race.active()) { startQuickTapOnline(api, rounds, difficulty); return; }
 
     var scorers = api.config.scorers;
     if (!scorers || !scorers.length) {
@@ -596,7 +590,7 @@ window.FF = window.FF || {};
     }
 
     function donePlayer(player, times) {
-      var points = times.reduce(function (sum, ms) { return sum + QT.tierPoints(ms, bonus); }, 0);
+      var points = times.reduce(function (sum, ms) { return sum + QT.tierPoints(ms); }, 0);
       var st = QT.stats(times);
       api.scoring.add(player.id, points, { correct: st.valid > 0, fastest: st.best });
       api.shell.updateScores(player.id);
@@ -640,7 +634,7 @@ window.FF = window.FF || {};
      Every device plays its own player in every round. Rounds settle once
      everyone has tapped (or false-started, or missed); every device then
      shows the same standings and auto-advances after the same pause. */
-  function startQuickTapOnline(api, rounds, bonus, difficulty) {
+  function startQuickTapOnline(api, rounds, difficulty) {
     var room = FF.Room.current();
     var meId = room ? room.uid : null;
 
@@ -656,7 +650,7 @@ window.FF = window.FF || {};
       rounds: rounds,
       mode: 'ranked',
       timerMs: QT.ONLINE_TIMER_MS,
-      pointsFor: function (answer, place) { return QT.placePoints(place || 1, bonus); }
+      pointsFor: function (answer, place) { return QT.placePoints(place || 1); }
     });
 
     var n = 0;

@@ -230,7 +230,7 @@ test('expert: every flag, extra time to spell and a bonus', function () {
   assertEqual(G.secondsFor({ level: 'expert', time: 8 }), 8 + G.TYPE_EXTRA_SECS);
   assertEqual(G.secondsFor({ level: 'normal', time: 8 }), 8);
   assertEqual(G.secondsFor({ level: 'expert', time: 0 }), 0, 'no limit stays no limit');
-  assertEqual(G.points(true, 0, 14, false, true), 250, 'spelled instantly');
+  assertEqual(G.points(true, 0, 14, false, true), 20, 'spelled instantly: 10 + 5 speed + 5 typed');
   assert(!G.isStandard({ level: 'expert' }), 'Expert is not the ranked standard');
   const deck = G.deal(ALL, { level: 'expert' }, G.rng(5), 10);
   deck.forEach(function (q) { assertEqual(q.options[q.answer], q.name, q.code + ' keeps its answer'); });

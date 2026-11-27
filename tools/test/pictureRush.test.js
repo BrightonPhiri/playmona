@@ -48,7 +48,6 @@ test('picture rush: settings keep to the offered values', function () {
   assert(P.isStandard({}), 'defaults are standard');
   assert(!P.isStandard({ grid: 5 }), 'a change is not standard');
   assertEqual([3, 4, 5, 6].map(P.secondsFor), [60, 120, 180, 300]);
-  assertEqual([3, 4, 5, 6].map(P.factor), [0.5, 1, 1.5, 2]);
 });
 
 test('picture rush: the picture list has 6 themes of 16 with unique ids', function () {
@@ -128,20 +127,20 @@ test('picture rush: the same seed deals the same pictures and scrambles', functi
   assert(a !== c, 'another day, another deal');
 });
 
-test('picture rush: points reward solving, speed and bigger grids; peeks cost', function () {
+test('picture rush: points reward solving and speed, the same on every grid; peeks cost', function () {
   const P = load().PictureRush;
   const fast = P.points({ solved: true, usedMs: 20000, hints: 0 }, 4);
   const slow = P.points({ solved: true, usedMs: 100000, hints: 0 }, 4);
   const part = P.points({ solved: false, usedMs: 120000, correct: 10, startCorrect: 1 }, 4);
   assert(fast > slow && slow > part, 'fast > slow > unsolved');
-  assertEqual(P.points({ solved: true, usedMs: 0 }, 4), 1500, 'base 1000 + all the speed bonus');
-  assertEqual(P.points({ solved: true, usedMs: 120000 }, 4), 1000, 'no time left: the base');
-  assertEqual(P.points({ solved: true, usedMs: 0 }, 6), 3000, '6×6 counts double');
-  assertEqual(P.points({ solved: true, usedMs: 0 }, 3), 750, '3×3 counts half');
-  assertEqual(P.points({ solved: true, usedMs: 0, hints: 2 }, 4), 1300, 'each peek costs 100');
-  assertEqual(P.points({ solved: true, usedMs: 0, hints: 2 }, 6), 2600, 'peeks scale with the grid');
+  assertEqual(P.points({ solved: true, usedMs: 0 }, 4), 20, 'base 10 + all the speed bonus');
+  assertEqual(P.points({ solved: true, usedMs: 120000 }, 4), 10, 'no time left: the base');
+  assertEqual(P.points({ solved: true, usedMs: 0 }, 6), 20, '6×6 the same');
+  assertEqual(P.points({ solved: true, usedMs: 0 }, 3), 20, '3×3 the same');
+  assertEqual(P.points({ solved: true, usedMs: 0, hints: 2 }, 4), 16, 'each peek costs 2');
+  assertEqual(P.points({ solved: true, usedMs: 0, hints: 2 }, 6), 16, 'peeks cost the same on every grid');
   assertEqual(P.points({ solved: false, correct: 1, startCorrect: 1, hints: 2 }, 4), 0, 'never below zero');
-  assertEqual(P.points({ solved: false, correct: 8, startCorrect: 0 }, 4), 250, 'half the tiles home: half the partial points');
+  assertEqual(P.points({ solved: false, correct: 8, startCorrect: 0 }, 4), 3, 'half the tiles home: half the partial points (2.5, rounded)');
   assertEqual(P.roomSeconds(P.STANDARD), 3 + 120 + 2, 'a room round has room for the look');
 });
 

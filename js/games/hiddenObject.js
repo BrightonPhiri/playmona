@@ -28,10 +28,9 @@ window.FF = window.FF || {};
   var COUNTS = [6, 9, 12];
   var PICTURES = [1, 3];
   var SECONDS = { 6: 90, 9: 120, 12: 150 };
-  var BONUS = { 6: 1, 9: 1.5, 12: 2 };
-  var FIND = 100;
-  var WRONG = 20;
-  var SPEED = 200;
+  var FIND = 5;                // an object found
+  var WRONG = 1;               // a tap on no object
+  var SPEED = 10;              // the most for finding them all quickly
   var MARGIN = 0.025;          // finger room round each object, as a share of the picture
   var MAX_ZOOM = 3;
   var TAP_PX = 8;              // a press that moves further than this is a drag, not a tap
@@ -106,14 +105,14 @@ window.FF = window.FF || {};
     return best !== -1 ? best : again ? -2 : decoy ? -3 : -1;
   }
 
-  /* st: { found, total, wrong, usedMs }. Finds score 100 x the level bonus;
-     finding them all adds up to 200 more for speed; wrong taps cost 20. */
+  /* st: { found, total, wrong, usedMs }. 5 a find on every level; finding
+     them all adds up to 10 more for speed; a wrong tap costs 1. Never below 0. */
   function points(st, limitMs) {
     var pts = (st.found || 0) * FIND;
     if (st.found >= st.total && limitMs > 0) {
       pts += Math.round(SPEED * Math.max(0, Math.min(1, 1 - (st.usedMs || 0) / limitMs)));
     }
-    return Math.max(0, Math.round((BONUS[st.total] || 1) * pts) - (st.wrong || 0) * WRONG);
+    return Math.max(0, pts - (st.wrong || 0) * WRONG);
   }
 
   /* The zoom: the picture is drawn z times the frame's size with its top
@@ -638,7 +637,7 @@ window.FF = window.FF || {};
   };
 
   FF.HiddenObject = {
-    COUNTS: COUNTS, PICTURES: PICTURES, SECONDS: SECONDS, BONUS: BONUS, MARGIN: MARGIN, MAX_ZOOM: MAX_ZOOM, STANDARD: STANDARD, ART: ART,
+    COUNTS: COUNTS, PICTURES: PICTURES, SECONDS: SECONDS, MARGIN: MARGIN, MAX_ZOOM: MAX_ZOOM, STANDARD: STANDARD, ART: ART,
     defaults: defaults, sanitize: sanitize, isStandard: isStandard, secondsFor: secondsFor,
     scenes: scenes, deal: deal, dealScene: dealScene, hit: hit, points: points,
     clampView: clampView, toPicture: toPicture, zoomAt: zoomAt, isTap: isTap,
@@ -661,7 +660,7 @@ window.FF = window.FF || {};
       'A busy picture hides 12 objects. Your list says which ones to find.',
       'Tap each object on your list. Finds are circled and ticked off.',
       'Pinch, or use + and −, to zoom in, and drag to look around.',
-      'Finds score points; wrong taps cost 20. Find them all quickly for a bonus.'
+      'Each find scores 5; a wrong tap costs 1. Find them all quickly for up to 10 more.'
     ],
     room: ROOM,
     start: function (api) {

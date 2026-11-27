@@ -35,10 +35,10 @@ window.FF = window.FF || {};
   var COUNTS = [1, 3, 5];
   var PEEKS = [0, 3, 5];
   var SECONDS = { 3: 60, 4: 120, 5: 180, 6: 300 };
-  var FACTOR = { 3: 0.5, 4: 1, 5: 1.5, 6: 2 };
   var HINTS = 2;               // Peeks per picture
   var HINT_MS = 3000;
-  var SCORING = { base: 1000, speed: 500, hintCost: 100, partial: 500 };
+  // 10 a picture, up to 10 for speed, up to 5 for part of one; a peek costs 2. Same on every grid.
+  var SCORING = { base: 10, speed: 10, hintCost: 2, partial: 5 };
   var ART = 'games/pictureRush';
   var MAX_COUNT = COUNTS[COUNTS.length - 1];
 
@@ -72,7 +72,6 @@ window.FF = window.FF || {};
   function key(s) { return [s.theme, s.grid, s.count, s.peek].join('|'); }
 
   function secondsFor(grid) { return SECONDS[grid] || SECONDS[4]; }
-  function factor(grid) { return FACTOR[grid] || 1; }
 
   function hasArt(id) {
     var m = FF.AssetManifest && FF.AssetManifest[ART];
@@ -142,7 +141,7 @@ window.FF = window.FF || {};
       solved: !!r.solved, usedMs: r.usedMs || 0, hints: r.hints || 0,
       correct: r.correct || 0, startCorrect: r.startCorrect || 0, size: grid
     }, roundMs);
-    return Math.max(0, Math.round(raw * factor(grid)));
+    return Math.max(0, Math.round(raw));
   }
 
   /* A room round: the look first, then the picture's time, and a moment for the last swap. */
@@ -584,9 +583,9 @@ window.FF = window.FF || {};
   };
 
   FF.PictureRush = {
-    GRIDS: GRIDS, COUNTS: COUNTS, PEEKS: PEEKS, SECONDS: SECONDS, FACTOR: FACTOR, HINTS: HINTS, HINT_MS: HINT_MS,
+    GRIDS: GRIDS, COUNTS: COUNTS, PEEKS: PEEKS, SECONDS: SECONDS, HINTS: HINTS, HINT_MS: HINT_MS,
     SCORING: SCORING, STANDARD: STANDARD, ART: ART,
-    defaults: defaults, sanitize: sanitize, isStandard: isStandard, key: key, secondsFor: secondsFor, factor: factor,
+    defaults: defaults, sanitize: sanitize, isStandard: isStandard, key: key, secondsFor: secondsFor,
     photos: photos, drawings: drawings, readyThemes: readyThemes, pool: pool, deal: deal, points: points,
     roomSeconds: roomSeconds, summary: summary, fields: fields, ROOM: ROOM
   };

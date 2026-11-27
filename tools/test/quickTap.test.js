@@ -22,16 +22,16 @@ test('quick tap: speed ratings and offline points', function () {
   assertEqual(QT.tier(279).id, 'quick');
   assertEqual(QT.tier(349).id, 'steady');
   assertEqual(QT.tier(900).id, 'sleepy');
-  assertEqual(QT.tierPoints(150, 1.5), 450);
-  assertEqual(QT.tierPoints(null, 2), 0, 'a false start scores nothing');
+  assertEqual(QT.tierPoints(150), 10);
+  assertEqual(QT.tierPoints(null), 0, 'a false start scores nothing');
 });
 
 test('quick tap: online place points', function () {
   const QT = load().QuickTap;
-  assertEqual(QT.placePoints(1, 1), 300);
-  assertEqual(QT.placePoints(2, 1), 200);
-  assertEqual(QT.placePoints(3, 2), 300);
-  assertEqual(QT.placePoints(7, 1), 100);
+  assertEqual(QT.placePoints(1), 10);
+  assertEqual(QT.placePoints(2), 8);
+  assertEqual(QT.placePoints(3), 6);
+  assertEqual(QT.placePoints(7), 4);
 });
 
 test('quick tap: the same seed draws the same round on every device', function () {

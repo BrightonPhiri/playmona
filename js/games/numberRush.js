@@ -204,25 +204,25 @@ window.FF = window.FF || {};
      extra. Survival: still standing at the end counts most. */
   function points(st, cfg) {
     var limit = cfg.seconds * 1000;
-    var v = (st.found || 0) * 10;
+    var v = st.found || 0;                    // 1 a number
     var left = st.full ? Math.max(0, Math.min(1, 1 - (st.used || 0) / limit)) : 0;
     if (cfg.mode === 'race') {
-      if (st.full) v += 300 + Math.round(300 * left);
+      if (st.full) v += 10 + Math.round(10 * left);
     } else if (cfg.mode === 'score') {
       v += st.combo || 0;
-      if (st.full) v += 200 + Math.round(200 * left);
+      if (st.full) v += 10 + Math.round(10 * left);
     } else {
-      if (!st.elim) v += 500;
-      else v += Math.floor((st.used || 0) / 1000) * 2;
+      if (!st.elim) v += 10;
+      else v += Math.min(5, Math.floor((st.used || 0) / 10000));   // 1 for each 10 seconds survived
     }
-    if (st.full && !st.mistakes) v += 100;    // a clean run
+    if (st.full && !st.mistakes) v += 5;      // a clean run
     return Math.max(0, Math.round(v));
   }
 
   /* Extra points in Score mode for a quick find after the last one. */
   function comboBonus(gapMs) {
-    if (gapMs <= 800) return 10;
-    if (gapMs <= 1500) return 5;
+    if (gapMs <= 800) return 2;
+    if (gapMs <= 1500) return 1;
     return 0;
   }
 
@@ -291,7 +291,7 @@ window.FF = window.FF || {};
     COUNTDOWN_MS: COUNTDOWN_MS, MAX_SLOTS: MAX_SLOTS, HUB_R: HUB_R, STANDARD: STANDARD,
     defaults: defaults, sanitize: sanitize, isStandard: isStandard, key: key,
     sequence: sequence, layout: layout, ringAngle: ringAngle, deal: deal,
-    points: points, comboBonus: comboBonus, summary: summary, fields: fields, clock: clock,
+    points: points, comboBonus: comboBonus, rankRuns: rankRuns, summary: summary, fields: fields, clock: clock,
     ROOM: ROOM
   };
 
@@ -1031,13 +1031,17 @@ window.FF = window.FF || {};
     next();
   }
 
-  function rankRuns(runs) {
+  /* Most points first. In Survival whoever is still in comes above anyone
+     knocked out, whatever their points ("whoever is still in at the end wins"). */
+  function rankRuns(runs, cfg) {
+    var surv = !!(cfg && cfg.mode === 'survival');
+    function out(r) { return surv && r.st.elim ? 1 : 0; }
     var sorted = runs.slice().sort(function (a, b) {
-      return b.st.value - a.st.value || (a.st.full && b.st.full ? a.st.used - b.st.used : 0);
+      return out(a) - out(b) || b.st.value - a.st.value || (a.st.full && b.st.full ? a.st.used - b.st.used : 0);
     });
     var place = 0, prev = null;
     sorted.forEach(function (r, i) {
-      if (!prev || prev.st.value !== r.st.value || (r.st.full && prev.st.full && prev.st.used !== r.st.used)) place = i + 1;
+      if (!prev || out(prev) !== out(r) || prev.st.value !== r.st.value || (r.st.full && prev.st.full && prev.st.used !== r.st.used)) place = i + 1;
       r.place = place;
       prev = r;
     });
@@ -1054,7 +1058,7 @@ window.FF = window.FF || {};
     var root = api.shell.root;
     api.shell.hideTimer();
     FF.ui.clear(root);
-    var ranked = rankRuns(runs);
+    var ranked = rankRuns(runs, cfg);
     var top = ranked[0];
     var tie = ranked.length > 1 && ranked[1].place === 1;
     var solo = ranked.length === 1;

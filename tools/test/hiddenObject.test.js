@@ -95,12 +95,12 @@ test('hidden object: a tap finds the nearest listed object', function () {
 
 test('hidden object: points for finds, speed and wrong taps', function () {
   const H = load().HiddenObject;
-  assertEqual(H.points({ found: 3, total: 6, wrong: 0 }, 90000), 300);
-  assertEqual(H.points({ found: 3, total: 9, wrong: 0 }, 120000), 450, 'Normal bonus 1.5');
-  assertEqual(H.points({ found: 6, total: 6, wrong: 0, usedMs: 0 }, 90000), 800, 'all found at once: +200');
-  assertEqual(H.points({ found: 6, total: 6, wrong: 0, usedMs: 45000 }, 90000), 700, 'half the clock: +100');
-  assertEqual(H.points({ found: 12, total: 12, wrong: 0, usedMs: 150000 }, 150000), 2400, 'Hard bonus 2, no time left');
-  assertEqual(H.points({ found: 1, total: 6, wrong: 2 }, 90000), 60, 'wrong taps cost 20');
+  assertEqual(H.points({ found: 3, total: 6, wrong: 0 }, 90000), 15);
+  assertEqual(H.points({ found: 3, total: 9, wrong: 0 }, 120000), 15, 'no level multiplier');
+  assertEqual(H.points({ found: 6, total: 6, wrong: 0, usedMs: 0 }, 90000), 40, 'all found at once: +10');
+  assertEqual(H.points({ found: 6, total: 6, wrong: 0, usedMs: 45000 }, 90000), 35, 'half the clock: +5');
+  assertEqual(H.points({ found: 12, total: 12, wrong: 0, usedMs: 150000 }, 150000), 60, 'no time left');
+  assertEqual(H.points({ found: 1, total: 6, wrong: 2 }, 90000), 3, 'wrong taps cost 1');
   assertEqual(H.points({ found: 0, total: 6, wrong: 5 }, 90000), 0, 'never below 0');
 });
 
