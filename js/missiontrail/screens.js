@@ -295,23 +295,35 @@ window.FF = window.FF || {};
     ]);
     mount(root, wrap);
 
+    // Listens on the document in the capture phase and stops the keys it uses, so the
+    // page's arrow-key focus navigation (FF.Nav) never moves focus while walking; that
+    // would make Enter press Pause or Exit instead of checking a place.
     var bound = false;
+    function overlayOpen() {
+      return !!(document.querySelector && (document.querySelector('.pause-overlay') || document.querySelector('.ff-dialog')));
+    }
     function onKey(e) {
       if (!wrap.isConnected) { unbind(); return; }
       if (e.altKey || e.ctrlKey || e.metaKey) return;
       var tag = e.target && e.target.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
-      if (root.querySelector && root.querySelector('.mt-tip')) return;
+      if (overlayOpen() || (root.querySelector && root.querySelector('.mt-tip'))) return;
       var dir = DIR_KEYS[e.key];
-      if (dir) { e.preventDefault(); opts.onMove(dir); return; }
-      if (e.key === 'Enter' || e.key === ' ') {
-        if (tag === 'BUTTON') return;   // a focused button already answers Enter and Space
+      if (dir) {
         e.preventDefault();
+        e.stopPropagation();
+        opts.onMove(dir, !!e.repeat);
+        return;
+      }
+      if (e.key === 'Enter' || e.key === ' ') {
+        if (tag === 'BUTTON' && !(e.target.classList && e.target.classList.contains('mt-arrow'))) return;
+        e.preventDefault();
+        e.stopPropagation();
         opts.onCheck();
       }
     }
-    function bind() { if (!bound) { bound = true; window.addEventListener('keydown', onKey); } }
-    function unbind() { if (bound) { bound = false; window.removeEventListener('keydown', onKey); } }
+    function bind() { if (!bound) { bound = true; document.addEventListener('keydown', onKey, true); } }
+    function unbind() { if (bound) { bound = false; document.removeEventListener('keydown', onKey, true); } }
     var msgTimer = null;
     var warned = false;
 

@@ -437,4 +437,144 @@ test('mission trail: the game is registered, solo, no leaderboard', function () 
   assertEqual([def.id, def.leaderboard, def.modes], ['missionTrail', false, ['solo']]);
 });
 
+/* ---------------- final review fixes ---------------- */
+
+const GAME = ENGINE.concat(['js/data/assetManifest.js', 'js/assets.js', 'js/missiontrail/assets.js', 'js/missiontrail/render.js',
+  'js/missiontrail/screens.js', 'js/registry.js', 'js/games/missionTrail.js']);
+
+function keyEvent(doc, key, extra) {
+  const ev = { key: key, target: doc.body, repeat: false, prevented: 0, stopped: 0,
+    preventDefault: function () { this.prevented++; }, stopPropagation: function () { this.stopped++; } };
+  return Object.assign(ev, extra || {});
+}
+
+test('mission trail: play keys are taken before the page navigation sees them', function () {
+  const FF = load(SCREENS), doc = document_of(FF);
+  const root = doc.createElement('div');
+  doc.body.appendChild(root);
+  const moves = [];
+  let checks = 0;
+  const h = FF.MissionTrail.Screens.play(root, { stage: FF.data.missionTrail.stages[0], total: 1,
+    onMove: function (d, repeat) { moves.push(d + (repeat ? '*' : '')); }, onCheck: function () { checks++; }, onTap: function () {} });
+  h.bind();
+  const ev = keyEvent(doc, 'ArrowUp');
+  doc.dispatch('keydown', ev);
+  assertEqual(moves, ['up']);
+  assertEqual([ev.prevented, ev.stopped], [1, 1]);
+  doc.dispatch('keydown', keyEvent(doc, 'd', { repeat: true }));
+  assertEqual(moves, ['up', 'right*']);
+  doc.dispatch('keydown', keyEvent(doc, 'Enter'));
+  assertEqual(checks, 1);
+  h.unbind();
+  doc.dispatch('keydown', keyEvent(doc, 'ArrowUp'));
+  assertEqual(moves.length, 2);
+});
+
+test('mission trail: keys do nothing while the pause menu or a dialog is open', function () {
+  const FF = load(SCREENS), doc = document_of(FF);
+  const root = doc.createElement('div');
+  doc.body.appendChild(root);
+  const moves = [];
+  const h = FF.MissionTrail.Screens.play(root, { stage: FF.data.missionTrail.stages[0], total: 1,
+    onMove: function (d) { moves.push(d); }, onCheck: function () {}, onTap: function () {} });
+  h.bind();
+  doc.querySelector = function (sel) { return /pause-overlay/.test(sel) ? {} : null; };
+  const ev = keyEvent(doc, 'ArrowUp');
+  doc.dispatch('keydown', ev);
+  assertEqual([moves.length, ev.stopped], [0, 0]);
+});
+
+function fakeView() {
+  return {
+    moving: false, walks: [], placed: null, pending: null, shakes: 0,
+    isMoving: function () { return this.moving; },
+    walk: function (pos, done) {
+      const v = this;
+      v.moving = true;
+      v.walks.push([pos.x, pos.y]);
+      v.pending = function () { v.moving = false; if (done) done(); };
+    },
+    place: function (pos) { this.placed = [pos.x, pos.y]; },
+    face: function () {},
+    shake: function () { this.shakes++; }
+  };
+}
+function drain(view) { let n = 0; while (view.pending && n < 50) { const p = view.pending; view.pending = null; p(); n++; } }
+function gameRun() {
+  const FF = load(GAME);
+  const stage = FF.data.missionTrail.stages[0];
+  const m = FF.MissionTrail.Rules.buildMap(map(stage.map));
+  const run = FF.MissionTrail.Engine.create(stage, m, { now: function () { return 1000; } });
+  run.start();
+  return { FF: FF, run: run };
+}
+
+test('mission trail: five fast taps are five steps', function () {
+  const g = gameRun(), view = fakeView();
+  const mover = g.FF.MissionTrail.Game.createMover(g.run, view);
+  for (let i = 0; i < 5; i++) mover.move('up');
+  assertEqual([g.run.pos.x, g.run.pos.y], [5, 5]);
+  drain(view);
+  const last = view.placed && view.walks.length === 0 ? view.placed : view.walks[view.walks.length - 1];
+  assertEqual(last, [5, 5]);
+  assertEqual(view.moving, false);
+});
+
+test('mission trail: a held key stops when it is let go', function () {
+  const g = gameRun(), view = fakeView();
+  const mover = g.FF.MissionTrail.Game.createMover(g.run, view);
+  mover.move('up');
+  mover.move('up', true);
+  mover.move('up', true);
+  mover.move('up', true);
+  assertEqual(g.run.pos.y, 9);
+  drain(view);
+  mover.move('up', true);
+  assertEqual(g.run.pos.y, 8);
+});
+
+test('mission trail: a bump while walking never moves the walker', function () {
+  const g = gameRun(), view = fakeView();
+  const mover = g.FF.MissionTrail.Game.createMover(g.run, view);
+  mover.move('up');
+  mover.move('left');
+  mover.move('left');
+  assertEqual([g.run.pos.x, g.run.pos.y], [5, 9]);
+  drain(view);
+  assertEqual(view.walks[view.walks.length - 1], [5, 9]);
+});
+
+async function syncSame(remoteCopy) {
+  const FF = load(['js/storage.js', 'js/missiontrail/progress.js', 'js/sync.js']);
+  FF.Storage.init();
+  FF.Storage.setScope('u1');
+  FF.Storage.set('missionTrail', SERVER_B);
+  FF.Storage.set('syncMeta', { missionTrail: 1 });
+  let redraws = 0;
+  FF.App = { onSynced: function () { redraws++; } };
+  const updates = [];
+  const remote = { missionTrail: { v: JSON.stringify(remoteCopy), t: 5000 } };
+  const firebase = { database: function () { return { ref: function () { return {
+    once: function () { return Promise.resolve({ val: function () { return remote; } }); },
+    update: function (v) { updates.push(v); return Promise.resolve(); }
+  }; } }; } };
+  await FF.Sync.start('u1', firebase);
+  FF.Sync.stop();
+  return { redraws: redraws, sent: updates.filter(function (u) { return u.missionTrail; }).length };
+}
+
+test('mission trail: matching copies sync without a redraw or a write', async function () {
+  assertEqual(await syncSame(SERVER_B), { redraws: 0, sent: 0 });
+});
+
+test('mission trail: a server copy that is behind is updated without a redraw', async function () {
+  const behind = { v: 1, highest: 1, stages: {} };
+  assertEqual(await syncSame(behind), { redraws: 0, sent: 1 });
+});
+
+test('mission trail: the game sits with the memory games', function () {
+  const FF = load(GAME);
+  assertEqual(FF.Games.get('missionTrail').category, 'memory');
+});
+
 module.exports = { load, map };

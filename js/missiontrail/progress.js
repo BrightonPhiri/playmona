@@ -90,6 +90,15 @@ window.FF = window.FF || {};
     return out;
   }
 
+  /* Whether two saves hold the same progress. `last` (this device's double-save guard) is ignored. */
+  function same(a, b) {
+    var x = clean(a);
+    var y = clean(b);
+    delete x.last;
+    delete y.last;
+    return JSON.stringify(x) === JSON.stringify(y);
+  }
+
   function totals(prog) {
     var p = clean(prog);
     var stars = 0;
@@ -131,6 +140,7 @@ window.FF = window.FF || {};
     clean: clean,
     record: record,
     merge: merge,
+    same: same,
     totals: totals,
     state: state,
     next: next,
