@@ -43,11 +43,11 @@ test('quiz run: every topic builds 10 answerable questions', function () {
 test('challenge: a link carries everything needed to replay', function () {
   const FF = boot();
   FF.Storage.setScope('alice');
-  const rec = { id: 'abcdefgh12345678', seed: 'k3y9x2p1', topic: 'world', role: 'sent', me: { score: 1234, correct: 8, ms: 40000 } };
+  const rec = { id: 'abcdefgh12345678', seed: 'k3y9x2p1', topic: 'world', role: 'sent', me: { score: 123, correct: 8, ms: 40000 } };
   const link = FF.Challenge.link(rec);
   const code = /#challenge=([A-Za-z0-9_-]+)/.exec(link)[1];
   const c = FF.Challenge.decode(code);
-  assertEqual([c.id, c.seed, c.topic, c.from.score, c.from.correct], ['abcdefgh12345678', 'k3y9x2p1', 'world', 1234, 8]);
+  assertEqual([c.id, c.seed, c.topic, c.from.score, c.from.correct], ['abcdefgh12345678', 'k3y9x2p1', 'world', 123, 8]);
 });
 
 test('challenge: broken or tampered links are refused or clamped', function () {
@@ -56,7 +56,7 @@ test('challenge: broken or tampered links are refused or clamped', function () {
   const raw = Buffer.from(JSON.stringify({ v: 1, i: 'abcdefgh', s: 'seed1234', k: 'nope', n: '<b>x</b>', a: 'x', sc: 999999, c: 50 })).toString('base64');
   const c = FF.Challenge.decode(raw.replace(/=+$/, ''));
   assertEqual(c.topic, 'mixed', 'unknown topic falls back');
-  assertEqual(c.from.score, 1500, 'score capped');
+  assertEqual(c.from.score, 150, 'score capped (10 questions, 15 at most each)');
   assertEqual(c.from.correct, 10, 'correct capped');
   assert(FF.Avatars.has(c.from.avatar), 'unknown avatar replaced');
   const bad = Buffer.from(JSON.stringify({ v: 1, i: '../../x', s: 'seed1234' })).toString('base64');
@@ -122,9 +122,9 @@ function codeOf(link) { return /#challenge=([A-Za-z0-9_-]+)/.exec(link)[1]; }
 test('challenge v2: a link for any game carries the game, seed, score and stats', function () {
   const FF = boot2();
   const rec = { id: 'abcdefgh12345678', v: 2, game: 'memoryMatch', seed: 'k3y9x2p1', role: 'sent',
-    me: { score: 250000, ms: 48000, stats: [{ value: '0:48', label: 'Time' }, { value: '×6', label: 'Best streak' }] } };
+    me: { score: 250, ms: 48000, stats: [{ value: '0:48', label: 'Time' }, { value: '×6', label: 'Best streak' }] } };
   const c = FF.Challenge.decode(codeOf(FF.Challenge.link(rec)));
-  assertEqual([c.v, c.id, c.seed, c.game, c.from.score], [2, 'abcdefgh12345678', 'k3y9x2p1', 'memoryMatch', 250000]);
+  assertEqual([c.v, c.id, c.seed, c.game, c.from.score], [2, 'abcdefgh12345678', 'k3y9x2p1', 'memoryMatch', 250]);
   assertEqual(JSON.stringify(c.from.stats), JSON.stringify(rec.me.stats));
   assertEqual(FF.Challenge.playable(c), true);
   const sent = Date.UTC(2026, 10, 3, 9, 0, 0);
@@ -144,9 +144,9 @@ test('challenge v2: a crossword link carries the exact puzzle and checking, and 
 
 test('challenge v2: old quiz links still decode as a quiz topic', function () {
   const FF = boot2();
-  const rec = { id: 'abcdefgh12345678', seed: 'k3y9x2p1', topic: 'world', role: 'sent', me: { score: 1234, correct: 8, ms: 40000 } };
+  const rec = { id: 'abcdefgh12345678', seed: 'k3y9x2p1', topic: 'world', role: 'sent', me: { score: 123, correct: 8, ms: 40000 } };
   const c = FF.Challenge.decode(codeOf(FF.Challenge.link(rec)));
-  assertEqual([c.v, c.topic, c.from.score, c.from.correct], [1, 'world', 1234, 8]);
+  assertEqual([c.v, c.topic, c.from.score, c.from.correct], [1, 'world', 123, 8]);
   assertEqual(FF.Challenge.playable(c), true);
 });
 
@@ -155,7 +155,7 @@ test('challenge v2: tampered scores clamp, and unknown games are not playable', 
   const raw = Buffer.from(JSON.stringify({ v: 2, i: 'abcdefgh', s: 'seed1234', g: 'notAGame', n: 'Kuda', sc: 5000000,
     st: [['1', '<b>x</b>'], ['2', 'b'], ['3', 'c'], ['4', 'd']] })).toString('base64').replace(/=+$/, '');
   const c = FF.Challenge.decode(raw);
-  assertEqual(c.from.score, 1000000);
+  assertEqual(c.from.score, 1000);
   assertEqual(c.from.stats.length, 3, 'three stats at most');
   assertEqual(FF.Challenge.playable(c), false);
   const bad = Buffer.from(JSON.stringify({ v: 2, i: 'abcdefgh', s: 'seed1234', g: 'mem<script>' })).toString('base64').replace(/=+$/, '');
@@ -197,10 +197,31 @@ test('challenge v2: a finished run becomes a sent challenge, and playing one sav
   assert(!FF.Challenge._incoming[c.id], 'no longer waiting to be played');
 });
 
-test('rules: challenge results take any game score up to a million, without a correct count', function () {
+test('season 1: challenges made before the new points are old; new ones carry pv 2 and their rows v 2', function () {
+  const FF = boot2();
+  const C = FF.Challenge;
+  const cur = { def: FF.Games.get('memoryMatch'), config: { challengeSeed: 'k3y9x2p1' } };
+  const rec = C.fromRun(cur, { results: [{ id: 'me', isMe: true, points: 40 }], challengeSeed: 'k3y9x2p1' });
+  assertEqual(rec.pv, 2);
+  const c = C.decode(codeOf(C.link(rec)));
+  assertEqual([c.pv, C.oldPoints(c)], [2, false]);
+  const before = Object.assign({}, rec);
+  delete before.pv;
+  assertEqual(C.oldPoints(C.decode(codeOf(C.link(before)))), true, 'a link made before the new points');
+  assertEqual(C.oldPoints({ v: 1, id: 'abcdefgh', seed: 'abcd', topic: 'mixed', from: {} }), true, 'old quiz links');
+  assertEqual(C._row(rec).v, 2, 'a new result row');
+  assertEqual(C.isOldRow({ name: 'A', score: 900, t: 1 }), true);
+  assertEqual(C.isOldRow({ name: 'A', score: 9, t: 1, v: 2 }), false);
+  c.id = 'zzzzzzzz9999';
+  C._incoming[c.id] = c;
+  C.finishRun({ def: cur.def, config: { challenge: { id: c.id, seed: c.seed } } }, 30, {});
+  assertEqual(C.byId(c.id).pv, 2, 'playing a new challenge keeps it new');
+});
+
+test('rules: challenge results take any game score up to 1,000, without a correct count', function () {
   const rules = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '..', '..', 'database.rules.json'), 'utf8')).rules;
   const v = rules.challenges.$id.$uid['.validate'];
-  assert(/val\(\) <= 1000000/.test(v), 'score cap');
+  assert(/val\(\) <= 1000 /.test(v), 'score cap');
   assert(!/hasChildren\(\['name', 'score', 'correct'/.test(v), 'correct is optional');
   assert(/newData\.child\('game'\)/.test(v), 'game is checked');
   assertEqual(JSON.stringify(require('../gen-rules.js').rules.challenges), JSON.stringify(rules.challenges), 'generator and file agree');

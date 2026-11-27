@@ -214,7 +214,8 @@ window.FF = window.FF || {};
   // Today's WordShift board (written by the server), top 10.
   function drawDailyBoard(holder, day) {
     if (!FF.Cloud || !FF.Cloud.available || !FF.Cloud.available() || !FF.Cloud.top) return;
-    FF.Cloud.top('wordshiftDaily/' + day, 'score', 10).then(function (rows) {
+    var read = FF.Leaderboards && FF.Leaderboards.top ? FF.Leaderboards.top('wordshiftDaily/' + day, 10) : FF.Cloud.top('wordshiftDaily/' + day, 'score', 10);
+    read.then(function (rows) {
       rows = FF.Leaderboards && FF.Leaderboards.sortRows ? FF.Leaderboards.sortRows(rows || []) : (rows || []);
       if (!rows.length) return;
       FF.ui.clear(holder);

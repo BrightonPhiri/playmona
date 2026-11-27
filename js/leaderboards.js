@@ -10,8 +10,10 @@
      difficulty and length, the usual timer, no game clock), by the
      signed-in account. Rooms and Game Night do not count.
    - Boards: the daily challenge (daily/<date>) and, per game, this
-     week and all time (leaderboards/<game>/week/<week>, /all). Each
-     keeps a player's best score.
+     week and all time (leaderboards/<game>/s1/week/<week>, /s1/all).
+     Each keeps a player's best score. Season 1 (s1) began with the
+     smaller points (no award above 10); every row it writes carries
+     v: 2, and the old week/all boards are read-only.
    - After a counted result, a player in the top N (Site >
      Leaderboards in the admin portal, 20 by default) gets confetti
      and a link to their place on the Leaderboard page.
@@ -31,7 +33,21 @@ window.FF = window.FF || {};
   var fmt = function (n) { return FF.util.formatNumber(n || 0); };
 
   var EXCLUDED = ['party', 'creative'];
-  var MAX_SCORE = 1000000;
+  var MAX_SCORE = 1000;          // a game's points (no single award is above 10)
+  var SEASON = 's1';
+  // The day the smaller points went live (UTC). From this day on, a daily
+  // board row without v: 2 was scored the old way and is left off.
+  var SEASON_START_DAY = '2026-11-27';
+
+  /* Daily boards from launch day on keep only rows scored the new way. */
+  function seasonFiltered(path) {
+    var m = /^(daily|wordshiftDaily)\/(\d{4}-\d{2}-\d{2})$/.exec(path || '');
+    return !!m && m[2] >= SEASON_START_DAY;
+  }
+  function seasonRows(path, rows) {
+    if (!seasonFiltered(path)) return rows;
+    return (rows || []).filter(function (r) { return r && r.v === 2; });
+  }
   var BOARD_SIZE = 50;
   var FEATURED_SIZE = 10;
   var REPEAT_DAYS = 14;
@@ -103,6 +119,9 @@ window.FF = window.FF || {};
 
   var LB = {
     MAX_SCORE: MAX_SCORE,
+    SEASON: SEASON,
+    SEASON_START_DAY: SEASON_START_DAY,
+    seasonRows: seasonRows,
     BOARD_SIZE: BOARD_SIZE,
     DEFAULT_FEATURED: DEFAULT_FEATURED,
     REPEAT_DAYS: REPEAT_DAYS,
@@ -272,11 +291,16 @@ window.FF = window.FF || {};
     /* ---------- Per-game boards ---------- */
 
     path: function (gameId, period, week) {
-      return 'leaderboards/' + gameId + '/' + (period === 'all' ? 'all' : 'week/' + (week || weekKey()));
+      return 'leaderboards/' + gameId + '/' + SEASON + '/' + (period === 'all' ? 'all' : 'week/' + (week || weekKey()));
     },
 
     top: function (path, n) {
-      return FF.Cloud.top(path, 'score', n || BOARD_SIZE).then(sortRows);
+      n = n || BOARD_SIZE;
+      // A daily board on or after launch day may still hold old-points rows: read extra, then drop them.
+      var filtered = seasonFiltered(path);
+      return FF.Cloud.top(path, 'score', filtered ? Math.max(100, n * 2) : n).then(function (rows) {
+        return sortRows(seasonRows(path, rows || [])).slice(0, n);
+      });
     },
 
     // 1-based place of uid in the top n of a board, or 0.
@@ -300,7 +324,7 @@ window.FF = window.FF || {};
         var at = self.path(gameId, period, week) + '/' + who.uid;
         return FF.Cloud.get(at).catch(function () { return null; }).then(function (cur) {
           if (cur && typeof cur.score === 'number' && cur.score >= score) return null;
-          return FF.Cloud.set(at, { name: who.name, avatar: who.avatar, score: score, t: Date.now() }).then(function () {
+          return FF.Cloud.set(at, { name: who.name, avatar: who.avatar, score: score, t: Date.now(), v: 2 }).then(function () {
             return self.rankIn(self.path(gameId, period, week), who.uid, n).then(function (rank) {
               return { period: period, rank: rank, best: score };
             });

@@ -12,7 +12,7 @@ namespace PlayMona;
  * - finish() replays the player's moves against the server's word list (api/data/wordshift-words.txt,
  *   made by tools/gen-wordshift.js), times the run by the server clock, scores it with SCORING
  *   (the same numbers as js/wordshift/rules.js; a test compares them) and writes the boards itself:
- *   leaderboards/wordShift (week + all time), wordshiftDaily/<day> for WordShift's own daily puzzle,
+ *   leaderboards/wordShift/s1 (week + all time, season 1: rows carry v 2), wordshiftDaily/<day> for WordShift's own daily puzzle,
  *   and daily/<day> when WordShift is the platform's daily game. Phones may not write those.
  */
 class WordShift
@@ -27,7 +27,8 @@ class WordShift
     public const MAX_MOVES = 200;
     private const GRACE_MS = 5_000;               // a Time Challenge finish this late still counts
     private const TICKET_TTL_MS = 6 * 3600 * 1000;
-    private const MAX_SCORE = 1_000_000;          // as FF.Leaderboards.MAX_SCORE
+    private const MAX_SCORE = 1_000;              // as FF.Leaderboards.MAX_SCORE
+    private const SEASON = 's1';                  // as FF.Leaderboards.SEASON: boards since the smaller points
 
     private static ?array $bank = null;
     private static ?array $words = null;
@@ -181,24 +182,25 @@ class WordShift
         if ($daily === 'ws') {
             $at = 'wordshiftDaily/' . $t['day'] . '/' . $user->uid;
             if ($this->rtdb->get($at) !== null) return $out;   // one ranked try a day
-            $this->rtdb->set($at, $who + ['score' => $out['score'], 'moves' => $r['moves'], 'ms' => $ms, 't' => $now]);
+            $this->rtdb->set($at, $who + ['score' => $out['score'], 'moves' => $r['moves'], 'ms' => $ms, 't' => $now, 'v' => 2]);
             $out['ranked'] = true;
             return $out;
         }
         if ($daily === 'platform') {
             $at = 'daily/' . $t['day'] . '/' . $user->uid;
             if ($this->rtdb->get($at) !== null) return $out;
-            $this->rtdb->set($at, $who + ['score' => $out['score'], 'ms' => $ms, 't' => $now, 'game' => self::GAME]);
+            $this->rtdb->set($at, $who + ['score' => $out['score'], 'ms' => $ms, 't' => $now, 'game' => self::GAME, 'v' => 2]);
             $out['ranked'] = true;
             return $out;
         }
         // As every leaderboard game: only the standard settings (Classic, a Normal puzzle) count.
         if ($timed || ($p['lv'] ?? '') !== 'normal') return $out;
         $week = gmdate('o-\WW', intdiv($now, 1000));
-        foreach (['week' => 'leaderboards/' . self::GAME . '/week/' . $week . '/' . $user->uid, 'all' => 'leaderboards/' . self::GAME . '/all/' . $user->uid] as $period => $at) {
+        $board = 'leaderboards/' . self::GAME . '/' . self::SEASON . '/';
+        foreach (['week' => $board . 'week/' . $week . '/' . $user->uid, 'all' => $board . 'all/' . $user->uid] as $period => $at) {
             $cur = $this->rtdb->get($at);
             if (is_array($cur) && is_numeric($cur['score'] ?? null) && $cur['score'] >= $out['score']) continue;
-            $this->rtdb->set($at, $who + ['score' => $out['score'], 't' => $now]);
+            $this->rtdb->set($at, $who + ['score' => $out['score'], 't' => $now, 'v' => 2]);
             $out['places'][] = ['period' => $period, 'best' => $out['score']];
         }
         $out['ranked'] = true;

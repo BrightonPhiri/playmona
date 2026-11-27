@@ -72,10 +72,12 @@ test('wordshift: a finished run is replayed, scored and put on the boards', func
     eq(10 + max(0, 5 - $extra) - 1, $r['score']);
     eq(42_000, $r['ms']);
     eq($p['n'], $r['shortest']);
-    $all = $w['rtdb']->get('leaderboards/wordShift/all/ann');
+    $all = $w['rtdb']->get('leaderboards/wordShift/s1/all/ann');
     eq($r['score'], $all['score']);
     eq('Ann', $all['name']);
-    eq($r['score'], $w['rtdb']->get('leaderboards/wordShift/week/2027-W02/ann')['score']);
+    eq(2, $all['v'], 'a season 1 row');
+    eq($r['score'], $w['rtdb']->get('leaderboards/wordShift/s1/week/2027-W02/ann')['score']);
+    eq(null, $w['rtdb']->get('leaderboards/wordShift/all/ann'), 'the old board is left alone');
     eq(null, $w['rtdb']->get('wordshiftTickets/' . $b['ticket']), 'ticket used up');
 });
 
@@ -147,7 +149,7 @@ test('wordshift: a lower score does not replace the best', function () {
     $best = $w['ws']->finish(ann(), ['ticket' => $b['ticket'], 'moves' => $route, 'invalid' => 0], WS_T0 + 5000)['score'];
     $b = $w['ws']->begin(ann(), ['puzzleId' => 'n1', 'mode' => 'classic'], WS_T0);
     $w['ws']->finish(ann(), ['ticket' => $b['ticket'], 'moves' => array_merge([wsMiss($p['s']), wsMiss($p['s'])], $route), 'invalid' => 0], WS_T0 + 5000);
-    eq($best, $w['rtdb']->get('leaderboards/wordShift/all/ann')['score']);
+    eq($best, $w['rtdb']->get('leaderboards/wordShift/s1/all/ann')['score']);
 });
 
 test('wordshift: the WordShift daily is one ranked try a day, on its own board', function () {
@@ -162,6 +164,7 @@ test('wordshift: the WordShift daily is one ranked try a day, on its own board',
     eq(true, $r['ranked']);
     $row = $w['rtdb']->get('wordshiftDaily/' . $day . '/ann');
     eq($r['score'], $row['score']);
+    eq(2, $row['v']);
     eq(count($route), $row['moves']);
     $b = $w['ws']->begin(ann(), ['puzzleId' => $p['id'], 'mode' => 'classic', 'daily' => 'ws'], WS_T0 + 60_000);
     eq(false, $w['ws']->finish(ann(), ['ticket' => $b['ticket'], 'moves' => $route, 'invalid' => 0], WS_T0 + 70_000)['ranked']);
@@ -177,6 +180,7 @@ test('wordshift: as the platform daily game it writes the daily board too', func
     $r = $w['ws']->finish(ann(), ['ticket' => $b['ticket'], 'moves' => $route, 'invalid' => 0], WS_T0 + 30_000);
     $row = $w['rtdb']->get('daily/' . $day . '/ann');
     eq('wordShift', $row['game']);
+    eq(2, $row['v']);
     eq($r['score'], $row['score']);
     eq(30_000, $row['ms']);
     // Another day's game: not on the daily board.
@@ -230,7 +234,7 @@ test('wordshift: only Classic on a Normal puzzle reaches the week and all-time b
     [, $route2] = wsPuzzle('n2');
     $b = $w['ws']->begin(ann(), ['puzzleId' => 'n2', 'mode' => 'timed', 'seconds' => 180], WS_T0);
     eq(false, $w['ws']->finish(ann(), ['ticket' => $b['ticket'], 'moves' => $route2, 'invalid' => 0], WS_T0 + 5000)['ranked'], 'Time Challenge is not ranked');
-    eq(null, $w['rtdb']->get('leaderboards/wordShift/all/ann'));
+    eq(null, $w['rtdb']->get('leaderboards/wordShift/s1/all/ann'));
 });
 
 test('wordshift: the PHP scoring numbers match js/wordshift/rules.js', function () {

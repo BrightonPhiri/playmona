@@ -186,16 +186,46 @@ test('daily: finishing saves one result with the game and reports the place', as
   FF.Games.register({ id: 'quickTap', name: 'Quick Tap', category: 'reaction', players: [1, 8], modes: ['solo'] });
   const key = FF.Daily.key();
   await FF.Cloud.set('dailyMeta/' + key, { game: 'quickTap', by: 'server', t: 1 });
-  await FF.Cloud.set('daily/' + key + '/someoneElse', { name: 'Bo', score: 9000, t: 1, game: 'quickTap' });
+  await FF.Cloud.set('daily/' + key + '/someoneElse', { name: 'Bo', score: 900, t: 1, game: 'quickTap', v: 2 });
   FF.Daily._save(key, { started: true, game: 'quickTap', score: 0, ms: 0, t: Date.now() });
   assertEqual(FF.Daily.played(), true, 'one try: started counts');
-  const rank = await FF.Daily.finish(key, 'quickTap', 4200);
+  const rank = await FF.Daily.finish(key, 'quickTap', 42);
   assertEqual(rank, 2, 'second behind Bo');
   const uid = FF.Auth.user().uid;
   const row = await FF.Cloud.get('daily/' + key + '/' + uid);
-  assertEqual([row.score, row.game], [4200, 'quickTap']);
-  assertEqual(await FF.Daily.finish(key, 'quickTap', 99999), 0, 'a second finish changes nothing');
-  assertEqual((await FF.Cloud.get('daily/' + key + '/' + uid)).score, 4200);
+  assertEqual([row.score, row.game], [42, 'quickTap']);
+  assertEqual(await FF.Daily.finish(key, 'quickTap', 999), 0, 'a second finish changes nothing');
+  assertEqual((await FF.Cloud.get('daily/' + key + '/' + uid)).score, 42);
+});
+
+/* ---------- Season 1 (smaller points) ---------- */
+test('season 1: boards live under s1, scores cap at 1,000 and rows carry v: 2', async function () {
+  const FF = await signedIn(boot(), 'alice');
+  const LB = FF.Leaderboards;
+  assertEqual([LB.SEASON, LB.MAX_SCORE], ['s1', 1000]);
+  assert(/^\d{4}-\d{2}-\d{2}$/.test(LB.SEASON_START_DAY), 'a launch day');
+  assertEqual(LB.path('stacoend', 'all'), 'leaderboards/stacoend/s1/all');
+  assertEqual(LB.path('stacoend', 'week', '2026-W48'), 'leaderboards/stacoend/s1/week/2026-W48');
+  await LB.submitGame('guessFlag', 5000);
+  const row = await FF.Cloud.get(LB.path('guessFlag', 'all') + '/' + FF.Auth.user().uid);
+  assertEqual([row.score, row.v], [1000, 2]);
+});
+
+test('season 1: daily rows carry v: 2; from launch day on, rows without it are left off the board', async function () {
+  const FF = await signedIn(boot(), 'alice');
+  FF.Games.register({ id: 'quickTap', name: 'Quick Tap', category: 'reaction', players: [1, 8], modes: ['solo'] });
+  const key = FF.Daily.key();
+  assert(key >= FF.Leaderboards.SEASON_START_DAY, 'today is in season 1');
+  await FF.Cloud.set('dailyMeta/' + key, { game: 'quickTap', by: 'server', t: 1 });
+  await FF.Cloud.set('daily/' + key + '/oldTimer', { name: 'Old', score: 900, t: 1, game: 'quickTap' });
+  FF.Daily._save(key, { started: true, game: 'quickTap', score: 0, ms: 0, t: Date.now() });
+  const rank = await FF.Daily.finish(key, 'quickTap', 40);
+  assertEqual(rank, 1, 'the old-points row does not count');
+  const uid = FF.Auth.user().uid;
+  assertEqual((await FF.Cloud.get('daily/' + key + '/' + uid)).v, 2);
+  assertEqual((await FF.Daily.board(key)).map(function (r) { return r.key; }), [uid]);
+  await FF.Cloud.set('daily/2020-01-01/oldTimer', { name: 'Old', score: 900, t: 1, game: 'quickTap' });
+  assertEqual((await FF.Daily.board('2020-01-01')).length, 1, 'a day before launch keeps its rows');
 });
 
 /* ---------- Game boards ---------- */
@@ -257,10 +287,10 @@ test('rules: game boards take a higher score only, and the featured list is serv
   const rules = JSON.parse(fs.readFileSync(path.join(ROOT, 'database.rules.json'), 'utf8')).rules;
   const lb = rules.leaderboards;
   assertEqual(lb.featured['.write'], undefined);
-  [lb.$game.week.$week.$uid, lb.$game.all.$uid].forEach(function (b) {
+  [lb.$game.s1.week.$week.$uid, lb.$game.s1.all.$uid].forEach(function (b) {
     assert(/auth\.uid === \$uid/.test(b['.write']), 'own row only');
     assert(/newData\.child\('score'\)\.val\(\) > data\.child\('score'\)\.val\(\)/.test(b['.validate']), 'only a better score');
   });
-  assertEqual(lb.$game.week.$week['.indexOn'], ['score']);
+  assertEqual(lb.$game.s1.week.$week['.indexOn'], ['score']);
   assert(rules.imposterSecrets, 'the hand-added Imposters rules are still there');
 });

@@ -18,13 +18,15 @@ const STR = (max) => ({ ".validate": "newData.isString() && newData.val().length
 const NUM = { ".validate": "newData.isNumber()" };
 const BOOL = { ".validate": "newData.isBoolean()" };
 const NONE = { ".validate": false };
+// Season 1 (smaller points, no award above 10): new rows say v: 2, and scores are capped at 1,000.
+const V2 = "newData.child('v').val() === 2";
 // Challenges: any game (points up to the leaderboard cap); quiz challenges also send how many were right.
-const RESULT = "newData.hasChildren(['name', 'score', 't']) && newData.child('name').isString() && newData.child('name').val().length <= 40 && newData.child('score').isNumber() && newData.child('score').val() >= 0 && newData.child('score').val() <= 1000000 && (!newData.child('correct').exists() || (newData.child('correct').isNumber() && newData.child('correct').val() >= 0 && newData.child('correct').val() <= 1000)) && (!newData.child('game').exists() || (newData.child('game').isString() && newData.child('game').val().length <= 40)) && (!newData.child('avatar').exists() || (newData.child('avatar').isString() && newData.child('avatar').val().length <= 60))";
+const RESULT = "newData.hasChildren(['name', 'score', 't', 'v']) && " + V2 + " && newData.child('name').isString() && newData.child('name').val().length <= 40 && newData.child('score').isNumber() && newData.child('score').val() >= 0 && newData.child('score').val() <= 1000 && (!newData.child('correct').exists() || (newData.child('correct').isNumber() && newData.child('correct').val() >= 0 && newData.child('correct').val() <= 1000)) && (!newData.child('game').exists() || (newData.child('game').isString() && newData.child('game').val().length <= 40)) && (!newData.child('avatar').exists() || (newData.child('avatar').isString() && newData.child('avatar').val().length <= 60))";
 
 // A score on a leaderboard (js/leaderboards.js). Scores are capped; points differ a lot between games.
-const SCORE = "newData.child('name').isString() && newData.child('name').val().length <= 40 && newData.child('score').isNumber() && newData.child('score').val() >= 0 && newData.child('score').val() <= 1000000 && newData.child('t').isNumber() && newData.child('t').val() <= now + 60000 && (!newData.child('avatar').exists() || (newData.child('avatar').isString() && newData.child('avatar').val().length <= 60))";
+const SCORE = "newData.child('name').isString() && newData.child('name').val().length <= 40 && newData.child('score').isNumber() && newData.child('score').val() >= 0 && newData.child('score').val() <= 1000 && newData.child('t').isNumber() && newData.child('t').val() <= now + 60000 && (!newData.child('avatar').exists() || (newData.child('avatar').isString() && newData.child('avatar').val().length <= 60))";
 // The daily challenge: one game a day (dailyMeta/<day>/game), one result per player.
-const DAILY_RESULT = "newData.hasChildren(['name', 'score', 't', 'game']) && " + SCORE + " && newData.child('game').val() === root.child('dailyMeta').child($day).child('game').val() && newData.child('game').val() !== 'wordShift' && (!newData.child('correct').exists() || (newData.child('correct').isNumber() && newData.child('correct').val() >= 0 && newData.child('correct').val() <= 1000)) && (!newData.child('ms').exists() || newData.child('ms').isNumber())";
+const DAILY_RESULT = "newData.hasChildren(['name', 'score', 't', 'game', 'v']) && " + V2 + " && " + SCORE + " && newData.child('game').val() === root.child('dailyMeta').child($day).child('game').val() && newData.child('game').val() !== 'wordShift' && (!newData.child('correct').exists() || (newData.child('correct').isNumber() && newData.child('correct').val() >= 0 && newData.child('correct').val() <= 1000)) && (!newData.child('ms').exists() || newData.child('ms').isNumber())";
 // A player's best on a game board: only a higher score replaces it.
 const BEST = {
   ".write": ACCOUNT + " && auth.uid === $uid && " + NOT_BANNED,
@@ -32,6 +34,11 @@ const BEST = {
   name: { ".validate": true }, score: { ".validate": true }, t: { ".validate": true }, avatar: { ".validate": true },
   "$other": { ".validate": false }
 };
+// Season 1 boards: the same, and the row says v: 2.
+const BEST_V2 = Object.assign({}, BEST, {
+  ".validate": "newData.hasChildren(['name', 'score', 't', 'v']) && " + V2 + " && " + SCORE + " && (!data.exists() || newData.child('score').val() > data.child('score').val())",
+  v: { ".validate": true }
+});
 
 const counterNode = (nameCheck) => ({
   ".write": "auth != null",
@@ -193,18 +200,33 @@ const rules = {
       featured: { ".read": true },
       "$game": {
         ".validate": "$game.matches(" + ID + ") && $game !== 'wordShift'",  // WordShift: server-written (api/lib/WordShift.php)
+        // Season 1: the boards since the smaller points.
+        s1: {
+          week: {
+            "$week": {
+              ".read": ACCOUNT,
+              ".indexOn": ["score"],
+              ".validate": "$week.matches(/^[0-9]{4}-W[0-9]{2}$/)",
+              "$uid": BEST_V2
+            }
+          },
+          all: {
+            ".read": ACCOUNT,
+            ".indexOn": ["score"],
+            "$uid": BEST_V2
+          },
+          "$other": { ".validate": false }
+        },
+        // Before season 1 (the old points): read-only.
         week: {
           "$week": {
             ".read": ACCOUNT,
-            ".indexOn": ["score"],
-            ".validate": "$week.matches(/^[0-9]{4}-W[0-9]{2}$/)",
-            "$uid": BEST
+            ".indexOn": ["score"]
           }
         },
         all: {
           ".read": ACCOUNT,
-          ".indexOn": ["score"],
-          "$uid": BEST
+          ".indexOn": ["score"]
         },
         "$other": { ".validate": false }
       }

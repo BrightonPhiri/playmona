@@ -301,4 +301,23 @@ test('points: xp is half the points (up to 50), plus 25 for beating others', fun
   assertEqual(xpAfter(30, [{ id: 'b', points: 10 }]), 15 + 25);
 });
 
+/* ---------------- Task 10: Season 1 rules ---------------- */
+
+test('points: the database takes season 1 board, daily and challenge rows only with v: 2 and up to 1,000', function () {
+  const gen = require('../gen-rules.js').rules;
+  const file = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '..', '..', 'database.rules.json'), 'utf8')).rules;
+  assertEqual(JSON.stringify(file.leaderboards), JSON.stringify(gen.leaderboards), 'the file is regenerated');
+  const lb = gen.leaderboards.$game;
+  const cap = /val\(\) <= 1000(?!\d)/;
+  const v2 = /child\('v'\)\.val\(\) === 2/;
+  [lb.s1.week.$week.$uid, lb.s1.all.$uid, gen.daily.$day.$uid, gen.challenges.$id.$uid].forEach(function (b, i) {
+    assert(v2.test(b['.validate']), i + ': needs v 2');
+    assert(cap.test(b['.validate']) && !/1000000/.test(b['.validate']), i + ': capped at 1,000');
+  });
+  assertEqual(lb.s1.all['.indexOn'], ['score']);
+  assertEqual(lb.s1.week.$week['.indexOn'], ['score']);
+  assert(lb.all['.read'] && lb.week.$week['.read'], 'old boards can still be read');
+  assertEqual([lb.all.$uid && lb.all.$uid['.write'], lb.week.$week.$uid && lb.week.$week.$uid['.write']], [undefined, undefined], 'old boards take no writes');
+});
+
 module.exports = { loadGame: loadGame, within: within, UI: UI };

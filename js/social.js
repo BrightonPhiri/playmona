@@ -23,7 +23,7 @@ window.FF = window.FF || {};
   };
   var icon = function (k) { return FF.Icons.icon(k); };
   var fmt = function (n) { return FF.util.formatNumber(n || 0); };
-  var MAX_SCORE = 1500;          // challenges (10 questions)
+  var MAX_SCORE = 150;           // quiz challenges: 10 questions, 15 at most each
 
   function me() {
     var p = (FF.Auth && FF.Auth.profile()) || {};
@@ -175,7 +175,7 @@ window.FF = window.FF || {};
       if (def && def.serverScored) { d.submitted = true; this._save(key, d); return Promise.resolve(); }
       var who = me();
       var self = this;
-      var row = { name: who.name, avatar: who.avatar, score: Math.min(FF.Leaderboards.MAX_SCORE, d.score), ms: Math.round(d.ms || 0), t: d.t, game: d.game || 'quiz' };
+      var row = { name: who.name, avatar: who.avatar, score: Math.min(FF.Leaderboards.MAX_SCORE, d.score), ms: Math.round(d.ms || 0), t: d.t, game: d.game || 'quiz', v: 2 };
       if (typeof d.correct === 'number') row.correct = d.correct;
       return FF.Cloud.set('daily/' + key + '/' + who.uid, row).then(function () {
         d.submitted = true; self._save(key, d);
@@ -187,7 +187,7 @@ window.FF = window.FF || {};
     },
 
     board: function (key) {
-      return FF.Cloud.top('daily/' + (key || this.key()), 'score', 50).then(sortRows);
+      return FF.Leaderboards.top('daily/' + (key || this.key()), 50);
     },
 
     shareText: function (d) {
@@ -209,7 +209,7 @@ window.FF = window.FF || {};
     return JSON.parse(decodeURIComponent(escape(atob(s))));
   }
 
-  var BIG_SCORE = 1000000;   // any game's points (the leaderboard cap); quiz links keep MAX_SCORE
+  var BIG_SCORE = 1000;      // any game's points (the leaderboard cap); quiz links keep MAX_SCORE
 
   // FNV-1a, so a challenge picks the same wording on every phone.
   function hash(str) {
@@ -299,6 +299,7 @@ window.FF = window.FF || {};
             st: (owner.stats || []).slice(0, 3).map(function (x) { return [x.value, x.label]; }),
             d: rec.from ? rec.from.at : (rec.at ? Math.floor(rec.at / 3600000) : undefined), o: rec.opts || undefined }
         : { v: 1, i: rec.id, s: rec.seed, k: rec.topic, n: owner.name, a: owner.avatar, sc: owner.score, c: owner.correct };
+      if (rec.pv === 2) payload.pv = 2;   // made with the smaller points (season 1)
       if (opts && opts.short) { delete payload.st; delete payload.a; }
       var code = b64encode(payload);
       var base = window.location.protocol === 'file:' ? 'https://playmona.com/play' : window.location.origin + window.location.pathname;
@@ -325,6 +326,7 @@ window.FF = window.FF || {};
           var hrs = Math.floor(Number(p.d));
           if (hrs > 0 && hrs * 3600000 <= Date.now() + 3600000) from.at = hrs;
           var out = { v: 2, id: p.i, seed: p.s, game: p.g, at: from.at ? from.at * 3600000 : null, from: from };
+          if (p.pv === 2) out.pv = 2;
           // The game's own choices (Quiz Mix topics): plain ids only.
           if (p.o && Array.isArray(p.o.topics)) {
             out.opts = { topics: p.o.topics.filter(function (x) { return typeof x === 'string' && /^[a-z]{2,20}$/.test(x); }).slice(0, 12) };
@@ -339,7 +341,7 @@ window.FF = window.FF || {};
         }
         var topic = FF.QuizRun.topic(p.k).id;
         return {
-          v: 1, id: p.i, seed: p.s, topic: topic,
+          v: 1, id: p.i, seed: p.s, topic: topic, pv: p.pv === 2 ? 2 : undefined,
           from: {
             name: String(p.n || t('aFriend', 'A friend')).replace(/\s+/g, ' ').trim().slice(0, 24),
             avatar: FF.Avatars.has(p.a) ? p.a : FF.Avatars.normalize(p.a, p.n),
@@ -365,6 +367,11 @@ window.FF = window.FF || {};
       return m ? m[1] : null;
     },
 
+    /* Made before the smaller points (no pv: 2): its scores can't be compared, so it is over. */
+    oldPoints: function (c) { return !c || c.pv !== 2; },
+    // A result row written before the smaller points.
+    isOldRow: function (row) { return !(row && row.v === 2); },
+
     // A link was opened: show the challenge (or its result if already played).
     openCode: function (code) {
       var c = this.decode(code);
@@ -378,7 +385,7 @@ window.FF = window.FF || {};
     create: function (topicId) {
       var self = this;
       var topic = FF.QuizRun.topic(topicId);
-      var rec = { id: FF.Random.newSeed() + FF.Random.newSeed(), seed: FF.Random.newSeed(), topic: topic.id, role: 'sent', at: Date.now() };
+      var rec = { id: FF.Random.newSeed() + FF.Random.newSeed(), seed: FF.Random.newSeed(), topic: topic.id, role: 'sent', at: Date.now(), pv: 2 };
       FF.QuizRun.play({
         title: t('challengeTitle', 'Challenge: {topic}', { topic: t('topic_' + topic.id, topic.name) }), icon: 'swords',
         questions: FF.QuizRun.build(rec.seed, topic.id),
@@ -397,6 +404,7 @@ window.FF = window.FF || {};
       var self = this;
       var c = this._incoming[id];
       if (!c) return;
+      if (this.oldPoints(c)) { if (FF.UI && FF.UI.toast) FF.UI.toast(t('challengeOldPoints', 'This challenge was made before the new points. Start a new one!')); return; }
       if (c.v === 2) {
         if (!this.playable(c)) { FF.UI.toast(t('chNotHere', 'This game is not in this version of PlayMona. Reload the page to update.'), { type: 'error' }); return; }
         if (!this.unlock(c.id, c.game)) { FF.Access.explain(c.game); return; }
@@ -407,7 +415,7 @@ window.FF = window.FF || {};
         title: t('challengeFrom', '{name}’s challenge', { name: c.from.name }), icon: 'swords',
         questions: FF.QuizRun.build(c.seed, c.topic),
         onDone: function (r) {
-          var rec = { id: c.id, seed: c.seed, topic: c.topic, role: 'received', from: c.from, at: Date.now(),
+          var rec = { id: c.id, seed: c.seed, topic: c.topic, role: 'received', from: c.from, at: Date.now(), pv: 2,
             me: { score: r.score, correct: r.correct, ms: Math.round(r.ms) } };
           self._put(rec);
           delete self._incoming[id];
@@ -423,7 +431,7 @@ window.FF = window.FF || {};
     fromRun: function (cur, results) {
       results = results || {};
       var mine = FF.GameFlow && FF.GameFlow._myResult ? FF.GameFlow._myResult(results.results) : (results.results || [])[0];
-      var rec = { id: FF.Random.newSeed() + FF.Random.newSeed(), v: 2, game: cur.def.id,
+      var rec = { id: FF.Random.newSeed() + FF.Random.newSeed(), v: 2, pv: 2, game: cur.def.id,
         seed: results.challengeSeed || cur.config.challengeSeed, role: 'sent', at: Date.now(), opts: results.dealOptions || undefined,
         me: { score: Math.max(0, Math.round(mine ? mine.points || 0 : 0)), ms: 0, stats: this.stats(results) } };
       if (typeof results.quizCorrect === 'number') rec.me.correct = results.quizCorrect;
@@ -437,7 +445,7 @@ window.FF = window.FF || {};
       var id = cur.config.challenge.id;
       var c = this._incoming[id];
       if (!c || this.byId(id)) return;
-      var rec = { id: c.id, v: 2, game: c.game, seed: c.seed, opts: c.opts, role: 'received', from: c.from, at: Date.now(),
+      var rec = { id: c.id, v: 2, pv: 2, game: c.game, seed: c.seed, opts: c.opts, role: 'received', from: c.from, at: Date.now(),
         me: { score: Math.max(0, Math.round(points || 0)), ms: 0, stats: this.stats(results) } };
       if (results && typeof results.quizCorrect === 'number') rec.me.correct = results.quizCorrect;
       this._put(rec);
@@ -448,8 +456,13 @@ window.FF = window.FF || {};
     // Share results so the sender can see who took them on (accounts only).
     _post: function (rec) {
       if (!FF.Cloud.available()) return;
+      FF.Cloud.set('challenges/' + rec.id + '/' + me().uid, this._row(rec)).catch(function () {});
+    },
+
+    // The result row for a challenge (v: 2: scored with the smaller points).
+    _row: function (rec) {
       var who = me();
-      var row = { name: who.name, avatar: who.avatar, ms: rec.me.ms || 0, t: Date.now() };
+      var row = { name: who.name, avatar: who.avatar, ms: rec.me.ms || 0, t: Date.now(), v: 2 };
       if (rec.v === 2) {
         row.score = Math.min(BIG_SCORE, rec.me.score);
         row.game = rec.game;
@@ -458,7 +471,7 @@ window.FF = window.FF || {};
         row.score = Math.min(MAX_SCORE, rec.me.score);
         row.correct = rec.me.correct;
       }
-      FF.Cloud.set('challenges/' + rec.id + '/' + who.uid, row).catch(function () {});
+      return row;
     },
 
     results: function (id) {
@@ -863,7 +876,9 @@ window.FF = window.FF || {};
         var words = C.wording(c.id);
         var wrap = FF.ui.el('section', { class: 'ch-invite' });
         wrap.appendChild(ticket(c, { name: c.from.name, avatar: c.from.avatar, score: c.from.score, stats: c.from.stats, tagline: words.tagline, at: c.at }));
-        if (!C.playable(c)) {
+        if (C.oldPoints(c)) {
+          wrap.appendChild(FF.ui.el('p', { class: 'social-done' }, t('challengeOldPoints', 'This challenge was made before the new points. Start a new one!')));
+        } else if (!C.playable(c)) {
           wrap.appendChild(FF.ui.el('p', { class: 'social-done' }, t('chNotHere', 'This game is not in this version of PlayMona. Reload the page to update.')));
         } else {
           wrap.appendChild(FF.UI.button(words.button, { class: 'btn-lg btn-primary btn-block', icon: 'swords', onClick: function () { C.accept(c.id); } }));
@@ -887,6 +902,12 @@ window.FF = window.FF || {};
       sent.appendChild(FF.ui.el('h1', { class: 'ch-send__title' }, params.fresh ? t('niceRun', 'Nice run!') : t('youChallenged', 'Your challenge')));
       sent.appendChild(FF.ui.el('p', { class: 'ch-send__lead' }, t('sendLinkLeadGame', 'Send this to your friends. They play the same {game} and try to beat {pts}.', { game: name, pts: fmt(rec.me.score) })));
       sent.appendChild(ticket(rec, { name: self.name, avatar: self.avatar, score: rec.me.score, stats: rec.me.stats, tagline: C.wording(rec.id).tagline, at: rec.at, preview: true }));
+      if (C.oldPoints(rec)) {
+        // Made before the smaller points: friends could not compare scores, so it can't be sent again.
+        sent.appendChild(FF.ui.el('p', { class: 'social-done' }, t('challengeOldPoints', 'This challenge was made before the new points. Start a new one!')));
+        main.appendChild(sent);
+        return;
+      }
       var text = rec.v === 2
         ? t('chShareTextGame', 'I scored {pts} in {game} on PlayMona. Can you beat me?', { pts: fmt(rec.me.score), game: name })
         : t('challengeShareText', 'I scored {pts} on PlayMona. Can you beat me?', { pts: fmt(rec.me.score) });
