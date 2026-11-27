@@ -389,7 +389,9 @@ window.FF = window.FF || {};
         msg.textContent = text || '';
         msg.className = 'mt-msg' + (tone ? ' is-' + tone : '');
         if (msgTimer) clearTimeout(msgTimer);
-        msgTimer = text ? setTimeout(function () { msg.textContent = ''; msg.className = 'mt-msg'; }, 2600) : null;
+        // Long messages (a refusal saying where to go back to) stay up long enough to read.
+        var showMs = Math.max(2600, String(text || '').length * 60);
+        msgTimer = text ? setTimeout(function () { msg.textContent = ''; msg.className = 'mt-msg'; }, showMs) : null;
       },
       penalty: function () {
         clockEl.classList.remove('is-hit');

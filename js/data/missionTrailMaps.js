@@ -57,7 +57,7 @@ window.FF = window.FF || {};
         { key: 'bench1', look: 'bench', x: 6, y: 4 },
         { key: 'flowers1', look: 'flower-bed', x: 7, y: 6 },
         { key: 'lamp1', look: 'street-lamp', x: 4, y: 4 },
-        { key: 'bush1', look: 'bush', x: 6, y: 6 },
+        { key: 'bush1', look: 'bush', x: 9, y: 6 },
         { key: 'bin1', look: 'bin', x: 6, y: 8 }
       ],
       start: { x: 5, y: 10, facing: 'up' }
@@ -117,6 +117,78 @@ window.FF = window.FF || {};
         { name: 'Mill Road', from: [6, 13], to: [13, 13] }
       ],
       start: { x: 9, y: 12, facing: 'up' }
+    },
+    {
+      // Getting around (Stages 11-20): a river you can only cross at two bridges, a park
+      // with paths, and look-alike buildings: three green houses in a row, two red shops,
+      // two brown houses.
+      id: 'town-2',
+      name: 'Riverside',
+      rows: [
+        'ggggggggggggggggggg',
+        'g=================g',
+        'g=ggg=ggg=ggg=ggg=g',
+        'g=ggg=ggg=ggg=ggg=g',
+        'g=ggg=ggg=ggg=ggg=g',
+        'g=================g',
+        'ggggg=ggggggg=ggggg',
+        'ggggg=ggggggg=ggggg',
+        '~~~~~=~~~~~~~=~~~~~',
+        'ggggg=ggggggg=ggggg',
+        'ggggg=ggggggg=ggggg',
+        'g=================g',
+        'g=ggg=ggg=f-f=ggg=g',
+        'g=ggg=ggg=---=ggg=g',
+        'g=ggg=ggg=f-f=ggg=g',
+        'g=================g',
+        'ggggggggggggggggggg'
+      ],
+      buildings: [
+        { key: 'n1', look: 'house-blue', x: 2, y: 3, w: 2, h: 2 },
+        { key: 'n2', look: 'shop-blue', x: 7, y: 3, w: 2, h: 2 },
+        { key: 'n3', look: 'hall-stone', x: 11, y: 3, w: 2, h: 2 },
+        { key: 'n4', look: 'house-purple', x: 15, y: 2, w: 2, h: 2 },
+        { key: 'm1', look: 'house-green', x: 2, y: 6, w: 2, h: 2 },
+        { key: 'm2', look: 'house-green', x: 6, y: 6, w: 2, h: 2 },
+        { key: 'm3', look: 'house-green', x: 10, y: 6, w: 2, h: 2 },
+        { key: 'm4', look: 'shop-green', x: 15, y: 6, w: 2, h: 2 },
+        { key: 's1', look: 'hall-brick', x: 2, y: 9, w: 2, h: 2 },
+        { key: 's2', look: 'shop-red', x: 7, y: 9, w: 2, h: 2 },
+        { key: 's3', look: 'house-orange', x: 10, y: 9, w: 2, h: 2 },
+        { key: 's4', look: 'block-glass', x: 15, y: 9, w: 2, h: 2 },
+        { key: 'd1', look: 'house-brown', x: 2, y: 13, w: 2, h: 2 },
+        { key: 'd2', look: 'shop-red', x: 7, y: 13, w: 2, h: 2 },
+        { key: 'd3', look: 'house-brown', x: 15, y: 13, w: 2, h: 2 }
+      ],
+      props: [
+        { key: 'tree1', look: 'tree-pine', x: 0, y: 0 },
+        { key: 'tree2', look: 'tree-pine', x: 18, y: 0 },
+        { key: 'tree3', look: 'tree-pine', x: 0, y: 16 },
+        { key: 'tree4', look: 'tree-pine', x: 18, y: 16 },
+        { key: 'tree5', look: 'tree-round', x: 4, y: 2 },
+        { key: 'tree6', look: 'tree-round', x: 14, y: 2 },
+        { key: 'tree7', look: 'tree-round', x: 10, y: 12 },
+        { key: 'tree8', look: 'tree-round', x: 12, y: 10 },
+        { key: 'stop1', look: 'bus-stop', x: 8, y: 2, check: true },
+        { key: 'fountain1', look: 'fountain', x: 12, y: 12, check: true },
+        { key: 'bench1', look: 'bench', x: 10, y: 14 },
+        { key: 'flowers1', look: 'flower-bed', x: 12, y: 14 },
+        { key: 'flowers2', look: 'flower-bed', x: 17, y: 7 },
+        { key: 'lamp1', look: 'street-lamp', x: 4, y: 4 },
+        { key: 'lamp2', look: 'street-lamp', x: 12, y: 7 },
+        { key: 'post1', look: 'postbox', x: 4, y: 7 },
+        { key: 'bush1', look: 'bush', x: 9, y: 6 },
+        { key: 'bush2', look: 'bush', x: 6, y: 14 },
+        { key: 'bin1', look: 'bin', x: 14, y: 4 },
+        { key: 'lights1', look: 'traffic-light', x: 14, y: 10 },
+        { key: 'signBridge', look: 'signpost', x: 14, y: 12, sign: 'Bridge Street' },
+        { key: 'signPark', look: 'signpost', x: 4, y: 12, sign: 'Park Lane' }
+      ],
+      streets: [
+        { name: 'Bridge Street', from: [13, 1], to: [13, 15] },
+        { name: 'Park Lane', from: [1, 11], to: [12, 11] }
+      ],
+      start: { x: 9, y: 15, facing: 'up' }
     }
   ];
 })();

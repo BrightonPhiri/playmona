@@ -280,6 +280,8 @@ window.FF = window.FF || {};
         }
       }
       a.off.push(run.on('scene', function (sc) {
+        // Fetching again puts the wrong thing back: the bag shows that.
+        handle.setBag(run.inventory.map(function (id) { return choice('objects', id); }));
         var category = MT.Assets.OPTION_CAT[sc.kind] || 'objects';
         handle.openScene({
           kind: sc.kind,
@@ -318,7 +320,19 @@ window.FF = window.FF || {};
       }));
       a.off.push(run.on('entered', function (e) { view.drive(e.key, e.look); }));
 
-      a.off.push(run.on('stepDone', function (e) { handle.setSteps(e.index + 1); }));
+      a.off.push(run.on('stepDone', function (e) { handle.setSteps(e.done); }));
+      a.off.push(run.on('stepUndone', function (e) { handle.setSteps(e.done); }));
+      // The right person, the wrong thing: they say so, and the player goes back for it.
+      a.off.push(run.on('refused', function (e) {
+        sound('wrong');
+        handle.closeScene();
+        var list = e.missing.map(function (id) { return choice('objects', id).name.toLowerCase(); }).join(t('mtAnd', ' and '));
+        var where = e.back ? String(run.revealed[e.back] || t('mtThatPlace', 'that place')).toLowerCase() : null;
+        handle.say(where
+          ? t('mtRefusedAt', 'That isn’t what I asked for! I need the {things}. Go back to the {place} to fetch it.', { things: list, place: where })
+          : t('mtRefusedStart', 'That isn’t what I asked for! I need the {things}. Go back to where you started to fetch it.', { things: list }), 'bad');
+        sync();
+      }));
       a.off.push(run.on('complete', function (res) { finish(stage, res, false); }));
       a.off.push(run.on('failed', function (res) { finish(stage, res, true); }));
 
