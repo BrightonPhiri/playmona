@@ -117,8 +117,22 @@ window.FF = window.FF || {};
     return list;
   }
 
+  /* Season 1 starts: a line at the top of the Leaderboard tab until it is closed. */
+  function seasonNote() {
+    if (FF.Storage.get('seasonNoteSeen', false)) return null;
+    var n = FF.ui.div('social-note social-note--season');
+    n.appendChild(icon('sparkle'));
+    n.appendChild(FF.ui.span('social-note__text', t('seasonNote', 'New season! Points are smaller now, so every board starts fresh.')));
+    n.appendChild(FF.UI.button(t('gotIt', 'Got it'), { class: 'btn-sm', onClick: function () {
+      FF.Storage.set('seasonNoteSeen', true);
+      if (n.parentNode) n.parentNode.removeChild(n);
+    } }));
+    return n;
+  }
+
   var LB = {
     MAX_SCORE: MAX_SCORE,
+    seasonNote: seasonNote,
     SEASON: SEASON,
     SEASON_START_DAY: SEASON_START_DAY,
     seasonRows: seasonRows,
@@ -601,6 +615,9 @@ window.FF = window.FF || {};
         FF.Assets.artUrl('ui', 'gamenight')));
 
       if (!FF.Cloud.available()) { main.appendChild(guestNote()); return; }
+
+      var season = seasonNote();
+      if (season) main.appendChild(season);
 
       var strip = placesStrip();
       if (strip) {

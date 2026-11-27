@@ -320,4 +320,33 @@ test('points: the database takes season 1 board, daily and challenge rows only w
   assertEqual([lb.all.$uid && lb.all.$uid['.write'], lb.week.$week.$uid && lb.week.$week.$uid['.write']], [undefined, undefined], 'old boards take no writes');
 });
 
+/* ---------------- Task 11: one-time clear of saved bests ---------------- */
+
+test('points: saved bests in old points clear once per account; times and everything else stay', function () {
+  const FF = loadFF(['js/core.js', 'js/storage.js', 'js/scoring.js']);
+  FF.Storage.init();
+  FF.Storage.setScope('alice');
+  assert(FF.PointsV2, 'FF.PointsV2 exists');
+  ['ballSwap:best', 'numberRush:best', 'stacoend:best', 'blinkRemember:best', 'rememberSequence:best', 'sortRush:best', 'lbPlaces'].forEach(function (k) {
+    assert(FF.PointsV2.BEST_KEYS.indexOf(k) !== -1, k + ' is cleared');
+  });
+  FF.Storage.set('stacoend:best', { x: { points: 400 } });
+  FF.Storage.set('sortRush:best', { y: 3000 });
+  FF.Storage.set('quickTapBest', { me: { normal: 210 } });
+  FF.Storage.set('crossword:best', { 'easy|mixed': 61000 });
+  FF.Storage.set('favorites', ['a']);
+  assertEqual(FF.PointsV2.migrate(), true);
+  assertEqual([FF.Storage.get('stacoend:best', null), FF.Storage.get('sortRush:best', null)], [null, null]);
+  assertEqual(FF.Storage.get('quickTapBest', null).me.normal, 210, 'reaction times are not points');
+  assertEqual(FF.Storage.get('crossword:best', null)['easy|mixed'], 61000, 'crossword bests are times');
+  assertEqual(FF.Storage.get('favorites', []).join(), 'a');
+  FF.Storage.set('stacoend:best', { x: { points: 12 } });
+  assertEqual(FF.PointsV2.migrate(), false, 'only once');
+  assertEqual(FF.Storage.get('stacoend:best', null).x.points, 12);
+  FF.Storage.setScope('bob');
+  FF.Storage.set('numberRush:best', { z: { value: 900 } });
+  assertEqual(FF.PointsV2.migrate(), true, 'each account once');
+  assertEqual(FF.Storage.get('numberRush:best', null), null);
+});
+
 module.exports = { loadGame: loadGame, within: within, UI: UI };

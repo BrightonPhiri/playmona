@@ -73,6 +73,7 @@ window.FF = window.FF || {};
       FF.Storage.set('session', next);
       FF.Storage.setScope(next.uid);
       FF.Storage.claimLegacy(next.uid);
+      if (FF.PointsV2) FF.PointsV2.migrate();   // once per account: old-points bests go
       if (!next.needsProfile && FF.Players) FF.Players.syncMe(next);
     } else {
       FF.Storage.remove('session');

@@ -284,6 +284,24 @@ window.FF = window.FF || {};
     }
   };
 
+  /* ---------- Season 1: smaller points ----------
+     Personal bests saved in the old (much bigger) points would never be
+     beaten again, so each account clears them once. Bests that are
+     times (Quick Tap, Mini Crossword) or counts (What's Missing Endless)
+     are not points and stay. */
+  FF.PointsV2 = {
+    KEY: 'pointsV2',
+    BEST_KEYS: ['ballSwap:best', 'numberRush:best', 'stacoend:best', 'blinkRemember:best',
+      'rememberSequence:best', 'sortRush:best', 'lbPlaces'],
+    // Clears the current account's old bests. True only on the run that cleared.
+    migrate: function () {
+      if (!FF.Storage || FF.Storage.get(this.KEY, false)) return false;
+      this.BEST_KEYS.forEach(function (k) { FF.Storage.remove(k); });
+      FF.Storage.set(this.KEY, true);
+      return true;
+    }
+  };
+
   /* ---------- Recently played ---------- */
   FF.Recents = {
     get: function () { return FF.Storage.get('recents', []); },
