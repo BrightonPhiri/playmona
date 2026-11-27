@@ -34,7 +34,8 @@ every later run starts again from that file.
 
 Reads   assets/playmona_assets/spot-difference/<id>-a.png and -b.png
         (--game hiddenObject: assets/playmona_assets/hidden-object/<id>-empty.png and -hidden.png,
-         writing tools/art/hiddenObject-spots/<id>.json)
+         writing tools/art/hiddenObject-spots/<id>.json; --game missionTrail: the same from
+         assets/playmona_assets/mission-trail/busy/, writing tools/art/missionTrail-spots/<id>.json)
 Writes  tools/art/spotDifference-spots/<id>.json
         assets/playmona_assets/spot-difference/<id>-spots.jpg (review picture)
 Exits 1 unless it finds exactly --expect spots.
@@ -56,6 +57,8 @@ SIDES = ('a', 'b')
 GAMES = {
     'spotDifference': ('spot-difference', 'spotDifference-spots', ('a', 'b')),
     'hiddenObject': ('hidden-object', 'hiddenObject-spots', ('empty', 'hidden')),
+    # Mission Trail's busy rooms (then tools/art/missiontrail-rooms.py names the spots).
+    'missionTrail': ('mission-trail/busy', 'missionTrail-spots', ('empty', 'hidden')),
 }
 WORK = 320          # the diff runs at this size: fast, and noise averages out
 CORE = 30           # a spot's own changed pixels (no padding): a patch must not cover another spot's
