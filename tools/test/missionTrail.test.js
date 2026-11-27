@@ -304,4 +304,48 @@ test('mission trail: the validator catches gaps in stage ids and unknown maps', 
   assert(problems.indexOf('expected stage 2') !== -1, problems);
 });
 
+/* ---------------- Task 5: account sync merge ---------------- */
+
+const DEVICE_A = { v: 1, highest: 3, stages: { '1': { stars: 3, best: 92, bestMs: 30000, done: true, plays: 2 }, '2': { stars: 1, best: 55, bestMs: 50000, done: true, plays: 1 } } };
+const SERVER_B = { v: 1, highest: 2, stages: { '1': { stars: 2, best: 80, bestMs: 21000, done: true, plays: 5 } } };
+
+async function syncWith(localNewer) {
+  const FF = load(['js/storage.js', 'js/missiontrail/progress.js', 'js/sync.js']);
+  FF.Storage.init();
+  FF.Storage.setScope('u1');
+  FF.Storage.set('missionTrail', DEVICE_A);
+  FF.Storage.set('syncMeta', { missionTrail: localNewer ? 9e12 : 1 });
+  const updates = [];
+  const remote = { missionTrail: { v: JSON.stringify(SERVER_B), t: 5000 } };
+  const firebase = { database: function () { return { ref: function () { return {
+    once: function () { return Promise.resolve({ val: function () { return remote; } }); },
+    update: function (v) { updates.push(v); return Promise.resolve(); }
+  }; } }; } };
+  await FF.Sync.start('u1', firebase);
+  FF.Sync.stop();
+  return { FF: FF, updates: updates };
+}
+
+function assertMerged(o) {
+  const local = o.FF.MissionTrail.Progress.load();
+  assertEqual(local.stages['1'], { stars: 3, best: 92, bestMs: 21000, done: true, plays: 5 });
+  assertEqual([local.highest, !!local.stages['2']], [3, true]);
+  const sent = o.updates.filter(function (u) { return u.missionTrail; }).pop();
+  assert(sent, 'the merged copy is sent back to the account');
+  assertEqual(JSON.parse(sent.missionTrail.v).stages['1'].bestMs, 21000);
+}
+
+test('mission trail: progress is a synced account key', function () {
+  const FF = load(['js/storage.js', 'js/missiontrail/progress.js', 'js/sync.js']);
+  assert(FF.Sync.KEYS.indexOf('missionTrail') !== -1);
+});
+
+test('mission trail: a newer server copy merges with this device', async function () {
+  assertMerged(await syncWith(false));
+});
+
+test('mission trail: a newer device copy merges with the server', async function () {
+  assertMerged(await syncWith(true));
+});
+
 module.exports = { load, map };

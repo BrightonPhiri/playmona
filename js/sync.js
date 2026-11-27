@@ -18,8 +18,18 @@ window.FF = window.FF || {};
     'players', 'teams', 'favorites', 'recents', 'stats',
     'difficulty', 'length', 'timer', 'sound', 'music', 'volume', 'animations',
     'randomOrder', 'randomQuestions', 'displaySeconds', 'autoAdvanceMs',
-    'dailyLog', 'challenges', 'savedRooms', 'hidePhotoPublic'
+    'dailyLog', 'challenges', 'savedRooms', 'hidePhotoPublic', 'missionTrail'
   ];
+
+  // Keys whose two copies are combined instead of the newer one winning,
+  // so progress made on two devices is never lost. Each returns the
+  // combined value, or null when its module is not loaded (then the
+  // newer copy wins as usual).
+  var MERGE = {
+    missionTrail: function (local, remote) {
+      return FF.MissionTrail && FF.MissionTrail.Progress ? FF.MissionTrail.Progress.merge(local, remote) : null;
+    }
+  };
   var PUSH_DELAY = 1500;
 
   var state = { uid: null, db: null, dirty: {}, timer: null, off: null, onlineHandler: null };
@@ -106,6 +116,18 @@ window.FF = window.FF || {};
           var r = remote[key];
           var localT = m[key] || 0;
           var hasLocal = FF.Storage.get(key, undefined) !== undefined;
+          if (r && hasLocal && MERGE[key]) {
+            try {
+              var merged = MERGE[key](FF.Storage.get(key, null), JSON.parse(r.v));
+              if (merged) {
+                FF.Storage.set(key, merged, { silent: true });
+                m[key] = Date.now();
+                state.dirty[key] = true;   // send the combined copy back
+                changed = true;
+                return;
+              }
+            } catch (e) { /* a damaged copy: fall back to the newer one */ }
+          }
           if (r && r.t > localT) {
             try {
               FF.Storage.set(key, incoming(key, JSON.parse(r.v)), { silent: true });
