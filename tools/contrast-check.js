@@ -112,6 +112,24 @@ if (base['skb-desk']) {
   check('skb bad on soft', base['skb-bad'], base['skb-bad-soft'], 4.5);
   check('skb warn on paper', base['skb-warn'], base['skb-paper'], 4.5);
 }
+if (base['mt-meadow']) {
+  console.log(' '); console.log('== Mission Trail ==');
+  ['mt-meadow', 'mt-meadow-2', 'mt-paper'].forEach(function (bg) {
+    check('mt ink on ' + bg, base['mt-ink'], base[bg], 4.5);
+    check('mt soft ink on ' + bg, base['mt-ink-soft'], base[bg], 4.5);
+    check('mt green on ' + bg, base['mt-green'], base[bg], 4.5);
+  });
+  check('mt good on paper', base['mt-good'], base['mt-paper'], 4.5);
+  check('mt bad on paper', base['mt-bad'], base['mt-paper'], 4.5);
+  check('mt locked ink on locked', base['mt-locked-ink'], base['mt-locked'], 4.5);
+  ['mt-green', 'mt-green-deep', 'mt-red'].forEach(function (bg) {
+    check('mt text on ' + bg, base['mt-on-accent'], base[bg], 4.5);
+  });
+  check('mt hud ink on hud', base['mt-hud-ink'], base['mt-hud'], 4.5);
+  check('mt warn on hud', base['mt-warn'], base['mt-hud'], 4.5);
+  check('mt gold on hud', base['mt-gold'], base['mt-hud'], 3);
+  check('mt gold-deep on paper', base['mt-gold-deep'], base['mt-paper'], 3);
+}
 if (base['cw-night']) {
   ['cw-night', 'cw-night-2', 'cw-walnut'].forEach(function (bg) {
     check('cw cream on ' + bg, base['cw-cream'], base[bg], 4.5);

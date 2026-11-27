@@ -214,6 +214,13 @@
   --skb-violet: #6a3df0; --skb-blue: #2c6fe8; --skb-violet-deep: #4a25c4; --skb-on-accent: #ffffff;
   --skb-lilac: #eee8ff; --skb-sky: #e3edff;
   --skb-good: #15803d; --skb-good-soft: #dcfce7; --skb-bad: #be123c; --skb-bad-soft: #ffe4e6; --skb-warn: #c2410c;
+  /* Mission Trail (js/games/missionTrail.js): a sunny village, the same in both themes: meadow green,
+     cream letter paper, deep green ink, a dark HUD strip over the town. */
+  --mt-meadow: #e8f3dc; --mt-meadow-2: #d3e8bf; --mt-paper: #fffaf0; --mt-paper-edge: #e2cfa6;
+  --mt-ink: #24301f; --mt-ink-soft: #4f5b45; --mt-on-accent: #ffffff;
+  --mt-green: #276b33; --mt-green-deep: #1f5a2a; --mt-red: #b8321f; --mt-gold: #f2b632; --mt-gold-deep: #9a6200;
+  --mt-hud: #1e2b1d; --mt-hud-ink: #ffffff; --mt-warn: #ffb4a0;
+  --mt-good: #1f7a35; --mt-bad: #b42318; --mt-locked: #e4e1d6; --mt-locked-ink: #575345;
   --medal-gold: #ffc83d; --medal-silver: #cfd6f6; --medal-bronze: #ff9a52; --medal-ink: #0b1030;
 }
 

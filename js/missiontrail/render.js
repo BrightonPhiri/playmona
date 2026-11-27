@@ -348,7 +348,11 @@ window.FF = window.FF || {};
       draw(now(), null);
     }
 
-    var onResize = function () { resize(); };
+    // FF.GameFlow has no cleanup hook: once the canvas leaves the page, stop for good.
+    var onResize = function () {
+      if (canvas.isConnected === false) { view.destroy(); return; }
+      resize();
+    };
     window.addEventListener('resize', onResize);
 
     var view = {

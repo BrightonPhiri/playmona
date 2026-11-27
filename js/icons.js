@@ -108,6 +108,7 @@ window.FF = window.FF || {};
   "pictureRush": "puzzle-piece",
   "spotDifference": "magnifying-glass",
   "hiddenObject": "binoculars",
+  "missionTrail": "map-trifold",
   "imposters": "detective",
   "wordFlow": "pencil",
   "guessIt": "images",

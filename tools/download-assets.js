@@ -124,6 +124,7 @@ const GAME = {
   // visual
   pictureRush: 'puzzle-piece', spotDifference: 'magnifying-glass',
   hiddenObject: 'binoculars',
+  missionTrail: 'map-trifold',
   guessIt: 'images',
   // memory
   memoryMatch: 'cards', whatsMissing: 'eye-slash',
