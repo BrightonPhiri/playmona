@@ -187,10 +187,10 @@
     { "from": "rooms/hospital.png", "to": "assets/images/games/missionTrail/scenes/hospital.webp", "size": [960, 600], "max_kb": 90 },
     { "from": "rooms/post-office.png", "to": "assets/images/games/missionTrail/scenes/post-office.webp", "size": [960, 600], "max_kb": 90 },
     { "from": "rooms/garage.png", "to": "assets/images/games/missionTrail/scenes/garage.webp", "size": [960, 600], "max_kb": 90 },
-    { "from": "busy/bedroom-hidden.png", "to": "assets/images/games/missionTrail/rooms/bedroom.webp", "size": [1500, 1000], "max_kb": 260 },
-    { "from": "busy/hallway-hidden.png", "to": "assets/images/games/missionTrail/rooms/hallway.webp", "size": [1500, 1000], "max_kb": 260 },
-    { "from": "busy/kitchen-hidden.png", "to": "assets/images/games/missionTrail/rooms/kitchen.webp", "size": [1500, 1000], "max_kb": 260 },
-    { "from": "busy/library-hidden.png", "to": "assets/images/games/missionTrail/rooms/library.webp", "size": [1500, 1000], "max_kb": 260 },
-    { "from": "busy/living-room-hidden.png", "to": "assets/images/games/missionTrail/rooms/living-room.webp", "size": [1500, 1000], "max_kb": 260 }
+    { "from": "busy/bedroom-hidden.png", "to": "assets/images/games/missionTrail/rooms/bedroom.webp", "size": [1024, 1024], "max_kb": 200 },
+    { "from": "busy/hallway-hidden.png", "to": "assets/images/games/missionTrail/rooms/hallway.webp", "size": [1024, 1024], "max_kb": 200 },
+    { "from": "busy/kitchen-hidden.png", "to": "assets/images/games/missionTrail/rooms/kitchen.webp", "size": [1024, 1024], "max_kb": 200 },
+    { "from": "busy/library-hidden.png", "to": "assets/images/games/missionTrail/rooms/library.webp", "size": [1024, 1024], "max_kb": 200 },
+    { "from": "busy/living-room-hidden.png", "to": "assets/images/games/missionTrail/rooms/living-room.webp", "size": [1024, 1024], "max_kb": 200 }
   ]
 }
