@@ -42,7 +42,7 @@ second checker.
 |---|---|---|
 | Guess It! | `js/games/guessIt.js` | One game for every picture topic (Animals, Flags, Food, Landmarks, Objects, Sports, Vehicles, Jobs, Instruments, Mix). Expert spells the name with letter tiles; long names spell a shorter accepted name (Tower of Pisa). Other names from each item's `aka`, checked by `FF.AnswerMatch` within the topic. +6 s, +50. Flags runs the Guess the Country engine (`js/games/guessCountry.js`) with country aliases. Rooms play Easy to Hard choices, never Expert. |
 | GeoSpin | `js/games/geoSpin.js` | Letter tiles from the start; the server referee checks answers in rooms. |
-| Who Am I? (Bible) | `js/games/bibleGames.js` | Spell the person; other names from `js/data/bibleAliases.js` (Abram, Simon Peter, Pilate). Family pool, +50. |
+| Who Am I? (Bible) | `js/games/bibleGames.js` | Spell the person; other names from `js/data/bibleAliases.js` (Abram, Simon Peter, Pilate). Family pool, +2 (a clue-scored game: 4 points at most for the answer itself). |
 | Books of the Bible | `js/games/bibleGames.js` | "What comes next?" is spelled (number tiles for 1 Kings; First/I/1st Kings count). +6 s, +50. |
 | Verse Rush | `js/games/bibleGames.js` | "Where is it?" spells the book (Psalm verses are in Psalms). Building the verse is unchanged. +6 s, +50. |
 | Bible Quiz | `js/games/bibleQuiz.js` | "Who said it?" and "Finish the verse" with short answers (2–14 letters, no commas) are spelled; the other choices are never accepted. No 50:50 on those. +6 s, +50. |

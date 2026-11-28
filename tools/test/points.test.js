@@ -37,7 +37,7 @@ test('points: bible quiz scores 10 a right answer, speed up to 5, bonus question
 
 test('points: bible games (who am I, verse rush, books) score in small points', function () {
   const G = loadGame(UI.concat(['js/data/bible.js']), ['js/games/bibleGames.js']).BibleGames;
-  assertEqual([1, 2, 3, 4].map(G.who.points), [10, 8, 5, 3]);
+  assertEqual([1, 2, 3, 4].map(G.who.points), [4, 3, 2, 1]);
   assertEqual(G.verse.buildPoints(0, 30000, 0, 0), 15);
   assertEqual(G.verse.buildPoints(30000, 30000, 9, 9), 3);
   assertEqual(G.verse.wherePoints(true, 0), 15);

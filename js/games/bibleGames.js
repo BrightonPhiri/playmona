@@ -2,7 +2,8 @@
    PLAYMONA — games/bibleGames.js
    Three Bible games (Bible Quiz lives in bibleQuiz.js), reading
    js/data/bible.js (KJV wording):
-     bibleWhoAmI    — Who Am I? Four clues, hardest first; guess early for more.
+     bibleWhoAmI    — Who Am I? One clue to start, hardest first; every
+                      clue you ask for costs a point.
      bibleVerseRush — Verse Rush: build a verse from its pieces, or find where it is.
      bibleBooks     — Books of the Bible: testament, part of the Bible,
                       what comes next, and putting books in order.
@@ -92,7 +93,7 @@ window.FF = window.FF || {};
 
   /* ---------- Who Am I? ---------- */
 
-  var WHO_STANDARD = { level: 'family', testament: 'all', pace: 'auto' };
+  var WHO_STANDARD = { level: 'family', testament: 'all', pace: 'tap' };
   var WHO_MIN_POOL = 10;
   var WHO_CLUE_MS = 8000;
 
@@ -101,7 +102,7 @@ window.FF = window.FF || {};
     return {
       level: levelOf(s.level),
       testament: s.testament === 'OT' || s.testament === 'NT' ? s.testament : 'all',
-      pace: s.pace === 'tap' ? 'tap' : 'auto'
+      pace: s.pace === 'auto' ? 'auto' : 'tap'
     };
   }
   function whoIsStandard(s) {
@@ -150,8 +151,8 @@ window.FF = window.FF || {};
     });
   }
 
-  /* 10 on the first clue, then 8, 5 and 3 (the same in rooms). */
-  var WHO_POINTS = [10, 8, 5, 3];
+  /* 4 on the first clue, and a point less for every clue asked for (the same in rooms). */
+  var WHO_POINTS = [4, 3, 2, 1];
   function whoPoints(clue) { return WHO_POINTS[Math.max(1, Math.min(4, clue)) - 1]; }
 
   /* ---------- Verse Rush ---------- */
@@ -903,11 +904,13 @@ window.FF = window.FF || {};
   /* ============================================================
      WHO AM I? (BIBLE EDITION)
      ============================================================ */
-  // A new clue every 8 s, so four clues need about 32 s to read.
+  // Time enough to read every clue, whoever opens them quickly or slowly.
   var WHO_ONLINE_MIN_SECS = 40;
   var WHO_SEEN = 'bibleWhoSeen';
   var STREAK_EVERY = 3;
-  var STREAK_BONUS = 5;
+  // Small, so a bonus never outweighs the answer itself (4 at most).
+  var STREAK_BONUS = 2;
+  var WHO_SPELL_BONUS = 2;
 
   function levelOptions() { return LEVELS.map(function (l) { return { value: l, label: levelName(l) }; }); }
 
@@ -920,8 +923,8 @@ window.FF = window.FF || {};
         { field: 'testament', label: t('bgTestament', 'Testament'), options: [
           { value: 'all', label: t('bgBoth', 'Both') }, { value: 'OT', label: t('bgOld', 'Old') }, { value: 'NT', label: t('bgNew', 'New') }
         ] },
-        { field: 'pace', label: t('bwClues', 'Clues'), desc: t('bwCluesDesc', 'A new clue every 8 seconds, or only when you ask. Each clue lowers the points.'), options: [
-          { value: 'auto', label: t('bwAuto', 'Every 8 seconds'), icon: 'timer' }, { value: 'tap', label: t('bwTap', 'When I ask'), icon: 'hand-tap' }
+        { field: 'pace', label: t('bwClues', 'Clues'), desc: t('bwCluesDesc2', 'The first clue shows on its own. Ask for another whenever you like, or have one arrive every 8 seconds. Every clue after the first costs a point.'), options: [
+          { value: 'tap', label: t('bwTap', 'When I ask'), icon: 'hand-tap' }, { value: 'auto', label: t('bwAuto', 'Every 8 seconds'), icon: 'timer' }
         ] }
       ],
       chips: null,
@@ -951,7 +954,9 @@ window.FF = window.FF || {};
       var deck = whoDeal(data.whoAmI, c, rng(seed), want, shared ? null : seenFor(WHO_SEEN, list, want));
       var spelling = isSpelled(c) && !racing;
       if (timed) FF.GameLength.manual();
-      var autoClues = racing || c.pace === 'auto';
+      // Rooms follow the setting too: everyone opens their own clues and
+      // scores on their own clue count.
+      var autoClues = c.pace === 'auto';
       var totals = tallies(scorers);
       var met = [];          // { name, right, clue } for the recap
 
@@ -1028,7 +1033,7 @@ window.FF = window.FF || {};
         var tools = FF.ui.div('bw-tools');
         var worth = FF.ui.span('bw-worth', '');
         tools.appendChild(worth);
-        var clueBtn = FF.UI.button(t('nextClue', 'Another clue'), { class: 'btn-sm', icon: 'plus', onClick: function () { advanceClue(); } });
+        var clueBtn = FF.UI.button(t('bwAnotherCost', 'Another clue (−1)'), { class: 'btn-sm', icon: 'plus', onClick: function () { advanceClue(); } });
         tools.appendChild(clueBtn);
         card.appendChild(tools);
         stage.appendChild(card);
@@ -1146,7 +1151,7 @@ window.FF = window.FF || {};
           totals.add(entity.id, isCorrect);
           met.push({ name: item.answer, right: isCorrect, clue: clueLevel });
           if (isCorrect) {
-            var pts = spell ? spellPoints(whoPoints(clueLevel), true) : whoPoints(clueLevel);
+            var pts = whoPoints(clueLevel) + (spell ? WHO_SPELL_BONUS : 0);
             api.scoring.add(entity.id, pts, { correct: true });
             var r = api.scoring.record ? api.scoring.record(entity.id) : null;
             var streak = !!(r && r.streak > 0 && r.streak % STREAK_EVERY === 0);
@@ -1203,7 +1208,7 @@ window.FF = window.FF || {};
   FF.registerGame({
     id: 'bibleWhoAmI',
     name: 'Who Am I? (Bible)',
-    description: 'Four clues, hardest first, about one of 68 people of the Bible. Guess early for the most points.',
+    description: 'One clue about one of 100 people of the Bible, hardest first. Ask for more clues if you need them, but each one costs a point.',
     category: 'bible',
     icon: '🔍',
     players: [1, 8],
@@ -1213,9 +1218,10 @@ window.FF = window.FF || {};
     modes: ['solo', 'turn', 'team', 'everyone'],
     defaultMode: 'turn',
     howToPlay: [
-      'Pick a level (Kids, Family, Bible scholar or Expert), a testament, and whether clues come by themselves.',
-      'Clues appear one at a time, hardest first. Pick the person from four names, or on Expert spell the name with letter tiles (5 bonus points).',
-      'The first clue is worth 10 points, then 8, 5 and 3. Three right in a row earns a bonus.',
+      'Pick a level (Kids, Family, Bible scholar or Expert) and a testament.',
+      'One clue shows, the hardest one. Tap Another clue whenever you want the next, up to four in all.',
+      'Guessing on the first clue is worth 4 points, and every clue you ask for takes one off: 3, then 2, then 1. Three right in a row earns a bonus.',
+      'Pick the person from four names, or on Expert spell the name with letter tiles for 2 bonus points.',
       'A wrong name ends that person. After each answer, read a verse about them and where their story is.'
     ],
     start: function (api) {

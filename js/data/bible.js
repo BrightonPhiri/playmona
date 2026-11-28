@@ -280,6 +280,126 @@ window.FF = window.FF || {};
       'I walked with God.',
       'I did not die: God took me.'
     ], 'Genesis 5; Hebrews 11:5', ['Genesis 5:24', 'And Enoch walked with God: and he was not; for God took him.']],
+    ['Abel', 'k', 'OT', 'm', [
+      'My blood cried unto God from the ground.',
+      'I was a keeper of sheep, and I brought the LORD the firstling of my flock.',
+      'God had respect unto my offering, and my brother was angry.',
+      'Cain killed me in the field, and I was the first man to die.'
+    ], 'Genesis 4', ['Hebrews 11:4', 'By faith Abel offered unto God a more excellent sacrifice than Cain, by which he obtained witness that he was righteous, God testifying of his gift: and by it he being dead yet speaketh.']],
+    ['Hagar', 'f', 'OT', 'f', [
+      'An angel found me by a fountain of water in the wilderness, by the way to Shur.',
+      'I was an Egyptian handmaid, and I ran away from my mistress.',
+      'God opened my eyes to a well of water when my son was dying of thirst.',
+      'Sarah sent me away with my son Ishmael, whose father was Abraham.'
+    ], 'Genesis 16 and 21', ['Genesis 16:13', 'And she called the name of the LORD that spake unto her, Thou God seest me.']],
+    ['Ishmael', 'f', 'OT', 'm', [
+      'The angel said I would be a wild man, and my hand against every man.',
+      'I grew up and became an archer in the wilderness of Paran.',
+      'My mother was my father’s Egyptian handmaid.',
+      'Abraham was my father, and Isaac was my younger brother.'
+    ], 'Genesis 16 – 25', ['Genesis 21:20', 'And God was with the lad; and he grew, and dwelt in the wilderness, and became an archer.']],
+    ['Esau', 'f', 'OT', 'm', [
+      'I was also called Edom, and my children dwelt in the land of Seir.',
+      'I came in from the field faint, and sold what was mine for a meal of pottage.',
+      'My father Isaac loved me, for I was a cunning hunter, a man of the field.',
+      'My twin brother Jacob took my birthright and my blessing, and years later I ran and kissed him.'
+    ], 'Genesis 25 – 33', ['Genesis 25:27', 'And the boys grew: and Esau was a cunning hunter, a man of the field; and Jacob was a plain man, dwelling in tents.']],
+    ['Leah', 'f', 'OT', 'f', [
+      'I was tender eyed, and my younger sister was beautiful.',
+      'My father Laban gave me to a man who had served seven years for my sister.',
+      'I bore six sons and a daughter named Dinah.',
+      'Jacob married me first, and Rachel my sister was his other wife.'
+    ], 'Genesis 29 – 30', ['Genesis 29:35', 'And she conceived again, and bare a son: and she said, Now will I praise the LORD: therefore she called his name Judah; and left off bearing.']],
+    ['Rachel', 'f', 'OT', 'f', [
+      'I hid my father’s images in the camel’s furniture and sat upon them.',
+      'I kept my father Laban’s sheep, and a man rolled the stone from the well for me.',
+      'I died on the way to Bethlehem, and a pillar was set upon my grave.',
+      'Jacob served fourteen years for me, and my sons were Joseph and Benjamin.'
+    ], 'Genesis 29 – 35', ['Genesis 29:20', 'And Jacob served seven years for Rachel; and they seemed unto him but a few days, for the love he had to her.']],
+    ['Judah', 's', 'OT', 'm', [
+      'My father said a lion was the sign of my tribe.',
+      'I told my brothers to sell the dreamer instead of killing him.',
+      'I offered myself to stay in Egypt in my youngest brother’s place.',
+      'I was the fourth son of Jacob and Leah, and kings came of my tribe.'
+    ], 'Genesis 37 – 49', ['Genesis 49:10', 'The sceptre shall not depart from Judah, nor a lawgiver from between his feet, until Shiloh come; and unto him shall the gathering of the people be.']],
+    ['Jethro', 's', 'OT', 'm', [
+      'I told a weary leader to choose able men to judge the people with him.',
+      'I was a priest of Midian, and I had seven daughters.',
+      'My son-in-law kept my flock for forty years before God called him.',
+      'Moses married my daughter Zipporah, and I gave him my counsel in the wilderness.'
+    ], 'Exodus 2 – 18', ['Exodus 18:11', 'Now I know that the LORD is greater than all gods: for in the thing wherein they dealt proudly he was above them.']],
+    ['Zipporah', 's', 'OT', 'f', [
+      'I was one of seven daughters of a priest of Midian who watered our father’s flock.',
+      'A stranger helped us at the well when shepherds drove us away.',
+      'I took a sharp stone and circumcised my son on the way to Egypt.',
+      'Moses was my husband, and Gershom was our firstborn son.'
+    ], 'Exodus 2 – 18', ['Exodus 2:21', 'And Moses was content to dwell with the man: and he gave Moses Zipporah his daughter.']],
+    ['Balaam', 's', 'OT', 'm', [
+      'An angel with a drawn sword stood in my way, and I could not see him.',
+      'My ass spoke to me after I had smitten her three times.',
+      'A king sent for me to curse Israel, but I blessed them instead.',
+      'Balak hired me, and I could speak only what God put in my mouth.'
+    ], 'Numbers 22 – 24', ['Numbers 22:28', 'And the LORD opened the mouth of the ass, and she said unto Balaam, What have I done unto thee, that thou hast smitten me these three times?']],
+    ['Jael', 's', 'OT', 'f', [
+      'I covered a fleeing captain with a mantle and gave him milk to drink.',
+      'I dwelt in a tent, the wife of Heber the Kenite.',
+      'I drove a nail of the tent through the temples of a sleeping enemy.',
+      'Deborah’s song called me blessed above women, for Sisera died in my tent.'
+    ], 'Judges 4 and 5', ['Judges 5:24', 'Blessed above women shall Jael the wife of Heber the Kenite be, blessed shall she be above women in the tent.']],
+    ['Delilah', 'k', 'OT', 'f', [
+      'The lords of the Philistines promised me eleven hundred pieces of silver each.',
+      'I asked a strong man again and again where his great strength lay.',
+      'I had the seven locks of his head shaved off while he slept upon my knees.',
+      'Samson told me his secret, and his strength went from him because of me.'
+    ], 'Judges 16', ['Judges 16:6', 'And Delilah said unto Samson, Tell me, I pray thee, wherein thy great strength lieth, and wherewith thou mightest be bound to afflict thee.']],
+    ['Eli', 'f', 'OT', 'm', [
+      'My two sons made themselves vile, and God said my house would be judged.',
+      'I was the priest at Shiloh, and I thought a praying woman was drunken.',
+      'I told a boy to answer, Speak, LORD; for thy servant heareth.',
+      'Samuel grew up with me, and I fell backward and died when I heard the ark was taken.'
+    ], '1 Samuel 1 – 4', ['1 Samuel 3:9', 'Therefore Eli said unto Samuel, Go, lie down: and it shall be, if he call thee, that thou shalt say, Speak, LORD; for thy servant heareth.']],
+    ['Abigail', 'f', 'OT', 'f', [
+      'I rode upon an ass to meet an angry band, with two hundred loaves and two bottles of wine.',
+      'My husband was churlish, a rich man of Carmel with three thousand sheep.',
+      'Ten days after my husband died, the man I had met sent for me.',
+      'Nabal my husband refused David food, and after that I became David’s wife.'
+    ], '1 Samuel 25', ['1 Samuel 25:32', 'And David said to Abigail, Blessed be the LORD God of Israel, which sent thee this day to meet me.']],
+    ['Bathsheba', 'f', 'OT', 'f', [
+      'A prophet told a king a story about a poor man’s one little lamb, and it was about me.',
+      'My first husband was Uriah the Hittite, a soldier who died in battle.',
+      'My first baby was taken from me, and I wept for him.',
+      'I married King David, and our son Solomon was king after him.'
+    ], '2 Samuel 11 – 12', ['Matthew 1:6', 'And Jesse begat David the king; and David the king begat Solomon of her that had been the wife of Urias.']],
+    ['Absalom', 'f', 'OT', 'm', [
+      'In all Israel there was none so praised for beauty, from the sole of my foot to the crown of my head.',
+      'I had a chariot and fifty men to run before me, and I stole the hearts of the people at the gate.',
+      'My head caught in the boughs of a great oak, and my mule went on without me.',
+      'I was King David’s son, and he wept, O my son, when Joab’s men killed me.'
+    ], '2 Samuel 13 – 18', ['2 Samuel 18:33', 'And the king was much moved, and went up to the chamber over the gate, and wept: and as he went, thus he said, O my son Absalom, my son, my son Absalom! would God I had died for thee, O Absalom, my son, my son!']],
+    ['Ahab', 'f', 'OT', 'm', [
+      'I lay upon my bed and would not eat, because a man would not sell me his vineyard.',
+      'Four hundred and fifty prophets of Baal lost on Mount Carmel in my day.',
+      'My wife was Jezebel, and she brought her gods into Israel.',
+      'Elijah said there would be no rain in my kingdom, and he called me the troubler of Israel.'
+    ], '1 Kings 16 – 22', ['1 Kings 18:17', 'And it came to pass, when Ahab saw Elijah, that Ahab said unto him, Art thou he that troubleth Israel?']],
+    ['Naaman', 'f', 'OT', 'm', [
+      'A little maid taken captive told my wife where I could be healed.',
+      'I was captain of the host of the king of Syria, a great man, but a leper.',
+      'I was angry to be told to wash in a small river, and not in the rivers of my own land.',
+      'I dipped seven times in Jordan at Elisha’s word, and my flesh came again like a little child’s.'
+    ], '2 Kings 5', ['2 Kings 5:14', 'Then went he down, and dipped himself seven times in Jordan, according to the saying of the man of God: and his flesh came again like unto the flesh of a little child, and he was clean.']],
+    ['Josiah', 's', 'OT', 'm', [
+      'I was eight years old when I began to reign.',
+      'The book of the law was found while my house of God was being repaired, and I rent my clothes when it was read.',
+      'I broke down the altars of the idols and burned the bones of their priests.',
+      'Huldah the prophetess spoke for the LORD to me, and I kept the greatest passover since the days of the judges.'
+    ], '2 Kings 22 – 23', ['2 Kings 22:2', 'And he did that which was right in the sight of the LORD, and walked in all the way of David his father, and turned not aside to the right hand or to the left.']],
+    ['Mordecai', 'f', 'OT', 'm', [
+      'I sat in the king’s gate, and I would not bow to a proud prince.',
+      'I heard of a plot against the king, and it was written in the book of the chronicles.',
+      'I was led through the street of the city on the king’s horse, in royal apparel.',
+      'Esther was my cousin, whom I brought up, and I asked her to plead for the Jews before the king.'
+    ], 'Esther 2 – 10', ['Esther 4:14', 'For if thou altogether holdest thy peace at this time, then shall there enlargement and deliverance arise to the Jews from another place; but thou and thy father’s house shall be destroyed: who knoweth whether thou art come to the kingdom for such a time as this?']],
 
     ['Mary', 'k', 'NT', 'f', [
       'My cousin Elisabeth was the mother of John the Baptist.',
@@ -430,7 +550,79 @@ window.FF = window.FF || {};
       'I lived in Joppa and was full of good works.',
       'Widows showed Peter the coats and clothes I had made.',
       'Peter prayed, and I came back to life.'
-    ], 'Acts 9:36-42', ['Acts 9:40', 'But Peter put them all forth, and kneeled down, and prayed; and turning him to the body said, Tabitha, arise. And she opened her eyes: and when she saw Peter, she sat up.']]
+    ], 'Acts 9:36-42', ['Acts 9:40', 'But Peter put them all forth, and kneeled down, and prayed; and turning him to the body said, Tabitha, arise. And she opened her eyes: and when she saw Peter, she sat up.']],
+    ['Zacharias', 'f', 'NT', 'm', [
+      'I was of the course of Abia, and my lot was to burn incense in the temple.',
+      'An angel named Gabriel stood on the right side of the altar, and I was afraid.',
+      'I could not speak until my son was born, because I did not believe.',
+      'Elisabeth my wife and I were old, and our son was John the Baptist.'
+    ], 'Luke 1', ['Luke 1:13', 'But the angel said unto him, Fear not, Zacharias: for thy prayer is heard; and thy wife Elisabeth shall bear thee a son, and thou shalt call his name John.']],
+    ['Anna', 's', 'NT', 'f', [
+      'I was of the tribe of Aser, and I had been a widow of about fourscore and four years.',
+      'I departed not from the temple, but served God with fastings and prayers night and day.',
+      'I was a prophetess, and I saw the baby that a righteous old man had just blessed.',
+      'Simeon had spoken, and I gave thanks in the temple when Mary and Joseph brought Jesus there.'
+    ], 'Luke 2', ['Luke 2:38', 'And she coming in that instant gave thanks likewise unto the Lord, and spake of him to all them that looked for redemption in Jerusalem.']],
+    ['Philip', 'f', 'NT', 'm', [
+      'I came from Bethsaida, the city of Andrew and Peter.',
+      'Jesus asked me where bread could be bought for five thousand men, to prove me.',
+      'I told a friend who doubted Nazareth, Come and see.',
+      'I was one of the twelve, and I said, Lord, shew us the Father, and it sufficeth us.'
+    ], 'John 1, 6 and 14', ['John 1:46', 'And Nathanael said unto him, Can there any good thing come out of Nazareth? Philip saith unto him, Come and see.']],
+    ['Nathanael', 's', 'NT', 'm', [
+      'I asked whether any good thing could come out of Nazareth.',
+      'I came from Cana in Galilee, and I was fishing when the Lord came to us the third time.',
+      'Jesus said he saw me under a fig tree before we ever met.',
+      'Philip brought me to Jesus, who called me an Israelite in whom is no guile.'
+    ], 'John 1 and 21', ['John 1:47', 'Jesus saw Nathanael coming to him, and saith of him, Behold an Israelite indeed, in whom is no guile!']],
+    ['Caiaphas', 'f', 'NT', 'm', [
+      'I said it was expedient that one man should die for the people.',
+      'I was the high priest that same year, and Annas was my wife’s father.',
+      'I rent my clothes and said, He hath spoken blasphemy.',
+      'I was the high priest who questioned Jesus and sent him on to Pontius Pilate.'
+    ], 'Matthew 26; John 11', ['John 11:50', 'Nor consider that it is expedient for us, that one man should die for the people, and that the whole nation perish not.']],
+    ['Barabbas', 'f', 'NT', 'm', [
+      'I was a notable prisoner, bound with them that had made insurrection.',
+      'A governor offered the people a choice at the feast, and they chose me.',
+      'I was a robber and a murderer, and yet I was let go.',
+      'The crowd cried for me to be released, and Jesus was crucified in my place.'
+    ], 'Matthew 27; Mark 15', ['Matthew 27:21', 'The governor answered and said unto them, Whether of the twain will ye that I release unto you? They said, Barabbas.']],
+    ['Cornelius', 's', 'NT', 'm', [
+      'I was a centurion of the band called the Italian band.',
+      'My prayers and my alms came up for a memorial before God.',
+      'An angel told me to send to Joppa for a man lodging in a tanner’s house.',
+      'Peter came to my house in Caesarea, and the Holy Ghost fell on us, the first Gentiles to believe.'
+    ], 'Acts 10', ['Acts 10:34', 'Then Peter opened his mouth, and said, Of a truth I perceive that God is no respecter of persons.']],
+    ['Priscilla', 's', 'NT', 'f', [
+      'My husband and I were tentmakers, and a man of Tarsus worked and lodged with us.',
+      'We came out of Italy when the Jews were commanded to depart from Rome.',
+      'We took an eloquent preacher aside and taught him the way of God more perfectly.',
+      'Aquila was my husband, and Paul greeted us as his helpers in Christ Jesus.'
+    ], 'Acts 18; Romans 16', ['Romans 16:3', 'Greet Priscilla and Aquila my helpers in Christ Jesus.']],
+    ['Rhoda', 's', 'NT', 'f', [
+      'I was a damsel in a house where many were gathered together praying.',
+      'I heard a knocking at the door of the gate, and I did not open it.',
+      'They said I was mad when I told them who stood outside.',
+      'I knew Peter’s voice at the gate after an angel had brought him out of prison.'
+    ], 'Acts 12', ['Acts 12:14', 'And when she knew Peter’s voice, she opened not the gate for gladness, but ran in, and told how Peter stood before the gate.']],
+    ['Sapphira', 's', 'NT', 'f', [
+      'My husband and I sold a possession and kept back part of the price.',
+      'We agreed together to say that we had brought it all.',
+      'Peter asked me for how much the land was sold, and I lied.',
+      'Ananias my husband fell down dead, and three hours after, so did I.'
+    ], 'Acts 5', ['Acts 5:9', 'Then Peter said unto her, How is it that ye have agreed together to tempt the Spirit of the Lord? behold, the feet of them which have buried thy husband are at the door, and shall carry thee out.']],
+    ['Joseph of Arimathaea', 's', 'NT', 'm', [
+      'I was a rich counsellor, and I had not consented to the counsel of the others.',
+      'I was a disciple secretly, for fear of the Jews.',
+      'I begged a governor for the body of Jesus, and wrapped it in clean linen.',
+      'Nicodemus helped me, and I laid Jesus in my own new tomb, hewn out of a rock.'
+    ], 'Matthew 27; John 19', ['Matthew 27:60', 'And laid it in his own new tomb, which he had hewn out in the rock: and he rolled a great stone to the door of the sepulchre, and departed.']],
+    ['Mark', 's', 'NT', 'm', [
+      'Many were praying in my mother’s house when Peter knocked at the gate.',
+      'I set out with Paul and Barnabas, and then I left them at Pamphylia and went home.',
+      'Paul would not take me the second time, so Barnabas took me, and the two parted.',
+      'Peter called me his son, and the second gospel of the New Testament carries my name.'
+    ], 'Acts 12 – 15', ['2 Timothy 4:11', 'Only Luke is with me. Take Mark, and bring him with thee: for he is profitable to me for the ministry.']]
   ];
 
   /* ---------- Verse Rush ----------

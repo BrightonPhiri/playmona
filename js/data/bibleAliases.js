@@ -50,7 +50,14 @@ window.FF = window.FF || {};
     'King Herod': ['Herod', 'Herod the Great'],
     'Elisabeth': ['Elizabeth'],
     'Dorcas': ['Tabitha'],
-    'Luke': ['Luke the physician']
+    'Luke': ['Luke the physician'],
+    'Zacharias': ['Zechariah', 'Zachariah'],
+    'Esau': ['Edom'],
+    'Naaman': ['Naaman the Syrian'],
+    'Philip': ['Philip the apostle'],
+    'Nathanael': ['Nathanael of Cana'],
+    'Mark': ['John Mark'],
+    'Joseph of Arimathaea': ['Joseph of Arimathea']
   };
 
   var BOOKS = {

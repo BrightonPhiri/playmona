@@ -30,8 +30,8 @@ function plainApostrophes(s) { return /'/.test(s); }
 
 /* ---------------- content ---------------- */
 
-test('who am I: about 60 people, four clues each, a level and a KJV verse', function () {
-  assert(WHO.length >= 60, 'about 60 people (' + WHO.length + ')');
+test('who am I: a hundred people, four clues each, a level and a KJV verse', function () {
+  assert(WHO.length >= 100, 'a hundred people (' + WHO.length + ')');
   assertEqual(new Set(WHO.map(function (x) { return x.answer; })).size, WHO.length, 'every name is unique');
   assertEqual(new Set(WHO.map(function (x) { return x.id; })).size, WHO.length, 'every id is unique');
   WHO.forEach(function (x) {
@@ -99,7 +99,8 @@ test('books: all 66 in order, with their parts, chapters and a key verse', funct
 test('settings keep to the offered values and know the standard', function () {
   assertEqual(JSON.stringify(G.who.sanitize({})), JSON.stringify(G.who.STANDARD));
   assertEqual(JSON.stringify(G.who.sanitize({ level: 'master', testament: 'apocrypha', pace: 'fast' })), JSON.stringify(G.who.STANDARD));
-  assert(!G.who.isStandard({ pace: 'tap' }) && !G.who.isStandard({ testament: 'NT' }) && G.who.isStandard({ level: 'family' }));
+  assert(!G.who.isStandard({ pace: 'auto' }) && !G.who.isStandard({ testament: 'NT' }) && G.who.isStandard({ level: 'family' }));
+  assertEqual(G.who.STANDARD.pace, 'tap', 'clues come only when you ask for them');
   assertEqual(G.verse.sanitize({ kinds: ['where', 'nope'] }).kinds, ['where']);
   assertEqual(G.verse.sanitize({ kinds: ['where', 'build'] }).kinds, [], 'every kind is the same as all');
   assert(G.verse.isStandard({}) && !G.verse.isStandard({ kinds: ['build'] }) && !G.verse.isStandard({ level: 'kids' }));
@@ -244,7 +245,9 @@ test('books: a seed deals the same rounds, the kinds take turns, every answer is
 /* ---------------- points ---------------- */
 
 test('points: who am I by clue, verse building, and the room points are unchanged', function () {
-  assertEqual([1, 2, 3, 4].map(G.who.points), [10, 8, 5, 3]);
+  // 4 on the first clue, and a point less for every clue asked for.
+  assertEqual([1, 2, 3, 4].map(G.who.points), [4, 3, 2, 1]);
+  assert(/var autoClues = c.pace === 'auto';/.test(SRC), 'rooms open clues on request too');
   assert(/race\.submit\(chosenName, isCorrect, null, \{ value: isCorrect \? whoPoints\(clueLevel\) : 0 \}\)/.test(SRC), 'a room guess sends its clue value');
   assertEqual([1, 2, 3, 4].map(G.verse.placePoints), [15, 13, 10, 10], 'verse rush rooms score by place');
   assertEqual(G.verse.buildPoints(0, 30000, 0, 0), 15, 'instant and clean');
@@ -317,14 +320,24 @@ test('who am I: a daily run deals the same people every time and scores a first-
   assertEqual(clue(a), clue(b), 'everyone gets the same first person');
   const person = WHO.filter(function (x) { return x.clues[0] === clue(a); })[0];
   assert(person, 'the clue belongs to a person');
-  const right = all(a.root, function (c) { return c.tagName === 'BUTTON' && c.dataset && c.dataset.answer === person.answer; })[0];
-  right.dispatch('click');
-  assertEqual(a.log.added[0].pts, 10, 'first clue is worth 10');
+  // Only the first clue shows: the other three wait to be asked for.
+  assertEqual(all(a.root, function (c) { return cls(c, 'bw-clue--locked'); }).length, 3, 'three clues still to ask for');
+  const name = function (d) { return all(d.root, function (c) { return c.tagName === 'BUTTON' && c.dataset && c.dataset.answer === person.answer; })[0]; };
+  name(a).dispatch('click');
+  assertEqual(a.log.added[0].pts, 4, 'the first clue is worth 4');
   assert(all(a.root, function (c) { return cls(c, 'bq-verse'); }).length === 1, 'the verse card shows');
   assertEqual(all(a.root, function (c) { return cls(c, 'bw-clue'); }).length, 4, 'four clue rows');
   assertEqual(all(a.root, function (c) { return cls(c, 'bw-clue--locked'); }).length, 0, 'every clue is shown after the answer');
   nextButton(a.root).dispatch('click');
   assert(clue(a) !== person.clues[0], 'the next person');
+
+  // Every clue asked for costs a point.
+  const askBtn = all(b.root, function (c) { return c.tagName === 'BUTTON' && /Another clue/.test(text(c)); })[0];
+  assert(askBtn, 'there is a button for another clue');
+  askBtn.dispatch('click');
+  assertEqual(all(b.root, function (c) { return cls(c, 'bw-clue--locked'); }).length, 2, 'the second clue opened');
+  name(b).dispatch('click');
+  assertEqual(b.log.added[0].pts, 3, 'the second clue is worth 3');
 });
 
 test('verse rush: a daily run builds a verse piece by piece', function () {
